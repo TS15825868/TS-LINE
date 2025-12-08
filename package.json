@@ -1,7 +1,7 @@
 {
   "name": "line-faq-bot",
   "version": "1.0.0",
-  "description": "LINE Official Account FAQ Bot",
+  "description": "LINE 官方帳 FAQ 自動回覆（龜鹿膏 / 龜鹿飲）",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
