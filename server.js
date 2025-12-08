@@ -54,3 +54,22 @@ app.post(
             type: 'text',
             text: item.reply
           });
+          return res.sendStatus(200);
+        }
+      }
+
+      // 4️⃣ 其他訊息 → 不亂回
+      return res.sendStatus(200);
+
+    } catch (err) {
+      console.error('Webhook error:', err);
+      return res.sendStatus(200);
+    }
+  }
+);
+
+// ✅ Render 要用它指定的 PORT（非常重要）
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log('✅ LINE FAQ Bot running on port', PORT);
+});
