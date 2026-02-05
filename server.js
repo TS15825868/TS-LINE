@@ -1,5 +1,5 @@
 /**
- * LINE Bot Webhook - 自動回覆全集（可整包替換，含「敏感問題」導流中醫師）
+ * LINE Bot Webhook - 自動回覆全集（含敏感問題導流 + 新好友24h追蹤推播）
  * npm i express @line/bot-sdk
  *
  * ENV:
@@ -12,6 +12,8 @@
 
 const express = require("express");
 const line = require("@line/bot-sdk");
+const fs = require("fs");
+const path = require("path");
 
 const { CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET, PORT = 3000 } = process.env;
 if (!CHANNEL_ACCESS_TOKEN || !CHANNEL_SECRET) {
@@ -33,7 +35,7 @@ const client = new line.Client(config);
 const STORE = {
   brandName: "仙加味・龜鹿",
   address: "台北市萬華區西昌街 52 號",
-  phoneDisplay: "(02) 2381-2990", // 顯示用
+  phoneDisplay: "(02) 2381-2990",
   website: "https://ts15825868.github.io/TaiShing/index.html",
 
   specs: {
@@ -55,20 +57,23 @@ const STORE = {
   shippingNote:
     "可安排宅配/超商等方式（依地區與品項而定）。請回覆「寄送縣市＋品項＋數量」，我會提供運費與到貨時間預估。",
 
-  // 敏感問題導流（你提供的內容）
   doctorLineId: "@changwuchi",
   doctorLink: "https://lin.ee/1MK4NR9",
 };
 
 /** =========================
- * B) 回覆文案（繁體中文，避免醫療宣稱）
+ * B) 回覆文案
  * ========================= */
 const TEXT = {
+  // ✅ 歡迎訊息（建議：新好友加好友即收到）
   welcome: [
-    "您好，歡迎您 😊",
-    `這裡是【仙加味・龜鹿】官方帳號`,
+    "您好，歡迎加入【仙加味・龜鹿】😊",
     "",
-    "您可以輸入關鍵字快速取得資訊👇",
+    "我們提供龜鹿相關產品與補養資訊，",
+    "可依您的需求協助說明與建議。",
+    "",
+    "您可以直接輸入下列關鍵字👇",
+    "",
     "1️⃣ 有什麼產品",
     "2️⃣ 價格／售價",
     "3️⃣ 容量／規格",
@@ -77,7 +82,26 @@ const TEXT = {
     "6️⃣ 怎麼買／運送／付款",
     "7️⃣ 門市資訊",
     "",
-    "也可以直接留言您的需求，我們將由專人回覆。",
+    "如有個人狀況（孕哺／用藥／慢性病等），",
+    "我們會協助轉由合作中醫師一對一說明。",
+    "",
+    "也歡迎直接留言，我們將由專人回覆您🙂",
+  ].join("\n"),
+
+  // ✅ 24h 追蹤提醒（不打擾版）
+  followup24h: [
+    "您好😊 這裡是【仙加味・龜鹿】的小提醒",
+    "",
+    "若您想快速了解，可以直接輸入👇",
+    "▪️ 有什麼產品",
+    "▪️ 價格",
+    "▪️ 容量",
+    "▪️ 龜鹿膏怎麼吃",
+    "▪️ 龜鹿飲怎麼喝",
+    "▪️ 門市資訊",
+    "",
+    "也可以直接留言您的需求，",
+    "我們會由專人協助您🙂",
   ].join("\n"),
 
   products: [
@@ -124,7 +148,6 @@ const TEXT = {
     "▪️ 食用期間避免冰飲",
     "",
     "若您屬於孕哺／慢性病用藥中／特殊體質等情況，建議先諮詢合作中醫師了解後再食用。",
-    "（可輸入：孕婦／哺乳／用藥／慢性病 等，我會提供諮詢方式）",
   ].join("\n"),
 
   drinkHow: [
@@ -136,7 +159,6 @@ const TEXT = {
     "▪️ 飲用期間避免冰飲",
     "",
     "若您屬於孕哺／慢性病用藥中／特殊體質等情況，建議先諮詢合作中醫師了解後再飲用。",
-    "（可輸入：孕婦／哺乳／用藥／慢性病 等，我會提供諮詢方式）",
   ].join("\n"),
 
   soupHow: [
@@ -155,7 +177,6 @@ const TEXT = {
     "▪️ 避免冰飲搭配",
     "",
     "若您屬於孕哺／慢性病用藥中／特殊體質等情況，建議先諮詢合作中醫師了解後再食用。",
-    "（可輸入：孕婦／哺乳／用藥／慢性病 等，我會提供諮詢方式）",
   ].join("\n"),
 
   ingredients: [
@@ -163,20 +184,16 @@ const TEXT = {
     "",
     "若您想了解特定品項的成分，請回覆：",
     "「成分 龜鹿膏」或「成分 龜鹿飲」",
-    "",
-    "我會把對應品項的成分資訊整理給您。",
   ].join("\n"),
 
   ingredientsGel: [
     "【龜鹿膏｜成分】",
     "請以實際包裝標示為準。",
-    "若您需要我提供文字版成分清單，請回覆「龜鹿膏 成分文字」，我可替您整理成可貼標格式。",
   ].join("\n"),
 
   ingredientsDrink: [
     "【龜鹿飲｜成分】",
     "請以實際包裝標示為準。",
-    "若您需要我提供文字版成分清單，請回覆「龜鹿飲 成分文字」，我可替您整理成可貼標格式。",
   ].join("\n"),
 
   storage: [
@@ -185,27 +202,15 @@ const TEXT = {
     "▪️ 請依包裝標示之保存方式為準",
     "▪️ 避免高溫、潮濕、日照直射",
     "▪️ 開封後建議盡快食用/冷藏（依品項標示）",
-    "",
-    "若您告訴我是哪個品項，我可以回覆更精準的保存方式。",
   ].join("\n"),
 
-  testing: [
-    "【檢驗／報告】",
-    "",
-    STORE.testingNote,
-    "",
-    "若您需要指定品項或指定批次/日期，請留言，我們會協助提供可提供的資料。",
-  ].join("\n"),
+  testing: ["【檢驗／報告】", "", STORE.testingNote].join("\n"),
 
   whoSuitable: [
     "【適合對象／注意事項】",
     "",
     "每個人體質、作息與飲食習慣不同，建議以「補養/日常保健」角度評估。",
-    "",
-    "若您屬於以下情況（孕哺/慢性病/規律用藥/手術前後/兒童等），",
-    "為避免誤解，建議先由合作中醫師一對一了解後再評估是否適合。",
-    "",
-    "可直接輸入：孕婦／哺乳／用藥／慢性病／手術／小孩 等，我會提供諮詢方式。",
+    "若您有孕哺/慢性病/用藥/手術等狀況，建議先由合作中醫師一對一了解後再評估是否適合。",
   ].join("\n"),
 
   howToBuy: [
@@ -216,15 +221,10 @@ const TEXT = {
     "② 數量",
     "③ 寄送地區（縣市）",
     "",
-    "我會回覆：",
-    "▪️ 商品資訊/規格",
-    "▪️ 價格（依數量/組合）",
-    "▪️ 運送方式與運費",
-    "▪️ 付款方式",
+    "我會回覆：商品資訊/規格、價格（依數量/組合）、運送與付款方式。",
   ].join("\n"),
 
   payment: ["【付款方式】", "", STORE.paymentNote].join("\n"),
-
   shipping: ["【運送／運費／到貨】", "", STORE.shippingNote].join("\n"),
 
   storeInfo: [
@@ -270,20 +270,69 @@ const TEXT = {
 };
 
 /** =========================
- * C) 關鍵字規則（同義詞 + 模糊命中）
+ * C) 追蹤推播：檔案儲存（不需資料庫）
+ * ========================= */
+const DATA_DIR = path.join(__dirname, "data");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+
+// 確保資料夾存在
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+// users.json 格式：{ "<userId>": { followedAt: 1234567890, followupSent: true/false } }
+function loadUsers() {
+  try {
+    if (!fs.existsSync(USERS_FILE)) return {};
+    const raw = fs.readFileSync(USERS_FILE, "utf8");
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    console.error("讀取 users.json 失敗：", e);
+    return {};
+  }
+}
+
+function saveUsers(users) {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
+  } catch (e) {
+    console.error("寫入 users.json 失敗：", e);
+  }
+}
+
+async function schedule24hFollowup(userId) {
+  // 24h 後推播（毫秒）
+  const delayMs = 24 * 60 * 60 * 1000;
+
+  setTimeout(async () => {
+    try {
+      const users = loadUsers();
+      const u = users[userId];
+      if (!u) return;
+      if (u.followupSent) return; // 已送過就不再送
+
+      await client.pushMessage(userId, {
+        type: "text",
+        text: TEXT.followup24h,
+      });
+
+      users[userId].followupSent = true;
+      users[userId].followupSentAt = Date.now();
+      saveUsers(users);
+    } catch (err) {
+      console.error("24h 推播失敗：", err);
+    }
+  }, delayMs);
+}
+
+/** =========================
+ * D) 關鍵字規則（同義詞 + 模糊命中）
  * ========================= */
 
 function normalizeText(s) {
-  return String(s || "")
-    .replace(/\u3000/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return String(s || "").replace(/\u3000/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function matchAny(t, patterns) {
-  return patterns.some((p) =>
-    p instanceof RegExp ? p.test(t) : String(t).includes(p)
-  );
+  return patterns.some((p) => String(t).includes(p));
 }
 
 const INTENT = {
@@ -305,7 +354,7 @@ const INTENT = {
   storeInfo: ["門市", "店面", "地址", "在哪", "位置", "營業", "電話", "怎麼去", "地點"],
   website: ["官網", "網站", "網址", "網頁"],
 
-  // ✅ 敏感問題：只要命中就導到中醫師
+  // 敏感問題：命中就導到中醫師
   sensitive: [
     "孕婦","懷孕","備孕","哺乳","餵母乳",
     "小孩","兒童","未成年",
@@ -324,12 +373,12 @@ function pickReply(userText) {
   const raw = normalizeText(userText);
   const t = raw.toLowerCase();
 
-  // ✅ 敏感健康狀況 → 優先導流中醫師（避免風險）
+  // 敏感健康狀況 → 優先導流
   if (matchAny(raw, INTENT.sensitive) || matchAny(t, INTENT.sensitive)) {
     return TEXT.sensitive;
   }
 
-  // 「成分 + 品項」：成分 龜鹿膏 / 成分龜鹿飲
+  // 「成分 + 品項」：成分 龜鹿膏 / 成分 龜鹿飲
   if (raw.includes("成分")) {
     if (raw.includes("龜鹿膏") || raw.includes("膏")) return TEXT.ingredientsGel;
     if (raw.includes("龜鹿飲") || raw.includes("飲")) return TEXT.ingredientsDrink;
@@ -362,7 +411,7 @@ function pickReply(userText) {
 }
 
 /** =========================
- * D) Webhook
+ * E) Webhook
  * ========================= */
 app.get("/", (req, res) => res.status(200).send("OK"));
 
@@ -378,6 +427,42 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 });
 
 async function handleEvent(event) {
+  // ✅ 新好友 follow：立即回歡迎 + 安排 24h 追蹤推播
+  if (event.type === "follow") {
+    const userId = event.source && event.source.userId;
+    if (userId) {
+      const users = loadUsers();
+      users[userId] = users[userId] || { followedAt: Date.now(), followupSent: false };
+      users[userId].followedAt = users[userId].followedAt || Date.now();
+      users[userId].followupSent = users[userId].followupSent || false;
+      saveUsers(users);
+
+      // 安排 24 小時後推播（只排一次）
+      if (!users[userId].followupScheduledAt) {
+        users[userId].followupScheduledAt = Date.now();
+        saveUsers(users);
+        schedule24hFollowup(userId);
+      }
+    }
+
+    return client.replyMessage(event.replyToken, {
+      type: "text",
+      text: TEXT.welcome,
+    });
+  }
+
+  // 取消追蹤：可選擇把 userId 移除
+  if (event.type === "unfollow") {
+    const userId = event.source && event.source.userId;
+    if (userId) {
+      const users = loadUsers();
+      delete users[userId];
+      saveUsers(users);
+    }
+    return null;
+  }
+
+  // 只處理文字訊息
   if (event.type !== "message") return null;
   if (!event.message || event.message.type !== "text") return null;
 
