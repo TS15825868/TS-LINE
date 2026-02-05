@@ -39,7 +39,7 @@ app.post(
           await client.replyMessage(event.replyToken, {
             type: 'text',
             text:
-              '您好，歡迎加入【台興山產・仙加味】😊\n' +
+              '您好，歡迎加入【仙加味・龜鹿】😊\n' +
               '我們是萬華在地、四代傳承的漢方補養店。\n\n' +
               '目前提供：\n' +
               '・龜鹿膏（100g／罐）\n' +
