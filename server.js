@@ -1,13 +1,13 @@
 "use strict";
 
 /**
- * 仙加味・龜鹿 LINE Bot（整包替換版｜方案A：諮詢入口）
+ * 仙加味・龜鹿 LINE Bot（整包替換版｜方案A：諮詢入口 + 輪替模板 + 去重 + 排序器）
  *
  * ✅ 功能
  * - Rich Menu「LINE諮詢」送出「諮詢」→ 回「諮詢入口導引」(方案A)
  * - 同義詞全連動：售價/價錢/價格、容量/規格/重量…
  * - 上下文連動：上一句提產品，下一句只問「價格/容量/怎麼買」也會接上
- * - 一句多問合併回覆
+ * - 一句多問合併回覆（固定順序：排序器）
  * - 強化下單解析：
  *    - 支援：龜鹿膏2罐、2罐龜鹿膏、我要買龜鹿飲1包
  *    - 支援：①龜鹿膏 ②1罐 ③台北市... 這種「分行/編號」格式
@@ -17,7 +17,8 @@
  *
  * ✅ 新增（你要求的）
  * - 模板輪替：同一意圖短時間重複問 → 不會一直貼同一段
- * - 去重：2分鐘內同一段內容完全相同 → 改回「我剛剛回覆過…」避免鬼打牆
+ * - 去重：2分鐘內同一段內容完全相同 → 改回「我剛剛回覆過…」
+ * - 排序器：同一句多問（價格/容量/怎麼買…）固定順序回覆
  */
 
 const express = require("express");
@@ -251,7 +252,14 @@ function ensureUser(userId) {
   };
 
   users[userId].order = users[userId].order || {
-    active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now(),
+    active: false,
+    step: null,
+    shipCity: null,
+    name: null,
+    phone: null,
+    address: null,
+    items: [],
+    updatedAt: Date.now(),
   };
   users[userId].state.lastSeenAt = Date.now();
   users[userId].order.updatedAt = Date.now();
@@ -265,7 +273,9 @@ function updateUser(userId, patchFn) {
   users[userId].state.rotate = users[userId].state.rotate || {};
   users[userId].state.replyCache = users[userId].state.replyCache || { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 };
 
-  users[userId].order = users[userId].order || { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
+  users[userId].order =
+    users[userId].order ||
+    { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
   patchFn(users[userId]);
   users[userId].state.lastSeenAt = Date.now();
   users[userId].order.updatedAt = Date.now();
@@ -367,15 +377,11 @@ function specsOne(productKey) {
 
 const TEMPLATES = {
   pricing: (productKey) => ([
-    // 1 完整
     pricingOne(productKey),
-    // 2 精簡 + 追問
     productKey
       ? "我可以再幫您補上「怎麼買/寄送」😊\n請回我：數量 + 寄送縣市（例：2罐 寄台北）"
       : "想問哪一款的價格呢？回我：龜鹿膏／龜鹿飲／湯塊／鹿茸粉",
-    // 3 引導下單
     "我可以直接幫您下單🙂\n請回：品項 + 數量 + 寄送縣市\n例：龜鹿膏2罐 寄台北",
-    // 4 只問關鍵
     "請回我：品項/數量/寄送縣市（例：龜鹿飲10包 寄台中）我立刻幫您整理～",
   ]),
   specs: (productKey) => ([
@@ -406,6 +412,9 @@ const TEMPLATES = {
   ]),
 };
 
+/** =========================
+ * E-3) 固定文案（TEXT）
+ * ========================= */
 const TEXT = {
   welcome: [
     `您好，歡迎加入【${STORE.brandName}】😊`,
@@ -535,6 +544,35 @@ function detectIntents(raw) {
   if (includesAny(raw, INTENT.website)) intents.add("website");
   if (includesAny(raw, INTENT.soupPrice)) intents.add("soupPrice");
   return Array.from(intents);
+}
+
+/** =========================
+ * F-2) 意圖排序器（新增）
+ * ========================= */
+const INTENT_ORDER = [
+  "consult",
+  "productList",
+  "pricing",
+  "soupPrice",
+  "specs",
+  "buy",
+  "shipping",
+  "payment",
+  "testing",
+  "store",
+  "website",
+];
+
+function sortIntents(intents) {
+  const set = new Set(intents || []);
+  const ordered = [];
+  for (const k of INTENT_ORDER) {
+    if (set.has(k)) ordered.push(k);
+  }
+  for (const x of set) {
+    if (!INTENT_ORDER.includes(x)) ordered.push(x);
+  }
+  return ordered;
 }
 
 /** =========================
@@ -796,12 +834,13 @@ function tryFillOrderFromMessage(userId, rawText) {
 }
 
 /** =========================
- * H) 全連動回覆（方案A：諮詢入口）
+ * H) 全連動回覆（方案A：諮詢入口 + 排序器）
  * ========================= */
 function buildSmartReply(raw, userObj) {
   const intents = detectIntents(raw);
   const userState = userObj?.state || { lastProductKey: null };
 
+  // 最高優先：敏感導流
   if (intents.includes("sensitive")) return TEXT.sensitive;
 
   const productKey = detectProductKey(raw) || userState.lastProductKey || null;
@@ -835,49 +874,76 @@ function buildSmartReply(raw, userObj) {
     ].join("\n");
   }
 
+  const orderedIntents = sortIntents(intents);
   const parts = [];
 
-  // ✅ 方案A：諮詢入口（輪替）
-  if (intents.includes("consult")) {
-    const n = nextRotation(userObj, "consult");
-    const list = TEMPLATES.consult();
-    parts.push(list[Math.min(n, list.length) - 1]);
-  }
+  for (const it of orderedIntents) {
+    if (it === "consult") {
+      const n = nextRotation(userObj, "consult");
+      const list = TEMPLATES.consult();
+      parts.push(list[Math.min(n, list.length) - 1]);
+      continue;
+    }
 
-  if (intents.includes("productList")) parts.push(productListText());
-  if (intents.includes("website")) parts.push(`官網連結：${STORE.website}`);
-  if (intents.includes("testing")) parts.push(TEXT.testing);
-  if (intents.includes("shipping")) parts.push(TEXT.shipping);
-  if (intents.includes("payment")) parts.push(TEXT.payment);
+    if (it === "productList") {
+      parts.push(productListText());
+      continue;
+    }
 
-  // ✅ buy（輪替）
-  if (intents.includes("buy")) {
-    const n = nextRotation(userObj, "buy");
-    const list = TEMPLATES.buy();
-    parts.push(list[Math.min(n, list.length) - 1]);
-  }
+    if (it === "soupPrice") {
+      parts.push(soupPriceAll());
+      continue;
+    }
 
-  // ✅ store（輪替）
-  if (intents.includes("store")) {
-    const n = nextRotation(userObj, "store");
-    const list = TEMPLATES.store();
-    parts.push(list[Math.min(n, list.length) - 1]);
-  }
+    if (it === "pricing") {
+      // 同句已包含 soupPrice 且指向湯塊時，避免重複湯塊表
+      if (intents.includes("soupPrice") && (productKey === "soup" || String(productKey).startsWith("soup"))) {
+        continue;
+      }
+      const n = nextRotation(userObj, "pricing");
+      const list = TEMPLATES.pricing(productKey);
+      parts.push(list[Math.min(n, list.length) - 1]);
+      continue;
+    }
 
-  if (intents.includes("soupPrice")) parts.push(soupPriceAll());
+    if (it === "specs") {
+      const n = nextRotation(userObj, "specs");
+      const list = TEMPLATES.specs(productKey);
+      parts.push(list[Math.min(n, list.length) - 1]);
+      continue;
+    }
 
-  // ✅ pricing（輪替）
-  if (intents.includes("pricing") && !intents.includes("soupPrice")) {
-    const n = nextRotation(userObj, "pricing");
-    const list = TEMPLATES.pricing(productKey);
-    parts.push(list[Math.min(n, list.length) - 1]);
-  }
+    if (it === "buy") {
+      const n = nextRotation(userObj, "buy");
+      const list = TEMPLATES.buy();
+      parts.push(list[Math.min(n, list.length) - 1]);
+      continue;
+    }
 
-  // ✅ specs（輪替）
-  if (intents.includes("specs")) {
-    const n = nextRotation(userObj, "specs");
-    const list = TEMPLATES.specs(productKey);
-    parts.push(list[Math.min(n, list.length) - 1]);
+    if (it === "shipping") {
+      parts.push(TEXT.shipping);
+      continue;
+    }
+    if (it === "payment") {
+      parts.push(TEXT.payment);
+      continue;
+    }
+    if (it === "testing") {
+      parts.push(TEXT.testing);
+      continue;
+    }
+
+    if (it === "store") {
+      const n = nextRotation(userObj, "store");
+      const list = TEMPLATES.store();
+      parts.push(list[Math.min(n, list.length) - 1]);
+      continue;
+    }
+
+    if (it === "website") {
+      parts.push(`官網連結：${STORE.website}`);
+      continue;
+    }
   }
 
   if (parts.length === 0) return TEXT.fallback;
@@ -936,10 +1002,17 @@ async function handleEvent(event) {
       users[userId] = users[userId] || {};
       users[userId].followedAt = users[userId].followedAt || Date.now();
       users[userId].followupSent = users[userId].followupSent || false;
-      users[userId].state = users[userId].state || { lastProductKey: null, lastSeenAt: Date.now(), rotate: {}, replyCache: { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 } };
+
+      users[userId].state =
+        users[userId].state ||
+        { lastProductKey: null, lastSeenAt: Date.now(), rotate: {}, replyCache: { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 } };
       users[userId].state.rotate = users[userId].state.rotate || {};
       users[userId].state.replyCache = users[userId].state.replyCache || { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 };
-      users[userId].order = users[userId].order || { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
+
+      users[userId].order =
+        users[userId].order ||
+        { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
+
       saveUsers(users);
     }
     return client.replyMessage(event.replyToken, textMessage(TEXT.welcome));
@@ -997,7 +1070,6 @@ async function handleEvent(event) {
   const pk = detectProductKey(raw);
   if (pk) updateUser(userId, (u) => (u.state.lastProductKey = pk));
 
-  // 取最新 state（包含 lastProductKey）
   const latestUser = ensureUser(userId);
   const reply = buildSmartReply(raw, latestUser);
 
