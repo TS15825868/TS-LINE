@@ -1,24 +1,21 @@
 "use strict";
 
 /**
- * 仙加味・龜鹿 LINE Bot（整包替換版｜方案A：諮詢入口 + 輪替模板 + 去重 + 排序器）
+ * 仙加味・龜鹿 LINE Bot（整包替換版｜方案A：諮詢入口）
  *
- * ✅ 功能
- * - Rich Menu「LINE諮詢」送出「諮詢」→ 回「諮詢入口導引」(方案A)
- * - 同義詞全連動：售價/價錢/價格、容量/規格/重量…
- * - 上下文連動：上一句提產品，下一句只問「價格/容量/怎麼買」也會接上
- * - 一句多問合併回覆（固定順序：排序器）
- * - 強化下單解析：
- *    - 支援：龜鹿膏2罐、2罐龜鹿膏、我要買龜鹿飲1包
- *    - 支援：①龜鹿膏 ②1罐 ③台北市... 這種「分行/編號」格式
- *    - 若有產品但數量寫在別處，會自動套到該產品（單一品項時）
+ * ✅ 已包含
+ * - 排序器：多意圖合併回覆順序固定（先諮詢入口→產品→價格→容量→怎麼買→運送→付款→檢驗→門市/官網）
+ * - 模板輪替：同類問題輪替不同版本；避免重複同一段
+ * - 去重：若本次回覆與上次回覆「相同簽章」，自動切換下一模板
+ * - 上下文連動：上一句提產品，下一句只問「價格/容量/怎麼買」也能接上
+ * - 下單解析加強：支援「①②③」編號格式、2罐龜鹿膏、龜鹿膏2罐、我要買龜鹿飲1包…等
  * - 下單流程：縣市 → 姓名 → 電話 → 地址 → 完整確認
  * - 敏感問題導流合作中醫師（你提供話術）
  *
- * ✅ 新增（你要求的）
- * - 模板輪替：同一意圖短時間重複問 → 不會一直貼同一段
- * - 去重：2分鐘內同一段內容完全相同 → 改回「我剛剛回覆過…」
- * - 排序器：同一句多問（價格/容量/怎麼買…）固定順序回覆
+ * ⚙️ 環境變數
+ * - CHANNEL_ACCESS_TOKEN
+ * - CHANNEL_SECRET
+ * - PORT（可選）
  */
 
 const express = require("express");
@@ -26,6 +23,7 @@ const line = require("@line/bot-sdk");
 const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
+const crypto = require("crypto");
 
 const { CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET, PORT = 3000 } = process.env;
 if (!CHANNEL_ACCESS_TOKEN || !CHANNEL_SECRET) {
@@ -38,7 +36,7 @@ const app = express();
 const client = new line.Client(config);
 
 /** =========================
- * A) 店家/產品資料
+ * A) 店家/產品資料（價格依你提供；使用方式依官網文案）
  * ========================= */
 const STORE = {
   brandName: "仙加味・龜鹿",
@@ -52,65 +50,87 @@ const STORE = {
   doctorLineId: "@changwuchi",
   doctorLink: "https://lin.ee/1MK4NR9",
 
+  // ✅ 用詞統一：售價（原價）／優惠價（特價）
   products: {
     gel: {
+      key: "gel",
       name: "龜鹿膏",
-      spec: "100g/罐",
-      priceOriginal: 1800,
-      pricePromo: 1500,
-      noteDays: "依每個人食用習慣不同，一罐大約可吃10天～半個月左右。",
-      howTo: [
-        "一般建議：先從小量、飯後開始（例如小湯匙量），連續觀察幾天；",
-        "若本身容易上火、睡不好或口乾，建議減量或隔天吃。",
-      ],
-      usage: [
-        "建議早上或空腹前後食用",
-        "一天一次，一小匙（初次可先半匙）",
-        "可用熱水化開後搭配溫水，或直接食用",
-        "食用期間避免冰飲",
+      specShort: "100g/罐",
+      priceList: 1800,  // 售價
+      pricePromo: 1500, // 優惠價
+      // 依官網內容（精簡、但保留核心邏輯）
+      usageBlocks: [
+        [
+          "【龜鹿膏｜使用方式】",
+          "• 每日 1～2 小匙，不需沖泡，直接內服即可。",
+          "• 也可搭配溫開水沖開，或加入日常湯品中。",
+          "• 若當天同時搭配龜鹿飲或湯塊，可先維持 1 匙，觀察作息與精神變化。",
+          "• 若正在接受治療或長期服用藥物，可先留言我們再一起評估。",
+        ],
       ],
     },
 
     drink: {
+      key: "drink",
       name: "龜鹿飲",
-      spec: "180cc/包",
-      priceOriginal: 200,
+      specShort: "180cc/包",
+      priceList: 200,
       pricePromo: 160,
-      usage: [
-        "每日一包",
-        "可隔水加熱或溫熱飲用",
-        "建議早上或白天飲用",
-        "飲用期間避免冰飲",
+      usageBlocks: [
+        [
+          "【龜鹿飲｜建議飲用方式】",
+          "• 一般建議：每日 1 包，可依個人狀況與作息調整頻率。",
+          "• 可常溫飲用；亦可隔水加溫至溫熱，不建議直接大火煮沸。",
+          "• 空腹或飯後皆可；若晚間飲用後精神較好，建議改在白天或下午。",
+          "• 若同時搭配龜鹿膏或湯塊，建議先以其中一種為主軸，再討論如何分工安排。",
+        ],
       ],
     },
 
     antler: {
+      key: "antler",
       name: "鹿茸粉",
-      spec: "二兩（75公克）/罐",
-      priceOriginal: 2000,
+      specShort: "75g/罐",
+      priceList: 2000,
       pricePromo: 1600,
-      usage: [
-        "一般建議：先從小量開始，搭配溫水或飲品",
-        "若容易上火、睡不好或口乾，建議減量或間隔食用",
+      usageBlocks: [
+        [
+          "【鹿茸粉｜建議使用方式】",
+          "• 加在飲品：1 匙加入牛奶、豆漿、優酪乳或果汁中混合飲用。",
+          "• 加在餐食：拌入粥品、湯品或溫熱餐食中。",
+          "• 頻率建議：每日 1～2 匙，可依個人狀況調整；搭配其他龜鹿產品可協助安排節奏。",
+        ],
       ],
     },
 
     soup: {
+      key: "soup",
       name: "龜鹿湯塊",
       variants: [
-        { key: "soup600", label: "一斤", spec: "600公克", priceOriginal: 8000, pricePromo: 6000 },
-        { key: "soup300", label: "半斤", spec: "300公克", priceOriginal: 4000, pricePromo: 3200 },
-        { key: "soup150", label: "4兩", spec: "150公克", priceOriginal: 2000, pricePromo: 1600 },
+        { key: "soup600", label: "一斤", spec: "600公克", priceList: 8000, pricePromo: 6000 },
+        { key: "soup300", label: "半斤", spec: "300公克", priceList: 4000, pricePromo: 3200 },
+        { key: "soup150", label: "4兩",  spec: "150公克", priceList: 2000, pricePromo: 1600 },
       ],
-      usage: [
-        "依個人口味加水煮滾，可搭配肉類/食材燉煮",
-        "建議熱飲熱食，避免冰冷搭配",
+      usageBlocks: [
+        [
+          "【湯塊｜建議使用方式】",
+          "【日常飲用（單人/少數人）】",
+          "• 1 塊放入保溫瓶/馬克杯，加熱水溶解後分次飲用；可調整水量或湯塊數量。",
+          "",
+          "【家庭燉湯（多人共享）】",
+          "• 可作為雞湯、排骨湯、牛腱湯等湯底使用。",
+          "• 建議先從 1～2 塊開始，依鍋子大小與風味濃度再微調。",
+          "• 可搭配紅棗、枸杞或家中習慣食材一起熬煮。",
+          "",
+          "【頻率建議】",
+          "• 多數家庭每週 1～2 次湯品為主；若同時搭配龜鹿膏/龜鹿飲，建議先以其中一種為主，再協助調整整體節奏。",
+        ],
       ],
     },
   },
 
   testingNote:
-    "目前我們可提供八大營養素等基本資訊（依批次/包裝標示為準）。如需更詳細資料，歡迎留言，我們整理後回覆您。",
+    "目前我們可提供八大營養素等基本資訊（以外包裝/批次標示為準）。如需更詳細資料，歡迎留言，我們整理後回覆您。",
   paymentNote:
     "付款方式可依訂單安排（如：轉帳等）。我整理好訂單後會一併提供付款資訊。",
   shippingNote:
@@ -124,71 +144,44 @@ function money(n) {
   const s = String(Number(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return `$${s}`;
 }
+
+function sha1(s) {
+  return crypto.createHash("sha1").update(String(s || ""), "utf8").digest("hex");
+}
+
+// 把 ①②③… 轉成 1/2/3，方便下單解析
+function normalizeCircledNumbers(s) {
+  const map = {
+    "①": "1", "②": "2", "③": "3", "④": "4", "⑤": "5",
+    "⑥": "6", "⑦": "7", "⑧": "8", "⑨": "9", "⑩": "10",
+    "⑪": "11", "⑫": "12", "⑬": "13", "⑭": "14", "⑮": "15",
+    "⑯": "16", "⑰": "17", "⑱": "18", "⑲": "19", "⑳": "20",
+  };
+  return String(s || "").replace(/[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳]/g, (m) => map[m] || m);
+}
+
 function normalizeText(s) {
-  return String(s || "")
+  return normalizeCircledNumbers(String(s || ""))
     .replace(/\u3000/g, " ")
     .replace(/[，,、/／]+/g, " ")
+    .replace(/[：:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
+
 function includesAny(t, arr) {
-  return arr.some((k) => String(t).includes(k));
+  const s = String(t || "");
+  return arr.some((k) => s.includes(k));
 }
+
 function safeInt(x) {
   const n = parseInt(String(x), 10);
   return Number.isFinite(n) ? n : null;
 }
+
 function cnNumToInt(token) {
   const map = { "一": 1, "二": 2, "兩": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10 };
   return map[token] ?? null;
-}
-
-/** =========================
- * B-2) 去重 + 模板輪替（新增）
- * ========================= */
-function simpleHash(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
-  return String(h >>> 0);
-}
-function shouldDedupeReply(userObj, replyText) {
-  const cache = userObj?.state?.replyCache;
-  if (!cache) return { dedupe: false, newText: replyText };
-
-  const now = Date.now();
-  const hash = simpleHash(replyText);
-  const within = (now - (cache.lastAt || 0)) < 2 * 60 * 1000; // 2 分鐘
-  const same = cache.lastHash && cache.lastHash === hash;
-
-  if (within && same) {
-    cache.repeatCount = (cache.repeatCount || 0) + 1;
-    const alt = [
-      "我剛剛已回覆過這段資訊😊",
-      "要我再貼一次完整內容嗎？",
-      "或您也可以直接回我：",
-      "① 品項（龜鹿膏/龜鹿飲/湯塊/鹿茸粉）",
-      "② 數量",
-      "③ 寄送縣市",
-      "例：龜鹿膏2罐 寄台北",
-    ].join("\n");
-    return { dedupe: true, newText: alt };
-  }
-
-  cache.lastText = replyText;
-  cache.lastHash = hash;
-  cache.lastAt = now;
-  cache.repeatCount = 0;
-  return { dedupe: false, newText: replyText };
-}
-function nextRotation(userObj, key, windowMs = 3 * 60 * 1000) {
-  const now = Date.now();
-  userObj.state.rotate = userObj.state.rotate || {};
-  const slot = userObj.state.rotate[key] || { lastAt: 0, n: 0 };
-  if (now - slot.lastAt > windowMs) slot.n = 0;
-  slot.n += 1;
-  slot.lastAt = now;
-  userObj.state.rotate[key] = slot;
-  return slot.n; // 1,2,3...
 }
 
 /** =========================
@@ -209,6 +202,7 @@ function quickRepliesCommon() {
     ],
   };
 }
+
 function textMessage(text) {
   return { type: "text", text, quickReply: quickRepliesCommon() };
 }
@@ -230,6 +224,7 @@ function loadUsers() {
     return {};
   }
 }
+
 function saveUsers(users) {
   try {
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
@@ -237,20 +232,16 @@ function saveUsers(users) {
     console.error("寫入 users.json 失敗：", e);
   }
 }
+
 function ensureUser(userId) {
   const users = loadUsers();
   users[userId] = users[userId] || {};
-  users[userId].state = users[userId].state || { lastProductKey: null, lastSeenAt: Date.now() };
-
-  // ✅ 新增：輪替 + 去重 cache
-  users[userId].state.rotate = users[userId].state.rotate || {};
-  users[userId].state.replyCache = users[userId].state.replyCache || {
-    lastText: null,
-    lastHash: null,
-    lastAt: 0,
-    repeatCount: 0,
+  users[userId].state = users[userId].state || {
+    lastProductKey: null,
+    lastSeenAt: Date.now(),
+    lastReplySig: null,
+    rotator: {}, // { intentKey: number }
   };
-
   users[userId].order = users[userId].order || {
     active: false,
     step: null,
@@ -266,21 +257,18 @@ function ensureUser(userId) {
   saveUsers(users);
   return users[userId];
 }
+
 function updateUser(userId, patchFn) {
   const users = loadUsers();
   users[userId] = users[userId] || {};
-  users[userId].state = users[userId].state || {};
-  users[userId].state.rotate = users[userId].state.rotate || {};
-  users[userId].state.replyCache = users[userId].state.replyCache || { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 };
-
-  users[userId].order =
-    users[userId].order ||
-    { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
+  users[userId].state = users[userId].state || { lastProductKey: null, lastSeenAt: Date.now(), lastReplySig: null, rotator: {} };
+  users[userId].order = users[userId].order || { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
   patchFn(users[userId]);
   users[userId].state.lastSeenAt = Date.now();
   users[userId].order.updatedAt = Date.now();
   saveUsers(users);
 }
+
 function resetOrder(userId) {
   updateUser(userId, (u) => {
     u.order = { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
@@ -288,65 +276,89 @@ function resetOrder(userId) {
 }
 
 /** =========================
- * E) 固定文案
+ * E) 模板輪替器（避免重複）
  * ========================= */
-function pricingAll() {
-  return [
-    "【目前店內活動價】",
-    `▪️ 龜鹿膏 ${STORE.products.gel.spec}：特價 ${money(STORE.products.gel.pricePromo)}（原價 ${money(STORE.products.gel.priceOriginal)}）`,
-    `▪️ 龜鹿飲 ${STORE.products.drink.spec}：優惠價 ${money(STORE.products.drink.pricePromo)}（售價 ${money(STORE.products.drink.priceOriginal)}）`,
-    `▪️ 鹿茸粉 ${STORE.products.antler.spec}：優惠價 ${money(STORE.products.antler.pricePromo)}（售價 ${money(STORE.products.antler.priceOriginal)}）`,
-    "▪️ 龜鹿湯塊：輸入「湯塊價格」可看三種規格",
-    "",
-    "可直接下單：",
-    "例：2罐龜鹿膏 / 我要龜鹿膏2罐+龜鹿飲10包 寄台中",
-  ].join("\n");
+function pickVariant(userId, key, variants) {
+  const user = ensureUser(userId);
+  const rot = user.state.rotator || {};
+  const idx = (rot[key] || 0) % variants.length;
+  rot[key] = (rot[key] || 0) + 1;
+
+  // 先選 idx 版本
+  let chosen = variants[idx];
+
+  // 若與上次回覆完全一樣 → 改用下一個版本
+  const sig = sha1(chosen);
+  if (user.state.lastReplySig && user.state.lastReplySig === sig && variants.length > 1) {
+    const idx2 = (idx + 1) % variants.length;
+    chosen = variants[idx2];
+    rot[key] = (rot[key] || 0) + 1;
+  }
+
+  updateUser(userId, (u) => {
+    u.state.rotator = rot;
+    u.state.lastReplySig = sha1(chosen);
+  });
+
+  return chosen;
 }
-function specsAll() {
-  return [
-    "【容量／規格】",
-    `▪️ 龜鹿膏：${STORE.products.gel.spec}`,
-    `▪️ 龜鹿飲：${STORE.products.drink.spec}`,
-    `▪️ 鹿茸粉：${STORE.products.antler.spec}`,
-    "▪️ 龜鹿湯塊：一斤600g／半斤300g／4兩150g",
-  ].join("\n");
-}
-function productListText() {
-  return [
-    "【產品清單】",
-    `▪️ 龜鹿膏（${STORE.products.gel.spec}）`,
-    `▪️ 龜鹿飲（${STORE.products.drink.spec}）`,
-    `▪️ 鹿茸粉（75g/罐）`,
-    "▪️ 龜鹿湯塊（一斤600g／半斤300g／4兩150g）",
-    "",
-    "您可以直接回：",
-    "「龜鹿膏 / 龜鹿飲 / 鹿茸粉 / 湯塊價格」",
-  ].join("\n");
-}
-function gelFull() {
-  const p = STORE.products.gel;
-  return [
-    `我們龜鹿膏是${p.spec}。`,
-    `目前店內活動是特價 ${money(p.pricePromo)}（原價 ${money(p.priceOriginal)}）。`,
-    p.noteDays,
-    "",
-    "一般建議：",
-    `• ${p.howTo[0]}`,
-    `• ${p.howTo[1]}`,
-  ].join("\n");
-}
-function soupPriceAll() {
+
+/** =========================
+ * F) 固定文案（用詞統一：售價/優惠價）
+ * ========================= */
+function soupPriceAllText() {
   const p = STORE.products.soup;
-  const lines = ["龜鹿湯塊｜三種規格價格", ""];
+  const lines = ["【龜鹿湯塊｜三種規格價格】", ""];
   for (const v of p.variants) {
     lines.push(`${v.label}（${v.spec}）`);
-    lines.push(`售價 ${money(v.priceOriginal)}，優惠價 ${money(v.pricePromo)}`);
+    lines.push(`售價 ${money(v.priceList)}｜優惠價 ${money(v.pricePromo)}`);
     lines.push("");
   }
   while (lines.length && lines[lines.length - 1] === "") lines.pop();
   return lines.join("\n");
 }
-function storeInfo() {
+
+function pricingAllText() {
+  const gel = STORE.products.gel;
+  const drink = STORE.products.drink;
+  const antler = STORE.products.antler;
+
+  return [
+    "【價格總覽（售價／優惠價）】",
+    `▪️ 龜鹿膏 ${gel.specShort}：售價 ${money(gel.priceList)}｜優惠價 ${money(gel.pricePromo)}`,
+    `▪️ 龜鹿飲 ${drink.specShort}：售價 ${money(drink.priceList)}｜優惠價 ${money(drink.pricePromo)}`,
+    `▪️ 鹿茸粉 ${antler.specShort}：售價 ${money(antler.priceList)}｜優惠價 ${money(antler.pricePromo)}`,
+    "▪️ 龜鹿湯塊：輸入「湯塊價格」查看一斤/半斤/4兩",
+    "",
+    "可直接下單（擇一方式）：",
+    "• 文字下單：我要龜鹿膏2罐+龜鹿飲10包 寄台中",
+    "• 編號下單：①龜鹿膏 ②2罐 ③台中",
+  ].join("\n");
+}
+
+function specsAllText() {
+  return [
+    "【容量／規格】",
+    `▪️ 龜鹿膏：${STORE.products.gel.specShort}`,
+    `▪️ 龜鹿飲：${STORE.products.drink.specShort}`,
+    `▪️ 鹿茸粉：${STORE.products.antler.specShort}`,
+    "▪️ 龜鹿湯塊：一斤600g／半斤300g／4兩150g",
+  ].join("\n");
+}
+
+function productListText() {
+  return [
+    "【產品清單】",
+    `▪️ 龜鹿膏（${STORE.products.gel.specShort}）`,
+    `▪️ 龜鹿飲（${STORE.products.drink.specShort}）`,
+    `▪️ 龜鹿湯塊（一斤600g／半斤300g／4兩150g）`,
+    `▪️ 鹿茸粉（${STORE.products.antler.specShort}）`,
+    "",
+    "你可以直接回：龜鹿膏 / 龜鹿飲 / 湯塊價格 / 鹿茸粉",
+  ].join("\n");
+}
+
+function storeInfoText() {
   return [
     "【門市資訊】",
     `店名：${STORE.brandName}`,
@@ -358,154 +370,172 @@ function storeInfo() {
 }
 
 /** =========================
- * E-2) 輪替模板庫（新增）
+ * G) 入口/常用回覆（輪替模板）
  * ========================= */
-function pricingOne(productKey) {
-  if (productKey === "gel") return `龜鹿膏｜${STORE.products.gel.spec}\n特價 ${money(STORE.products.gel.pricePromo)}（原價 ${money(STORE.products.gel.priceOriginal)}）`;
-  if (productKey === "drink") return `龜鹿飲｜${STORE.products.drink.spec}\n優惠價 ${money(STORE.products.drink.pricePromo)}（售價 ${money(STORE.products.drink.priceOriginal)}）`;
-  if (productKey === "antler") return `鹿茸粉｜${STORE.products.antler.spec}\n優惠價 ${money(STORE.products.antler.pricePromo)}（售價 ${money(STORE.products.antler.priceOriginal)}）`;
-  if (productKey === "soup" || String(productKey).startsWith("soup")) return soupPriceAll();
-  return pricingAll();
-}
-function specsOne(productKey) {
-  if (!productKey) return specsAll();
-  if (productKey === "gel") return `龜鹿膏｜規格\n${STORE.products.gel.spec}`;
-  if (productKey === "drink") return `龜鹿飲｜規格\n${STORE.products.drink.spec}`;
-  if (productKey === "antler") return `鹿茸粉｜規格\n${STORE.products.antler.spec}`;
-  return "龜鹿湯塊｜規格\n一斤600g／半斤300g／4兩150g";
-}
-
-const TEMPLATES = {
-  pricing: (productKey) => ([
-    pricingOne(productKey),
-    productKey
-      ? "我可以再幫您補上「怎麼買/寄送」😊\n請回我：數量 + 寄送縣市（例：2罐 寄台北）"
-      : "想問哪一款的價格呢？回我：龜鹿膏／龜鹿飲／湯塊／鹿茸粉",
-    "我可以直接幫您下單🙂\n請回：品項 + 數量 + 寄送縣市\n例：龜鹿膏2罐 寄台北",
-    "請回我：品項/數量/寄送縣市（例：龜鹿飲10包 寄台中）我立刻幫您整理～",
-  ]),
-  specs: (productKey) => ([
-    specsOne(productKey),
-    productKey
-      ? "要不要我也把「價格/怎麼買」一起整理給您？（回：價格／怎麼買）"
-      : "想問哪一款的容量呢？回我：龜鹿膏／龜鹿飲／湯塊／鹿茸粉",
-    "若要直接下單：回「品項 + 數量 + 寄送縣市」🙂\n例：鹿茸粉1罐 寄新北",
-    "請回：品項 + 數量 + 寄送縣市，我幫您整理。",
-  ]),
-  buy: () => ([
-    TEXT.howToBuy,
-    "最快下單方式：直接回「品項 + 數量 + 寄送縣市」🙂\n例：龜鹿膏2罐 寄台北",
-    "如果您只想先問價格/容量也可以～回：價格／容量",
-    "請回：品項 + 數量 + 寄送縣市，我立刻幫您整理～",
-  ]),
-  store: () => ([
-    storeInfo(),
-    `也可以直接來電：${STORE.phoneDisplay}`,
-    "需要我幫您安排寄送也可以：回「品項 + 數量 + 寄送縣市」🙂",
-    "要我直接幫您下單嗎？回：品項 + 數量 + 寄送縣市",
-  ]),
-  consult: () => ([
-    TEXT.consultEntry,
-    "您也可以直接一句話下單：例 龜鹿膏2罐 寄台北 🙂",
-    "如果只想先看價格：回「價格」；看容量：回「容量」",
-    "我可以直接幫您整理：品項 + 數量 + 寄送縣市",
-  ]),
-};
-
-/** =========================
- * E-3) 固定文案（TEXT）
- * ========================= */
-const TEXT = {
+const TPL = {
   welcome: [
-    `您好，歡迎加入【${STORE.brandName}】😊`,
-    "",
-    "您可以直接輸入👇",
-    "▪️ 諮詢（快速導引）",
-    "▪️ 產品名（看有哪些產品）",
-    "▪️ 價格 / 售價 / 價錢",
-    "▪️ 容量 / 規格 / 重量",
-    "▪️ 怎麼買 / 下單",
-    "",
-    "也可以直接下單：",
-    "例：我要龜鹿膏2罐+龜鹿飲10包 寄台中",
-  ].join("\n"),
+    [
+      `您好，歡迎加入【${STORE.brandName}】😊`,
+      "",
+      "你可以直接輸入👇",
+      "▪️ 諮詢（快速導引）",
+      "▪️ 產品名（看有哪些產品）",
+      "▪️ 價格 / 售價 / 價錢",
+      "▪️ 容量 / 規格 / 重量",
+      "▪️ 怎麼買 / 下單",
+      "",
+      "也可直接下單：我要龜鹿膏2罐+龜鹿飲10包 寄台中",
+    ].join("\n"),
+    [
+      `嗨您好😊 這裡是【${STORE.brandName}】`,
+      "想最快拿到資訊，可以回：",
+      "• 價格  • 容量  • 怎麼買  • 產品名",
+      "",
+      "也可以直接打：龜鹿膏2罐 寄台北",
+    ].join("\n"),
+    [
+      `歡迎加入【${STORE.brandName}】🌿`,
+      "",
+      "快速選單：諮詢 / 產品名 / 價格 / 容量 / 怎麼買 / 湯塊價格 / 門市資訊",
+      "（你也可以直接打一段話下單，我會一步一步帶你完成）",
+    ].join("\n"),
+  ],
 
   consultEntry: [
-    `您好😊 這裡是【${STORE.brandName}】`,
-    "我可以先幫您快速整理常見資訊，或直接協助下單。",
-    "",
-    "請回覆其中一個即可：",
-    "① 想了解：龜鹿膏／龜鹿飲／湯塊／鹿茸粉",
-    "② 直接問：價格／容量／怎麼買",
-    "③ 直接下單：例 2罐龜鹿膏、或 龜鹿膏2罐+龜鹿飲10包 寄台中",
-    "",
-    "若是孕哺／慢性病／用藥等狀況，我會改由合作中醫師協助您🙂",
-  ].join("\n"),
+    [
+      `您好😊 這裡是【${STORE.brandName}】`,
+      "我可以先幫你快速整理常見資訊，或直接協助下單。",
+      "",
+      "請回覆其中一個即可：",
+      "① 想了解：龜鹿膏／龜鹿飲／湯塊／鹿茸粉",
+      "② 直接問：價格／容量／怎麼買",
+      "③ 直接下單：例 2罐龜鹿膏、或 龜鹿膏2罐+龜鹿飲10包 寄台中",
+      "",
+      "若是孕哺／慢性病／用藥等狀況，我會改由合作中醫師協助🙂",
+    ].join("\n"),
+    [
+      `收到👌 我先當你的「快速導覽」`,
+      "",
+      "你想先看哪一類？",
+      "• 價格（售價/優惠價）",
+      "• 容量（規格/重量）",
+      "• 怎麼買（下單流程）",
+      "• 或直接回產品名：龜鹿膏/龜鹿飲/湯塊/鹿茸粉",
+    ].join("\n"),
+    [
+      `了解😊 你可以直接丟一句話就好：`,
+      "• 想問：價格 / 容量 / 怎麼買",
+      "• 想看：產品名",
+      "• 想下單：龜鹿膏2罐 寄台北",
+      "",
+      "我會把你需要的資訊一次整理給你。",
+    ].join("\n"),
+  ],
 
   howToBuy: [
-    "【怎麼買／下單流程】",
-    "您可以直接打一段話：",
-    "例：我要龜鹿膏2罐+龜鹿飲10包 寄台中",
-    "",
-    "或用編號也可以：",
-    "① 品項（龜鹿膏/龜鹿飲/湯塊/鹿茸粉）",
-    "② 數量（例：1罐/10包/一斤1份）",
-    "③ 寄送縣市（例：台北/新北/台中）",
-  ].join("\n"),
+    [
+      "【怎麼買／下單流程】",
+      "你可以直接打一段話：",
+      "例：我要龜鹿膏2罐+龜鹿飲10包 寄台中",
+      "",
+      "或用編號也可以：",
+      "① 品項（龜鹿膏/龜鹿飲/湯塊/鹿茸粉）",
+      "② 數量（例：1罐/10包/一斤1份）",
+      "③ 寄送縣市（例：台北/新北/台中）",
+    ].join("\n"),
+    [
+      "要下單的話很快😊",
+      "你只要回我三件事：品項＋數量＋寄送縣市",
+      "例如：龜鹿飲10包 寄新北",
+    ].join("\n"),
+    [
+      "下單可以用「一行完成」：",
+      "• 龜鹿膏2罐 寄台北",
+      "或用「三行編號」：",
+      "①龜鹿膏 ②2罐 ③台北",
+    ].join("\n"),
+  ],
 
-  shipping: ["【運送／運費／到貨】", "", STORE.shippingNote].join("\n"),
-  payment: ["【付款方式】", "", STORE.paymentNote].join("\n"),
-  testing: ["【檢驗／報告】", "", STORE.testingNote].join("\n"),
+  shipping: [
+    ["【運送／運費／到貨】", "", STORE.shippingNote].join("\n"),
+    ["運送說明：", STORE.shippingNote, "你給我寄送縣市，我就能一起回覆運費與到貨方式😊"].join("\n"),
+    ["可以寄送喔👌", STORE.shippingNote].join("\n"),
+  ],
+
+  payment: [
+    ["【付款方式】", "", STORE.paymentNote].join("\n"),
+    ["付款方式我會在訂單確認後一併整理給你😊", STORE.paymentNote].join("\n"),
+    ["付款可配合安排（如轉帳等）", "我先幫你把品項/數量/寄送整理好，再回覆付款資訊👌"].join("\n"),
+  ],
+
+  testing: [
+    ["【檢驗／報告】", "", STORE.testingNote].join("\n"),
+    ["關於檢驗資料：", STORE.testingNote].join("\n"),
+    ["目前可提供基本標示資訊（八大營養素等）", "若你想看哪一項，我可以幫你整理後回覆😊"].join("\n"),
+  ],
 
   sensitive: [
-    "這部分會因每個人的身體狀況不同，",
-    "為了讓您得到更準確的說明與建議，",
-    "建議先由合作的中醫師了解您的情況🙂",
-    "",
-    "✔ 專人一對一說明",
-    "✔ 可詢問適不適合食用",
-    "✔ 可詢問個人狀況與疑問",
-    "",
-    `➤ Line ID：${STORE.doctorLineId}`,
-    "➤ 章無忌中醫師諮詢連結：",
-    STORE.doctorLink,
-  ].join("\n"),
-
-  cancelOrder: "已為您取消本次下單流程。如需重新下單，直接輸入：2罐龜鹿膏 或 我要龜鹿膏2罐+龜鹿飲10包 寄台中 😊",
+    [
+      "這部分會因每個人的身體狀況不同，",
+      "為了讓您得到更準確的說明與建議，",
+      "建議先由合作的中醫師了解您的情況🙂",
+      "",
+      "✔ 專人一對一說明",
+      "✔ 可詢問適不適合食用",
+      "✔ 可詢問個人狀況與疑問",
+      "",
+      `➤ Line ID：${STORE.doctorLineId}`,
+      "➤ 章無忌中醫師諮詢連結：",
+      STORE.doctorLink,
+    ].join("\n"),
+  ],
 
   fallback: [
-    "我想確認一下您的需求😊",
-    "請回我其中一個即可：",
-    "① 品項（龜鹿膏/龜鹿飲/湯塊/鹿茸粉）",
-    "② 想了解：價格／容量／怎麼買／門市",
-    "",
-    "也可以直接下單：例 龜鹿膏2罐 寄台北",
-  ].join("\n"),
+    [
+      "我先給你最常用的指令😊（也可以直接留言需求）",
+      "",
+      "▪️ 諮詢",
+      "▪️ 產品名",
+      "▪️ 價格 / 售價 / 價錢",
+      "▪️ 容量 / 規格 / 重量",
+      "▪️ 怎麼買 / 下單",
+      "▪️ 湯塊價格",
+      "▪️ 門市資訊 / 官網 / 來電",
+    ].join("\n"),
+    [
+      "我可能沒抓到你想問的重點😅",
+      "你可以用這種方式問我：",
+      "• 龜鹿膏價格",
+      "• 鹿茸粉容量",
+      "• 我要買龜鹿飲10包 寄台中",
+    ].join("\n"),
+    [
+      "你可以回我：價格／容量／怎麼買／產品名",
+      "或直接打一段話下單：龜鹿膏2罐 寄台北 😊",
+    ].join("\n"),
+  ],
 };
 
 /** =========================
- * F) 意圖（方案A：諮詢入口）
+ * H) 意圖判斷（含同義詞）
  * ========================= */
 const INTENT = {
-  consult: ["諮詢","客服","真人","專人","有人嗎","請協助","幫我"],
-  pricing: ["價格","價錢","售價","多少錢","幾錢","特價","優惠","活動","折扣","報價","批發"],
-  specs: ["容量","規格","幾克","幾g","g","公克","克","幾cc","cc","毫升","ml","多大","多少量","重量"],
+  consult: ["諮詢","客服","真人","專人","有人嗎","請協助","幫我","詢問","問一下","我要問"],
+  pricing: ["價格","價錢","售價","多少錢","幾錢","優惠","活動","折扣","報價","批發","一包多少","一罐多少","一盒多少"],
+  specs: ["容量","規格","幾克","幾g","g","公克","克","幾cc","cc","毫升","ml","多大","多少量","重量","尺寸"],
   productList: ["產品名","有哪些產品","有什麼產品","產品","商品","品項","商品清單","品項清單"],
-  buy: ["怎麼買","怎麼購買","下單","訂購","購買","我要買","我要","訂單","訂購方式","怎麼訂"],
-  shipping: ["運送","寄送","運費","到貨","配送","宅配","超商","店到店","多久到","幾天到"],
-  payment: ["付款","怎麼付","轉帳","匯款","刷卡","貨到付款","付款方式"],
-  testing: ["檢驗","報告","檢測","八大營養素","合格","安全","驗證"],
+  buy: ["怎麼買","怎麼購買","下單","訂購","購買","我要買","我要","訂單","訂購方式","怎麼訂","怎麼下單"],
+  shipping: ["運送","寄送","運費","到貨","配送","宅配","超商","店到店","多久到","幾天到","貨到"],
+  payment: ["付款","怎麼付","轉帳","匯款","刷卡","貨到付款","付款方式","付錢"],
+  testing: ["檢驗","報告","檢測","八大營養素","合格","安全","驗證","有驗嗎"],
   store: ["門市","店面","地址","在哪","位置","怎麼去","地圖","電話","聯絡","營業時間"],
-  website: ["官網","網站","網址","連結"],
-  soupPrice: ["湯塊價格","湯塊售價","湯塊多少錢","湯塊特價"],
+  website: ["官網","網站","網址","連結","官網連結"],
+  soupPrice: ["湯塊價格","湯塊售價","湯塊多少錢","湯塊優惠","湯塊價錢"],
 
   gel: ["龜鹿膏"],
   drink: ["龜鹿飲"],
-  antler: ["鹿茸粉"],
-  soup: ["龜鹿湯塊","湯塊"],
-  soup600: ["湯塊一斤","一斤湯塊","600公克","600g","一斤"],
-  soup300: ["湯塊半斤","半斤湯塊","300公克","300g","半斤"],
-  soup150: ["湯塊4兩","4兩湯塊","湯塊四兩","四兩湯塊","150公克","150g","4兩","四兩"],
+  antler: ["鹿茸粉","鹿茸"],
+  soup: ["龜鹿湯塊","湯塊","湯底"],
 
   sensitive: [
     "孕婦","懷孕","備孕","哺乳","餵母乳",
@@ -514,17 +544,14 @@ const INTENT = {
     "用藥","抗凝血","阿斯匹靈","warfarin",
     "能不能吃","可以吃嗎","適不適合","副作用","禁忌"
   ],
-  cancel: ["取消","不用了","先不要","改天","取消下單","取消訂單"],
+  cancel: ["取消","不用了","先不要","改天","取消下單","取消訂單","不要買了"],
 };
 
 function detectProductKey(raw) {
-  if (includesAny(raw, INTENT.soup600)) return "soup600";
-  if (includesAny(raw, INTENT.soup300)) return "soup300";
-  if (includesAny(raw, INTENT.soup150)) return "soup150";
-  if (includesAny(raw, INTENT.gel)) return "gel";
-  if (includesAny(raw, INTENT.drink)) return "drink";
-  if (includesAny(raw, INTENT.antler)) return "antler";
-  if (includesAny(raw, INTENT.soup)) return "soup";
+  if (raw.includes("湯塊") || raw.includes("龜鹿湯塊")) return "soup";
+  if (raw.includes("龜鹿膏")) return "gel";
+  if (raw.includes("龜鹿飲")) return "drink";
+  if (raw.includes("鹿茸粉") || raw.includes("鹿茸")) return "antler";
   return null;
 }
 
@@ -534,6 +561,7 @@ function detectIntents(raw) {
   if (includesAny(raw, INTENT.cancel)) intents.add("cancel");
   if (includesAny(raw, INTENT.consult)) intents.add("consult");
   if (includesAny(raw, INTENT.productList)) intents.add("productList");
+  if (includesAny(raw, INTENT.soupPrice)) intents.add("soupPrice");
   if (includesAny(raw, INTENT.pricing)) intents.add("pricing");
   if (includesAny(raw, INTENT.specs)) intents.add("specs");
   if (includesAny(raw, INTENT.buy)) intents.add("buy");
@@ -542,43 +570,13 @@ function detectIntents(raw) {
   if (includesAny(raw, INTENT.testing)) intents.add("testing");
   if (includesAny(raw, INTENT.store)) intents.add("store");
   if (includesAny(raw, INTENT.website)) intents.add("website");
-  if (includesAny(raw, INTENT.soupPrice)) intents.add("soupPrice");
   return Array.from(intents);
 }
 
 /** =========================
- * F-2) 意圖排序器（新增）
+ * I) 訂單解析（強化：支援編號/分行/數量分離）
  * ========================= */
-const INTENT_ORDER = [
-  "consult",
-  "productList",
-  "pricing",
-  "soupPrice",
-  "specs",
-  "buy",
-  "shipping",
-  "payment",
-  "testing",
-  "store",
-  "website",
-];
-
-function sortIntents(intents) {
-  const set = new Set(intents || []);
-  const ordered = [];
-  for (const k of INTENT_ORDER) {
-    if (set.has(k)) ordered.push(k);
-  }
-  for (const x of set) {
-    if (!INTENT_ORDER.includes(x)) ordered.push(x);
-  }
-  return ordered;
-}
-
-/** =========================
- * G) 訂單解析（強化：分行/編號/數量分離）
- * ========================= */
-const ORDER_INTENT_WORDS = ["我要", "我想買", "想買", "訂購", "下單", "購買", "要買", "訂", "買"];
+const ORDER_INTENT_WORDS = ["我要", "我想買", "想買", "訂購", "下單", "購買", "要買", "訂", "買", "來一", "給我", "幫我出"];
 const CITY_LIST = [
   "台北","新北","基隆","桃園","新竹","苗栗",
   "台中","彰化","南投","雲林",
@@ -588,22 +586,33 @@ const CITY_LIST = [
 ];
 
 function extractShipCity(rawText) {
+  const t = normalizeText(rawText);
   for (const city of CITY_LIST) {
     const re = new RegExp(`(寄到|寄送|寄|送到|配送|宅配)\\s*${city}`);
-    if (re.test(rawText)) return city;
+    if (re.test(t)) return city;
   }
   for (const city of CITY_LIST) {
-    if (rawText.includes(city)) return city;
+    if (t.includes(city)) return city;
   }
   return null;
 }
 
 function looksLikeOrder(rawText) {
-  return /([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)\s*(罐|包|盒|組|份|個)/.test(rawText);
+  const t = normalizeText(rawText);
+  // 允許：2罐 / 10包 / 1份 / 3盒
+  return /([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)\s*(罐|包|盒|組|份|個)/.test(t);
+}
+
+function hasNumberedOrderFormat(rawText) {
+  // ①龜鹿膏 ②2罐 ③台北（或 1 龜鹿膏 2 2罐 3 台北）
+  const t = normalizeText(rawText);
+  return /(^|\s)(1|2|3)\s*(龜鹿膏|龜鹿飲|湯塊|龜鹿湯塊|鹿茸粉|鹿茸)/.test(t) ||
+         /(龜鹿膏|龜鹿飲|湯塊|龜鹿湯塊|鹿茸粉|鹿茸)\s*(1|2|3)\s*([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)\s*(罐|包|盒|組|份|個)?/.test(t);
 }
 
 function extractQtyUnitAnywhere(text) {
-  const m = text.match(/([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)\s*(罐|包|盒|組|份|個)/);
+  const t = normalizeText(text);
+  const m = t.match(/([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)\s*(罐|包|盒|組|份|個)/);
   if (!m) return null;
   const rawNum = m[1];
   const unit = m[2];
@@ -613,10 +622,11 @@ function extractQtyUnitAnywhere(text) {
 }
 
 function extractQtyAfterProduct(text, productAlias) {
+  const t = normalizeText(text);
   const unitGroup = "(罐|包|盒|組|份|個)?";
   const numGroup = "([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)";
   const re = new RegExp(`${productAlias}\\s*${numGroup}\\s*${unitGroup}`);
-  const m = text.match(re);
+  const m = t.match(re);
   if (!m) return null;
   const rawNum = m[1];
   const unit = m[2] || null;
@@ -624,11 +634,13 @@ function extractQtyAfterProduct(text, productAlias) {
   if (!qty || qty <= 0) return null;
   return { qty, unit };
 }
+
 function extractQtyBeforeProduct(text, productAlias) {
+  const t = normalizeText(text);
   const unitGroup = "(罐|包|盒|組|份|個)";
   const numGroup = "([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)";
   const re = new RegExp(`${numGroup}\\s*${unitGroup}\\s*${productAlias}`);
-  const m = text.match(re);
+  const m = t.match(re);
   if (!m) return null;
   const rawNum = m[1];
   const unit = m[2] || null;
@@ -646,6 +658,17 @@ function promoUnitPriceByKey(key) {
   if (key === "soup150") return STORE.products.soup.variants.find(v => v.key === "soup150")?.pricePromo ?? null;
   return null;
 }
+
+function listUnitPriceByKey(key) {
+  if (key === "gel") return STORE.products.gel.priceList;
+  if (key === "drink") return STORE.products.drink.priceList;
+  if (key === "antler") return STORE.products.antler.priceList;
+  if (key === "soup600") return STORE.products.soup.variants.find(v => v.key === "soup600")?.priceList ?? null;
+  if (key === "soup300") return STORE.products.soup.variants.find(v => v.key === "soup300")?.priceList ?? null;
+  if (key === "soup150") return STORE.products.soup.variants.find(v => v.key === "soup150")?.priceList ?? null;
+  return null;
+}
+
 function defaultUnitByKey(key) {
   if (key === "gel") return "罐";
   if (key === "drink") return "包";
@@ -654,30 +677,43 @@ function defaultUnitByKey(key) {
   return "";
 }
 
+// 產品別名
 const PRODUCT_ALIASES = [
   { key: "gel", name: "龜鹿膏", aliases: ["龜鹿膏"] },
   { key: "drink", name: "龜鹿飲", aliases: ["龜鹿飲"] },
-  { key: "antler", name: "鹿茸粉", aliases: ["鹿茸粉"] },
+  { key: "antler", name: "鹿茸粉", aliases: ["鹿茸粉","鹿茸"] },
   { key: "soup600", name: "龜鹿湯塊一斤", aliases: ["湯塊一斤","一斤湯塊","600公克湯塊","600g湯塊","一斤"] },
   { key: "soup300", name: "龜鹿湯塊半斤", aliases: ["湯塊半斤","半斤湯塊","300公克湯塊","300g湯塊","半斤"] },
   { key: "soup150", name: "龜鹿湯塊4兩", aliases: ["湯塊4兩","4兩湯塊","湯塊四兩","四兩湯塊","150公克湯塊","150g湯塊","4兩","四兩"] },
 ];
 
+function isLikelyOrderMessage(rawText) {
+  const t = normalizeText(rawText);
+  const hasOrderWord = ORDER_INTENT_WORDS.some(w => t.includes(w));
+  const hasQty = looksLikeOrder(t);
+  const hasCity = !!extractShipCity(t);
+  const hasProduct = includesAny(t, ["龜鹿膏","龜鹿飲","湯塊","龜鹿湯塊","鹿茸粉","鹿茸"]);
+  const hasNumbered = hasNumberedOrderFormat(rawText);
+  // ✅ 只要「產品 +（數量或縣市或編號）」就優先視為下單
+  return (hasProduct && (hasQty || hasCity || hasNumbered)) || hasOrderWord;
+}
+
 function parseOrder(rawText) {
   const text = normalizeText(rawText);
-  const hasOrderIntent = ORDER_INTENT_WORDS.some(w => rawText.includes(w));
-  const shipCity = extractShipCity(rawText);
+  const hasOrderIntent = ORDER_INTENT_WORDS.some(w => text.includes(w));
+  const shipCity = extractShipCity(text);
 
-  const shouldTry = hasOrderIntent || looksLikeOrder(rawText);
-  if (!shouldTry && !includesAny(rawText, ["龜鹿膏","龜鹿飲","鹿茸粉","湯塊"])) {
+  const shouldTry = hasOrderIntent || looksLikeOrder(text) || hasNumberedOrderFormat(rawText) || (shipCity && includesAny(text, ["龜鹿膏","龜鹿飲","湯塊","鹿茸粉","鹿茸"]));
+  if (!shouldTry && !includesAny(text, ["龜鹿膏","龜鹿飲","鹿茸粉","鹿茸","湯塊"])) {
     return { hasOrderIntent: false, items: [], shipCity: null };
   }
 
   const itemsMap = new Map();
 
+  // 抓「產品 + 近距離數量」
   for (const p of PRODUCT_ALIASES) {
     const matchedAlias = p.aliases
-      .filter(a => rawText.includes(a))
+      .filter(a => text.includes(a))
       .sort((a, b) => b.length - a.length)[0];
     if (!matchedAlias) continue;
 
@@ -687,17 +723,18 @@ function parseOrder(rawText) {
 
     const qty = near?.qty ?? null;
     const unit = (near?.unit ?? null) || defaultUnitByKey(p.key);
-    const promo = promoUnitPriceByKey(p.key);
 
     itemsMap.set(p.key, {
       key: p.key,
       name: p.name,
-      qty,
+      qty: qty,
       unit,
-      promoUnitPrice: promo
+      promoUnitPrice: promoUnitPriceByKey(p.key),
+      listUnitPrice: listUnitPriceByKey(p.key),
     });
   }
 
+  // ✅ 若只有一個品項但數量寫在別處（編號/分行），套用全句第一個 qty
   if (itemsMap.size === 1) {
     const only = Array.from(itemsMap.values())[0];
     if (!only.qty) {
@@ -712,12 +749,13 @@ function parseOrder(rawText) {
     }
   }
 
+  // ✅ 多品項但缺 qty → 預設 1
   for (const [k, it] of itemsMap.entries()) {
     if (!it.qty) it.qty = 1;
     itemsMap.set(k, it);
   }
 
-  return { hasOrderIntent: hasOrderIntent || looksLikeOrder(rawText), items: Array.from(itemsMap.values()), shipCity };
+  return { hasOrderIntent: hasOrderIntent || looksLikeOrder(text) || hasNumberedOrderFormat(rawText), items: Array.from(itemsMap.values()), shipCity };
 }
 
 function calcSubtotal(items) {
@@ -727,16 +765,21 @@ function calcSubtotal(items) {
   }
   return sum;
 }
+
 function orderSummaryLines(items) {
   const lines = [];
   for (const it of items) {
-    const price = typeof it.promoUnitPrice === "number" ? `｜優惠價 ${money(it.promoUnitPrice)} /${it.unit}` : "";
-    lines.push(`▪️ ${it.name} × ${it.qty} ${it.unit}${price}`);
+    const unit = it.unit || defaultUnitByKey(it.key);
+    const price = (typeof it.promoUnitPrice === "number" && typeof it.listUnitPrice === "number")
+      ? `｜售價 ${money(it.listUnitPrice)}｜優惠價 ${money(it.promoUnitPrice)} /${unit}`
+      : "";
+    lines.push(`▪️ ${it.name} × ${it.qty} ${unit}${price}`);
   }
   const subtotal = calcSubtotal(items);
   if (subtotal > 0) lines.push(`小計（未含運）：${money(subtotal)}`);
   return lines;
 }
+
 function computeNextStep(order) {
   if (!order.shipCity) return "shipCity";
   if (!order.name) return "name";
@@ -744,18 +787,19 @@ function computeNextStep(order) {
   if (!order.address) return "address";
   return null;
 }
-function buildOrderPrompt(order) {
-  const summary = orderSummaryLines(order.items || []);
-  const head = ["我先幫您整理目前訂單（如有誤可直接更正）👇", "", ...summary].join("\n");
 
+function buildOrderPrompt(order) {
   if (!order.items || order.items.length === 0) {
     return [
-      "好的😊 我可以協助您下單！",
+      "好的😊 我可以協助你下單！",
       "",
-      "請先告訴我您要的品項與數量（可直接這樣打）：",
+      "請先告訴我品項與數量（可直接這樣打）：",
       "例：2罐龜鹿膏 / 10包龜鹿飲 / 湯塊一斤1份",
     ].join("\n");
   }
+
+  const summary = orderSummaryLines(order.items || []);
+  const head = ["我先幫你整理目前訂單（如有誤可直接更正）👇", "", ...summary].join("\n");
 
   const next = computeNextStep(order);
   if (!next) {
@@ -771,12 +815,15 @@ function buildOrderPrompt(order) {
       "我接著會回覆：運費、到貨方式與付款資訊😊",
     ].join("\n");
   }
+
   if (next === "shipCity") return [head, "", "請問要寄送到哪個縣市呢？（例：台北／新北／台中）"].join("\n");
   if (next === "name") return [head, "", `寄送縣市：${order.shipCity}`, "", "請問收件人姓名是？"].join("\n");
   if (next === "phone") return [head, "", `寄送縣市：${order.shipCity}`, `收件人：${order.name}`, "", "請問收件人電話是？"].join("\n");
   if (next === "address") return [head, "", `寄送縣市：${order.shipCity}`, `收件人：${order.name}`, `電話：${order.phone}`, "", "請問收件地址是？"].join("\n");
+
   return head;
 }
+
 function startOrUpdateOrder(userId, parsed) {
   updateUser(userId, (u) => {
     u.order.active = true;
@@ -795,6 +842,7 @@ function startOrUpdateOrder(userId, parsed) {
     u.order.step = computeNextStep(u.order);
   });
 }
+
 function tryFillOrderFromMessage(userId, rawText) {
   const raw = normalizeText(rawText);
   const user = ensureUser(userId);
@@ -802,10 +850,11 @@ function tryFillOrderFromMessage(userId, rawText) {
 
   if (includesAny(raw, INTENT.cancel)) {
     resetOrder(userId);
-    return { handled: true, reply: TEXT.cancelOrder };
+    return { handled: true, reply: "已為你取消本次下單流程。如需重新下單，直接輸入：龜鹿膏2罐 寄台中 😊" };
   }
   if (!order.active) return { handled: false, reply: null };
 
+  // 允許在流程中補品項/數量/縣市
   const parsed = parseOrder(rawText);
   if ((parsed.items && parsed.items.length > 0) || parsed.shipCity) {
     startOrUpdateOrder(userId, parsed);
@@ -818,7 +867,8 @@ function tryFillOrderFromMessage(userId, rawText) {
     const city = extractShipCity(rawText);
     if (city) updateUser(userId, (u) => (u.order.shipCity = city));
   } else if (step === "name") {
-    if (raw.length >= 2 && raw.length <= 10 && !includesAny(raw, ["價格","容量","地址","電話","官網","門市"])) {
+    // 避免把「價格/容量」當姓名
+    if (raw.length >= 2 && raw.length <= 12 && !includesAny(raw, ["價格","容量","地址","電話","官網","門市","湯塊","龜鹿","鹿茸"])) {
       updateUser(userId, (u) => (u.order.name = raw));
     }
   } else if (step === "phone") {
@@ -834,124 +884,117 @@ function tryFillOrderFromMessage(userId, rawText) {
 }
 
 /** =========================
- * H) 全連動回覆（方案A：諮詢入口 + 排序器）
+ * J) 智能回覆（排序器＋輪替模板）
  * ========================= */
-function buildSmartReply(raw, userObj) {
-  const intents = detectIntents(raw);
-  const userState = userObj?.state || { lastProductKey: null };
 
-  // 最高優先：敏感導流
-  if (intents.includes("sensitive")) return TEXT.sensitive;
+// ✅ 排序器：同一句多意圖時，回覆順序固定
+const INTENT_PRIORITY = [
+  "consult",
+  "productList",
+  "soupPrice",
+  "pricing",
+  "specs",
+  "buy",
+  "shipping",
+  "payment",
+  "testing",
+  "store",
+  "website",
+];
 
+// 產品頁快速回答（價格/容量/使用方式）
+function productQuickPricing(key) {
+  if (key === "gel") {
+    const p = STORE.products.gel;
+    return `【龜鹿膏｜價格】\n售價 ${money(p.priceList)}｜優惠價 ${money(p.pricePromo)}\n規格：${p.specShort}`;
+  }
+  if (key === "drink") {
+    const p = STORE.products.drink;
+    return `【龜鹿飲｜價格】\n售價 ${money(p.priceList)}｜優惠價 ${money(p.pricePromo)}\n規格：${p.specShort}`;
+  }
+  if (key === "antler") {
+    const p = STORE.products.antler;
+    return `【鹿茸粉｜價格】\n售價 ${money(p.priceList)}｜優惠價 ${money(p.pricePromo)}\n規格：${p.specShort}`;
+  }
+  if (key === "soup") return soupPriceAllText();
+  return null;
+}
+
+function productQuickSpecs(key) {
+  if (key === "gel") return `【龜鹿膏｜規格】\n${STORE.products.gel.specShort}`;
+  if (key === "drink") return `【龜鹿飲｜規格】\n${STORE.products.drink.specShort}`;
+  if (key === "antler") return `【鹿茸粉｜規格】\n${STORE.products.antler.specShort}`;
+  if (key === "soup") return "【龜鹿湯塊｜規格】\n一斤600g／半斤300g／4兩150g";
+  return null;
+}
+
+function productUsageByKey(key) {
+  if (key === "gel") return STORE.products.gel.usageBlocks[0].join("\n");
+  if (key === "drink") return STORE.products.drink.usageBlocks[0].join("\n");
+  if (key === "antler") return STORE.products.antler.usageBlocks[0].join("\n");
+  if (key === "soup") return STORE.products.soup.usageBlocks[0].join("\n");
+  return null;
+}
+
+// ✅ 把同義詞/模糊問法也導向：價格/容量/怎麼買
+function inferImplicitIntents(raw) {
+  const t = normalizeText(raw);
+  const extra = new Set();
+  if (/^(價格|價錢|售價|多少錢|幾錢)$/.test(t)) extra.add("pricing");
+  if (/^(容量|規格|重量|幾克|幾g|幾cc|多大)$/.test(t)) extra.add("specs");
+  if (/^(怎麼買|下單|訂購|購買|我要買)$/.test(t)) extra.add("buy");
+  return Array.from(extra);
+}
+
+function buildSmartReply(userId, raw, userState) {
+  const intents0 = detectIntents(raw);
+  const intents = Array.from(new Set([...intents0, ...inferImplicitIntents(raw)]));
+
+  if (intents.includes("sensitive")) {
+    return pickVariant(userId, "sensitive", TPL.sensitive);
+  }
+
+  // 上下文產品連動
   const productKey = detectProductKey(raw) || userState.lastProductKey || null;
 
-  // 只打產品名 → 回「產品完整」或「使用方式」
-  if (intents.length === 0 && productKey === "gel") return gelFull();
-  if (intents.length === 0 && productKey === "drink") {
-    return [
-      "【龜鹿飲 飲用方式】",
-      ...STORE.products.drink.usage.map(x => `• ${x}`),
-      "",
-      `規格：${STORE.products.drink.spec}`,
-      `價格：優惠價 ${money(STORE.products.drink.pricePromo)}（售價 ${money(STORE.products.drink.priceOriginal)}）`,
-    ].join("\n");
-  }
-  if (intents.length === 0 && productKey === "antler") {
-    return [
-      "【鹿茸粉 食用建議】",
-      ...STORE.products.antler.usage.map(x => `• ${x}`),
-      "",
-      `規格：${STORE.products.antler.spec}`,
-      `價格：優惠價 ${money(STORE.products.antler.pricePromo)}（售價 ${money(STORE.products.antler.priceOriginal)}）`,
-    ].join("\n");
-  }
-  if (intents.length === 0 && (productKey === "soup" || String(productKey).startsWith("soup"))) {
-    return [
-      "【龜鹿湯塊 使用建議】",
-      ...STORE.products.soup.usage.map(x => `• ${x}`),
-      "",
-      soupPriceAll(),
-    ].join("\n");
+  // ✅ 只打產品名（且不是在下單語境）→ 回使用方式（依官網文案）
+  if (intents.length === 0 && productKey) {
+    const usage = productUsageByKey(productKey);
+    if (usage) return usage;
   }
 
-  const orderedIntents = sortIntents(intents);
+  // ✅ 排序器：按照固定順序拼接
+  const ordered = intents.sort((a, b) => INTENT_PRIORITY.indexOf(a) - INTENT_PRIORITY.indexOf(b));
   const parts = [];
 
-  for (const it of orderedIntents) {
-    if (it === "consult") {
-      const n = nextRotation(userObj, "consult");
-      const list = TEMPLATES.consult();
-      parts.push(list[Math.min(n, list.length) - 1]);
-      continue;
+  for (const it of ordered) {
+    if (it === "consult") parts.push(pickVariant(userId, "consultEntry", TPL.consultEntry));
+    else if (it === "productList") parts.push(productListText());
+    else if (it === "soupPrice") parts.push(soupPriceAllText());
+    else if (it === "pricing") {
+      const p = productKey ? productQuickPricing(productKey) : null;
+      parts.push(p || pricingAllText());
     }
-
-    if (it === "productList") {
-      parts.push(productListText());
-      continue;
+    else if (it === "specs") {
+      const p = productKey ? productQuickSpecs(productKey) : null;
+      parts.push(p || specsAllText());
     }
-
-    if (it === "soupPrice") {
-      parts.push(soupPriceAll());
-      continue;
-    }
-
-    if (it === "pricing") {
-      // 同句已包含 soupPrice 且指向湯塊時，避免重複湯塊表
-      if (intents.includes("soupPrice") && (productKey === "soup" || String(productKey).startsWith("soup"))) {
-        continue;
-      }
-      const n = nextRotation(userObj, "pricing");
-      const list = TEMPLATES.pricing(productKey);
-      parts.push(list[Math.min(n, list.length) - 1]);
-      continue;
-    }
-
-    if (it === "specs") {
-      const n = nextRotation(userObj, "specs");
-      const list = TEMPLATES.specs(productKey);
-      parts.push(list[Math.min(n, list.length) - 1]);
-      continue;
-    }
-
-    if (it === "buy") {
-      const n = nextRotation(userObj, "buy");
-      const list = TEMPLATES.buy();
-      parts.push(list[Math.min(n, list.length) - 1]);
-      continue;
-    }
-
-    if (it === "shipping") {
-      parts.push(TEXT.shipping);
-      continue;
-    }
-    if (it === "payment") {
-      parts.push(TEXT.payment);
-      continue;
-    }
-    if (it === "testing") {
-      parts.push(TEXT.testing);
-      continue;
-    }
-
-    if (it === "store") {
-      const n = nextRotation(userObj, "store");
-      const list = TEMPLATES.store();
-      parts.push(list[Math.min(n, list.length) - 1]);
-      continue;
-    }
-
-    if (it === "website") {
-      parts.push(`官網連結：${STORE.website}`);
-      continue;
-    }
+    else if (it === "buy") parts.push(pickVariant(userId, "howToBuy", TPL.howToBuy));
+    else if (it === "shipping") parts.push(pickVariant(userId, "shipping", TPL.shipping));
+    else if (it === "payment") parts.push(pickVariant(userId, "payment", TPL.payment));
+    else if (it === "testing") parts.push(pickVariant(userId, "testing", TPL.testing));
+    else if (it === "store") parts.push(storeInfoText());
+    else if (it === "website") parts.push(`官網連結：${STORE.website}`);
   }
 
-  if (parts.length === 0) return TEXT.fallback;
+  if (parts.length === 0) return pickVariant(userId, "fallback", TPL.fallback);
+
+  // ✅ 合併時加分隔，讓閱讀清楚
   return parts.join("\n\n——\n\n");
 }
 
 /** =========================
- * I) 24h 追蹤（可保留）
+ * K) 24h 追蹤（保留）
  * ========================= */
 async function scanAndSendFollowups() {
   const users = loadUsers();
@@ -978,7 +1021,7 @@ async function scanAndSendFollowups() {
 cron.schedule("*/10 * * * *", () => scanAndSendFollowups().catch(() => {}));
 
 /** =========================
- * J) Webhook
+ * L) Webhook
  * ========================= */
 app.get("/", (req, res) => res.status(200).send("OK"));
 
@@ -1002,20 +1045,13 @@ async function handleEvent(event) {
       users[userId] = users[userId] || {};
       users[userId].followedAt = users[userId].followedAt || Date.now();
       users[userId].followupSent = users[userId].followupSent || false;
-
-      users[userId].state =
-        users[userId].state ||
-        { lastProductKey: null, lastSeenAt: Date.now(), rotate: {}, replyCache: { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 } };
-      users[userId].state.rotate = users[userId].state.rotate || {};
-      users[userId].state.replyCache = users[userId].state.replyCache || { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 };
-
-      users[userId].order =
-        users[userId].order ||
-        { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
-
+      users[userId].state = users[userId].state || { lastProductKey: null, lastSeenAt: Date.now(), lastReplySig: null, rotator: {} };
+      users[userId].order = users[userId].order || { active: false, step: null, shipCity: null, name: null, phone: null, address: null, items: [], updatedAt: Date.now() };
       saveUsers(users);
     }
-    return client.replyMessage(event.replyToken, textMessage(TEXT.welcome));
+    // ✅ 歡迎訊息也輪替
+    const welcome = userId ? pickVariant(userId, "welcome", TPL.welcome) : TPL.welcome[0];
+    return client.replyMessage(event.replyToken, textMessage(welcome));
   }
 
   if (event.type !== "message") return null;
@@ -1025,61 +1061,42 @@ async function handleEvent(event) {
   const userTextRaw = event.message.text || "";
   const raw = normalizeText(userTextRaw);
 
+  // 沒有 userId（極少）就直接回
   if (!userId) {
-    const tempUser = { state: { lastProductKey: null, rotate: {}, replyCache: { lastText: null, lastHash: null, lastAt: 0, repeatCount: 0 } } };
-    const reply0 = buildSmartReply(raw, tempUser);
-    return client.replyMessage(event.replyToken, textMessage(reply0));
+    const reply = pickVariant("anonymous", "fallback", TPL.fallback);
+    return client.replyMessage(event.replyToken, textMessage(reply));
   }
 
   const user = ensureUser(userId);
 
-  // 1) 訂單流程已啟動：先補資料
+  // 0) 若正在下單流程：先嘗試補資料
   if (user.order && user.order.active) {
     const filled = tryFillOrderFromMessage(userId, userTextRaw);
-    if (filled.handled) {
-      const ded = shouldDedupeReply(user, filled.reply);
-      updateUser(userId, (u) => {
-        u.state.rotate = user.state.rotate;
-        u.state.replyCache = user.state.replyCache;
-      });
-      return client.replyMessage(event.replyToken, textMessage(ded.newText));
+    if (filled.handled) return client.replyMessage(event.replyToken, textMessage(filled.reply));
+  }
+
+  // ✅ 1) 只要判定像下單 → 優先走下單（避免你截圖那種跳去食用方式）
+  if (isLikelyOrderMessage(userTextRaw)) {
+    const parsed = parseOrder(userTextRaw);
+    if ((parsed.items && parsed.items.length > 0) || parsed.hasOrderIntent || parsed.shipCity) {
+      startOrUpdateOrder(userId, parsed);
+
+      // 更新上下文產品（第一個 item）
+      const updated = ensureUser(userId);
+      if (updated.order.items && updated.order.items.length > 0) {
+        updateUser(userId, (u) => (u.state.lastProductKey = updated.order.items[0].key === "soup600" || updated.order.items[0].key === "soup300" || updated.order.items[0].key === "soup150" ? "soup" : updated.order.items[0].key));
+      }
+      return client.replyMessage(event.replyToken, textMessage(buildOrderPrompt(updated.order)));
     }
   }
 
-  // 2) 解析本句是否為下單
-  const parsed = parseOrder(userTextRaw);
-  if ((parsed.items && parsed.items.length > 0) || parsed.hasOrderIntent) {
-    startOrUpdateOrder(userId, parsed);
-
-    // 更新上下文產品（第一個 item）
-    const updated = ensureUser(userId);
-    if (updated.order.items && updated.order.items.length > 0) {
-      updateUser(userId, (u) => (u.state.lastProductKey = updated.order.items[0].key));
-    }
-
-    const replyOrder = buildOrderPrompt(updated.order);
-    const ded = shouldDedupeReply(user, replyOrder);
-    updateUser(userId, (u) => {
-      u.state.rotate = user.state.rotate;
-      u.state.replyCache = user.state.replyCache;
-    });
-    return client.replyMessage(event.replyToken, textMessage(ded.newText));
-  }
-
-  // 3) 一般全連動回覆
+  // 2) 一般回覆：更新上下文產品
   const pk = detectProductKey(raw);
   if (pk) updateUser(userId, (u) => (u.state.lastProductKey = pk));
 
-  const latestUser = ensureUser(userId);
-  const reply = buildSmartReply(raw, latestUser);
-
-  const ded = shouldDedupeReply(latestUser, reply);
-  updateUser(userId, (u) => {
-    u.state.rotate = latestUser.state.rotate;
-    u.state.replyCache = latestUser.state.replyCache;
-  });
-
-  return client.replyMessage(event.replyToken, textMessage(ded.newText));
+  const latestState = ensureUser(userId).state;
+  const reply = buildSmartReply(userId, raw, latestState);
+  return client.replyMessage(event.replyToken, textMessage(reply));
 }
 
 app.listen(PORT, () => console.log(`LINE bot webhook listening on port ${PORT}`));
