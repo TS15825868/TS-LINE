@@ -1,20 +1,19 @@
 "use strict";
 
 /**
- * 仙加味・龜鹿 LINE Bot（整包替換版｜全數字選單｜保護條款強化版）
+ * 仙加味・龜鹿 LINE Bot（整包替換版｜完整版）
  *
- * ✅ 功能摘要
- * - 全選單數字化：主選單/產品/價格/購買方式/湯塊（介紹/價格/規格）/湯塊規格
- * - 價格單品回覆：建議售價 + 目前活動價（建議售價9折）
- * - 所有價格回覆統一附：通路差異/到店活動/報價有效期限/運費&組合另計
- * - 龜鹿膏 建議售價 2000；目前活動價 1800（9折）
- * - 湯塊新增 2兩(75g) 1000（暫不做活動價）
- * - 湯塊 4兩不做活動價
- * - 「龜鹿仙膠/龜鹿二仙膠/龜鹿膠」→ 統一「龜鹿湯塊(膠)」
- * - 真人回覆管理（ADMIN_USER_IDS 推播 + 指令 handoff）
- * - 不制式購買草稿（吸收訊息、不鎖流程），草稿 30 分鐘過期
- * - 地址/門市判斷：只有選了購買方式才吸收，避免誤判地名
- * - 0 隨時回主選單
+ * ✅ 重點功能
+ * - 全數字選單（主選單/產品/價格/購買方式/湯塊：介紹/價格/規格/規格價格）
+ * - 關鍵字也能用（長輩可直接打：價格/容量/湯塊/仙膠/門市/怎麼買）
+ * - 「龜鹿仙膠/龜鹿二仙膠/龜鹿膠」統一視為「龜鹿湯塊(膠)」
+ * - 價格改「建議售價」+「目前活動價（建議售價9折）」+「通路差異/到店活動/報價有效/運費另計」
+ * - 湯塊：2兩(75g) $1000（暫無活動價）、4兩(150g) $2000（無活動價）、半斤/一斤 9折
+ * - 購買方式：宅配/店到店/雙北親送/到店自取（先選方式再問細節，不制式卡死）
+ * - 草稿 30 分鐘過期（避免「草稿過期要30分鐘」困擾）
+ * - 地址判斷：只有選了購買方式才吸收地址/門市（避免誤判地名）
+ * - 真人回覆管理：ADMIN_USER_IDS 推播新案件 + 管理指令 handoff list/show/close/note
+ * - 營業時間：週一～五 9:30-18:30，自取可到 21:30-22:00；週末視狀況可取貨；回覆時間 9:30-22:00 左右
  */
 
 const express = require("express");
@@ -41,7 +40,7 @@ const client = new line.Client(config);
 const ADMIN_IDS = ADMIN_USER_IDS.split(",").map((s) => s.trim()).filter(Boolean);
 
 /** =========================
- * A) 店家/產品資料
+ * A) 店家/產品資料（可集中改）
  * ========================= */
 const STORE = {
   brandName: "仙加味・龜鹿",
@@ -52,11 +51,10 @@ const STORE = {
   mapUrl:
     "https://www.google.com/maps/search/?api=1&query=%E5%8F%B0%E5%8C%97%E5%B8%82%E8%90%AC%E8%8F%AF%E5%8D%80%E8%A5%BF%E6%98%8C%E8%A1%97+52+%E8%99%9F",
 
-  // 營業/回覆時間（你提供）
   hours: {
     weekdays: "週一～週五 9:30–18:30",
     pickupLate: "自取可到約 21:30–22:00（請先訊息確認）",
-    weekendPickup: "週六日若剛好在店/可外出，也可協助取貨（建議先訊息確認）",
+    weekendPickup: "週六日若剛好在店/方便外出，也可協助取貨（建議先訊息確認）",
     replyTime: "回覆時間大多落在 9:30–22:00 左右（依現場忙碌略有延遲）",
   },
 
@@ -68,8 +66,8 @@ const STORE = {
       key: "gel",
       name: "龜鹿膏",
       spec: "100g/罐",
-      msrp: 2000, // ✅ 建議售價
-      discount: 0.9, // ✅ 9折
+      msrp: 2000,       // ✅ 建議售價（你選 A：2000）
+      discount: 0.9,    // ✅ 9折
       noteDays: "依每個人食用習慣不同，一罐大約可吃10天～半個月左右。",
       usage: [
         "一般建議：先從小量、飯後開始（例如小湯匙量），連續觀察幾天；",
@@ -98,10 +96,10 @@ const STORE = {
     soup: {
       key: "soup",
       name: "龜鹿湯塊(膠)",
-      packagingNote: "目前為傳統盒裝（新包裝仍在規劃中）。",
+      packagingNote: "目前仍以傳統盒裝為主（新包裝仍在規劃中）。",
       variants: [
-        { key: "soup75", label: "2兩", spec: "75g", msrp: 1000, discount: null },    // ✅ 暫不做活動價
-        { key: "soup150", label: "4兩", spec: "150g", msrp: 2000, discount: null },  // ✅ 不做活動價
+        { key: "soup75",  label: "2兩",  spec: "75g",  msrp: 1000, discount: null }, // 暫無活動價
+        { key: "soup150", label: "4兩",  spec: "150g", msrp: 2000, discount: null }, // ✅ 拿掉活動價
         { key: "soup300", label: "半斤", spec: "300g", msrp: 4000, discount: 0.9 },
         { key: "soup600", label: "一斤", spec: "600g", msrp: 8000, discount: 0.9 },
       ],
@@ -117,7 +115,7 @@ const STORE = {
 
 const SETTINGS = {
   draftTtlMs: 30 * 60 * 1000, // 30分鐘
-  detailsStyle: "hybrid", // "hybrid"：短介紹＋官網；"linkOnly"：只給官網
+  detailsStyle: "hybrid", // hybrid：短介紹＋官網；linkOnly：只給官網
 };
 
 /** =========================
@@ -135,8 +133,8 @@ const PRIVACY_LINE = "※ 您提供的聯絡與地址僅用於本次出貨聯繫
 const ETA_LINE = "※ 到貨/配送時間為預估，仍以物流/路況為準。";
 
 const D2D_NOTE = [
-  "※ 雙北親送僅限台北/新北，是否可送需以地址與當日路線確認。",
-  "※ 親送需視訂單金額與時段安排；若不便親送會改以宅配/店到店協助🙂",
+  "※ 雙北親送僅限台北/新北；是否可親送會以地址與當日路線/時間確認🙂",
+  "※ 若順路/時間允許就能安排親送；若不便親送會改以宅配或店到店協助。",
   ETA_LINE,
 ].join("\n");
 
@@ -156,7 +154,7 @@ function money(n) {
   const s = String(Math.round(Number(n))).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return `$${s}`;
 }
-function clampText(s, max = 4000) {
+function clampText(s, max = 4500) {
   const t = String(s || "");
   return t.length <= max ? t : t.slice(0, max - 3) + "...";
 }
@@ -167,9 +165,7 @@ function normalizeText(s) {
     .replace(/\s+/g, " ")
     .trim();
 }
-function includesAny(t, arr) {
-  return arr.some((k) => String(t).includes(k));
-}
+function includesAny(t, arr) { return (arr || []).some((k) => String(t).includes(k)); }
 function calcActivityPrice(msrp, discount) {
   if (!discount || typeof discount !== "number") return null;
   return Math.round(msrp * discount);
@@ -240,9 +236,8 @@ function ensureUser(userId) {
   const users = loadUsers();
   users[userId] = users[userId] || {};
   users[userId].state = users[userId].state || {
-    lastProductKey: null,      // gel/drink/antler/soup
-    lastSoupVariantKey: null,  // soup75/soup150/soup300/soup600
-    menu: "main",              // main/product/price/buy/soup_menu/soup_variant/none
+    lastProductKey: null,
+    menu: "main", // main/product/price/buy/soup_menu/soup_variant
     lastSeenAt: nowMs(),
   };
   users[userId].draft = users[userId].draft || {
@@ -340,14 +335,11 @@ async function createHandoffCase({ userId, lastMessage }) {
   const createdAt = new Date().toISOString();
 
   const record = {
-    id,
-    userId,
+    id, userId,
     displayName: profile?.displayName || null,
-    createdAt,
-    status: "open",
+    createdAt, status: "open",
     lastMessage: String(lastMessage || "").trim(),
-    note: null,
-    closedAt: null,
+    note: null, closedAt: null,
   };
 
   h.list = Array.isArray(h.list) ? h.list : [];
@@ -475,7 +467,7 @@ function productMenuText() {
     `1) ${p.gel.name}（${p.gel.spec}）`,
     `2) ${p.drink.name}（${p.drink.spec}）`,
     `3) ${p.antler.name}（${p.antler.spec}）`,
-    `4) ${p.soup.name}（含龜鹿仙膠/二仙膠）`,
+    `4) ${p.soup.name}（含 龜鹿仙膠/二仙膠）`,
     "",
     "0) 回主選單",
   ].join("\n");
@@ -508,7 +500,6 @@ function buyMenuText() {
   ].join("\n");
 }
 
-// ✅ 新：湯塊主選單（介紹/價格/規格）
 function soupMenuText() {
   return [
     `【${STORE.products.soup.name}】請回覆數字：`,
@@ -726,14 +717,17 @@ function parseItemsForDraft(rawText) {
 
   const items = [];
   const qtyMatch = normalizeText(raw).match(/([0-9]{1,3}|一|二|兩|三|四|五|六|七|八|九|十)\s*(罐|包|份|個|盒|組)/);
+  const map = { 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
   const qty = qtyMatch
-    ? (Number.isFinite(parseInt(qtyMatch[1], 10)) ? parseInt(qtyMatch[1], 10) : ({ 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 }[qtyMatch[1]] || 1))
+    ? (Number.isFinite(parseInt(qtyMatch[1], 10)) ? parseInt(qtyMatch[1], 10) : (map[qtyMatch[1]] || 1))
     : 1;
 
-  if (includesAny(raw, ["龜鹿膏"])) items.push({ key: "gel", name: STORE.products.gel.name, qty, unit: "罐" });
-  if (includesAny(raw, ["龜鹿飲"])) items.push({ key: "drink", name: STORE.products.drink.name, qty, unit: "包" });
-  if (includesAny(raw, ["鹿茸粉"])) items.push({ key: "antler", name: STORE.products.antler.name, qty, unit: "罐" });
-  if (includesAny(raw, ["湯塊", "龜鹿仙膠", "龜鹿二仙膠", "二仙膠", "龜鹿膠"])) items.push({ key: "soup", name: STORE.products.soup.name, qty, unit: "份" });
+  if (raw.includes("龜鹿膏")) items.push({ key: "gel", name: STORE.products.gel.name, qty, unit: "罐" });
+  if (raw.includes("龜鹿飲")) items.push({ key: "drink", name: STORE.products.drink.name, qty, unit: "包" });
+  if (raw.includes("鹿茸粉")) items.push({ key: "antler", name: STORE.products.antler.name, qty, unit: "罐" });
+  if (includesAny(raw, ["湯塊", "龜鹿仙膠", "龜鹿二仙膠", "二仙膠", "龜鹿膠"])) {
+    items.push({ key: "soup", name: STORE.products.soup.name, qty, unit: "份" });
+  }
 
   return items;
 }
@@ -882,10 +876,8 @@ function absorbDraft(userId, rawText) {
   }
 
   const d = ensureUser(userId).draft;
-  // 未選方式：不吸收地址/門市
   if (!d.active || !d.method) return;
 
-  // 已選方式才吸收
   if ((d.method === "home" || d.method === "d2d") && isLikelyAddress(rawText)) {
     updateUser(userId, (u) => {
       u.draft.ship = u.draft.ship || {};
@@ -905,13 +897,13 @@ function absorbDraft(userId, rawText) {
 }
 
 /** =========================
- * K) 意圖偵測（關鍵字仍保留）
+ * K) 意圖偵測（關鍵字也能走）
  * ========================= */
 const INTENT = {
   handoff: ["真人回覆", "真人", "轉真人", "人工", "人工客服", "專人回覆", "有人回覆", "找人"],
   product: ["產品名", "產品", "商品", "品項", "清單"],
   specs: ["容量", "規格", "重量", "幾克", "公克", "克", "幾cc", "毫升", "ml"],
-  pricing: ["價格", "價錢", "售價", "多少錢", "報價"],
+  pricing: ["價格", "價錢", "售價", "多少錢", "報價", "活動價"],
   buy: ["購買方式", "怎麼買", "購買", "下單", "訂購", "訂"],
   store: ["門市", "地址", "在哪", "地圖", "電話", "聯絡", "營業時間", "幾點"],
   website: ["官網", "網站", "網址", "連結"],
@@ -940,7 +932,7 @@ function detectSensitive(raw) { return includesAny(raw, INTENT.sensitive); }
 function detectPricingIntent(raw) { return includesAny(raw, INTENT.pricing); }
 
 /** =========================
- * L) 24h 追蹤（可保留）
+ * L) 24h 追蹤（保留）
  * ========================= */
 async function scanAndSendFollowups() {
   const users = loadUsers();
@@ -983,7 +975,6 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 });
 
 async function handleEvent(event) {
-  // follow：歡迎訊息 + 設定初始狀態
   if (event.type === "follow") {
     const userId = event.source && event.source.userId;
     if (userId) {
@@ -1044,7 +1035,7 @@ async function handleEvent(event) {
     );
   }
 
-  // 解析產品關鍵字（不怕長輩直接打字）
+  // 解析產品關鍵字（長輩直接打字也OK）
   const pk = detectProductKey(raw);
   if (pk) updateUser(userId, (u) => { u.state.lastProductKey = pk; });
 
@@ -1075,7 +1066,7 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage(`官網：${STORE.website}\n（官網以產品介紹為主，價格請以官方LINE回覆為準🙂）`, "sub"));
   }
 
-  // 關鍵字導覽（不依賴數字）
+  // 關鍵字導覽
   if (includesAny(raw, INTENT.product)) {
     updateUser(userId, (u) => { u.state.menu = "product"; });
     return client.replyMessage(event.replyToken, textMessage(productMenuText(), "sub"));
@@ -1105,21 +1096,18 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage("好的～我先把這筆購買草稿清掉🙂 想買或想看資訊，回 0 叫出選單就可以。", "sub"));
   }
 
-  // ====== 子選單：產品選單 ======
   const state = ensureUser(userId).state;
 
+  // ====== 子選單：產品 ======
   if (state.menu === "product") {
     if (raw === "1") return client.replyMessage(event.replyToken, textMessage(productIntroText("gel"), "sub"));
     if (raw === "2") return client.replyMessage(event.replyToken, textMessage(productIntroText("drink"), "sub"));
     if (raw === "3") return client.replyMessage(event.replyToken, textMessage(productIntroText("antler"), "sub"));
-
-    // ✅ 湯塊改成「湯塊主選單」
     if (raw === "4") {
       updateUser(userId, (u) => { u.state.menu = "soup_menu"; });
       return client.replyMessage(event.replyToken, textMessage(soupMenuText(), "sub"));
     }
 
-    // 產品選單內打到產品關鍵字也OK
     if (pk) {
       if (pk === "soup") {
         updateUser(userId, (u) => { u.state.menu = "soup_menu"; });
@@ -1131,7 +1119,7 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage("我有收到🙂\n請回覆 1～4 選產品，或回 0 回主選單。", "sub"));
   }
 
-  // ====== 子選單：湯塊主選單（介紹/價格/規格） ======
+  // ====== 子選單：湯塊（介紹/價格/規格） ======
   if (state.menu === "soup_menu") {
     if (raw === "1") return client.replyMessage(event.replyToken, textMessage(productIntroText("soup"), "sub"));
     if (raw === "2") {
@@ -1142,19 +1130,16 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage("請回覆 1～3 選擇湯塊內容，或回 0 回主選單。", "sub"));
   }
 
-  // ====== 子選單：價格選單（單品） ======
+  // ====== 子選單：價格 ======
   if (state.menu === "price") {
     if (raw === "1") return client.replyMessage(event.replyToken, textMessage(priceTextForProduct("gel"), "sub"));
     if (raw === "2") return client.replyMessage(event.replyToken, textMessage(priceTextForProduct("drink"), "sub"));
     if (raw === "3") return client.replyMessage(event.replyToken, textMessage(priceTextForProduct("antler"), "sub"));
-
-    // 湯塊價格 -> 直接進湯塊規格價格
     if (raw === "4") {
       updateUser(userId, (u) => { u.state.menu = "soup_variant"; });
       return client.replyMessage(event.replyToken, textMessage(soupVariantMenuText("價格查詢"), "sub"));
     }
 
-    // 價格選單內若打產品名：直接回該品項價格（湯塊->規格）
     if (pk) {
       if (pk === "soup") {
         updateUser(userId, (u) => { u.state.menu = "soup_variant"; });
@@ -1167,7 +1152,7 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage("請回覆 1～4 選擇要查的品項，或回 0 回主選單。", "sub"));
   }
 
-  // ====== 子選單：湯塊規格（價格查詢） ======
+  // ====== 子選單：湯塊規格價格 ======
   if (state.menu === "soup_variant") {
     if (raw === "1") return client.replyMessage(event.replyToken, textMessage(priceTextForSoupVariant("soup75"), "sub"));
     if (raw === "2") return client.replyMessage(event.replyToken, textMessage(priceTextForSoupVariant("soup150"), "sub"));
@@ -1214,7 +1199,7 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage(reply, "sub"));
   }
 
-  // 若客人直接問「湯塊/仙膠」且有價格意圖 -> 進湯塊規格價格；否則進湯塊主選單
+  // 客人直接問「湯塊/仙膠」：有價格意圖 -> 規格價格；否則 -> 湯塊主選單
   if (pk === "soup") {
     if (detectPricingIntent(raw)) {
       updateUser(userId, (u) => { u.state.menu = "soup_variant"; });
@@ -1224,7 +1209,7 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage(soupMenuText(), "sub"));
   }
 
-  // 最後 fallback：給主選單
+  // fallback
   return client.replyMessage(event.replyToken, textMessage("我有收到🙂\n回 0 叫出主選單，或直接回：1產品 2容量 3價格 4購買 5門市 6真人 7官網", "main"));
 }
 
