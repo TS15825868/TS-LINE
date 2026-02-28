@@ -48,7 +48,7 @@ if (!_ACCESS_TOKEN || !_CHANNEL_SECRET) {
 }
 
 const config = { channelAccessToken: _ACCESS_TOKEN, channelSecret: _CHANNEL_SECRET };
-const app = express();
+const app = express;
 const client = new line.Client(config);
 
 /** =========================
@@ -153,11 +153,11 @@ const STORE = {
         "不建議久煮過度，避免口感過於濃稠",
       ],
       variants: [
-        { label: "75g｜8入｜每塊約 9.375g", spec: "", msrp: 1000, activityDiscount: null, note: "盒子規劃中（目前以傳統包裝出貨）" },
-        { label: "150g｜8入｜每塊約 18.75g", spec: "", msrp: 2000, activityDiscount: null, note: null },
-        { label: "300g｜16入｜每塊約 18.75g", spec: "", msrp: 4000, activityDiscount: 0.9, note: null },
-        { label: "600g｜32入｜每塊約 18.75g", spec: "", msrp: 8000, activityDiscount: 0.9, note: null },
-      ],
+  { label: "75g｜8入｜每塊約 9.375g", spec: "", msrp: 1000, activityDiscount: null, note: "盒子規劃中（目前以傳統包裝出貨）" },
+  { label: "150g｜8入｜每塊約 18.75g", spec: "", msrp: 2000, activityDiscount: null, note: null },
+  { label: "300g｜16入｜每塊約 18.75g", spec: "", msrp: 4000, activityDiscount: 0.9, note: null },
+  { label: "600g｜32入｜每塊約 18.75g", spec: "", msrp: 8000, activityDiscount: 0.9, note: null },
+],
       priceCode: "54",
     },
   },
@@ -947,4 +947,4 @@ async function handleEvent(event) {
   return client.replyMessage(event.replyToken, textMessage(fallback, "main"));
 }
 
-app.listen(PORT, () => console.log(`LINE bot webhook listening on port ${PORT}`));
+app.listen(PORT,  => console.log(`LINE bot webhook listening on port ${PORT}`));
