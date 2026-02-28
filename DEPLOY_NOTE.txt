@@ -1,0 +1,7 @@
+Render 設定建議：
+Build Command: npm install
+Start Command: npm start
+Environment Variables 必填：
+- LINE_CHANNEL_ACCESS_TOKEN
+- LINE_CHANNEL_SECRET
+（若專案原本有其他變數，請依原設定保留）

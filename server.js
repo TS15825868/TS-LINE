@@ -1,5 +1,13 @@
 "use strict";
 
+
+
+function formatVariantLine(x) {
+  const specPart = x.spec ? `：${x.spec}` : "";
+  const notePart = x.note ? `（${x.note}）` : "";
+  return `• ${x.label}${specPart}${notePart}`;
+}
+
 /**
  * 仙加味・龜鹿 LINE Bot（最終完整版｜A 穩重老字號｜動態子選單只留當頁選項｜代碼全 ≤ 2 位數）
  *
@@ -136,11 +144,11 @@ const STORE = {
         "不建議久煮過度，避免口感過於濃稠",
       ],
       variants: [
-  { label: "75g｜8入｜每塊約 9.375g", spec: "", msrp: 1000, activityDiscount: null, note: "盒子規劃中（目前以傳統包裝出貨）" },
-  { label: "150g｜8入｜每塊約 18.75g", spec: "", msrp: 2000, activityDiscount: null, note: null },
-  { label: "300g｜16入｜每塊約 18.75g", spec: "", msrp: 4000, activityDiscount: 0.9, note: null },
-  { label: "600g｜32入｜每塊約 18.75g", spec: "", msrp: 8000, activityDiscount: 0.9, note: null },
-],
+        { label: "75g｜8入｜每塊約 9.375g", spec: "", msrp: 1000, activityDiscount: null, note: "盒子規劃中（目前以傳統包裝出貨）" },
+        { label: "150g｜8入｜每塊約 18.75g", spec: "", msrp: 2000, activityDiscount: null, note: null },
+        { label: "300g｜16入｜每塊約 18.75g", spec: "", msrp: 4000, activityDiscount: 0.9, note: null },
+        { label: "600g｜32入｜每塊約 18.75g", spec: "", msrp: 8000, activityDiscount: 0.9, note: null },
+      ],
       priceCode: "54",
     },
   },
@@ -392,7 +400,7 @@ function productIntroText(userId, key) {
 
   if (key === "soup") {
     const vLines = p.variants
-      .map((x) => `• ${x.label}：${x.spec}${x.note ? `（${x.note}）` : ""}`)
+      .map((x) => formatVariantLine(x))
       .join("\n");
 
     return [
@@ -440,7 +448,7 @@ function productSpecText(key) {
   if (!p) return "我先確認一下您想看的品項🙂（回 0 可回主選單）";
 
   if (key === "soup") {
-    const lines = p.variants.map((x) => `• ${x.label}：${x.spec}${x.note ? `（${x.note}）` : ""}`).join("\n");
+    const lines = p.variants.map((x) => formatVariantLine(x)).join("\n");
     return `【龜鹿湯塊（膠）規格】\n${lines}\n\n（回 0 可回主選單）`;
   }
   return `【${p.name} 規格】\n${p.spec}\n\n（回 0 可回主選單）`;
