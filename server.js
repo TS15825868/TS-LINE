@@ -938,4 +938,4 @@ async function handleEvent(event) {
   return client.replyMessage(event.replyToken, textMessage(fallback, "main"));
 }
 
-app.listen(PORT,  => console.log(`LINE bot webhook listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`LINE bot webhook listening on port ${PORT}`));
