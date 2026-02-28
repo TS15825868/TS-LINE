@@ -3,22 +3,19 @@
 /**
  * 仙加味・龜鹿 LINE Bot（最終完整版｜A 穩重老字號｜動態子選單只留當頁選項｜代碼全 ≤ 2 位數）
  *
- * ✅ 代碼規則（依你最新指定）
+ * ✅ 代碼規則（最新版｜你指定）
  * - 主選單：0 / 1 / 2 / 3 / 4 / 5 / 6 / 7
  * - 產品介紹選品：11~14
  * - 規格選品：31~34
- * - 價格選品：51~54（湯塊改用 54）
+ * - 價格選品：51~54（湯塊：54）
  * - 購買方式：91~94（宅配/店到店/雙北親送/到店自取）
  *
- * ✅ 舊代碼相容（全部自動換成新代碼，不會卡住）
- * - 湯塊舊 55 → 新 54
- * - 舊購買 41~44 → 新 91~94
- * - 在「產品/規格/價格/購買」子選單中，若老人家只回 1~4，會依當下頁面自動換成新代碼（例如產品頁 1→11、價格頁 4→54、購買頁 2→92）
- *
- * ✅ 湯塊價格：不分規格代碼 → 54 一次顯示全部規格價格
- * ✅ 產品介紹正文已含成分 → 不再提示「想看成分」
+ * ✅ 湯塊價格：不分規格 → 54 一次顯示全部規格價格
+ * ✅ 產品介紹正文已含成分 → 不需要「想看成分」提示
  * ✅ 子選單 Quick Reply：只顯示「當頁需要的按鈕」
- * ✅ 真人回覆管理：6 開啟、解除真人 關閉（真人期間暫停自動）
+ * ✅ 各產品「價格頁」快捷新增：4 購買方式
+ * ✅ Rich Menu「傳送訊息」改發文字「選單」→ 本程式已支援：回「選單」= 主選單
+ * ✅ 真人回覆：6 開啟；解除真人/取消真人/恢復自動 關閉（真人期間暫停自動）
  */
 
 const express = require("express");
@@ -79,7 +76,7 @@ const STORE = {
       activityDiscount: 0.9,
       ingredients: ["鹿角", "全龜", "枸杞", "黃耆", "紅棗", "粉光蔘"],
       intro: [
-        "以鹿角與全龜為基底，佐以枸杞、黃耆、紅棗、粉光蔘等配伍熬製。",
+        "以鹿角與全龜為基底，佐以枸杞、黃耆、紅棗、粉光蔘等熬製。",
         "口感溫潤濃稠，可直接食用或以溫水化開。",
         "適合日常滋養，作息調整期間作為養身型食品補充。",
       ],
@@ -99,6 +96,7 @@ const STORE = {
       spec: "180cc/包",
       msrp: 200,
       activityDiscount: 0.9,
+      // ✅ 依你包裝習慣：液體型成分建議把「水」寫入（與標示一致、最直覺）
       ingredients: ["水", "鹿角", "全龜", "枸杞", "黃耆", "紅棗", "粉光蔘"],
       intro: ["即飲型設計，方便日常補充與外出攜帶。", "可溫熱飲用，口感順口，適合忙碌族群。"],
       usage: ["每日一包", "可隔水加熱或溫熱飲用", "建議白天飲用較舒適", "避免冰飲"],
@@ -119,18 +117,25 @@ const STORE = {
 
     soup: {
       key: "soup",
+      // ✅ 名稱統一：不要顯示「龜鹿仙膠/二仙膠」等別名（避免混亂）
       name: "龜鹿湯塊（膠）",
       aliasNames: ["龜鹿仙膠", "龜鹿二仙膠", "龜鹿膠", "二仙膠", "仙膠"],
-      ingredients: ["鹿角", "全龜"], // ✅ 依你要求：湯塊只鹿角＋全龜
-      intro: ["傳統熬製濃縮成塊，方便燉煮成湯。", "可依個人口味調整濃淡，適合搭配肉類/食材燉煮。"],
-      usage: ["加入適量水煮滾後，可搭配雞肉或其他食材燉煮", "建議熱食熱飲，口感更佳", "不建議久煮過度，避免口感變得過濃"],
+      // ✅ 依你要求：主要原料（半成品主原料）用「萃取物」寫法，食品化更一致
+      ingredients: ["鹿角萃取物", "全龜萃取物"],
+      // ✅ 食品安全描述（不碰固有成方、不碰療效）
+      intro: [
+        "以鹿角萃取物、全龜萃取物製成，經傳統製程濃縮成塊。",
+        "適合日常燉煮湯品使用，可依個人口味調整濃淡比例。",
+      ],
+      usage: ["加入適量水煮滾後，可搭配食材燉煮", "建議熱食熱飲", "不建議久煮過度，避免口感變得過濃"],
+      // ✅ 規格保留（規格頁可查），但「價格」不分規格入口：54 一次顯示全部
       variants: [
         { label: "2兩", spec: "75g", msrp: 1000, activityDiscount: null, note: "盒子規劃中（目前以傳統包裝出貨）" },
         { label: "4兩", spec: "150g", msrp: 2000, activityDiscount: null, note: null },
         { label: "半斤", spec: "300g", msrp: 4000, activityDiscount: 0.9, note: null },
         { label: "一斤", spec: "600g", msrp: 8000, activityDiscount: 0.9, note: null },
       ],
-      priceCode: "54", // ✅ 湯塊改用 54
+      priceCode: "54",
     },
   },
 };
@@ -168,7 +173,7 @@ function includesAny(t, arr) {
   return arr.some((k) => s.includes(k));
 }
 
-/** 湯塊別名統一 */
+/** 湯塊別名統一（使用者打別名也導回「龜鹿湯塊（膠）」） */
 function normalizeSoupAlias(raw) {
   let t = String(raw || "");
   if (includesAny(t, STORE.products.soup.aliasNames)) {
@@ -177,20 +182,50 @@ function normalizeSoupAlias(raw) {
   return t;
 }
 
-/** 只接受 1~2 位純數字代碼（符合你規則） */
-function extractCode(rawText) {
-  const t = String(rawText || "").trim();
-  if (!/^\d{1,2}$/.test(t)) return null;
-  return t;
-}
-
 /** 雙北判斷 */
 const CITY_LIST = [
-  "台北","台北市","新北","新北市","基隆","基隆市","桃園","桃園市","新竹","新竹市","新竹縣","苗栗","苗栗縣",
-  "台中","台中市","彰化","彰化縣","南投","南投縣","雲林","雲林縣",
-  "嘉義","嘉義市","嘉義縣","台南","台南市","高雄","高雄市","屏東","屏東縣",
-  "宜蘭","宜蘭縣","花蓮","花蓮縣","台東","台東縣",
-  "澎湖","澎湖縣","金門","金門縣","馬祖","連江縣"
+  "台北",
+  "台北市",
+  "新北",
+  "新北市",
+  "基隆",
+  "基隆市",
+  "桃園",
+  "桃園市",
+  "新竹",
+  "新竹市",
+  "新竹縣",
+  "苗栗",
+  "苗栗縣",
+  "台中",
+  "台中市",
+  "彰化",
+  "彰化縣",
+  "南投",
+  "南投縣",
+  "雲林",
+  "雲林縣",
+  "嘉義",
+  "嘉義市",
+  "嘉義縣",
+  "台南",
+  "台南市",
+  "高雄",
+  "高雄市",
+  "屏東",
+  "屏東縣",
+  "宜蘭",
+  "宜蘭縣",
+  "花蓮",
+  "花蓮縣",
+  "台東",
+  "台東縣",
+  "澎湖",
+  "澎湖縣",
+  "金門",
+  "金門縣",
+  "馬祖",
+  "連江縣",
 ];
 function guessCityFromText(text) {
   const t = String(text || "");
@@ -277,41 +312,7 @@ function setHumanMode(userId, on) {
 }
 
 /** =========================
- * D) 代碼相容（舊 → 新）
- * ========================= */
-const LEGACY_GLOBAL_MAP = {
-  "55": "54",  // 湯塊舊 → 新
-  "41": "91",  // 舊購買 → 新
-  "42": "92",
-  "43": "93",
-  "44": "94",
-};
-
-function mapLegacyByContext(code, lastMenu) {
-  // 先套用全域舊碼
-  let c = LEGACY_GLOBAL_MAP[code] || code;
-
-  // 子選單中老人家只回 1~4 → 依頁面換成新代碼
-  if (["1","2","3","4"].includes(c)) {
-    if (lastMenu === "product_menu") {
-      const m = { "1":"11", "2":"12", "3":"13", "4":"14" };
-      c = m[c] || c;
-    } else if (lastMenu === "spec_menu") {
-      const m = { "1":"31", "2":"32", "3":"33", "4":"34" };
-      c = m[c] || c;
-    } else if (lastMenu === "price_menu") {
-      const m = { "1":"51", "2":"52", "3":"53", "4":"54" };
-      c = m[c] || c;
-    } else if (lastMenu === "buy_menu") {
-      const m = { "1":"91", "2":"92", "3":"93", "4":"94" };
-      c = m[c] || c;
-    }
-  }
-  return c;
-}
-
-/** =========================
- * E) Quick Reply（動態｜只留當頁）
+ * D) Quick Reply（動態｜只留當頁）
  * ========================= */
 function qr(label, text) {
   return { type: "action", action: { type: "message", label, text } };
@@ -342,16 +343,8 @@ function quickRepliesByMenu(menu, ctx = {}) {
       return { items: [qr("31 龜鹿膏", "31"), qr("32 龜鹿飲", "32"), qr("33 鹿茸粉", "33"), qr("34 湯塊(膠)", "34"), qr("0 回主選單", "0")] };
 
     case "price_menu": // 51~54
-      return {
-        items: [
-          qr("51 龜鹿膏", "51"),
-          qr("52 龜鹿飲", "52"),
-          qr("53 鹿茸粉", "53"),
-          qr("54 湯塊(膠)", "54"),
-          qr("4 購買方式", "4"),
-          qr("0 回主選單", "0"),
-        ],
-      };
+      // ✅ 你指定：價格選單加「4 購買方式」
+      return { items: [qr("51 龜鹿膏", "51"), qr("52 龜鹿飲", "52"), qr("53 鹿茸粉", "53"), qr("54 湯塊(膠)", "54"), qr("4 購買方式", "4"), qr("0 回主選單", "0")] };
 
     case "buy_menu": // 91~94
       return { items: [qr("91 宅配", "91"), qr("92 店到店", "92"), qr("93 雙北親送", "93"), qr("94 到店自取", "94"), qr("0 回主選單", "0")] };
@@ -360,14 +353,18 @@ function quickRepliesByMenu(menu, ctx = {}) {
       return { items: [qr("0 回主選單", "0"), qrUri("地圖", STORE.mapUrl), qrUri("來電", `tel:${STORE.phoneTel}`), qrUri("官網", STORE.website)] };
 
     case "product_page": {
-      // 該產品頁只顯示該頁需要的按鈕
+      // ✅ 該產品頁只顯示該產品需要的按鈕（含 4 購買方式）
       const items = [];
       if (ctx.priceCode) items.push(qr(`${ctx.priceCode} 看價格`, String(ctx.priceCode)));
       items.push(qr("4 購買方式", "4"));
-      items.push(qr("看其他產品(回產品選單)", "1"));
+      items.push(qr("1 產品選單", "1"));
       items.push(qr("0 主選單", "0"));
       return { items };
     }
+
+    // ✅ 價格頁也加 4 購買方式（老人家更直覺）
+    case "price_page":
+      return { items: [qr("4 購買方式", "4"), qr("3 價格選單", "3"), qr("0 回主選單", "0")] };
 
     default:
       return { items: [qr("0 回主選單", "0")] };
@@ -379,12 +376,12 @@ function textMessage(text, menu = "main", ctx = {}) {
 }
 
 /** =========================
- * F) 選單文字
+ * E) 選單文字
  * ========================= */
 function mainMenuText(userId) {
   const templates = [
-    `您好，這裡是【${STORE.brandName}】🙂\n請回覆數字查詢：\n\n1) 產品介紹\n2) 容量／規格\n3) 價格（單品）\n4) 購買方式\n5) 門市資訊／來電\n6) 真人回覆\n7) 官網\n\n（隨時回 0 可回到主選單）`,
-    `您好🙂【${STORE.brandName}】為您服務。\n回數字即可：\n\n1 產品介紹\n2 規格\n3 價格\n4 購買方式\n5 門市/電話\n6 真人\n7 官網\n\n（回 0 回主選單）`,
+    `您好，這裡是【${STORE.brandName}】🙂\n請回覆數字查詢：\n\n1) 產品介紹\n2) 容量／規格\n3) 價格（單品）\n4) 購買方式\n5) 門市資訊／來電\n6) 真人回覆\n7) 官網\n\n（隨時回 0 或回「選單」可回到主選單）`,
+    `您好🙂【${STORE.brandName}】為您服務。\n回數字即可：\n\n1 產品介紹\n2 規格\n3 價格\n4 購買方式\n5 門市/電話\n6 真人\n7 官網\n\n（回 0 / 回「選單」= 主選單）`,
   ];
   return rotatePick(userId, "mainMenu", templates);
 }
@@ -395,7 +392,7 @@ function specMenuText() {
   return `【容量／規格】請回覆代碼：\n31) 龜鹿膏\n32) 龜鹿飲\n33) 鹿茸粉\n34) 龜鹿湯塊（膠）\n\n0) 回主選單`;
 }
 function priceMenuText() {
-  return `【價格（單品）】請回覆代碼：\n51) 龜鹿膏\n52) 龜鹿飲\n53) 鹿茸粉\n54) 龜鹿湯塊（膠）\n\n0) 回主選單`;
+  return `【價格（單品）】請回覆代碼：\n51) 龜鹿膏\n52) 龜鹿飲\n53) 鹿茸粉\n54) 龜鹿湯塊（膠）\n\n4) 購買方式\n0) 回主選單`;
 }
 function buyMenuText(userId) {
   const templates = [
@@ -423,7 +420,7 @@ function commonPriceFoot() {
 }
 
 /** =========================
- * G) 產品回覆（介紹/規格/價格）
+ * F) 產品回覆（介紹/規格/價格）
  * ========================= */
 function productIntroText(userId, key) {
   const p = STORE.products[key];
@@ -444,7 +441,7 @@ function productIntroText(userId, key) {
       "成分：",
       `• ${p.ingredients.join("\n• ")}`,
       "",
-      "食用建議：",
+      "使用方式：",
       `• ${p.usage.join("\n• ")}`,
       "",
       `想看價格：回 ${p.priceCode}`,
@@ -501,7 +498,7 @@ function productPriceText(key) {
     .join("\n");
 }
 
-/** 湯塊價格：不分規格代碼（54 一次顯示全部） */
+/** ✅ 湯塊價格：不分規格代碼（54 一次顯示全部） */
 function soupPriceAllText() {
   const p = STORE.products.soup;
   const lines = [];
@@ -524,7 +521,7 @@ function soupPriceAllText() {
 }
 
 /** =========================
- * H) 購買流程（自然收斂、不制式）
+ * G) 購買流程（自然收斂、不制式）
  * ========================= */
 function startBuying(userId, method) {
   updateUser(userId, (u) => {
@@ -573,7 +570,7 @@ function buyMethodExplain(method) {
     base.push(`週末：${STORE.hours.weekend}`);
   }
 
-  base.push("\n（回 0 可回主選單）");
+  base.push("\n（回 0 回主選單）");
   return base.join("\n");
 }
 
@@ -586,7 +583,7 @@ function tryHandleBuyingFlow(userId, rawText) {
   const n = normalizeSoupAlias(normalizeText(raw));
 
   // buy_flow 期間：0 一律跳回主選單並結束購買
-  if (n === "0") {
+  if (n === "0" || n === "選單") {
     stopBuying(userId);
     updateUser(userId, (x) => {
       x.state.lastMenu = "main";
@@ -594,9 +591,6 @@ function tryHandleBuyingFlow(userId, rawText) {
     });
     return { reply: mainMenuText(userId), menu: "main" };
   }
-
-  // buy_flow 期間：不吃 1~2 位代碼（避免跳頁），只吃實際內容
-  // （例如客人誤回 4 或 91，在這裡都當一般文字，不會跳選單）
 
   const hasItemSignal =
     includesAny(n, ["龜鹿膏", "龜鹿飲", "鹿茸粉", "湯塊", "龜鹿湯塊", "龜鹿湯塊（膠）"]) ||
@@ -632,8 +626,7 @@ function tryHandleBuyingFlow(userId, rawText) {
     if (hasPhone) cur.phone = digits;
 
     const looksLikeAddress =
-      raw.length >= 6 &&
-      (raw.includes("路") || raw.includes("街") || raw.includes("巷") || raw.includes("號") || raw.includes("樓") || raw.includes("段") || raw.includes("弄"));
+      raw.length >= 6 && (raw.includes("路") || raw.includes("街") || raw.includes("巷") || raw.includes("號") || raw.includes("樓") || raw.includes("段") || raw.includes("弄"));
 
     // 宅配/親送：地址
     if ((cur.method === "home" || cur.method === "deliver") && looksLikeAddress) cur.address = raw.trim();
@@ -678,7 +671,6 @@ function tryHandleBuyingFlow(userId, rawText) {
     ].join("\n");
 
     stopBuying(userId);
-    updateUser(userId, (u) => { u.state.lastMenu = "main"; u.state.lastProductKey = null; }); // ✅ 結單收乾淨
     return { reply: summary, menu: "buy_menu" };
   }
 
@@ -702,7 +694,6 @@ function tryHandleBuyingFlow(userId, rawText) {
     ].join("\n");
 
     stopBuying(userId);
-    updateUser(userId, (u) => { u.state.lastMenu = "main"; u.state.lastProductKey = null; }); // ✅ 結單收乾淨
     return { reply: summary, menu: "buy_menu" };
   }
 
@@ -734,7 +725,6 @@ function tryHandleBuyingFlow(userId, rawText) {
     ].join("\n");
 
     stopBuying(userId);
-    updateUser(userId, (u) => { u.state.lastMenu = "main"; u.state.lastProductKey = null; }); // ✅ 結單收乾淨
     return { reply: summary, menu: "buy_menu" };
   }
 
@@ -753,19 +743,40 @@ function tryHandleBuyingFlow(userId, rawText) {
   ].join("\n");
 
   stopBuying(userId);
-  updateUser(userId, (u) => { u.state.lastMenu = "main"; u.state.lastProductKey = null; }); // ✅ 結單收乾淨
   return { reply: summary, menu: "buy_menu" };
 }
 
 /** =========================
- * I) 敏感問題導流（保護你）
+ * H) 敏感問題導流（保護你）
  * ========================= */
 const SENSITIVE = [
-  "孕婦","懷孕","備孕","哺乳","餵母乳",
-  "慢性病","三高","高血壓","糖尿病","洗腎","肝","心臟",
-  "癌","癌症","化療","放療","手術","術後",
-  "用藥","抗凝血","阿斯匹靈","warfarin",
-  "能不能吃","可以吃嗎","適不適合","副作用","禁忌"
+  "孕婦",
+  "懷孕",
+  "備孕",
+  "哺乳",
+  "餵母乳",
+  "慢性病",
+  "三高",
+  "高血壓",
+  "糖尿病",
+  "洗腎",
+  "肝",
+  "心臟",
+  "癌",
+  "癌症",
+  "化療",
+  "放療",
+  "手術",
+  "術後",
+  "用藥",
+  "抗凝血",
+  "阿斯匹靈",
+  "warfarin",
+  "能不能吃",
+  "可以吃嗎",
+  "適不適合",
+  "副作用",
+  "禁忌",
 ];
 function sensitiveText() {
   return [
@@ -782,7 +793,7 @@ function sensitiveText() {
 }
 
 /** =========================
- * J) 24h 追蹤（保留）
+ * I) 24h 追蹤（保留）
  * ========================= */
 async function scanAndSendFollowups() {
   const users = loadUsers();
@@ -796,7 +807,7 @@ async function scanAndSendFollowups() {
     if (now - u.followedAt < dueMs) continue;
 
     try {
-      await client.pushMessage(userId, textMessage(`您好🙂 需要主選單請回：0\n要真人協助請回：6`, "main"));
+      await client.pushMessage(userId, textMessage(`您好🙂 需要主選單請回：0 或回「選單」\n要真人協助請回：6`, "main"));
       users[userId].followupSent = true;
       users[userId].followupSentAt = Date.now();
       changed = true;
@@ -809,7 +820,7 @@ async function scanAndSendFollowups() {
 cron.schedule("*/10 * * * *", () => scanAndSendFollowups().catch(() => {}));
 
 /** =========================
- * K) Webhook
+ * J) Webhook
  * ========================= */
 app.get("/", (req, res) => res.status(200).send("OK"));
 
@@ -839,7 +850,7 @@ async function handleEvent(event) {
       ensureUser(userId);
       return client.replyMessage(event.replyToken, textMessage(mainMenuText(userId), "main"));
     }
-    return client.replyMessage(event.replyToken, textMessage("您好🙂 請回 0 叫出主選單。", "main"));
+    return client.replyMessage(event.replyToken, textMessage("您好🙂 請回 0 或回「選單」叫出主選單。", "main"));
   }
 
   if (event.type !== "message") return null;
@@ -847,7 +858,7 @@ async function handleEvent(event) {
 
   const userId = event.source && event.source.userId;
   const userTextRaw = event.message.text || "";
-  if (!userId) return client.replyMessage(event.replyToken, textMessage("您好🙂 請回 0 叫出主選單。", "main"));
+  if (!userId) return client.replyMessage(event.replyToken, textMessage("您好🙂 請回 0 或回「選單」叫出主選單。", "main"));
 
   const rawNorm = normalizeSoupAlias(normalizeText(userTextRaw));
   const user = ensureUser(userId);
@@ -873,7 +884,7 @@ async function handleEvent(event) {
 
   // 真人模式中：只回最小提示（避免打架）
   if (user.state.humanMode) {
-    if (rawNorm === "0") {
+    if (rawNorm === "0" || rawNorm === "選單") {
       setHumanMode(userId, false);
       stopBuying(userId);
       updateUser(userId, (u) => {
@@ -882,10 +893,10 @@ async function handleEvent(event) {
       });
       return client.replyMessage(event.replyToken, textMessage(mainMenuText(userId), "main"));
     }
-    return client.replyMessage(event.replyToken, textMessage("我有收到🙂 已轉真人協助中。\n要回主選單回：0\n要解除真人回：解除真人", "main"));
+    return client.replyMessage(event.replyToken, textMessage("我有收到🙂 已轉真人協助中。\n要回主選單回：0 或回「選單」\n要解除真人回：解除真人", "main"));
   }
 
-  /** 1) 0 回主選單（任何時候） */
+  /** 1) 0 / 選單 回主選單（任何時候） */
   if (rawNorm === "0" || rawNorm === "主選單" || rawNorm === "選單" || rawNorm === "menu") {
     stopBuying(userId);
     updateUser(userId, (u) => {
@@ -895,7 +906,7 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage(mainMenuText(userId), "main"));
   }
 
-  /** 2) 購買流程中 → 先吃掉（避免雙回覆/跳頁） */
+  /** 2) 購買流程中 → 先吃掉（避免雙回覆） */
   const buyingHandled = tryHandleBuyingFlow(userId, userTextRaw);
   if (buyingHandled) {
     return client.replyMessage(event.replyToken, textMessage(buyingHandled.reply, buyingHandled.menu || "buy_menu"));
@@ -906,72 +917,87 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage(sensitiveText(), "main"));
   }
 
-  /** 4) 代碼處理（≤2位數）＋ 舊代碼替換 */
-  const lastMenu = user.state.lastMenu || "main";
+  /** 4) 代碼選單（全部 ≤ 2 位數） */
+  const code = rawNorm;
 
-  let code = extractCode(rawNorm); // 只接受 1~2 位純數字
-  if (code) {
-    code = mapLegacyByContext(code, lastMenu);
-  }
-
-  // 主選單（只在非 buy_flow 時；buy_flow 已在上面被吃掉）
-  if (code && ["1","2","3","4","5","7"].includes(code)) {
+  // 主選單
+  if (["1", "2", "3", "4", "5", "7"].includes(code)) {
     if (code === "1") {
-      updateUser(userId, (u) => { u.state.lastMenu = "product_menu"; });
+      updateUser(userId, (u) => {
+        u.state.lastMenu = "product_menu";
+      });
       return client.replyMessage(event.replyToken, textMessage(productMenuText(), "product_menu"));
     }
     if (code === "2") {
-      updateUser(userId, (u) => { u.state.lastMenu = "spec_menu"; });
+      updateUser(userId, (u) => {
+        u.state.lastMenu = "spec_menu";
+      });
       return client.replyMessage(event.replyToken, textMessage(specMenuText(), "spec_menu"));
     }
     if (code === "3") {
-      updateUser(userId, (u) => { u.state.lastMenu = "price_menu"; });
+      updateUser(userId, (u) => {
+        u.state.lastMenu = "price_menu";
+      });
       return client.replyMessage(event.replyToken, textMessage(priceMenuText(), "price_menu"));
     }
     if (code === "4") {
-      updateUser(userId, (u) => { u.state.lastMenu = "buy_menu"; });
+      updateUser(userId, (u) => {
+        u.state.lastMenu = "buy_menu";
+      });
       return client.replyMessage(event.replyToken, textMessage(buyMenuText(userId), "buy_menu"));
     }
     if (code === "5") {
-      updateUser(userId, (u) => { u.state.lastMenu = "store_menu"; });
+      updateUser(userId, (u) => {
+        u.state.lastMenu = "store_menu";
+      });
       return client.replyMessage(event.replyToken, textMessage(storeInfoText(), "store_menu"));
     }
     if (code === "7") {
-      updateUser(userId, (u) => { u.state.lastMenu = "main"; });
+      updateUser(userId, (u) => {
+        u.state.lastMenu = "main";
+      });
       return client.replyMessage(event.replyToken, textMessage(`官網（品牌介紹／產品資訊）：\n${STORE.website}\n\n（回 0 可回主選單）`, "main"));
     }
   }
 
   // 產品介紹選品：11~14
-  if (code && ["11","12","13","14"].includes(code)) {
+  if (["11", "12", "13", "14"].includes(code)) {
     const map = { "11": "gel", "12": "drink", "13": "antler", "14": "soup" };
     const key = map[code];
-    updateUser(userId, (u) => { u.state.lastMenu = "product_page"; u.state.lastProductKey = key; });
+    updateUser(userId, (u) => {
+      u.state.lastMenu = "product_page";
+      u.state.lastProductKey = key;
+    });
 
     const priceCode = STORE.products[key].priceCode;
     return client.replyMessage(event.replyToken, textMessage(productIntroText(userId, key), "product_page", { priceCode }));
   }
 
   // 規格選品：31~34
-  if (code && ["31","32","33","34"].includes(code)) {
+  if (["31", "32", "33", "34"].includes(code)) {
     const map = { "31": "gel", "32": "drink", "33": "antler", "34": "soup" };
     const key = map[code];
-    updateUser(userId, (u) => { u.state.lastMenu = "spec_menu"; u.state.lastProductKey = key; });
+    updateUser(userId, (u) => {
+      u.state.lastMenu = "spec_menu";
+      u.state.lastProductKey = key;
+    });
     return client.replyMessage(event.replyToken, textMessage(productSpecText(key), "spec_menu"));
   }
 
-  // 價格選品：51~54（湯塊 54）
-  if (code && ["51","52","53","54"].includes(code)) {
-    updateUser(userId, (u) => { u.state.lastMenu = "price_menu"; });
+  // 價格選品：51~54（湯塊=54｜不分規格）
+  if (["51", "52", "53", "54"].includes(code)) {
+    updateUser(userId, (u) => {
+      u.state.lastMenu = "price_menu";
+    });
 
-    if (code === "51") return client.replyMessage(event.replyToken, textMessage(productPriceText("gel"), "price_menu"));
-    if (code === "52") return client.replyMessage(event.replyToken, textMessage(productPriceText("drink"), "price_menu"));
-    if (code === "53") return client.replyMessage(event.replyToken, textMessage(productPriceText("antler"), "price_menu"));
-    if (code === "54") return client.replyMessage(event.replyToken, textMessage(soupPriceAllText(), "price_menu"));
+    if (code === "51") return client.replyMessage(event.replyToken, textMessage(productPriceText("gel"), "price_page"));
+    if (code === "52") return client.replyMessage(event.replyToken, textMessage(productPriceText("drink"), "price_page"));
+    if (code === "53") return client.replyMessage(event.replyToken, textMessage(productPriceText("antler"), "price_page"));
+    if (code === "54") return client.replyMessage(event.replyToken, textMessage(soupPriceAllText(), "price_page"));
   }
 
   // 購買方式：91~94 → 開啟 buy_flow
-  if (code && ["91","92","93","94"].includes(code)) {
+  if (["91", "92", "93", "94"].includes(code)) {
     const methodMap = { "91": "home", "92": "c2c", "93": "deliver", "94": "pickup" };
     const method = methodMap[code];
     startBuying(userId, method);
@@ -981,37 +1007,34 @@ async function handleEvent(event) {
   /** 5) 自然語句導引（不靠代碼也能用） */
   // 官網
   if (rawNorm.includes("官網") || rawNorm.includes("網址") || rawNorm.includes("網站")) {
-    updateUser(userId, (u) => { u.state.lastMenu = "main"; });
     return client.replyMessage(event.replyToken, textMessage(`官網（品牌介紹／產品資訊）：\n${STORE.website}\n\n（回 0 可回主選單）`, "main"));
   }
   // 門市
   if (rawNorm.includes("門市") || rawNorm.includes("地址") || rawNorm.includes("電話") || rawNorm.includes("營業")) {
-    updateUser(userId, (u) => { u.state.lastMenu = "store_menu"; });
     return client.replyMessage(event.replyToken, textMessage(storeInfoText(), "store_menu"));
   }
   // 價格
   if (rawNorm.includes("價格") || rawNorm.includes("價錢") || rawNorm.includes("售價") || rawNorm.includes("報價")) {
-    updateUser(userId, (u) => { u.state.lastMenu = "price_menu"; });
     return client.replyMessage(event.replyToken, textMessage(priceMenuText(), "price_menu"));
   }
   // 規格
   if (rawNorm.includes("規格") || rawNorm.includes("容量") || rawNorm.includes("幾g") || rawNorm.includes("幾cc") || rawNorm.includes("重量")) {
-    updateUser(userId, (u) => { u.state.lastMenu = "spec_menu"; });
     return client.replyMessage(event.replyToken, textMessage(specMenuText(), "spec_menu"));
   }
   // 購買
   if (rawNorm.includes("購買") || rawNorm.includes("怎麼買") || rawNorm.includes("下單") || rawNorm.includes("訂購") || rawNorm.includes("宅配") || rawNorm.includes("店到店") || rawNorm.includes("自取") || rawNorm.includes("親送")) {
-    updateUser(userId, (u) => { u.state.lastMenu = "buy_menu"; });
     return client.replyMessage(event.replyToken, textMessage(buyMenuText(userId), "buy_menu"));
   }
 
   /** 6) Fallback（不機械、不跳頁） */
   const fallback = rotatePick(userId, "fallback", [
-    "我有收到🙂\n要叫出主選單請回：0\n也可以直接回：1 產品介紹、3 價格、4 購買方式",
-    "收到🙂\n要查詢請回：0\n或直接回：1 產品介紹／3 價格／4 購買方式，我會帶您走。",
+    "我有收到🙂\n要叫出主選單請回：0 或回「選單」\n也可以直接回：1 產品介紹、3 價格、4 購買方式",
+    "收到🙂\n要查詢請回：0 或回「選單」\n或直接回：1 產品介紹／3 價格／4 購買方式，我會帶您走。",
   ]);
 
-  updateUser(userId, (u) => { u.state.lastMenu = "main"; });
+  updateUser(userId, (u) => {
+    u.state.lastMenu = "main";
+  });
   return client.replyMessage(event.replyToken, textMessage(fallback, "main"));
 }
 
