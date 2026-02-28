@@ -1,5 +1,13 @@
 "use strict";
 
+
+
+function formatVariantLine(x) {
+  const specPart = x.spec ? `：${x.spec}` : "";
+  const notePart = x.note ? `（${x.note}）` : "";
+  return `• ${x.label}${specPart}${notePart}`;
+}
+
 /**
  * 仙加味・龜鹿 LINE Bot（最終完整版｜A 穩重老字號｜動態子選單只留當頁選項｜代碼全 ≤ 2 位數）
  *
@@ -24,14 +32,31 @@ const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
 
-const { CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET, PORT = 3000 } = process.env;
-if (!CHANNEL_ACCESS_TOKEN || !CHANNEL_SECRET) {
-  console.error("缺少環境變數：CHANNEL_ACCESS_TOKEN 或 CHANNEL_SECRET");
-  process.exit(1);
+const {
+  CHANNEL_ACCESS_TOKEN,
+  CHANNEL_SECRET,
+  LINE_CHANNEL_ACCESS_TOKEN,
+  LINE_CHANNEL_SECRET,
+  PORT = 3000,
+} = process.env;
+
+const _ACCESS_TOKEN = CHANNEL_ACCESS_TOKEN || LINE_CHANNEL_ACCESS_TOKEN;
+const _CHANNEL_SECRET = CHANNEL_SECRET || LINE_CHANNEL_SECRET;
+if (!_ACCESS_TOKEN || !_CHANNEL_SECRET) {
+  console.warn("[WARN] 缺少 LINE 金鑰：請設定 LINE_CHANNEL_ACCESS_TOKEN/LINE_CHANNEL_SECRET 或 CHANNEL_ACCESS_TOKEN/CHANNEL_SECRET。
+"+
+               "服務仍會啟動（避免 Render Exit 1），但 webhook 將回 500。
+"+
+               "請到 Render → Environment 補上變數後重新部署。
+");
 }
 
-const config = { channelAccessToken: CHANNEL_ACCESS_TOKEN, channelSecret: CHANNEL_SECRET };
-const app = express();
+const config = { channelAccessToken: _ACCESS_TOKEN || "", channelSecret: _CHANNEL_SECRET || "" };
+const app = express;
+
+
+app.get('/health', (req,res)=>res.status(200).send('ok'));
+
 const client = new line.Client(config);
 
 /** =========================
@@ -136,11 +161,11 @@ const STORE = {
         "不建議久煮過度，避免口感過於濃稠",
       ],
       variants: [
-  { label: "75g｜8入｜每塊約 9.375g", spec: "", msrp: 1000, activityDiscount: null, note: "盒子規劃中（目前以傳統包裝出貨）" },
-  { label: "150g｜8入｜每塊約 18.75g", spec: "", msrp: 2000, activityDiscount: null, note: null },
-  { label: "300g｜16入｜每塊約 18.75g", spec: "", msrp: 4000, activityDiscount: 0.9, note: null },
-  { label: "600g｜32入｜每塊約 18.75g", spec: "", msrp: 8000, activityDiscount: 0.9, note: null },
-],
+        { label: "75g｜8入｜每塊約 9.375g", spec: "", msrp: 1000, activityDiscount: null, note: "盒子規劃中（目前以傳統包裝出貨）" },
+        { label: "150g｜8入｜每塊約 18.75g", spec: "", msrp: 2000, activityDiscount: null, note: null },
+        { label: "300g｜16入｜每塊約 18.75g", spec: "", msrp: 4000, activityDiscount: 0.9, note: null },
+        { label: "600g｜32入｜每塊約 18.75g", spec: "", msrp: 8000, activityDiscount: 0.9, note: null },
+      ],
       priceCode: "54",
     },
   },
@@ -165,7 +190,7 @@ function normalizeText(s) {
     .replace(/\u3000/g, " ")
     .replace(/[，,、/／]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim;
 }
 function clampText(text) {
   const t = String(text || "");
@@ -213,7 +238,7 @@ const DATA_DIR = path.join(__dirname, "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-function loadUsers() {
+function loadUsers {
   try {
     if (!fs.existsSync(USERS_FILE)) return {};
     const raw = fs.readFileSync(USERS_FILE, "utf8");
@@ -231,7 +256,7 @@ function saveUsers(users) {
   }
 }
 function ensureUser(userId) {
-  const users = loadUsers();
+  const users = loadUsers;
   users[userId] = users[userId] || {};
   users[userId].state = users[userId].state || {
     lastMenu: "main",
@@ -239,22 +264,22 @@ function ensureUser(userId) {
     rotate: {},
     humanMode: false,
     humanSince: null,
-    lastSeenAt: Date.now(),
+    lastSeenAt: Date.now,
   };
   users[userId].draft = users[userId].draft || {
     buying: { active: false, method: null, itemsText: null, name: null, phone: null, address: null },
   };
-  users[userId].state.lastSeenAt = Date.now();
+  users[userId].state.lastSeenAt = Date.now;
   saveUsers(users);
   return users[userId];
 }
 function updateUser(userId, patchFn) {
-  const users = loadUsers();
+  const users = loadUsers;
   users[userId] = users[userId] || {};
   users[userId].state = users[userId].state || {};
   users[userId].draft = users[userId].draft || { buying: { active: false, method: null } };
   patchFn(users[userId]);
-  users[userId].state.lastSeenAt = Date.now();
+  users[userId].state.lastSeenAt = Date.now;
   saveUsers(users);
 }
 function bumpRotate(userId, key, mod) {
@@ -274,7 +299,7 @@ function rotatePick(userId, key, arr) {
 function setHumanMode(userId, on) {
   updateUser(userId, (u) => {
     u.state.humanMode = !!on;
-    u.state.humanSince = on ? Date.now() : null;
+    u.state.humanSince = on ? Date.now : null;
   });
 }
 
@@ -349,13 +374,13 @@ function mainMenuText(userId) {
   ];
   return rotatePick(userId, "mainMenu", templates);
 }
-function productMenuText() {
+function productMenuText {
   return `【產品介紹】請回覆代碼：\n11) 龜鹿膏（100g/罐）\n12) 龜鹿飲（180cc/包）\n13) 鹿茸粉（75g/罐）\n14) 龜鹿湯塊（膠）\n\n0) 回主選單`;
 }
-function specMenuText() {
+function specMenuText {
   return `【容量／規格】請回覆代碼：\n31) 龜鹿膏\n32) 龜鹿飲\n33) 鹿茸粉\n34) 龜鹿湯塊（膠）\n\n0) 回主選單`;
 }
-function priceMenuText() {
+function priceMenuText {
   return `【價格（單品）】請回覆代碼：\n51) 龜鹿膏\n52) 龜鹿飲\n53) 鹿茸粉\n54) 龜鹿湯塊（膠）\n\n4) 購買方式\n0) 回主選單`;
 }
 function buyMenuText(userId) {
@@ -365,7 +390,7 @@ function buyMenuText(userId) {
   ];
   return rotatePick(userId, "buyMenu", templates);
 }
-function storeInfoText() {
+function storeInfoText {
   return [
     `【門市資訊｜${STORE.brandName}】`,
     `地址：${STORE.address}`,
@@ -379,7 +404,7 @@ function storeInfoText() {
     "（回 0 可回主選單）",
   ].join("\n");
 }
-function commonPriceFoot() {
+function commonPriceFoot {
   return [STORE.priceNote1, STORE.priceNote2].join("\n");
 }
 
@@ -392,7 +417,7 @@ function productIntroText(userId, key) {
 
   if (key === "soup") {
     const vLines = p.variants
-      .map((x) => `• ${x.label}：${x.spec}${x.note ? `（${x.note}）` : ""}`)
+      .map((x) => formatVariantLine(x))
       .join("\n");
 
     return [
@@ -440,7 +465,7 @@ function productSpecText(key) {
   if (!p) return "我先確認一下您想看的品項🙂（回 0 可回主選單）";
 
   if (key === "soup") {
-    const lines = p.variants.map((x) => `• ${x.label}：${x.spec}${x.note ? `（${x.note}）` : ""}`).join("\n");
+    const lines = p.variants.map((x) => formatVariantLine(x)).join("\n");
     return `【龜鹿湯塊（膠）規格】\n${lines}\n\n（回 0 可回主選單）`;
   }
   return `【${p.name} 規格】\n${p.spec}\n\n（回 0 可回主選單）`;
@@ -456,13 +481,13 @@ function productPriceText(key) {
     `建議售價：${money(p.msrp)}`,
     act ? `目前活動價：${money(act)}（9折）` : "",
     "",
-    commonPriceFoot(),
+    commonPriceFoot,
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-function soupPriceAllText() {
+function soupPriceAllText {
   const p = STORE.products.soup;
   const lines = [];
   lines.push("【龜鹿湯塊（膠）價格】");
@@ -476,10 +501,10 @@ function soupPriceAllText() {
     if (v.note) lines.push(`備註：${v.note}`);
     lines.push("");
   }
-  while (lines.length && lines[lines.length - 1] === "") lines.pop();
+  while (lines.length && lines[lines.length - 1] === "") lines.pop;
 
   lines.push("");
-  lines.push(commonPriceFoot());
+  lines.push(commonPriceFoot);
   return lines.join("\n");
 }
 
@@ -542,7 +567,7 @@ function tryHandleBuyingFlow(userId, rawText) {
   const b = u.draft.buying;
   if (!b || !b.active) return null;
 
-  const raw = String(rawText || "").trim();
+  const raw = String(rawText || "").trim;
   const n = normalizeSoupAlias(normalizeText(raw));
 
   if (n === "0" || n === "選單") {
@@ -580,10 +605,10 @@ function tryHandleBuyingFlow(userId, rawText) {
     const looksLikeAddress =
       raw.length >= 6 && (raw.includes("路") || raw.includes("街") || raw.includes("巷") || raw.includes("號") || raw.includes("樓") || raw.includes("段") || raw.includes("弄"));
 
-    if ((cur.method === "home" || cur.method === "deliver") && looksLikeAddress) cur.address = raw.trim();
+    if ((cur.method === "home" || cur.method === "deliver") && looksLikeAddress) cur.address = raw.trim;
 
     if (cur.method === "c2c" && includesAny(raw, ["門市", "店", "路", "街", "號", "全家", "7-11", "711", "萊爾富", "OK"])) {
-      cur.address = raw.trim();
+      cur.address = raw.trim;
     }
 
     const nn = normalizeText(raw.replace(digits, ""));
@@ -592,7 +617,7 @@ function tryHandleBuyingFlow(userId, rawText) {
       nn.length <= 10 &&
       !includesAny(nn, ["路", "街", "巷", "號", "樓", "段", "弄", "台北", "新北", "市", "縣", "門市", "店"]);
 
-    if (nameCandidateOk) cur.name = nn.trim();
+    if (nameCandidateOk) cur.name = nn.trim;
   });
 
   const latest = ensureUser(userId).draft.buying;
@@ -699,7 +724,7 @@ const SENSITIVE = [
   "孕婦","懷孕","備孕","哺乳","餵母乳","慢性病","三高","高血壓","糖尿病","洗腎","肝","心臟","癌","癌症","化療","放療","手術","術後",
   "用藥","抗凝血","阿斯匹靈","warfarin","能不能吃","可以吃嗎","適不適合","副作用","禁忌",
 ];
-function sensitiveText() {
+function sensitiveText {
   return [
     "這部分會因每個人的身體狀況不同，為了讓您得到更準確的說明與建議，建議先由合作中醫師了解您的情況🙂",
     "",
@@ -716,9 +741,9 @@ function sensitiveText() {
 /** =========================
  * I) 24h 追蹤（保留）
  * ========================= */
-async function scanAndSendFollowups() {
-  const users = loadUsers();
-  const now = Date.now();
+async function scanAndSendFollowups {
+  const users = loadUsers;
+  const now = Date.now;
   const dueMs = 24 * 60 * 60 * 1000;
   let changed = false;
 
@@ -730,7 +755,7 @@ async function scanAndSendFollowups() {
     try {
       await client.pushMessage(userId, textMessage(`您好🙂 需要主選單請回：0 或回「選單」\n要真人協助請回：6`, "main"));
       users[userId].followupSent = true;
-      users[userId].followupSentAt = Date.now();
+      users[userId].followupSentAt = Date.now;
       changed = true;
     } catch (err) {
       console.error("24h 推播失敗：", userId, err?.message || err);
@@ -738,7 +763,7 @@ async function scanAndSendFollowups() {
   }
   if (changed) saveUsers(users);
 }
-cron.schedule("*/10 * * * *", () => scanAndSendFollowups().catch(() => {}));
+cron.schedule("*/10 * * * *",  => scanAndSendFollowups.catch( => {}));
 
 /** =========================
  * J) Webhook
@@ -746,13 +771,17 @@ cron.schedule("*/10 * * * *", () => scanAndSendFollowups().catch(() => {}));
 app.get("/", (req, res) => res.status(200).send("OK"));
 
 app.post("/webhook", line.middleware(config), async (req, res) => {
-  try {
+  
+  if (!config.channelAccessToken || !config.channelSecret) {
+    return res.status(500).send('LINE credentials missing');
+  }
+try {
     const events = req.body.events || [];
     await Promise.all(events.map(handleEvent));
-    res.status(200).end();
+    res.status(200).end;
   } catch (err) {
     console.error("Webhook error:", err);
-    res.status(500).end();
+    res.status(500).end;
   }
 });
 
@@ -760,9 +789,9 @@ async function handleEvent(event) {
   if (event.type === "follow") {
     const userId = event.source && event.source.userId;
     if (userId) {
-      const users = loadUsers();
+      const users = loadUsers;
       users[userId] = users[userId] || {};
-      users[userId].followedAt = users[userId].followedAt || Date.now();
+      users[userId].followedAt = users[userId].followedAt || Date.now;
       users[userId].followupSent = users[userId].followupSent || false;
       users[userId].state = users[userId].state || {};
       users[userId].draft = users[userId].draft || {};
@@ -833,7 +862,7 @@ async function handleEvent(event) {
 
   /** 3) 敏感問題導流（保護你） */
   if (includesAny(rawNorm, SENSITIVE)) {
-    return client.replyMessage(event.replyToken, textMessage(sensitiveText(), "main"));
+    return client.replyMessage(event.replyToken, textMessage(sensitiveText, "main"));
   }
 
   /** 4) 代碼選單（全部 ≤ 2 位數） */
@@ -842,15 +871,15 @@ async function handleEvent(event) {
   if (["1", "2", "3", "4", "5", "7"].includes(code)) {
     if (code === "1") {
       updateUser(userId, (u) => { u.state.lastMenu = "product_menu"; });
-      return client.replyMessage(event.replyToken, textMessage(productMenuText(), "product_menu"));
+      return client.replyMessage(event.replyToken, textMessage(productMenuText, "product_menu"));
     }
     if (code === "2") {
       updateUser(userId, (u) => { u.state.lastMenu = "spec_menu"; });
-      return client.replyMessage(event.replyToken, textMessage(specMenuText(), "spec_menu"));
+      return client.replyMessage(event.replyToken, textMessage(specMenuText, "spec_menu"));
     }
     if (code === "3") {
       updateUser(userId, (u) => { u.state.lastMenu = "price_menu"; });
-      return client.replyMessage(event.replyToken, textMessage(priceMenuText(), "price_menu"));
+      return client.replyMessage(event.replyToken, textMessage(priceMenuText, "price_menu"));
     }
     if (code === "4") {
       updateUser(userId, (u) => { u.state.lastMenu = "buy_menu"; });
@@ -858,7 +887,7 @@ async function handleEvent(event) {
     }
     if (code === "5") {
       updateUser(userId, (u) => { u.state.lastMenu = "store_menu"; });
-      return client.replyMessage(event.replyToken, textMessage(storeInfoText(), "store_menu"));
+      return client.replyMessage(event.replyToken, textMessage(storeInfoText, "store_menu"));
     }
     if (code === "7") {
       updateUser(userId, (u) => { u.state.lastMenu = "main"; });
@@ -893,7 +922,7 @@ async function handleEvent(event) {
     if (code === "51") return client.replyMessage(event.replyToken, textMessage(productPriceText("gel"), "price_page"));
     if (code === "52") return client.replyMessage(event.replyToken, textMessage(productPriceText("drink"), "price_page"));
     if (code === "53") return client.replyMessage(event.replyToken, textMessage(productPriceText("antler"), "price_page"));
-    if (code === "54") return client.replyMessage(event.replyToken, textMessage(soupPriceAllText(), "price_page"));
+    if (code === "54") return client.replyMessage(event.replyToken, textMessage(soupPriceAllText, "price_page"));
   }
 
   if (["91", "92", "93", "94"].includes(code)) {
@@ -908,13 +937,13 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage(`官網（品牌介紹／產品資訊）：\n${STORE.website}\n\n（回 0 可回主選單）`, "main"));
   }
   if (rawNorm.includes("門市") || rawNorm.includes("地址") || rawNorm.includes("電話") || rawNorm.includes("營業")) {
-    return client.replyMessage(event.replyToken, textMessage(storeInfoText(), "store_menu"));
+    return client.replyMessage(event.replyToken, textMessage(storeInfoText, "store_menu"));
   }
   if (rawNorm.includes("價格") || rawNorm.includes("價錢") || rawNorm.includes("售價") || rawNorm.includes("報價")) {
-    return client.replyMessage(event.replyToken, textMessage(priceMenuText(), "price_menu"));
+    return client.replyMessage(event.replyToken, textMessage(priceMenuText, "price_menu"));
   }
   if (rawNorm.includes("規格") || rawNorm.includes("容量") || rawNorm.includes("幾g") || rawNorm.includes("幾cc") || rawNorm.includes("重量")) {
-    return client.replyMessage(event.replyToken, textMessage(specMenuText(), "spec_menu"));
+    return client.replyMessage(event.replyToken, textMessage(specMenuText, "spec_menu"));
   }
   if (rawNorm.includes("購買") || rawNorm.includes("怎麼買") || rawNorm.includes("下單") || rawNorm.includes("訂購") || rawNorm.includes("宅配") || rawNorm.includes("店到店") || rawNorm.includes("自取") || rawNorm.includes("親送")) {
     return client.replyMessage(event.replyToken, textMessage(buyMenuText(userId), "buy_menu"));
@@ -930,4 +959,4 @@ async function handleEvent(event) {
   return client.replyMessage(event.replyToken, textMessage(fallback, "main"));
 }
 
-app.listen(PORT, () => console.log(`LINE bot webhook listening on port ${PORT}`));
+app.listen(PORT, "0.0.0.0",  => console.log(`LINE bot webhook listening on port ${PORT}`));

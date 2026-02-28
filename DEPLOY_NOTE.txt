@@ -1,11 +1,9 @@
-Render 設定（建議）：
-- Build Command: npm install
-- Start Command: npm start
+Render 部署：
+Build Command: npm install
+Start Command: npm start
 
-環境變數需二擇一（有一組即可）：
-A 組：
-  LINE_CHANNEL_ACCESS_TOKEN
-  LINE_CHANNEL_SECRET
-B 組：
-  CHANNEL_ACCESS_TOKEN
-  CHANNEL_SECRET
+環境變數（擇一組）：
+A: LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET
+B: CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET
+
+部署成功後可測試：/health 應回 ok
