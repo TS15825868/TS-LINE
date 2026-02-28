@@ -32,14 +32,23 @@ const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
 
-const { CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET, PORT = 3000 } = process.env;
-if (!CHANNEL_ACCESS_TOKEN || !CHANNEL_SECRET) {
-  console.error("缺少環境變數：CHANNEL_ACCESS_TOKEN 或 CHANNEL_SECRET");
+const {
+  CHANNEL_ACCESS_TOKEN,
+  CHANNEL_SECRET,
+  LINE_CHANNEL_ACCESS_TOKEN,
+  LINE_CHANNEL_SECRET,
+  PORT = 3000,
+} = process.env;
+
+const _ACCESS_TOKEN = CHANNEL_ACCESS_TOKEN || LINE_CHANNEL_ACCESS_TOKEN;
+const _CHANNEL_SECRET = CHANNEL_SECRET || LINE_CHANNEL_SECRET;
+if (!_ACCESS_TOKEN || !_CHANNEL_SECRET) {
+  console.error("缺少環境變數：CHANNEL_ACCESS_TOKEN/CHANNEL_SECRET 或 LINE_CHANNEL_ACCESS_TOKEN/LINE_CHANNEL_SECRET");
   process.exit(1);
 }
 
-const config = { channelAccessToken: CHANNEL_ACCESS_TOKEN, channelSecret: CHANNEL_SECRET };
-const app = express;
+const config = { channelAccessToken: _ACCESS_TOKEN, channelSecret: _CHANNEL_SECRET };
+const app = express();
 const client = new line.Client(config);
 
 /** =========================
