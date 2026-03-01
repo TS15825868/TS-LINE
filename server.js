@@ -2,6 +2,7 @@
 
 const express = require("express");
 const line = require("@line/bot-sdk");
+const crypto = require("crypto");
 
 const {
   LINE_CHANNEL_ACCESS_TOKEN,
@@ -18,12 +19,18 @@ const config = {
 const app = express();
 const client = new line.Client(config);
 
-/* =====================================================
+const userOrders = {};
+
+/* =========================
    工具
-===================================================== */
+========================= */
 
 function money(n) {
   return "NT$" + Number(n).toLocaleString();
+}
+
+function generateOrderId() {
+  return "TS" + Date.now().toString().slice(-8);
 }
 
 async function getProducts() {
@@ -31,11 +38,32 @@ async function getProducts() {
   return await res.json();
 }
 
-/* =====================================================
-   主選單（老人模式）
-===================================================== */
+function isTaipei(address) {
+  return address.includes("台北") || address.includes("新北");
+}
+
+/* =========================
+   主選單
+========================= */
 
 function mainMenu() {
+  return bubble("仙加味・龜鹿", [
+    btn("產品介紹", "menu_products"),
+    btn("我要購買", "menu_products"),
+    btn("門市資訊", "menu_store"),
+    btn("真人客服", "menu_human"),
+  ]);
+}
+
+function btn(label, data) {
+  return {
+    type: "button",
+    style: "primary",
+    action: { type: "postback", label, data },
+  };
+}
+
+function bubble(title, buttons) {
   return {
     type: "bubble",
     body: {
@@ -43,119 +71,25 @@ function mainMenu() {
       layout: "vertical",
       spacing: "lg",
       contents: [
-        { type: "text", text: "仙加味・龜鹿", weight: "bold", size: "xl" },
+        { type: "text", text: title, weight: "bold", size: "xl" },
         { type: "separator" },
-        button("產品介紹", "menu_products"),
-        button("查看價格", "menu_prices"),
-        button("我要購買", "menu_buy"),
-        button("門市資訊", "menu_store"),
-        button("真人客服", "menu_human"),
+        ...buttons,
       ],
     },
   };
 }
 
-function button(label, data) {
-  return {
-    type: "button",
-    style: "primary",
-    action: {
-      type: "postback",
-      label,
-      data,
-    },
-  };
+function flex(replyToken, alt, contents) {
+  return client.replyMessage(replyToken, {
+    type: "flex",
+    altText: alt,
+    contents,
+  });
 }
 
-/* =====================================================
-   產品列表
-===================================================== */
-
-function productMenu() {
-  return {
-    type: "bubble",
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "md",
-      contents: [
-        { type: "text", text: "選擇產品", weight: "bold", size: "lg" },
-        { type: "separator" },
-        button("龜鹿膏", "product_gel"),
-        button("龜鹿飲", "product_drink"),
-        button("鹿茸粉", "product_antler"),
-        button("龜鹿湯塊", "product_soup"),
-        button("回主選單", "menu_main"),
-      ],
-    },
-  };
-}
-
-/* =====================================================
-   產品介紹卡
-===================================================== */
-
-function productCard(name, intro, nextData) {
-  return {
-    type: "bubble",
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "md",
-      contents: [
-        { type: "text", text: name, weight: "bold", size: "lg" },
-        { type: "separator" },
-        { type: "text", text: intro, wrap: true },
-      ],
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      spacing: "sm",
-      contents: [
-        button("看價格", nextData),
-        button("我要買", "buy_" + nextData),
-        button("回產品列表", "menu_products"),
-      ],
-    },
-  };
-}
-
-/* =====================================================
-   價格卡
-===================================================== */
-
-function priceCard(name, priceLines) {
-  return {
-    type: "bubble",
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "md",
-      contents: [
-        { type: "text", text: name + " 價格", weight: "bold", size: "lg" },
-        { type: "separator" },
-        ...priceLines.map(x => ({
-          type: "text",
-          text: x,
-          wrap: true
-        }))
-      ],
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        button("我要買", "menu_buy"),
-        button("回主選單", "menu_main"),
-      ],
-    },
-  };
-}
-
-/* =====================================================
+/* =========================
    Webhook
-===================================================== */
+========================= */
 
 app.post("/webhook", line.middleware(config), async (req, res) => {
   await Promise.all(req.body.events.map(handleEvent));
@@ -163,87 +97,140 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 });
 
 async function handleEvent(event) {
-
   if (event.type === "postback") {
     return handlePostback(event);
   }
 
-  if (event.type === "message" && event.message.type === "text") {
-    return client.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: "主選單",
-      contents: mainMenu()
-    });
+  if (event.type === "message") {
+    const userId = event.source.userId;
+    const order = userOrders[userId];
+
+    if (order && !order.address) {
+      order.address = event.message.text;
+
+      const shippingType = isTaipei(order.address)
+        ? "雙北親送"
+        : "宅配";
+
+      const shippingFee =
+        shippingType === "雙北親送"
+          ? order.subtotal >= 3000 ? 0 : 200
+          : 150;
+
+      const total = order.subtotal + shippingFee;
+
+      order.shipping = shippingType;
+      order.shippingFee = shippingFee;
+      order.total = total;
+      order.orderId = generateOrderId();
+
+      return flex(event.replyToken, "訂單確認",
+        bubble("訂單確認", [
+          btn("訂單編號：" + order.orderId, "none"),
+          btn("商品：" + order.productName, "none"),
+          btn("數量：" + order.quantity, "none"),
+          btn("小計：" + money(order.subtotal), "none"),
+          btn("配送：" + shippingType, "none"),
+          btn("運費：" + money(shippingFee), "none"),
+          btn("總金額：" + money(total), "none"),
+          btn("確認下單", "confirm_order"),
+          btn("取消", "menu_main"),
+        ])
+      );
+    }
+
+    return flex(event.replyToken, "主選單", mainMenu());
   }
 }
 
-/* =====================================================
-   Postback 處理
-===================================================== */
+/* =========================
+   Postback
+========================= */
 
 async function handlePostback(event) {
   const data = event.postback.data;
   const products = await getProducts();
-
-  if (data === "menu_main") {
-    return client.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: "主選單",
-      contents: mainMenu()
-    });
-  }
+  const userId = event.source.userId;
 
   if (data === "menu_products") {
-    return client.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: "產品列表",
-      contents: productMenu()
-    });
-  }
-
-  if (data === "product_gel") {
-    const gel = products.categories.find(c => c.id === "gel").items[0];
-    return client.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: "龜鹿膏",
-      contents: productCard("龜鹿膏", gel.intro.join("\n"), "price_gel")
-    });
-  }
-
-  if (data === "price_gel") {
-    const gel = products.categories.find(c => c.id === "gel").items[0];
-    const price = gel.discount ? gel.msrp * gel.discount : gel.msrp;
-    return client.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: "龜鹿膏價格",
-      contents: priceCard("龜鹿膏", [
-        "建議售價：" + money(gel.msrp),
-        "活動價：" + money(price)
+    return flex(event.replyToken, "產品列表",
+      bubble("選擇產品", [
+        btn("龜鹿膏", "buy_gel_100g"),
+        btn("龜鹿飲", "buy_drink_180cc"),
+        btn("鹿茸粉", "buy_antler_75g"),
+        btn("龜鹿湯塊 75g", "buy_soup_75"),
+        btn("龜鹿湯塊 150g", "buy_soup_150"),
+        btn("龜鹿湯塊 300g", "buy_soup_300"),
+        btn("龜鹿湯塊 600g", "buy_soup_600"),
+        btn("回主選單", "menu_main"),
       ])
-    });
+    );
   }
 
-  if (data === "menu_store") {
+  if (data.startsWith("buy_")) {
+    const id = data.replace("buy_", "");
+    const product = findProduct(products, id);
+
+    userOrders[userId] = {
+      productId: id,
+      productName: product.name + " " + product.spec,
+      price: product.price,
+    };
+
+    return flex(event.replyToken, "選擇數量",
+      bubble("請選數量", [
+        btn("1 件", "qty_1"),
+        btn("2 件", "qty_2"),
+        btn("3 件", "qty_3"),
+        btn("5 件", "qty_5"),
+      ])
+    );
+  }
+
+  if (data.startsWith("qty_")) {
+    const qty = parseInt(data.replace("qty_", ""));
+    const order = userOrders[userId];
+
+    order.quantity = qty;
+    order.subtotal = order.price * qty;
+
     return client.replyMessage(event.replyToken, {
       type: "text",
-      text: "門市地址：台北市萬華區西昌街52號\n電話：(02)2381-2990"
+      text: "請輸入完整地址"
     });
   }
 
-  if (data === "menu_human") {
+  if (data === "confirm_order") {
     return client.replyMessage(event.replyToken, {
       type: "text",
-      text: "已通知真人客服，請稍候🙂"
+      text: "訂單已成立，我們將盡快與您聯繫確認🙂"
     });
   }
 
-  return client.replyMessage(event.replyToken, {
-    type: "flex",
-    altText: "主選單",
-    contents: mainMenu()
-  });
+  if (data === "menu_main") {
+    return flex(event.replyToken, "主選單", mainMenu());
+  }
+}
+
+function findProduct(products, id) {
+  for (const c of products.categories) {
+    for (const i of c.items) {
+      if (i.id === id) {
+        const price = i.discount ? i.msrp * i.discount : i.msrp;
+        return { name: i.name, spec: i.spec, price };
+      }
+      if (i.variants) {
+        for (const v of i.variants) {
+          if (id.includes(v.spec)) {
+            const price = v.discount ? v.msrp * v.discount : v.msrp;
+            return { name: i.name, spec: v.spec, price };
+          }
+        }
+      }
+    }
+  }
 }
 
 app.listen(PORT, () => {
-  console.log("V3 老人模式啟動成功");
+  console.log("V5 電商版啟動成功");
 });
