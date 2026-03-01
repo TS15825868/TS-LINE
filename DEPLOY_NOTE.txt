@@ -1,9 +1,9 @@
-Render 部署設定：
-Build Command: npm install
-Start Command: npm start
+Render 設定：
+- Build Command: npm install
+- Start Command: npm start
 
 環境變數（擇一組）：
 A: LINE_CHANNEL_ACCESS_TOKEN / LINE_CHANNEL_SECRET
 B: CHANNEL_ACCESS_TOKEN / CHANNEL_SECRET
 
-部署成功後測試：/health 回 ok
+健康檢查：/health 回 ok
