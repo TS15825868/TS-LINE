@@ -1,20 +1,18 @@
 "use strict";
 
 /**
- * 仙加味・龜鹿 LINE Bot（升級版｜不制式、不強迫客人｜分層選單 + 自然語句 + 自動辨識訂單 + 串接官網 products.json）
+ * 仙加味・龜鹿 LINE Bot（V2 升級版）
+ * ✅ Flex 卡片（產品/價格/訂單確認）
+ * ✅ 不制式：客人自然語句可用（代碼仍保留做捷徑）
+ * ✅ 自動算單：抓 products.json 的 msrp/discount/variants 計算
+ * ✅ 湯塊規格變體辨識：2兩(75g)/4兩(150g)/半斤(300g)/一斤(600g)
+ * ✅ 串接官網 products.json（PRODUCTS_URL）
  *
- * ✅ Render 環境變數（請用這組命名）
+ * Render 環境變數（請用這組命名）
  * - LINE_CHANNEL_ACCESS_TOKEN
  * - LINE_CHANNEL_SECRET
  * - PRODUCTS_URL   （例：https://ts15825868.github.io/TaiShing/products.json）
  * - PORT           （Render 自動提供，可不填）
- *
- * ✅ 代碼（保留做捷徑，不強迫）
- * 主選單：0/1/2/3/4/5/6/7
- * 產品介紹：11~14
- * 規格：31~34
- * 價格：51~54
- * 購買方式：91~94
  */
 
 const express = require("express");
@@ -43,7 +41,7 @@ const app = express();
 const client = new line.Client(config);
 
 /** =========================
- * 0) 店家資訊（可自行改）
+ * 店家資訊（可自行改）
  * ========================= */
 const STORE = {
   brandName: "仙加味・龜鹿",
@@ -51,7 +49,6 @@ const STORE = {
   phoneDisplay: "(02) 2381-2990",
   phoneTel: "0223812990",
   website: "https://ts15825868.github.io/TaiShing/index.html",
-  productsJsonHint: "官網產品資料同步中（LINE 價格以此為準）",
   mapUrl:
     "https://www.google.com/maps/search/?api=1&query=%E5%8F%B0%E5%8C%97%E5%B8%82%E8%90%AC%E8%8F%AF%E5%8D%80%E8%A5%BF%E6%98%8C%E8%A1%97+52+%E8%99%9F",
   doctorLineId: "@changwuchi",
@@ -61,17 +58,17 @@ const STORE = {
     pickupLate: "自取可到約 21:30–22:00（請先訊息確認）",
     weekend: "週六日若剛好在店/方便外出，也可協助取貨（建議先訊息確認）",
   },
-  priceNote: "※ 會因通路服務/搭配方案不同略有差異🙂 到店常有不定期活動，依現場為準。",
+  priceNote: "※ 價格可能因通路服務/搭配方案不同略有差異🙂 到店常有不定期活動，依現場為準。",
+  infoDisclaimer: "※ 產品資訊以實際包裝標示為準（不同批次可能略有差異）。",
   orderNote:
     "※ 訂單確認後會依出貨方式提供付款資訊。\n※ 若需改單請於出貨前通知；已出貨將依物流狀況處理。",
-  infoDisclaimer: "※ 產品資訊以實際包裝標示為準（不同批次可能略有差異）。",
   deliverNote: "※ 若順路/時間允許可安排親送；若不便親送會改以宅配或店到店協助。",
   humanModeNote:
     "我已先幫您轉真人協助🙂\n\n（真人回覆期間系統會少說話，避免打架）\n要回主選單：回 0 或「選單」\n要解除真人：回「解除真人」",
 };
 
 /** =========================
- * 1) products.json：串接官網（快取 + 容錯 + 本地備援）
+ * products.json：串接官網（快取 + 容錯 + 本地備援）
  * ========================= */
 const PRODUCTS_CACHE = { data: null, loadedAt: 0, ttlMs: 5 * 60 * 1000 };
 
@@ -137,7 +134,7 @@ function buildProductIndex(productsJson) {
   return { categories, byCatId };
 }
 
-/** 固定代碼對應（保留捷徑） */
+/** 固定代碼（仍保留捷徑） */
 const CODE_MAP = {
   intro: { "11": "gel", "12": "drink", "13": "antler", "14": "soup" },
   spec: { "31": "gel", "32": "drink", "33": "antler", "34": "soup" },
@@ -151,7 +148,7 @@ function catToCodes(catId) {
 }
 
 /** =========================
- * 2) 使用者狀態（輕量）
+ * 使用者狀態（含 pendingOrder）
  * ========================= */
 const DATA_DIR = path.join(__dirname, "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
@@ -175,6 +172,7 @@ function ensureUser(userId) {
   users[userId].state = users[userId].state || {
     humanMode: false,
     lastCat: null,
+    pendingOrder: null, // { items:[{catId, variantKey, name, qty, unit, line}], total }
     buy: { active: false, step: null, method: null, itemsText: null, name: null, phone: null, address: null },
     lastSeenAt: now(),
   };
@@ -193,9 +191,12 @@ function updateUser(userId, fn) {
 function setHumanMode(userId, on) {
   updateUser(userId, (u) => { u.state.humanMode = !!on; });
 }
+function setPendingOrder(userId, pending) {
+  updateUser(userId, (u) => { u.state.pendingOrder = pending; });
+}
 
 /** =========================
- * 3) Quick Reply（當頁）
+ * Quick Reply（當頁）
  * ========================= */
 function qr(label, text) {
   return { type: "action", action: { type: "message", label, text } };
@@ -204,49 +205,17 @@ function qrUri(label, uri) {
   return { type: "action", action: { type: "uri", label, uri } };
 }
 function quickReplies(menu, ctx = {}) {
-  // 「不制式」：Quick Reply 當作便利鍵，不用強迫
   switch (menu) {
     case "main":
-      return {
-        items: [
-          qr("產品", "產品"),
-          qr("價格", "價格"),
-          qr("怎麼吃", "怎麼吃"),
-          qr("怎麼買", "怎麼買"),
-          qr("門市/來電", "門市"),
-          qr("真人", "真人"),
-          qr("官網", "官網"),
-        ],
-      };
+      return { items: [qr("產品", "產品"), qr("價格", "價格"), qr("怎麼吃", "怎麼吃"), qr("怎麼買", "怎麼買"), qr("門市", "門市"), qr("真人", "真人"), qr("官網", "官網")] };
     case "products":
-      return {
-        items: [
-          qr("龜鹿膏", "龜鹿膏"),
-          qr("龜鹿飲", "龜鹿飲"),
-          qr("鹿茸粉", "鹿茸粉"),
-          qr("龜鹿湯塊", "龜鹿湯塊"),
-          qr("回主選單", "選單"),
-        ],
-      };
+      return { items: [qr("龜鹿膏", "龜鹿膏"), qr("龜鹿飲", "龜鹿飲"), qr("鹿茸粉", "鹿茸粉"), qr("龜鹿湯塊", "龜鹿湯塊"), qr("回主選單", "選單")] };
     case "buy":
-      return {
-        items: [
-          qr("宅配", "宅配"),
-          qr("店到店", "店到店"),
-          qr("雙北親送", "親送"),
-          qr("到店自取", "自取"),
-          qr("回主選單", "選單"),
-        ],
-      };
+      return { items: [qr("宅配", "宅配"), qr("店到店", "店到店"), qr("雙北親送", "親送"), qr("到店自取", "自取"), qr("主選單", "選單")] };
     case "product_page":
-      return {
-        items: [
-          ctx.priceCode ? qr("看價格", String(ctx.priceCode)) : qr("看價格", "價格"),
-          qr("我要買", "我要買"),
-          qr("其他產品", "產品"),
-          qr("主選單", "選單"),
-        ],
-      };
+      return { items: [ctx.priceCode ? qr("看價格", String(ctx.priceCode)) : qr("看價格", "價格"), qr("我要買", "我要買"), qr("其他產品", "產品"), qr("主選單", "選單")] };
+    case "order_confirm":
+      return { items: [qr("確認下單", "確認下單"), qr("改一下", "修改訂單"), qr("主選單", "選單")] };
     case "store":
       return { items: [qrUri("地圖", STORE.mapUrl), qrUri("來電", `tel:${STORE.phoneTel}`), qr("主選單", "選單")] };
     default:
@@ -258,8 +227,56 @@ function textMessage(text, menu = "main", ctx = {}) {
 }
 
 /** =========================
- * 4) 輕量「不制式」主文案
+ * Flex helpers
  * ========================= */
+function flexMessage(altText, contents, menu = "main", ctx = {}) {
+  return { type: "flex", altText: clampText(altText), contents, quickReply: quickReplies(menu, ctx) };
+}
+function flexProductCard({ title, subtitleLines = [], bodyLines = [], buttons = [] }) {
+  const mkText = (txt, size = "sm", weight = "regular", wrap = true, color) => {
+    const o = { type: "text", text: clampText(txt), size, weight, wrap };
+    if (color) o.color = color;
+    return o;
+  };
+
+  return {
+    type: "bubble",
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "md",
+      contents: [
+        mkText(title, "lg", "bold"),
+        ...subtitleLines.map((x) => mkText(x, "sm", "regular", true, "#666666")),
+        { type: "separator" },
+        ...bodyLines.map((x) => mkText(x, "sm", "regular")),
+      ],
+    },
+    footer: buttons.length
+      ? {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: buttons.map((b) => ({
+            type: "button",
+            style: b.style || "primary",
+            action: { type: "message", label: b.label, text: b.text },
+          })),
+        }
+      : undefined,
+  };
+}
+
+function storeInfoText() {
+  return `【門市資訊｜${STORE.brandName}】
+地址：${STORE.address}
+電話：${STORE.phoneDisplay}
+
+營業：${STORE.hours.weekday}
+自取：${STORE.hours.pickupLate}
+週末：${STORE.hours.weekend}`;
+}
+
 function mainMenuText() {
   return `您好，這裡是【${STORE.brandName}】🙂
 
@@ -271,103 +288,90 @@ function mainMenuText() {
 
 或按下方快捷鍵也可以。`;
 }
-function storeInfoText() {
-  return `【門市資訊｜${STORE.brandName}】
-地址：${STORE.address}
-電話：${STORE.phoneDisplay}
-
-營業：${STORE.hours.weekday}
-自取：${STORE.hours.pickupLate}
-週末：${STORE.hours.weekend}`;
-}
 
 /** =========================
- * 5) 從 products.json 生成內容（介紹 / 規格 / 價格）
+ * 產品內容（由 products.json）
  * ========================= */
-function buildIntroText(catId, cat, item, priceCode) {
+function buildIntroFlex(catId, cat, item, priceCode) {
   const name = item?.name || cat?.name || "產品";
   const intro = Array.isArray(item?.intro) ? item.intro : [];
   const ing = Array.isArray(item?.ingredients) ? item.ingredients : [];
   const usage = Array.isArray(item?.usage) ? item.usage : [];
 
-  // 湯塊 variants
-  let variants = "";
+  let specLine = item?.spec ? `規格：${item.spec}` : "";
   if (Array.isArray(item?.variants) && item.variants.length) {
-    variants =
-      "規格：\n" +
-      item.variants
-        .map((v) => `• ${v.label}：${v.spec}${v.note ? `（${v.note}）` : ""}`)
-        .join("\n");
-  } else if (item?.spec) {
-    variants = `規格：${item.spec}`;
+    specLine = "規格：" + item.variants.map((v) => `${v.label} ${v.spec}`).join(" / ");
   }
 
-  // ✅ 你圈起來那句：全品項統一「想看價格：回 xx 或直接打 XXX價格」
-  const hintName = name.includes("龜鹿飲") ? "龜鹿飲" :
-                   name.includes("龜鹿膏") ? "龜鹿膏" :
-                   name.includes("鹿茸") ? "鹿茸粉" :
-                   name.includes("湯塊") ? "龜鹿湯塊" : name;
+  const hintName =
+    name.includes("龜鹿飲") ? "龜鹿飲" :
+    name.includes("龜鹿膏") ? "龜鹿膏" :
+    name.includes("鹿茸") ? "鹿茸粉" :
+    name.includes("湯塊") ? "龜鹿湯塊" : name;
 
   const priceHint = priceCode
-    ? `想看價格：回 ${priceCode}（或直接打「${hintName}價格」）`
+    ? `想看價格：回 ${priceCode}（或打「${hintName}價格」）`
     : `想看價格：直接打「${hintName}價格」`;
 
-  return [
-    `【${name}】`,
-    intro.length ? `• ${intro.join("\n• ")}` : "",
-    "",
-    variants,
-    "",
-    ing.length ? ["成分：", ...ing.map((x) => `• ${x}`)].join("\n") : "",
-    "",
-    usage.length ? ["食用建議：", ...usage.map((x) => `• ${x}`)].join("\n") : "",
-    "",
-    priceHint,
+  const bodyLines = [
+    ...intro.map((x) => `• ${x}`),
+    specLine ? `\n${specLine}` : "",
+    ing.length ? `\n成分：${ing.join("、")}` : "",
+    usage.length ? `\n食用建議：${usage.join(" / ")}` : "",
+    `\n${priceHint}`,
     STORE.infoDisclaimer,
-  ].filter((x) => String(x || "").trim()).join("\n");
+  ].filter(Boolean);
+
+  return flexProductCard({
+    title: `【${name}】`,
+    subtitleLines: [],
+    bodyLines,
+    buttons: [
+      { label: "看價格", text: priceCode ? String(priceCode) : `${hintName}價格`, style: "primary" },
+      { label: "我要買", text: "我要買", style: "secondary" },
+      { label: "其他產品", text: "產品", style: "secondary" },
+    ],
+  });
 }
 
-function buildSpecText(cat, item) {
+function buildPriceFlex(cat, item) {
   const name = item?.name || cat?.name || "產品";
-  if (Array.isArray(item?.variants) && item.variants.length) {
-    return `【${name} 規格】\n` + item.variants.map((v) => `• ${v.label}：${v.spec}${v.note ? `（${v.note}）` : ""}`).join("\n");
-  }
-  return `【${name} 規格】\n${item?.spec || "—"}`;
-}
 
-function buildPriceText(cat, item) {
-  const name = item?.name || cat?.name || "產品";
+  const lines = [];
   if (Array.isArray(item?.variants) && item.variants.length) {
-    const lines = [`【${name} 價格】`];
     for (const v of item.variants) {
       const act = v.discount ? calcDiscount(v.msrp, v.discount) : null;
-      lines.push(`${v.label}（${v.spec}）`);
-      if (v.msrp) lines.push(`建議售價：${money(v.msrp)}`);
-      if (act) lines.push(`目前活動價：${money(act)}（${Math.round(v.discount * 10)}折）`);
-      if (v.note) lines.push(`備註：${v.note}`);
+      lines.push(`• ${v.label}（${v.spec}）`);
+      if (v.msrp) lines.push(`  建議：${money(v.msrp)}`);
+      if (act) lines.push(`  活動：${money(act)}（${Math.round(v.discount * 10)}折）`);
+      if (v.note) lines.push(`  備註：${v.note}`);
       lines.push("");
     }
-    while (lines.length && lines[lines.length - 1] === "") lines.pop();
-    lines.push("");
-    lines.push(STORE.priceNote);
-    return lines.join("\n");
+  } else {
+    const msrp = item?.msrp;
+    const discount = item?.discount;
+    const act = discount ? calcDiscount(msrp, discount) : null;
+    lines.push(msrp ? `建議售價：${money(msrp)}` : "建議售價：—");
+    if (act) lines.push(`目前活動價：${money(act)}（${Math.round(discount * 10)}折）`);
   }
 
-  const msrp = item?.msrp;
-  const discount = item?.discount;
-  const act = discount ? calcDiscount(msrp, discount) : null;
+  while (lines.length && lines[lines.length - 1] === "") lines.pop();
+  lines.push("");
+  lines.push(STORE.priceNote);
 
-  return [
-    `【${name} 價格】`,
-    msrp ? `建議售價：${money(msrp)}` : "建議售價：—",
-    act ? `目前活動價：${money(act)}（${Math.round(discount * 10)}折）` : "",
-    "",
-    STORE.priceNote,
-  ].filter(Boolean).join("\n");
+  return flexProductCard({
+    title: `【${name} 價格】`,
+    subtitleLines: [],
+    bodyLines: lines,
+    buttons: [
+      { label: "我要買", text: "我要買", style: "primary" },
+      { label: "其他產品", text: "產品", style: "secondary" },
+    ],
+  });
 }
 
 /** =========================
- * 6) 產品名稱辨識（不靠代碼）
+ * 自然語句：產品辨識
  * ========================= */
 function detectCatIdFromText(t) {
   const s = String(t || "");
@@ -379,25 +383,35 @@ function detectCatIdFromText(t) {
 }
 
 /** =========================
- * 7) 訂單辨識（讓客人自然講）
+ * 訂單辨識（含湯塊 variants）
  * ========================= */
-// 嘗試把「龜鹿膏2罐 龜鹿飲5包」抓出來（不追求完美，先接住需求）
+const cnMap = { 一:1, 二:2, 兩:2, 三:3, 四:4, 五:5, 六:6, 七:7, 八:8, 九:9, 十:10 };
+function toNum(x) {
+  if (!x) return null;
+  if (/^\d+$/.test(x)) return Number(x);
+  if (cnMap[x] != null) return cnMap[x];
+  return null;
+}
+function parseSoupVariantKey(text) {
+  const s = String(text || "");
+  // 2兩 / 75g
+  if (includesAny(s, ["2兩", "二兩", "75g", "75克", "75公克"])) return "75g";
+  // 4兩 / 150g
+  if (includesAny(s, ["4兩", "四兩", "150g", "150克", "150公克"])) return "150g";
+  // 半斤 / 300g
+  if (includesAny(s, ["半斤", "300g", "300克", "300公克"])) return "300g";
+  // 一斤 / 600g
+  if (includesAny(s, ["一斤", "600g", "600克", "600公克"])) return "600g";
+  return null;
+}
+
 function parseOrder(text) {
   const s = normalizeText(text);
   const items = [];
 
-  // 量詞/數量辨識（阿拉伯數字 + 常見中文數字）
-  const cnMap = { 一:1, 二:2, 兩:2, 三:3, 四:4, 五:5, 六:6, 七:7, 八:8, 九:9, 十:10 };
-  function toNum(x) {
-    if (!x) return null;
-    if (/^\d+$/.test(x)) return Number(x);
-    if (cnMap[x] != null) return cnMap[x];
-    return null;
-  }
-
   const patterns = [
     { name: "龜鹿膏", catId: "gel", re: /(龜鹿膏)\s*([0-9一二兩三四五六七八九十]{1,3})?\s*(罐|瓶)?/g },
-    { name: "龜鹿飲", catId: "drink", re: /(龜鹿飲)\s*([0-9一二兩三四五六七八九十]{1,3})?\s*(包|袋|瓶|罐)?/g },
+    { name: "龜鹿飲", catId: "drink", re: /(龜鹿飲)\s*([0-9一二兩三四五六七八九十]{1,3})?\s*(包|袋|瓶)?/g },
     { name: "鹿茸粉", catId: "antler", re: /(鹿茸粉|鹿茸)\s*([0-9一二兩三四五六七八九十]{1,3})?\s*(罐)?/g },
     { name: "龜鹿湯塊（膠）", catId: "soup", re: /(龜鹿湯塊|湯塊|膠)\s*([0-9一二兩三四五六七八九十]{1,3})?\s*(盒|份|塊)?/g },
   ];
@@ -406,31 +420,104 @@ function parseOrder(text) {
     let m;
     while ((m = p.re.exec(s)) !== null) {
       const qty = toNum(m[2]) || null;
-      items.push({ catId: p.catId, name: p.name, qty });
+      const variantKey = p.catId === "soup" ? parseSoupVariantKey(text) : null;
+      items.push({ catId: p.catId, name: p.name, qty, variantKey });
     }
   }
 
-  // 去重（同類取最大 qty）
+  // merge：同 catId + variantKey 合併 qty（取最大或相加都可；這裡用相加更貼近直覺）
   const merged = {};
   for (const it of items) {
-    if (!merged[it.catId]) merged[it.catId] = { ...it };
-    else {
-      const a = merged[it.catId].qty || 0;
-      const b = it.qty || 0;
-      merged[it.catId].qty = Math.max(a, b) || merged[it.catId].qty;
-    }
+    const key = `${it.catId}::${it.variantKey || ""}`;
+    if (!merged[key]) merged[key] = { ...it, qty: it.qty || 1 };
+    else merged[key].qty = (merged[key].qty || 1) + (it.qty || 1);
   }
-
   const out = Object.values(merged);
   if (!out.length) return null;
 
+  const strongBuy = includesAny(s, ["我要買", "下單", "訂購", "想買", "要買", "買", "訂"]);
+  return { items: out, strongBuy };
+}
+
+/** =========================
+ * 從 products.json 算價
+ * ========================= */
+function findUnitPriceFromProducts(idx, catId, variantKey) {
+  const cat = idx.byCatId[catId];
+  const item = Array.isArray(cat?.items) ? cat.items[0] : null;
+  if (!item) return null;
+
+  // variants（湯塊）
+  if (Array.isArray(item.variants) && item.variants.length) {
+    // 以 spec 或 label 對應 variantKey
+    const v = item.variants.find((x) => {
+      const spec = String(x.spec || "").toLowerCase();
+      const label = String(x.label || "");
+      if (variantKey === "75g") return spec.includes("75") || label.includes("2兩") || label.includes("二兩");
+      if (variantKey === "150g") return spec.includes("150") || label.includes("4兩") || label.includes("四兩");
+      if (variantKey === "300g") return spec.includes("300") || label.includes("半斤");
+      if (variantKey === "600g") return spec.includes("600") || label.includes("一斤");
+      return false;
+    }) || null;
+
+    if (!v) return { unit: null, name: item.name || cat.name, spec: "（請補規格：2兩/4兩/半斤/一斤）" };
+
+    const unit = v.discount ? calcDiscount(v.msrp, v.discount) : v.msrp || null;
+    return {
+      unit,
+      name: item.name || cat.name,
+      spec: `${v.label} ${v.spec}`,
+      msrp: v.msrp || null,
+      discount: v.discount || null,
+      note: v.note || null,
+    };
+  }
+
+  // 一般品項
+  const msrp = item.msrp || null;
+  const unit = item.discount ? calcDiscount(msrp, item.discount) : msrp;
   return {
-    items: out,
-    // 如果客人有出現「我要買/下單/訂購」就認定購買意圖更強
-    strongBuy: includesAny(s, ["我要買", "下單", "訂購", "想買", "要買"]),
+    unit,
+    name: item.name || cat.name,
+    spec: item.spec || "",
+    msrp,
+    discount: item.discount || null,
+    note: null,
   };
 }
 
+function buildOrderSummaryFlex(pending) {
+  const lines = [];
+  for (const it of pending.items) {
+    const qty = it.qty || 1;
+    const unitTxt = it.unit ? money(it.unit) : "（待確認）";
+    const lineTxt = it.line != null ? money(it.line) : "（待確認）";
+    const spec = it.spec ? `｜${it.spec}` : "";
+    lines.push(`• ${it.name}${spec} × ${qty}`);
+    lines.push(`  單價：${unitTxt}　小計：${lineTxt}`);
+    if (it.note) lines.push(`  備註：${it.note}`);
+  }
+
+  lines.push("");
+  lines.push(pending.total != null ? `合計：${money(pending.total)}` : "合計：待確認（請補規格/數量）");
+  lines.push("");
+  lines.push(STORE.priceNote);
+
+  return flexProductCard({
+    title: "【訂單確認】",
+    subtitleLines: ["你可以直接回「確認下單」或「改一下」🙂"],
+    bodyLines: lines,
+    buttons: [
+      { label: "確認下單", text: "確認下單", style: "primary" },
+      { label: "改一下", text: "修改訂單", style: "secondary" },
+      { label: "主選單", text: "選單", style: "secondary" },
+    ],
+  });
+}
+
+/** =========================
+ * 購買流程（更柔性）
+ * ========================= */
 function startBuyFlow(userId, presetItemsText = null) {
   updateUser(userId, (u) => {
     u.state.buy = {
@@ -444,21 +531,18 @@ function startBuyFlow(userId, presetItemsText = null) {
     };
   });
 }
-
 function stopBuyFlow(userId) {
   updateUser(userId, (u) => {
     u.state.buy = { active: false, step: null, method: null, itemsText: null, name: null, phone: null, address: null };
   });
 }
-
 function buyExplain(method) {
-  if (method === "home") return `好的🙂 我用【宅配】幫您處理。\n請再補一段：收件姓名＋電話＋地址`;
-  if (method === "c2c") return `好的🙂 我用【超商店到店】幫您處理。\n請再補一段：收件人姓名＋電話 + 取貨門市（店名/店號/地址）`;
-  if (method === "deliver") return `好的🙂 我用【雙北親送】幫您處理。\n請再補一段：收件姓名＋電話＋地址\n\n${STORE.deliverNote}`;
-  if (method === "pickup") return `好的🙂 我用【到店自取】幫您處理。\n請再補一段：聯絡姓名＋電話\n取貨時間：${STORE.hours.pickupLate}`;
+  if (method === "home") return `好的🙂 我用【宅配】幫您處理。\n請補：收件姓名＋電話＋地址`;
+  if (method === "c2c") return `好的🙂 我用【超商店到店】幫您處理。\n請補：收件人姓名＋電話 + 取貨門市（店名/店號/地址）`;
+  if (method === "deliver") return `好的🙂 我用【雙北親送】幫您處理。\n請補：收件姓名＋電話＋地址\n\n${STORE.deliverNote}`;
+  if (method === "pickup") return `好的🙂 我用【到店自取】幫您處理。\n請補：聯絡姓名＋電話\n取貨時間：${STORE.hours.pickupLate}`;
   return "";
 }
-
 function handleBuyFlow(userId, rawText) {
   const u = ensureUser(userId);
   const b = u.state.buy;
@@ -466,13 +550,11 @@ function handleBuyFlow(userId, rawText) {
 
   const text = normalizeText(rawText);
 
-  // 退出
   if (text === "0" || text === "選單" || text === "主選單") {
     stopBuyFlow(userId);
     return { reply: mainMenuText(), menu: "main" };
   }
 
-  // 選方式
   const method =
     includesAny(text, ["宅配"]) ? "home" :
     includesAny(text, ["店到店", "超商"]) ? "c2c" :
@@ -483,25 +565,19 @@ function handleBuyFlow(userId, rawText) {
   if (b.step === "ask_items") {
     const po = parseOrder(text);
     if (po) {
-      const itemsText = po.items.map(i => `${i.name}${i.qty ? ` ${i.qty}` : ""}`).join("、");
+      const itemsText = po.items.map(i => `${i.name}${i.variantKey ? `(${i.variantKey})` : ""}${i.qty ? ` ${i.qty}` : ""}`).join("、");
       updateUser(userId, (x) => { x.state.buy.itemsText = itemsText; x.state.buy.step = "choose_method"; });
-      return {
-        reply: `收到🙂 我先幫您記下：${itemsText}\n\n想用哪種方式取貨/出貨？（可直接打「宅配 / 店到店 / 自取 / 親送」）`,
-        menu: "buy",
-      };
+      return { reply: `收到🙂 我先幫您記下：${itemsText}\n\n想用哪種方式？（宅配/店到店/親送/自取）`, menu: "buy" };
     }
-    return { reply: "好的🙂 方便跟我說一下要買哪些品項＋數量嗎？\n例：龜鹿膏 1 罐、龜鹿飲 5 包", menu: "buy" };
+    return { reply: "好的🙂 方便跟我說一下要買哪些品項＋數量嗎？\n例：龜鹿膏 1 罐、龜鹿飲 5 包、湯塊 半斤 1", menu: "buy" };
   }
 
   if (b.step === "choose_method") {
-    if (!method) {
-      return { reply: "我可以用下面方式幫您處理🙂 你直接回：宅配 / 店到店 / 親送 / 自取\n（也可按下方快捷鍵）", menu: "buy" };
-    }
+    if (!method) return { reply: "你想用哪種方式？宅配 / 店到店 / 親送 / 自取（也可按下方快捷鍵）", menu: "buy" };
     updateUser(userId, (x) => { x.state.buy.method = method; x.state.buy.step = "collect_contact"; });
     return { reply: buyExplain(method), menu: "buy" };
   }
 
-  // 收聯絡資訊（不硬規則，先能接住）
   if (b.step === "collect_contact") {
     const digits = safeDigits(rawText);
     const hasPhone = digits.length >= 8 && digits.length <= 15;
@@ -515,7 +591,6 @@ function handleBuyFlow(userId, rawText) {
         rawText.length >= 6 &&
         (rawText.includes("路") || rawText.includes("街") || rawText.includes("巷") || rawText.includes("號") || rawText.includes("樓") || rawText.includes("段") || rawText.includes("弄"));
 
-      // 店到店：允許門市資訊
       if (cur.method === "c2c" && includesAny(rawText, ["門市", "店", "路", "街", "號", "全家", "7-11", "711", "萊爾富", "OK"])) {
         cur.address = rawText.trim();
       }
@@ -523,7 +598,6 @@ function handleBuyFlow(userId, rawText) {
         cur.address = rawText.trim();
       }
 
-      // 名字：去掉手機號
       const nn = normalizeText(rawText.replace(digits, ""));
       const nameOk =
         nn.length >= 2 &&
@@ -539,9 +613,7 @@ function handleBuyFlow(userId, rawText) {
     if (!latest.phone) need.push("電話");
     if (latest.method !== "pickup" && !latest.address) need.push(latest.method === "c2c" ? "取貨門市" : "地址");
 
-    if (need.length) {
-      return { reply: `我有收到🙂 目前還需要：${need.join("、")}\n（可以分段貼，也可以一次貼完）`, menu: "buy" };
-    }
+    if (need.length) return { reply: `我有收到🙂 目前還需要：${need.join("、")}\n（可以分段貼，也可以一次貼完）`, menu: "buy" };
 
     const summary = [
       "✅ 已收到購買資訊：",
@@ -563,7 +635,7 @@ function handleBuyFlow(userId, rawText) {
 }
 
 /** =========================
- * 8) 敏感問題導流（更柔性）
+ * 敏感字眼導流（柔性）
  * ========================= */
 const SENSITIVE = [
   "孕婦","懷孕","備孕","哺乳","餵母乳",
@@ -587,7 +659,7 @@ ${tail}
 }
 
 /** =========================
- * 9) Webhook（關鍵：不要在 /webhook 前先 express.json）
+ * Webhook（簽章驗證：/webhook 前不要 express.json）
  * ========================= */
 app.get("/", (req, res) => res.status(200).send("OK"));
 
@@ -602,7 +674,7 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
   }
 });
 
-// 其他路由才用 json（不影響簽章）
+// 其他路由才用 json
 app.use(express.json());
 
 app.get("/health", async (req, res) => {
@@ -616,6 +688,9 @@ app.get("/health", async (req, res) => {
   });
 });
 
+/** =========================
+ * 主事件處理
+ * ========================= */
 async function handleEvent(event) {
   if (event.type !== "message" || event.message?.type !== "text") return null;
 
@@ -627,10 +702,11 @@ async function handleEvent(event) {
 
   const user = ensureUser(userId);
 
-  /** 真人模式：不插話 */
+  /** 真人模式 */
   if (text === "解除真人") {
     setHumanMode(userId, false);
     stopBuyFlow(userId);
+    setPendingOrder(userId, null);
     return client.replyMessage(event.replyToken, textMessage(mainMenuText(), "main"));
   }
   if (includesAny(text, ["真人", "人工", "客服"]) || text === "6") {
@@ -642,98 +718,139 @@ async function handleEvent(event) {
     if (text === "選單" || text === "0") {
       setHumanMode(userId, false);
       stopBuyFlow(userId);
+      setPendingOrder(userId, null);
       return client.replyMessage(event.replyToken, textMessage(mainMenuText(), "main"));
     }
     return client.replyMessage(event.replyToken, textMessage("我有收到🙂 已轉真人協助中。\n要回主選單回：選單\n要解除真人回：解除真人", "main"));
   }
 
-  /** 任何時候：選單 */
+  /** 主選單 */
   if (text === "選單" || text === "0" || text === "主選單") {
     stopBuyFlow(userId);
+    setPendingOrder(userId, null);
     return client.replyMessage(event.replyToken, textMessage(mainMenuText(), "main"));
   }
 
-  /** 購買流程中先吃掉 */
+  /** 購買流程（若正在進行） */
   const buyHandled = handleBuyFlow(userId, raw);
   if (buyHandled) return client.replyMessage(event.replyToken, textMessage(buyHandled.reply, buyHandled.menu));
 
-  /** 敏感字眼 */
+  /** 敏感字 */
   if (includesAny(text, SENSITIVE)) {
     return client.replyMessage(event.replyToken, textMessage(sensitiveText(), "main"));
   }
 
-  /** products.json */
+  /** 讀 products.json */
   const productsJson = await getProducts();
   const idx = buildProductIndex(productsJson);
 
-  /** 快速語意：官網/門市/怎麼買 */
+  /** 直接導向：官網/門市 */
   if (includesAny(text, ["官網", "網站", "網址"])) {
     return client.replyMessage(event.replyToken, textMessage(`官網：\n${STORE.website}`, "main"));
   }
   if (includesAny(text, ["門市", "地址", "電話", "營業", "幾點", "來電"])) {
     return client.replyMessage(event.replyToken, textMessage(storeInfoText(), "store"));
   }
-  if (includesAny(text, ["怎麼買", "購買", "下單", "訂購", "我要買"])) {
-    // 若同句帶訂單內容，直接進入流程（不逼他先選方式）
-    const po = parseOrder(text);
-    if (po) {
-      const itemsText = po.items.map(i => `${i.name}${i.qty ? ` ${i.qty}` : ""}`).join("、");
-      startBuyFlow(userId, itemsText);
-      return client.replyMessage(event.replyToken, textMessage(`收到🙂 我先幫你記下：${itemsText}\n\n想用哪種方式？（宅配/店到店/親送/自取）`, "buy"));
-    }
+
+  /** 訂單確認（Flex 按鈕文字） */
+  if (text === "修改訂單" || includesAny(text, ["改一下", "修改"])) {
+    setPendingOrder(userId, null);
     startBuyFlow(userId, null);
-    return client.replyMessage(event.replyToken, textMessage("好的🙂 你想怎麼取貨/出貨？（宅配/店到店/親送/自取）\n也可以直接跟我說要買哪些品項＋數量。", "buy"));
+    return client.replyMessage(event.replyToken, textMessage("沒問題🙂 你想改成哪些品項＋數量？\n例：龜鹿膏 1 罐、龜鹿飲 5 包、湯塊 半斤 1", "buy"));
+  }
+  if (text === "確認下單" || includesAny(text, ["確認", "就這樣", "可以下單"])) {
+    const latest = ensureUser(userId).state.pendingOrder;
+    // 沒有 pendingOrder 就直接進購買流程
+    if (!latest) {
+      startBuyFlow(userId, null);
+      return client.replyMessage(event.replyToken, textMessage("好的🙂 想用哪種方式？（宅配/店到店/親送/自取）\n也可以直接跟我說要買哪些品項＋數量。", "buy"));
+    }
+    // 有 pendingOrder：帶入 itemsText
+    const itemsText = latest.items.map(i => `${i.name}${i.spec ? `(${i.spec})` : ""} × ${i.qty}`).join("、");
+    startBuyFlow(userId, itemsText);
+    return client.replyMessage(event.replyToken, textMessage(`收到🙂 你這單是：${itemsText}\n\n想用哪種方式？（宅配/店到店/親送/自取）`, "buy"));
   }
 
-  /** 代碼捷徑（仍支援） */
-  // 主選單捷徑
+  /** 快速語意：怎麼買 */
+  if (includesAny(text, ["怎麼買", "購買", "下單", "訂購", "我要買"])) {
+    const po = parseOrder(text);
+    if (po) {
+      const pending = buildPendingFromParsedOrder(idx, po);
+      setPendingOrder(userId, pending);
+      return client.replyMessage(
+        event.replyToken,
+        flexMessage("訂單確認", buildOrderSummaryFlex(pending), "order_confirm")
+      );
+    }
+    startBuyFlow(userId, null);
+    return client.replyMessage(event.replyToken, textMessage("好的🙂 你可以直接跟我說：要買哪些品項＋數量\n例：龜鹿膏 1 罐、龜鹿飲 5 包、湯塊 半斤 1", "buy"));
+  }
+
+  /** 代碼捷徑 */
   if (["1","2","3","4","5","7"].includes(text)) {
     if (text === "1") return client.replyMessage(event.replyToken, textMessage("想看哪個？你可以直接打品名（龜鹿膏/龜鹿飲/鹿茸粉/龜鹿湯塊）", "products"));
     if (text === "2") return client.replyMessage(event.replyToken, textMessage("你想查哪個規格？直接打品名也可以🙂", "products"));
     if (text === "3") return client.replyMessage(event.replyToken, textMessage("想看哪個價格？直接打「龜鹿膏價格 / 龜鹿飲價格」也可以🙂", "products"));
-    if (text === "4") { startBuyFlow(userId, null); return client.replyMessage(event.replyToken, textMessage("好的🙂 想用哪種方式？（宅配/店到店/親送/自取）", "buy")); }
+    if (text === "4") { startBuyFlow(userId, null); return client.replyMessage(event.replyToken, textMessage("好的🙂 你想怎麼取貨/出貨？（宅配/店到店/親送/自取）", "buy")); }
     if (text === "5") return client.replyMessage(event.replyToken, textMessage(storeInfoText(), "store"));
     if (text === "7") return client.replyMessage(event.replyToken, textMessage(`官網：\n${STORE.website}`, "main"));
   }
 
-  // 產品介紹代碼 11~14
+  // 產品介紹 11~14
   if (Object.keys(CODE_MAP.intro).includes(text)) {
     const catId = CODE_MAP.intro[text];
     const cat = idx.byCatId[catId];
     const item = Array.isArray(cat?.items) ? cat.items[0] : null;
     const { priceCode } = catToCodes(catId);
-    const msg = buildIntroText(catId, cat, item, priceCode);
     updateUser(userId, (u) => { u.state.lastCat = catId; });
-    return client.replyMessage(event.replyToken, textMessage(msg, "product_page", { priceCode }));
+
+    return client.replyMessage(
+      event.replyToken,
+      flexMessage(`${item?.name || cat?.name || "產品"} 介紹`, buildIntroFlex(catId, cat, item, priceCode), "product_page", { priceCode })
+    );
   }
+
   // 規格 31~34
   if (Object.keys(CODE_MAP.spec).includes(text)) {
     const catId = CODE_MAP.spec[text];
     const cat = idx.byCatId[catId];
     const item = Array.isArray(cat?.items) ? cat.items[0] : null;
-    return client.replyMessage(event.replyToken, textMessage(buildSpecText(cat, item), "products"));
+
+    const specText = Array.isArray(item?.variants) && item.variants.length
+      ? `【${item?.name || cat?.name} 規格】\n` + item.variants.map(v => `• ${v.label}：${v.spec}${v.note ? `（${v.note}）` : ""}`).join("\n")
+      : `【${item?.name || cat?.name} 規格】\n${item?.spec || "—"}`;
+
+    return client.replyMessage(event.replyToken, textMessage(specText, "products"));
   }
+
   // 價格 51~54
   if (Object.keys(CODE_MAP.price).includes(text)) {
     const catId = CODE_MAP.price[text];
     const cat = idx.byCatId[catId];
     const item = Array.isArray(cat?.items) ? cat.items[0] : null;
-    return client.replyMessage(event.replyToken, textMessage(buildPriceText(cat, item), "products"));
+
+    return client.replyMessage(
+      event.replyToken,
+      flexMessage(`${item?.name || cat?.name} 價格`, buildPriceFlex(cat, item), "products")
+    );
   }
 
-  /** 非代碼：產品/價格/規格/吃法 自然語句 */
+  /** 非代碼：自然語句（產品/價格/規格/吃法） */
   const catId = detectCatIdFromText(text);
   const wantsPrice = includesAny(text, ["價格", "價錢", "多少錢", "售價"]);
   const wantsSpec = includesAny(text, ["規格", "幾g", "幾cc", "容量", "重量"]);
   const wantsUsage = includesAny(text, ["怎麼吃", "食用", "用法", "一天", "建議"]);
-  const wantsIntro = includesAny(text, ["介紹", "是什麼", "內容", "成分", "功效"]) || (!!catId && !wantsPrice && !wantsSpec && !wantsUsage);
+  const wantsIntro = includesAny(text, ["介紹", "是什麼", "內容", "成分"]) || (!!catId && !wantsPrice && !wantsSpec && !wantsUsage);
 
-  // 若訊息看起來像「直接下單」
+  /** 若文字像「直接下單」→ 先做訂單 Flex 確認 */
   const po = parseOrder(text);
-  if (po && (po.strongBuy || includesAny(text, ["買", "下單", "訂"])) ) {
-    const itemsText = po.items.map(i => `${i.name}${i.qty ? ` ${i.qty}` : ""}`).join("、");
-    startBuyFlow(userId, itemsText);
-    return client.replyMessage(event.replyToken, textMessage(`收到🙂 我先幫你記下：${itemsText}\n\n想用哪種方式？（宅配/店到店/親送/自取）`, "buy"));
+  if (po && po.strongBuy) {
+    const pending = buildPendingFromParsedOrder(idx, po);
+    setPendingOrder(userId, pending);
+    return client.replyMessage(
+      event.replyToken,
+      flexMessage("訂單確認", buildOrderSummaryFlex(pending), "order_confirm")
+    );
   }
 
   if (catId) {
@@ -741,17 +858,33 @@ async function handleEvent(event) {
     const item = Array.isArray(cat?.items) ? cat.items[0] : null;
     const { priceCode } = catToCodes(catId);
 
-    if (wantsPrice) return client.replyMessage(event.replyToken, textMessage(buildPriceText(cat, item), "product_page", { priceCode }));
-    if (wantsSpec) return client.replyMessage(event.replyToken, textMessage(buildSpecText(cat, item), "product_page", { priceCode }));
-    // wantsUsage / wantsIntro 都用介紹卡（裡面本來就含 usage）
+    // 規格查詢（湯塊可帶變體）
+    if (wantsSpec) {
+      const specText = Array.isArray(item?.variants) && item.variants.length
+        ? `【${item?.name || cat?.name} 規格】\n` + item.variants.map(v => `• ${v.label}：${v.spec}${v.note ? `（${v.note}）` : ""}`).join("\n")
+        : `【${item?.name || cat?.name} 規格】\n${item?.spec || "—"}`;
+      return client.replyMessage(event.replyToken, textMessage(specText, "product_page", { priceCode }));
+    }
+
+    // 價格用 Flex
+    if (wantsPrice) {
+      return client.replyMessage(
+        event.replyToken,
+        flexMessage(`${item?.name || cat?.name} 價格`, buildPriceFlex(cat, item), "product_page", { priceCode })
+      );
+    }
+
+    // 介紹/怎麼吃 → 介紹 Flex（並修正你圈起來那句：直接指到本品價格）
     if (wantsUsage || wantsIntro) {
-      const msg = buildIntroText(catId, cat, item, priceCode);
       updateUser(userId, (u) => { u.state.lastCat = catId; });
-      return client.replyMessage(event.replyToken, textMessage(msg, "product_page", { priceCode }));
+      return client.replyMessage(
+        event.replyToken,
+        flexMessage(`${item?.name || cat?.name} 介紹`, buildIntroFlex(catId, cat, item, priceCode), "product_page", { priceCode })
+      );
     }
   }
 
-  /** 如果客人只說「產品/有哪些」 */
+  /** 只說「產品/有哪些」 */
   if (includesAny(text, ["產品", "有哪些", "有賣什麼"])) {
     return client.replyMessage(event.replyToken, textMessage("目前主力品項有：龜鹿膏、龜鹿飲、鹿茸粉、龜鹿湯塊（膠）。\n你想先看哪個？（直接打品名就行🙂）", "products"));
   }
@@ -759,8 +892,40 @@ async function handleEvent(event) {
     return client.replyMessage(event.replyToken, textMessage("你想查哪個價格？直接打「龜鹿膏價格 / 龜鹿飲價格」也可以🙂", "products"));
   }
 
-  /** Fallback：不硬推代碼，給自然引導 */
+  /** Fallback */
   return client.replyMessage(event.replyToken, textMessage("我有收到🙂\n你可以直接打：\n• 龜鹿膏 / 龜鹿飲 / 鹿茸粉 / 龜鹿湯塊\n• 也可以加上「價格/規格/怎麼吃」\n\n或按下方快捷鍵。", "main"));
+}
+
+/** =========================
+ * 由 parseOrder + products.json 生成 pendingOrder（含小計/合計）
+ * ========================= */
+function buildPendingFromParsedOrder(idx, po) {
+  const items = [];
+  let total = 0;
+  let totalReady = true;
+
+  for (const it of po.items) {
+    const qty = it.qty || 1;
+    const priceInfo = findUnitPriceFromProducts(idx, it.catId, it.variantKey);
+    const unit = priceInfo?.unit ?? null;
+
+    const line = unit != null ? unit * qty : null;
+    if (line != null) total += line;
+    else totalReady = false;
+
+    items.push({
+      catId: it.catId,
+      variantKey: it.variantKey || null,
+      name: priceInfo?.name || it.name,
+      spec: priceInfo?.spec || "",
+      qty,
+      unit,
+      line,
+      note: priceInfo?.note || null,
+    });
+  }
+
+  return { items, total: totalReady ? total : null };
 }
 
 app.listen(PORT, () => {
