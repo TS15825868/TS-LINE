@@ -489,27 +489,43 @@ cron.schedule("*/10 * * * *", () => scanAndSendFollowups().catch(() => {}));
 const app = express();
 app.use(express.json());
 
+// Health check（Render/瀏覽器快速確認服務是否活著）
+app.get("/health", (req, res) => res.status(200).send("ok"));
+app.get("/", (req, res, next) => {
+  // 若用瀏覽器打開根目錄，回健康訊息（不影響 webhook 的 POST /）
+  if (req.method === "GET") return res.status(200).send("ok");
+  return next();
+});
+
 app.get("/", (req, res) => res.status(200).send("OK"));
 app.get("/health", (req, res) => res.status(200).send("ok"));
 
 // middleware 分開：缺金鑰就回 500（避免 crash）
-app.post("/webhook", (req, res, next) => {
-  if (!config.channelAccessToken || !config.channelSecret) {
-    return res.status(500).send("LINE credentials missing");
-  }
-  return line.middleware(config)(req, res, next);
-});
+function mountWebhook(pathname){
+  // 先做簽章驗證（LINE 官方建議）
+  app.post(pathname, (req, res, next) => {
+    if (!config.channelAccessToken || !config.channelSecret) {
+      return res.status(500).send("LINE credentials missing");
+    }
+    return line.middleware(config)(req, res, next);
+  });
 
-app.post("/webhook", async (req, res) => {
-  try {
-    const events = req.body.events || [];
-    await Promise.all(events.map(handleEvent));
-    res.status(200).end();
-  } catch (err) {
-    console.error("Webhook error:", err);
-    res.status(500).end();
-  }
-});
+  // 真正處理事件
+  app.post(pathname, async (req, res) => {
+    try {
+      const events = req.body.events || [];
+      await Promise.all(events.map(handleEvent));
+      res.status(200).end();
+    } catch (err) {
+      console.error("Webhook error:", err);
+      res.status(500).end();
+    }
+  });
+}
+
+// ✅ 同時支援 /webhook 與 /（避免你在 LINE 後台填錯路徑時「可部署但沒回覆」）
+mountWebhook("/webhook");
+mountWebhook("/");
 
 async function handleEvent(event) {
   if (event.type === "follow") {
