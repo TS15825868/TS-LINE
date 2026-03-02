@@ -2,13 +2,11 @@
 
 const express = require("express");
 const line = require("@line/bot-sdk");
-const fs = require("fs");
-const path = require("path");
 const https = require("https");
 const http = require("http");
 
 /* =========================
-   1️⃣ 環境變數
+   環境變數
 ========================= */
 
 const {
@@ -17,7 +15,7 @@ const {
   CHANNEL_ACCESS_TOKEN,
   CHANNEL_SECRET,
   PRODUCTS_URL,
-  PORT,
+  PORT
 } = process.env;
 
 const ACCESS_TOKEN = LINE_CHANNEL_ACCESS_TOKEN || CHANNEL_ACCESS_TOKEN;
@@ -25,77 +23,23 @@ const CHANNEL_SEC = LINE_CHANNEL_SECRET || CHANNEL_SECRET;
 
 const config = {
   channelAccessToken: ACCESS_TOKEN,
-  channelSecret: CHANNEL_SEC,
+  channelSecret: CHANNEL_SEC
 };
 
 const client = new line.Client(config);
 
 /* =========================
-   2️⃣ 基本資訊
+   基本資訊
 ========================= */
 
 const STORE = {
   brandName: "仙加味・龜鹿",
   address: "台北市萬華區西昌街 52 號",
-  phone: "(02) 2381-2990",
-  phoneTel: "0223812990",
-  website: "https://ts15825868.github.io/TaiShing/index.html",
-  mapUrl:
-    "https://www.google.com/maps/search/?api=1&query=台北市萬華區西昌街+52號",
+  phone: "(02) 2381-2990"
 };
 
 /* =========================
-   3️⃣ 使用者狀態
-========================= */
-
-const DATA_DIR = path.join(__dirname, "data");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
-
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-function loadUsers() {
-  if (!fs.existsSync(USERS_FILE)) return {};
-  return JSON.parse(fs.readFileSync(USERS_FILE, "utf8") || "{}");
-}
-
-function saveUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-}
-
-function ensureUser(userId) {
-  const users = loadUsers();
-  users[userId] = users[userId] || {
-    step: null,
-    method: null,
-    cart: null,
-    name: null,
-    phone: null,
-    address: null,
-  };
-  saveUsers(users);
-  return users[userId];
-}
-
-function updateUser(userId, fn) {
-  const users = loadUsers();
-  users[userId] = users[userId] || {};
-  fn(users[userId]);
-  saveUsers(users);
-}
-
-function resetUser(userId) {
-  updateUser(userId, (u) => {
-    u.step = null;
-    u.method = null;
-    u.cart = null;
-    u.name = null;
-    u.phone = null;
-    u.address = null;
-  });
-}
-
-/* =========================
-   4️⃣ 讀 products.json
+   抓 products.json
 ========================= */
 
 let cache = { at: 0, data: null };
@@ -116,16 +60,22 @@ async function getProducts() {
   if (Date.now() - cache.at < ttl && cache.data) return cache.data;
 
   try {
-    if (PRODUCTS_URL) {
-      const data = await fetchJson(PRODUCTS_URL);
-      cache = { at: Date.now(), data };
-      return data;
-    }
+    const data = await fetchJson(PRODUCTS_URL);
+    cache = { at: Date.now(), data };
+    return data;
   } catch (e) {
-    console.log("讀取 products.json 失敗，使用空資料");
+    return { categories: [] };
   }
+}
 
-  return { categories: [] };
+function flattenProducts(data) {
+  const list = [];
+  for (const c of data.categories || []) {
+    for (const item of c.items || []) {
+      list.push(item);
+    }
+  }
+  return list;
 }
 
 function money(n) {
@@ -133,12 +83,12 @@ function money(n) {
 }
 
 function calcDiscount(msrp, d) {
-  if (!d) return null;
+  if (!msrp || !d) return null;
   return Math.round(msrp * d);
 }
 
 /* =========================
-   5️⃣ LINE 卡片
+   主選單卡
 ========================= */
 
 function mainMenuCard() {
@@ -152,123 +102,163 @@ function mainMenuCard() {
       actions: [
         { type: "message", label: "產品介紹", text: "產品介紹" },
         { type: "message", label: "看價格", text: "看價格" },
-        { type: "message", label: "怎麼購買", text: "怎麼購買" },
-        { type: "message", label: "門市資訊", text: "門市資訊" },
-      ],
-    },
+        { type: "message", label: "門市資訊", text: "門市資訊" }
+      ]
+    }
   };
 }
 
 /* =========================
-   6️⃣ 產品查詢
+   產品卡片
 ========================= */
 
-function flattenProducts(data) {
-  const list = [];
-  for (const c of data.categories || []) {
-    for (const item of c.items || []) {
-      list.push({ ...item, categoryId: c.id });
-    }
-  }
-  return list;
-}
-
-async function findProduct(name) {
+async function productsCarousel() {
   const data = await getProducts();
   const flat = flattenProducts(data);
-  return flat.find((p) => name.includes(p.name));
+
+  return {
+    type: "template",
+    altText: "產品列表",
+    template: {
+      type: "carousel",
+      columns: flat.map(p => ({
+        title: p.name,
+        text: (p.intro && p.intro[0]) || "點擊查看介紹",
+        actions: [
+          { type: "message", label: "看介紹", text: `介紹 ${p.name}` },
+          { type: "message", label: "看價格", text: `價格 ${p.name}` },
+          { type: "message", label: "回主選單", text: "選單" }
+        ]
+      }))
+    }
+  };
 }
 
 /* =========================
-   7️⃣ 對話邏輯（乾淨版）
+   價格卡片（支援湯塊多規格）
 ========================= */
 
-async function handleText(userId, text) {
-  ensureUser(userId);
+async function priceCarousel() {
+  const data = await getProducts();
+  const flat = flattenProducts(data);
+
+  const columns = [];
+
+  for (const p of flat) {
+
+    // 如果有 variants（例如龜鹿湯塊）
+    if (p.variants && p.variants.length > 0) {
+      for (const v of p.variants) {
+        const act = calcDiscount(v.msrp, v.discount);
+        columns.push({
+          title: p.name,
+          text:
+            `${v.label}\n` +
+            `建議售價：${money(v.msrp)}\n` +
+            (act ? `活動價：${money(act)}` : ""),
+          actions: [
+            { type: "message", label: "回主選單", text: "選單" }
+          ]
+        });
+      }
+    } else {
+      const act = calcDiscount(p.msrp, p.discount);
+      columns.push({
+        title: p.name,
+        text:
+          `建議售價：${money(p.msrp || 0)}\n` +
+          (act ? `活動價：${money(act)}` : ""),
+        actions: [
+          { type: "message", label: "回主選單", text: "選單" }
+        ]
+      });
+    }
+  }
+
+  return {
+    type: "template",
+    altText: "產品價格",
+    template: {
+      type: "carousel",
+      columns: columns
+    }
+  };
+}
+
+/* =========================
+   介紹文字
+========================= */
+
+async function introText(name) {
+  const data = await getProducts();
+  const flat = flattenProducts(data);
+  const p = flat.find(x => name.includes(x.name));
+  if (!p) return "找不到產品🙂";
+
+  return `【${p.name}】\n` + (p.intro || []).join("\n");
+}
+
+/* =========================
+   對話邏輯
+========================= */
+
+async function handleText(text) {
   const t = text.trim();
 
-  /* 主選單 */
-  if (!t || t === "選單" || t === "主選單") {
-    resetUser(userId);
-    return [mainMenuCard()];
-  }
+  if (!t || t === "選單") return [mainMenuCard()];
 
-  if (t === "產品介紹") {
-    const data = await getProducts();
-    const flat = flattenProducts(data);
+  if (t === "產品介紹") return [await productsCarousel()];
 
-    return [{
-      type: "text",
-      text:
-        "目前產品：\n" +
-        flat.map((p) => "• " + p.name).join("\n") +
-        "\n\n可輸入：介紹 龜鹿膏"
-    }];
-  }
-
-  if (t === "看價格") {
-    const data = await getProducts();
-    const flat = flattenProducts(data);
-
-    const lines = flat.map((p) => {
-      const act = calcDiscount(p.msrp, p.discount);
-      return `【${p.name}】\n建議售價：${money(p.msrp)}\n${act ? `活動價：${money(act)}` : ""}`;
-    });
-
-    return [{ type: "text", text: lines.join("\n\n") }];
-  }
-
-  if (t === "怎麼購買") {
-    return [{
-      type: "text",
-      text:
-        "可選：\n宅配\n超商店到店\n雙北親送\n到店自取\n\n請輸入其中一種。"
-    }];
-  }
+  if (t === "看價格") return [await priceCarousel()];
 
   if (t === "門市資訊") {
     return [{
-      type: "text",
-      text:
-        `${STORE.address}\n${STORE.phone}`
+      type: "template",
+      altText: "門市資訊",
+      template: {
+        type: "buttons",
+        title: "門市資訊",
+        text: `${STORE.address}\n${STORE.phone}`,
+        actions: [
+          { type: "message", label: "回主選單", text: "選單" }
+        ]
+      }
     }];
   }
 
   if (t.startsWith("介紹 ")) {
-    const product = await findProduct(t);
-    if (!product) return [{ type: "text", text: "找不到產品🙂" }];
-
-    return [{
-      type: "text",
-      text:
-        `【${product.name}】\n` +
-        (product.intro || []).join("\n")
-    }];
+    const name = t.replace("介紹 ", "");
+    return [
+      { type: "text", text: await introText(name) },
+      mainMenuCard()
+    ];
   }
 
   return [
-    { type: "text", text: "請使用選單操作🙂" },
-    mainMenuCard(),
+    { type: "text", text: "請點選單操作🙂" },
+    mainMenuCard()
   ];
 }
 
 /* =========================
-   8️⃣ Webhook
+   Webhook
 ========================= */
 
 const app = express();
 
-app.post(
-  "/webhook",
+app.post("/webhook",
   line.middleware(config),
   async (req, res) => {
     const events = req.body.events;
+
     await Promise.all(events.map(async (event) => {
-      if (event.type !== "message" || event.message.type !== "text") return;
-      const userId = event.source.userId;
-      const msgs = await handleText(userId, event.message.text);
+      if (event.type !== "message") return;
+      if (event.message.type !== "text") return;
+
+      const msgs = await handleText(event.message.text);
       return client.replyMessage(event.replyToken, msgs);
     }));
+
     res.sendStatus(200);
   }
 );
