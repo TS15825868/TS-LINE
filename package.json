@@ -1,5 +1,5 @@
 {
-  "name": "ts-line",
+  "name": "xianjiawei-lineoa",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -7,7 +7,6 @@
   },
   "dependencies": {
     "@line/bot-sdk": "^9.0.0",
-    "express": "^4.18.0",
-    "node-cron": "^3.0.0"
+    "express": "^4.18.2"
   }
 }
