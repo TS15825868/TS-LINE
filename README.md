@@ -1,15 +1,24 @@
-# 仙加味・龜鹿 LINE OA Bot（卡片按鈕版｜串接 products.json）
+# 仙加味・龜鹿 LINE OA Bot（全卡片按鈕版）
 
-## Render 環境變數
-- `LINE_CHANNEL_ACCESS_TOKEN`（或 `CHANNEL_ACCESS_TOKEN`）
-- `LINE_CHANNEL_SECRET`（或 `CHANNEL_SECRET`）
-- `PRODUCTS_URL`（可不填；預設：`https://ts15825868.github.io/TaiShing/products.json`）
-- `PORT`（Render 會自動給）
+## 1) Render 環境變數（必填）
+- `LINE_CHANNEL_ACCESS_TOKEN`
+- `LINE_CHANNEL_SECRET`
 
-## LINE Developers Webhook URL
-- `https://<你的render網域>/webhook`
+（相容舊命名）
+- `CHANNEL_ACCESS_TOKEN`
+- `CHANNEL_SECRET`
 
-（程式也同時支援 `/` 作為 webhook，避免後台填錯路徑造成「Verify 成功但沒回覆」）
+## 2) products.json（可選）
+- `PRODUCTS_URL`（不填則使用官網預設）
+  - 預設：`https://ts15825868.github.io/TaiShing/products.json`
 
-## 健康檢查
-- `GET /health` 會回 `ok`
+## 3) Webhook
+- Webhook URL：`https://<你的Render網域>/webhook`
+- LINE Developers 後台：Use webhook 開啟
+
+## 4) 開發
+```bash
+npm i
+npm start
+```
+
