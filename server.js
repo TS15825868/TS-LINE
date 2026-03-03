@@ -4,18 +4,11 @@
 /**
  * 仙加味・龜鹿 LINE OA Bot（最終可部署版｜全卡片流程｜串接官網 products.json）
  *
- * ✅ 重點
- * - 主互動採「卡片按鈕」（Buttons / Carousel）→ 長輩好用、少打字
- * - 產品資料：從 PRODUCTS_URL 抓取（預設 GitHub Pages products.json）
- * - 價格：僅在 LINE 顯示（官網可不顯示價格）
- * - 飲食專區：補養建議（綜合版）/ 季節推薦 / 燉煮建議 / FAQ
- * - 購買流程：可自動抓「品項＋數量」並估算小計；雙北親送會檢查地址是否台北/新北
- *
- * ✅ Render 環境變數
- * - LINE_CHANNEL_ACCESS_TOKEN  (或 CHANNEL_ACCESS_TOKEN)
- * - LINE_CHANNEL_SECRET        (或 CHANNEL_SECRET)
- * - PRODUCTS_URL               (可選，不填就用預設)
- * - PORT                       (Render 會自帶)
+ * ✅ 修正/加強：
+ * - 加好友歡迎：支援 follow / join / memberJoined
+ * - webhook 驗簽安全：使用 line.middleware(config)（不要在前面 app.use(express.json())）
+ * - 不洗版：主選單只在使用者回「選單/0」時送出
+ * - products.json：快取 + timeout
  */
 
 const express = require("express");
@@ -198,16 +191,22 @@ function saveUsers(users) {
   }
 }
 
-function getUser(userId) {
+function ensureUser(userId) {
   const users = loadUsers();
-  users[userId] = users[userId] || { buying: null };
+  users[userId] = users[userId] || { buying: null, meta: {} };
+  users[userId].meta = users[userId].meta || {};
   saveUsers(users);
   return users[userId];
 }
 
+function getUser(userId) {
+  return ensureUser(userId);
+}
+
 function updateUser(userId, fn) {
   const users = loadUsers();
-  users[userId] = users[userId] || { buying: null };
+  users[userId] = users[userId] || { buying: null, meta: {} };
+  users[userId].meta = users[userId].meta || {};
   fn(users[userId]);
   saveUsers(users);
 }
@@ -442,7 +441,7 @@ function seasonText(key) {
         STORE.foodDisclaimer,
       ].join("\n");
     default:
-      return "我先幫你回到季節選單🙂";
+      return null;
   }
 }
 
@@ -461,7 +460,7 @@ function cookMenuCarousel() {
     { title: "四神風味", text: "薏仁/蓮子/芡實（依喜好）", key: "四神" },
     { title: "麻油少量", text: "少量麻油＋薑片（冬天）", key: "麻油" },
     { title: "清燉牛腱", text: "牛腱清燉（少油）", key: "牛腱" },
-  ].slice(0, 10).map((x) => ({
+  ].map((x) => ({
     title: safeText(x.title, 40),
     text: safeText(x.text, 60),
     actions: [
@@ -477,123 +476,79 @@ function cookMenuCarousel() {
 function cookText(key) {
   const baseHint = "湯塊（膠）建議：先用清水小火化開，再放食材；濃淡可用水量調整。";
 
-  switch (key) {
-    case "雞湯":
-      return [
-        "【燉煮｜經典雞湯】",
-        "食材：雞腿/半雞、湯塊（膠）、薑片（可選）",
-        "作法：",
-        "1) 雞肉汆燙去浮沫（可選）",
-        "2) 鍋內加水＋湯塊（膠）小火化開",
-        "3) 下雞肉小火煮 30–60 分鐘（或電鍋外鍋 2 杯水）",
-        "4) 起鍋前再加鹽調味即可",
-        "",
-        baseHint,
-      ].join("\n");
-    case "排骨":
-      return [
-        "【燉煮｜排骨燉煮】",
-        "食材：排骨、玉米/白蘿蔔、湯塊（膠）",
-        "作法：",
-        "1) 排骨汆燙",
-        "2) 水＋湯塊（膠）化開後，下排骨與配料",
-        "3) 小火 45–90 分鐘（或電鍋外鍋 2–3 杯水）",
-        "",
-        baseHint,
-      ].join("\n");
-    case "山藥":
-      return [
-        "【燉煮｜山藥搭配】",
-        "食材：山藥、香菇、雞肉（或排骨）、湯塊（膠）",
-        "作法：",
-        "1) 湯塊（膠）化開後下肉類先煮 30–40 分鐘",
-        "2) 再下山藥與香菇煮 15–20 分鐘",
-        "3) 以鹽簡單調味即可",
-        "",
-        baseHint,
-      ].join("\n");
-    case "菇類":
-      return [
-        "【燉煮｜菇類素食版】",
-        "食材：杏鮑菇/香菇/金針菇、豆腐（可選）、湯塊（膠）",
-        "作法：",
-        "1) 水＋湯塊（膠）化開",
-        "2) 下菇類與豆腐，小火 15–25 分鐘",
-        "3) 少許鹽或胡椒即可",
-        "",
-        baseHint,
-      ].join("\n");
-    case "海鮮":
-      return [
-        "【燉煮｜海鮮清爽版】",
-        "食材：蛤蜊/魚片、薑絲（可選）、湯塊（膠）",
-        "作法：",
-        "1) 湯塊（膠）先化開",
-        "2) 下海鮮，時間別煮太久（蛤蜊開口/魚片變白即可）",
-        "3) 起鍋前調味",
-        "",
-        baseHint,
-      ].join("\n");
-    case "電鍋":
-      return [
-        "【燉煮｜電鍋懶人版】",
-        "食材：任一肉類/菇類/蔬菜＋湯塊（膠）",
-        "作法：",
-        "1) 內鍋放水＋湯塊（膠）＋食材",
-        "2) 外鍋 2 杯水（想更軟爛可 3 杯）",
-        "3) 跳起後再悶 10 分鐘，調味即可",
-        "",
-        baseHint,
-      ].join("\n");
-    case "蔬菜":
-      return [
-        "【燉煮｜蔬菜清甜版】",
-        "食材：高麗菜/洋蔥/紅蘿蔔、湯塊（膠）",
-        "作法：",
-        "1) 湯塊（膠）化開",
-        "2) 下蔬菜小火 20–30 分鐘",
-        "3) 調味即可（清甜路線）",
-        "",
-        baseHint,
-      ].join("\n");
-    case "四神":
-      return [
-        "【燉煮｜四神風味】",
-        "食材：薏仁/蓮子/芡實（依喜好）、排骨（可選）、湯塊（膠）",
-        "作法：",
-        "1) 乾料先泡 30 分鐘（若有時間）",
-        "2) 湯塊（膠）化開後加入乾料與肉類",
-        "3) 小火 60–120 分鐘（或電鍋外鍋 3 杯水）",
-        "",
-        baseHint,
-      ].join("\n");
-    case "麻油":
-      return [
-        "【燉煮｜麻油少量（冬天）】",
-        "食材：少量麻油、薑片、雞肉/排骨、湯塊（膠）",
-        "作法：",
-        "1) 麻油少量爆香薑片（不要過焦）",
-        "2) 加水與湯塊（膠）化開",
-        "3) 下肉類小火燉煮，起鍋調味",
-        "",
-        "提醒：走清爽路線，麻油用量不要太多。",
-        "",
-        baseHint,
-      ].join("\n");
-    case "牛腱":
-      return [
-        "【燉煮｜清燉牛腱】",
-        "食材：牛腱、洋蔥/紅蘿蔔（可選）、湯塊（膠）",
-        "作法：",
-        "1) 牛腱汆燙去雜質",
-        "2) 湯塊（膠）化開後下牛腱小火 90–150 分鐘",
-        "3) 加配料再煮 20–30 分鐘，調味即可",
-        "",
-        baseHint,
-      ].join("\n");
-    default:
-      return "我先幫你回到燉煮選單🙂";
-  }
+  const map = {
+    雞湯: [
+      "【燉煮｜經典雞湯】",
+      "食材：雞腿/半雞、湯塊（膠）、薑片（可選）",
+      "作法：1) 雞肉汆燙去浮沫（可選） 2) 水＋湯塊（膠）小火化開 3) 下雞肉小火 30–60 分鐘 4) 起鍋前加鹽調味",
+      "",
+      baseHint,
+    ],
+    排骨: [
+      "【燉煮｜排骨燉煮】",
+      "食材：排骨、玉米/白蘿蔔、湯塊（膠）",
+      "作法：1) 排骨汆燙 2) 水＋湯塊（膠）化開後下排骨與配料 3) 小火 45–90 分鐘",
+      "",
+      baseHint,
+    ],
+    山藥: [
+      "【燉煮｜山藥搭配】",
+      "食材：山藥、香菇、雞肉/排骨、湯塊（膠）",
+      "作法：1) 湯塊化開後先下肉類煮 30–40 分鐘 2) 再下山藥與香菇煮 15–20 分鐘 3) 調味",
+      "",
+      baseHint,
+    ],
+    菇類: [
+      "【燉煮｜菇類素食版】",
+      "食材：杏鮑菇/香菇/金針菇、豆腐（可選）、湯塊（膠）",
+      "作法：1) 水＋湯塊化開 2) 下菇類小火 15–25 分鐘 3) 調味",
+      "",
+      baseHint,
+    ],
+    海鮮: [
+      "【燉煮｜海鮮清爽版】",
+      "食材：蛤蜊/魚片、薑絲（可選）、湯塊（膠）",
+      "作法：1) 湯塊先化開 2) 下海鮮，時間別煮太久（開口/變白即可） 3) 調味",
+      "",
+      baseHint,
+    ],
+    電鍋: [
+      "【燉煮｜電鍋懶人版】",
+      "作法：1) 內鍋水＋湯塊＋食材 2) 外鍋 2 杯水（想更軟爛可 3 杯）3) 跳起後悶 10 分鐘",
+      "",
+      baseHint,
+    ],
+    蔬菜: [
+      "【燉煮｜蔬菜清甜版】",
+      "食材：高麗菜/洋蔥/紅蘿蔔、湯塊（膠）",
+      "作法：1) 湯塊化開 2) 下蔬菜小火 20–30 分鐘 3) 調味",
+      "",
+      baseHint,
+    ],
+    四神: [
+      "【燉煮｜四神風味】",
+      "食材：薏仁/蓮子/芡實（依喜好）、排骨（可選）、湯塊（膠）",
+      "作法：1) 乾料先泡（可選）2) 湯塊化開後加入乾料與肉類 3) 小火 60–120 分鐘",
+      "",
+      baseHint,
+    ],
+    麻油: [
+      "【燉煮｜麻油少量（冬天）】",
+      "作法：1) 麻油少量爆香薑片（不要過焦）2) 加水與湯塊化開 3) 下肉類燉煮，調味",
+      "提醒：走清爽路線，麻油用量不要太多。",
+      "",
+      baseHint,
+    ],
+    牛腱: [
+      "【燉煮｜清燉牛腱】",
+      "作法：1) 牛腱汆燙 2) 湯塊化開後下牛腱小火 90–150 分鐘 3) 加配料再煮 20–30 分鐘",
+      "",
+      baseHint,
+    ],
+  };
+
+  const arr = map[String(key || "").trim()];
+  return arr ? arr.join("\n") : null;
 }
 
 /* =========================
@@ -618,7 +573,7 @@ function faqMenuCard() {
 }
 
 function faqText(key) {
-  switch (key) {
+  switch (String(key || "").trim()) {
     case "天天":
       return [
         "【FAQ｜可以天天吃嗎？】",
@@ -633,7 +588,7 @@ function faqText(key) {
         "【FAQ｜怎麼保存？】",
         "• 以產品包裝標示為準",
         "• 開封後建議密封、避免高溫與日照",
-        "• 湯品/即飲開封後請盡快食用完畢",
+        "• 開封後請盡快食用完畢（依產品型態）",
       ].join("\n");
     case "搭配":
       return [
@@ -645,7 +600,7 @@ function faqText(key) {
         STORE.foodDisclaimer,
       ].join("\n");
     default:
-      return "我先幫你回到 FAQ 選單🙂";
+      return null;
   }
 }
 
@@ -728,8 +683,8 @@ function productActionCard(productName) {
 
 async function priceAllCarousel() {
   const flat = flattenProducts(await getProducts());
-
   const columns = [];
+
   for (const p of flat) {
     if (p.variants && p.variants.length) {
       for (const v of p.variants) {
@@ -778,7 +733,7 @@ async function priceForProduct(name) {
   const flat = flattenProducts(await getProducts());
   const p = matchProduct(flat, name);
 
-  if (!p) return [{ type: "text", text: "找不到這個品項🙂（回：選單）" }, ...mainMenuCards()];
+  if (!p) return [{ type: "text", text: "找不到這個品項🙂（回：選單）" }];
 
   if (p.variants && p.variants.length) {
     const columns = p.variants.map((v) => {
@@ -866,7 +821,6 @@ function buyExplain(method) {
 
 async function tryParseItemsToTotal(itemsText) {
   const flat = flattenProducts(await getProducts());
-
   const t = normalizeText(itemsText);
   if (!t) return { lines: [], total: null };
 
@@ -948,10 +902,18 @@ async function tryBuyingFlow(userId, rawText) {
     const cur = x.buying;
     if (!cur) return;
 
-    if (!cur.itemsText && (text.includes("龜鹿") || text.includes("鹿茸") || text.includes("湯塊") || /\d+\s*(罐|包|盒|組|份|個|瓶|袋)/.test(text))) {
+    if (
+      !cur.itemsText &&
+      (text.includes("龜鹿") ||
+        text.includes("鹿茸") ||
+        text.includes("湯塊") ||
+        /\d+\s*(罐|包|盒|組|份|個|瓶|袋)/.test(text))
+    ) {
       cur.itemsText = text;
     }
+
     if (phone) cur.phone = phone;
+
     if (!cur.address && looksLikeAddress(text) && cur.method !== "自取") cur.address = text;
 
     if (!cur.name) {
@@ -969,7 +931,13 @@ async function tryBuyingFlow(userId, rawText) {
     if (lines.length) {
       return [{
         type: "text",
-        text: ["我先幫你把品項換算一下🙂", ...lines.map((l) => `• ${l}`), "", `小計：約 ${money(total)}`, "（若有活動/組合/運費等，最後以我們確認為準）"].join("\n"),
+        text: [
+          "我先幫你把品項換算一下🙂",
+          ...lines.map((l) => `• ${l}`),
+          "",
+          `小計：約 ${money(total)}`,
+          "（若有活動/組合/運費等，最後以我們確認為準）",
+        ].join("\n"),
       }];
     }
   }
@@ -1006,7 +974,7 @@ async function tryBuyingFlow(userId, rawText) {
 }
 
 /* =========================
-   對話控制（全卡片流程）
+   對話控制（不洗版）
 ========================= */
 async function handleText(userId, text) {
   const t = normalizeText(text);
@@ -1019,7 +987,6 @@ async function handleText(userId, text) {
   const flow = await tryBuyingFlow(userId, text);
   if (flow) return flow;
 
-  // 避免資訊還沒看完就被「主選單」洗版：主選單只在使用者輸入「選單」時送出
   if (t === "產品介紹" || t === "產品" || t === "商品" || t === "產品列表") return [await productsCarousel()];
   if (t === "看價格" || t === "價格") return [await priceAllCarousel(), { type: "text", text: STORE.priceNote }];
   if (t === "飲食專區") return [foodMenuCard()];
@@ -1032,22 +999,19 @@ async function handleText(userId, text) {
   if (t === "季節推薦") return [seasonMenuCarousel()];
   if (t.startsWith("季節 ")) {
     const msg = seasonText(t.replace("季節", "").trim());
-    if (msg.startsWith("我先幫你回到")) return [seasonMenuCarousel()];
-    return [{ type: "text", text: msg }, afterFoodNavCard()];
+    return msg ? [{ type: "text", text: msg }, afterFoodNavCard()] : [seasonMenuCarousel()];
   }
 
   if (t === "燉煮建議") return [cookMenuCarousel()];
   if (t.startsWith("燉煮 ")) {
     const msg = cookText(t.replace("燉煮", "").trim());
-    if (msg.startsWith("我先幫你回到")) return [cookMenuCarousel()];
-    return [{ type: "text", text: msg }, afterFoodNavCard()];
+    return msg ? [{ type: "text", text: msg }, afterFoodNavCard()] : [cookMenuCarousel()];
   }
 
   if (t === "FAQ" || t === "常見問題") return [faqMenuCard()];
   if (t.startsWith("FAQ ")) {
     const msg = faqText(t.replace("FAQ", "").trim());
-    if (msg.startsWith("我先幫你回到")) return [faqMenuCard()];
-    return [{ type: "text", text: msg }, afterFoodNavCard()];
+    return msg ? [{ type: "text", text: msg }, afterFoodNavCard()] : [faqMenuCard()];
   }
 
   if (t.startsWith("購買方式")) {
@@ -1062,19 +1026,61 @@ async function handleText(userId, text) {
     const name = t.replace("介紹", "").trim();
     const flat = flattenProducts(await getProducts());
     const p = matchProduct(flat, name);
-    if (!p) return [{ type: "text", text: "找不到這個品項🙂（回：選單）" }, ...mainMenuCards()];
+    if (!p) return [{ type: "text", text: "找不到這個品項🙂（回：選單）" }];
     return [{ type: "text", text: productIntroFullText(p) }, productActionCard(p.name)];
   }
 
   if (t.startsWith("價格 ")) {
     const name = t.replace("價格", "").trim();
-    const msgs = await priceForProduct(name);
-    return [...msgs];
+    return await priceForProduct(name);
   }
 
-  if (t.startsWith("購買 ")) return [{ type: "text", text: "好的🙂 你想用哪一種方式購買？（直接點）" }, buyMenuCard()];
+  if (t.startsWith("購買 ")) {
+    return [{ type: "text", text: "好的🙂 你想用哪一種方式購買？（直接點）" }, buyMenuCard()];
+  }
 
   return [{ type: "text", text: "我有收到🙂\n你可以直接點『選單』開始～" }, ...mainMenuCards()];
+}
+
+/* =========================
+   Event Handler（關鍵：follow 歡迎）
+========================= */
+async function handleEvent(event) {
+  const userId = event.source && event.source.userId;
+
+  // 1) 加好友：送歡迎＋主選單（不洗版，只有這裡主動送）
+  if (event.type === "follow") {
+    if (userId) {
+      ensureUser(userId);
+      updateUser(userId, (u) => { u.meta.followedAt = Date.now(); });
+    }
+    const welcomeText = `您好🙂 歡迎加入【${STORE.brandName}】\n直接點下方卡片就能看產品/價格/飲食搭配。\n需要主選單也可以回：選單`;
+    return client.replyMessage(event.replyToken, [{ type: "text", text: welcomeText }, ...mainMenuCards()]);
+  }
+
+  // 2) 取消追蹤：不回覆，但可記錄
+  if (event.type === "unfollow") {
+    if (userId) {
+      updateUser(userId, (u) => { u.meta.unfollowedAt = Date.now(); });
+    }
+    return null;
+  }
+
+  // 3) 被拉進群組/多人聊天室
+  if (event.type === "join" || event.type === "memberJoined") {
+    const msg = `您好🙂 我是【${STORE.brandName}】小幫手～\n需要主選單請回：選單`;
+    return client.replyMessage(event.replyToken, [{ type: "text", text: msg }, ...mainMenuCards()]);
+  }
+
+  // 4) 一般文字訊息
+  if (event.type === "message" && event.message && event.message.type === "text") {
+    if (!userId) return null;
+    ensureUser(userId);
+    const msgs = await handleText(userId, event.message.text);
+    return client.replyMessage(event.replyToken, msgs);
+  }
+
+  return null;
 }
 
 /* =========================
@@ -1085,6 +1091,7 @@ const app = express();
 app.get("/health", (req, res) => res.status(200).send("ok"));
 app.get("/", (req, res) => res.status(200).send("ok"));
 
+// 注意：不要在這裡 app.use(express.json())，會影響 LINE middleware 驗簽
 app.post(
   "/webhook",
   (req, res, next) => {
@@ -1094,14 +1101,7 @@ app.post(
   async (req, res) => {
     try {
       const events = req.body.events || [];
-      await Promise.all(events.map(async (event) => {
-        if (event.type !== "message") return;
-        if (!event.message || event.message.type !== "text") return;
-        const userId = event.source && event.source.userId;
-        if (!userId) return;
-        const msgs = await handleText(userId, event.message.text);
-        return client.replyMessage(event.replyToken, msgs);
-      }));
+      await Promise.all(events.map(handleEvent));
       res.sendStatus(200);
     } catch (e) {
       console.error("webhook error:", e?.message || e);
