@@ -3,34 +3,33 @@
 const express = require("express");
 const line = require("@line/bot-sdk");
 
+const app = express();
+
 const config = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.LINE_CHANNEL_SECRET
 };
 
 const client = new line.Client(config);
-const app = express();
 
 /* =========================
-   敏感問題判斷
+   敏感詞判斷（醫療相關）
 ========================= */
 
-function isSensitiveQuestion(text) {
+function isSensitive(text) {
   const keywords = [
-    "懷孕","孕婦","高血壓","糖尿病",
-    "心臟病","腎臟病","肝病",
-    "癌症","化療","副作用",
-    "治療","可以治","適不適合我",
-    "吃藥","慢性病"
+    "懷孕","孕婦","高血壓","糖尿病","心臟病",
+    "腎臟病","肝病","癌症","化療","副作用",
+    "治療","藥","慢性病","適不適合我","體質"
   ];
   return keywords.some(k => text.includes(k));
 }
 
 /* =========================
-   中醫師轉接文字
+   中醫師轉接
 ========================= */
 
-function doctorRedirect() {
+function doctorReply() {
   return {
     type: "text",
     text:
@@ -43,7 +42,7 @@ function doctorRedirect() {
 ✔ 可詢問個人狀況與疑問
 
 ➤ Line ID：@changwuchi
-➤ 章無忌中醫師諮詢連結：
+➤ 諮詢連結：
 https://lin.ee/1MK4NR9`
   };
 }
@@ -63,7 +62,7 @@ function mainMenu() {
       actions: [
         { type: "message", label: "產品介紹", text: "產品介紹" },
         { type: "message", label: "推薦組合", text: "推薦組合" },
-        { type: "message", label: "飲食專區", text: "飲食專區" },
+        { type: "message", label: "飲食建議", text: "飲食建議" },
         { type: "message", label: "中醫師諮詢", text: "中醫師諮詢" }
       ]
     }
@@ -81,7 +80,7 @@ function bundleMenu() {
     template: {
       type: "buttons",
       title: "補養推薦組合",
-      text: "直接選一種，我幫你說明🙂",
+      text: "直接選一種🙂",
       actions: [
         { type: "message", label: "日常補養組", text: "組合 日常" },
         { type: "message", label: "加強搭配組", text: "組合 加強" },
@@ -92,9 +91,10 @@ function bundleMenu() {
 }
 
 function bundleReply(type) {
+
   if (type === "日常") {
     return {
-      type:"text",
+      type: "text",
       text:
 `【日常補養組】
 ✔ 龜鹿膏 1 罐
@@ -107,19 +107,18 @@ function bundleReply(type) {
 
   if (type === "加強") {
     return {
-      type:"text",
+      type: "text",
       text:
 `【加強搭配組】
 ✔ 龜鹿膏 + 龜鹿飲
-或
 ✔ 湯塊燉煮搭配
 
-想要扎實補養者適合🙂`
+想要更扎實補養者🙂`
     };
   }
 
   return {
-    type:"text",
+    type: "text",
     text:
 `【長輩溫和組】
 ✔ 龜鹿飲為主
@@ -134,16 +133,18 @@ function bundleReply(type) {
 ========================= */
 
 app.post("/webhook", line.middleware(config), async (req, res) => {
+
   try {
     const events = req.body.events;
 
     await Promise.all(events.map(async (event) => {
+
       if (event.type !== "message" || event.message.type !== "text") return;
 
       const text = event.message.text;
 
-      if (isSensitiveQuestion(text)) {
-        return client.replyMessage(event.replyToken, doctorRedirect());
+      if (isSensitive(text)) {
+        return client.replyMessage(event.replyToken, doctorReply());
       }
 
       if (text === "選單") {
@@ -160,13 +161,14 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
       }
 
       if (text === "中醫師諮詢") {
-        return client.replyMessage(event.replyToken, doctorRedirect());
+        return client.replyMessage(event.replyToken, doctorReply());
       }
 
       return client.replyMessage(event.replyToken, {
         type: "text",
         text: "您好🙂 回『選單』查看功能。"
       });
+
     }));
 
     res.sendStatus(200);
@@ -175,6 +177,7 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
     console.error(err);
     res.sendStatus(500);
   }
+
 });
 
 app.listen(process.env.PORT || 3000, () => {
