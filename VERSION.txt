@@ -1,0 +1,2 @@
+OA v2.2 timeout-hardened (2026-03-03)
+PRODUCTS_URL default: https://ts15825868.github.io/TaiShing/products.json
