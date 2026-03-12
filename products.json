@@ -5,10 +5,13 @@
       "name": "仙加味・龜鹿",
       "items": [
         {
-          "id": "gel_100g",
+          "id": "guilu-gao",
           "name": "龜鹿膏",
-          "spec": "100g/罐",
-          "image": "images/guilu-gao-100g.jpg",
+          "fullName": "仙加味・龜鹿膏",
+          "spec": "100 g / 罐",
+          "image": "https://ts15825868.github.io/TaiShing/images/guilu-gao-100g.jpg",
+          "aliases": ["龜鹿膏", "膏", "仙加味龜鹿膏"],
+          "intro": "濃縮膏狀型態，可直接食用，也可加入溫熱開水攪拌飲用。",
           "ingredients": [
             "龜板萃取物",
             "鹿角萃取物",
@@ -16,13 +19,22 @@
             "枸杞",
             "紅棗",
             "黃耆"
-          ]
+          ],
+          "usage": [
+            "直接食用",
+            "溫熱開水攪拌",
+            "料理搭配"
+          ],
+          "priceText": "價格與搭配方案請以 LINE / 門市實際回覆為準。"
         },
         {
-          "id": "drink_30cc",
+          "id": "guilu-drink",
           "name": "龜鹿飲",
-          "spec": "30cc/瓶",
-          "image": "images/guilu-drink-30cc.jpg",
+          "fullName": "仙加味・龜鹿飲",
+          "spec": "30 cc 小瓶裝 / 180 cc 袋裝",
+          "image": "https://ts15825868.github.io/TaiShing/images/guilu-drink-30cc.jpg",
+          "aliases": ["龜鹿飲", "飲", "龜鹿飲30cc", "龜鹿飲180cc"],
+          "intro": "液態即飲型態，30 cc 小瓶裝與 180 cc 袋裝並列，方便日常飲用與攜帶。",
           "ingredients": [
             "水",
             "龜板萃取物",
@@ -31,61 +43,50 @@
             "枸杞",
             "紅棗",
             "黃耆"
-          ]
+          ],
+          "usage": [
+            "開封即飲",
+            "可隔水加熱",
+            "日常攜帶"
+          ],
+          "priceText": "價格與搭配方案請以 LINE / 門市實際回覆為準。"
         },
         {
-          "id": "drink_180cc",
-          "name": "龜鹿飲",
-          "spec": "180cc/包",
-          "image": "images/guilu-drink-180cc.jpg",
-          "ingredients": [
-            "水",
-            "龜板萃取物",
-            "鹿角萃取物",
-            "粉光蔘",
-            "枸杞",
-            "紅棗",
-            "黃耆"
-          ]
-        },
-        {
-          "id": "block_75g",
+          "id": "guilu-block",
           "name": "龜鹿湯塊",
-          "spec": "75g/盒",
-          "image": "images/guilu-block-75g.jpg",
+          "fullName": "仙加味・龜鹿湯塊",
+          "spec": "75 g / 300 g / 600 g",
+          "image": "https://ts15825868.github.io/TaiShing/images/guilu-block-75g.jpg",
+          "aliases": ["龜鹿湯塊", "湯塊", "龜鹿膠", "二仙膠", "龜鹿二仙膠"],
+          "intro": "濃縮湯塊型態，適合雞湯、排骨湯與日常燉煮料理。",
           "ingredients": [
             "鹿角萃取物",
             "全龜萃取物"
-          ]
+          ],
+          "usage": [
+            "雞湯",
+            "排骨湯",
+            "日常燉煮"
+          ],
+          "priceText": "價格與搭配方案請以 LINE / 門市實際回覆為準。"
         },
         {
-          "id": "block_300g",
-          "name": "龜鹿湯塊",
-          "spec": "300g/盒",
-          "image": "images/guilu-block-300g-box.jpg",
-          "ingredients": [
-            "鹿角萃取物",
-            "全龜萃取物"
-          ]
-        },
-        {
-          "id": "block_600g",
-          "name": "龜鹿湯塊",
-          "spec": "600g/盒",
-          "image": "images/guilu-block-600g-box.jpg",
-          "ingredients": [
-            "鹿角萃取物",
-            "全龜萃取物"
-          ]
-        },
-        {
-          "id": "lurong_75g",
+          "id": "lurong-powder",
           "name": "鹿茸粉",
-          "spec": "75g/罐",
-          "image": "images/lurong-powder-75g.jpg",
+          "fullName": "仙加味・鹿茸粉",
+          "spec": "75 g / 罐",
+          "image": "https://ts15825868.github.io/TaiShing/images/lurong-powder-75g.jpg",
+          "aliases": ["鹿茸粉", "鹿茸", "粉"],
+          "intro": "粉末型態，方便加入溫熱飲品或日常飲食中。",
           "ingredients": [
             "鹿茸粉"
-          ]
+          ],
+          "usage": [
+            "熱飲",
+            "茶飲",
+            "日常搭配"
+          ],
+          "priceText": "價格與搭配方案請以 LINE / 門市實際回覆為準。"
         }
       ]
     },
@@ -94,13 +95,22 @@
       "name": "柒玄茶",
       "items": [
         {
-          "id": "qixuan_mix",
+          "id": "guilu-mix",
           "name": "龜鹿調飲粉",
-          "spec": "2g/小包；20g/包",
-          "image": "images/qixuan-guilu-mix.jpg",
+          "fullName": "柒玄茶・龜鹿調飲粉",
+          "spec": "2 g / 小包；20 g / 包（10 小包）",
+          "image": "https://ts15825868.github.io/TaiShing/images/qixuan-guilu-mix.jpg",
+          "aliases": ["龜鹿調飲粉", "調飲粉", "龜鹿粉", "柒玄茶"],
+          "intro": "可加入茶飲、咖啡或熱水中調和使用，作為更貼近日常飲品情境的延伸型態。",
           "ingredients": [
             "龜鹿膠粉"
-          ]
+          ],
+          "usage": [
+            "茶飲",
+            "咖啡",
+            "熱水沖泡"
+          ],
+          "priceText": "價格與搭配方案請以 LINE / 門市實際回覆為準。"
         }
       ]
     }
