@@ -139,6 +139,9 @@ function findProduct(flat, text) {
   let direct = flat.find((p) => lower === String(p.name || "").toLowerCase());
   if (direct) return direct;
 
+  direct = flat.find((p) => lower === String(p.fullName || "").toLowerCase());
+  if (direct) return direct;
+
   direct = flat.find((p) => (p.aliases || []).some((a) => lower.includes(String(a).toLowerCase())));
   if (direct) return direct;
 
@@ -381,6 +384,23 @@ function productUsageText(p) {
   return lines.join("\n");
 }
 
+function productPromoText(p) {
+  const lines = [];
+  lines.push(`${p.fullName || p.name}`);
+
+  if (p.priceText) {
+    lines.push(`【目前活動】${p.priceText}`);
+  }
+
+  if (p.promoText) {
+    lines.push(p.promoText);
+  } else {
+    lines.push("目前活動與搭配方案，請以 LINE / 門市實際回覆為準🙂");
+  }
+
+  return lines.join("\n");
+}
+
 function compareReply(text) {
   const t = normalizeText(text);
 
@@ -466,11 +486,22 @@ function ingredientQuestionReply(text, flat) {
 
 function promoReply() {
   return makeText(
-    "目前優惠與搭配方案，會依門市、LINE 與活動檔期不同而調整🙂\n\n" +
-    "建議直接私訊我們，由專人幫您看目前較適合的方案。\n\n" +
-    "可直接點下方：\n" +
-    `加入 LINE：${STORE.lineLink}\n\n` +
-    STORE.priceNote
+    "目前有做搭配優惠🙂\n\n" +
+    "例如：\n" +
+    "【龜鹿膏】\n" +
+    "單罐活動價 $1800\n" +
+    "• 2罐 $3400\n" +
+    "• 3罐以上平均約 $1600 / 罐\n" +
+    "（含運）\n\n" +
+    "如果您想看其他產品的活動，\n" +
+    "可以直接回：\n" +
+    "• 龜鹿膏優惠\n" +
+    "• 龜鹿飲優惠\n" +
+    "• 龜鹿湯塊優惠\n" +
+    "• 鹿茸粉優惠\n" +
+    "• 龜鹿調飲粉優惠\n\n" +
+    "也可以直接私訊我們，\n" +
+    "由專人幫您整理目前比較適合的方案🙂"
   );
 }
 
@@ -643,6 +674,18 @@ async function handleTextMessage(text) {
   const food = foodReply(t);
   if (food) return [food];
 
+  if (
+    t.includes("還有什麼優惠") ||
+    t.includes("還有優惠嗎") ||
+    t.includes("有什麼優惠") ||
+    t.includes("有優惠嗎") ||
+    t.includes("活動有哪些") ||
+    t.includes("現在有什麼活動") ||
+    t.includes("目前有什麼優惠")
+  ) {
+    return [promoReply(), contactCard()];
+  }
+
   if (looksBuyIntent(t)) {
     return [
       makeText(
@@ -674,6 +717,14 @@ async function handleTextMessage(text) {
     return [northReply(), contactCard()];
   }
 
+  const promoProduct = flat.find((p) =>
+    (p.promoKeywords || []).some((k) => t.includes(k))
+  );
+
+  if (promoProduct) {
+    return [makeText(productPromoText(promoProduct))];
+  }
+
   const product = findProduct(flat, t);
   if (product) {
     return [
@@ -685,6 +736,7 @@ async function handleTextMessage(text) {
         actions: [
           postbackAction("成分規格", `ingredient:${product.id}`, `${product.name} 成分規格`),
           postbackAction("怎麼吃", `usage:${product.id}`, `${product.name} 怎麼吃`),
+          postbackAction("活動優惠", `promo:${product.id}`, `${product.name} 活動優惠`),
           messageAction("回選單", "選單")
         ]
       })
@@ -717,6 +769,7 @@ async function handlePostback(dataRaw) {
         actions: [
           postbackAction("成分規格", `ingredient:${p.id}`, `${p.name} 成分規格`),
           postbackAction("怎麼吃", `usage:${p.id}`, `${p.name} 怎麼吃`),
+          postbackAction("活動優惠", `promo:${p.id}`, `${p.name} 活動優惠`),
           messageAction("回選單", "選單")
         ]
       })
@@ -735,6 +788,13 @@ async function handlePostback(dataRaw) {
     const p = flat.find((x) => x.id === id);
     if (!p) return [makeText("找不到這個產品🙂")];
     return [makeText(productUsageText(p))];
+  }
+
+  if (raw.startsWith("promo:")) {
+    const id = raw.replace("promo:", "");
+    const p = flat.find((x) => x.id === id);
+    if (!p) return [makeText("找不到這個產品🙂")];
+    return [makeText(productPromoText(p))];
   }
 
   return [makeText("您好🙂 回「選單」查看功能。")];
