@@ -230,9 +230,9 @@ function mainMenuCard() {
     text: "請選擇功能🙂",
     actions: [
       messageAction("產品介紹", "產品介紹"),
+      messageAction("怎麼選龜鹿", "怎麼選龜鹿"),
       messageAction("產品比較", "產品比較"),
-      messageAction("推薦組合", "推薦組合"),
-      messageAction("飲食建議", "飲食建議")
+      messageAction("料理搭配", "料理搭配")
     ]
   });
 }
@@ -240,11 +240,11 @@ function mainMenuCard() {
 function secondMenuCard() {
   return makeButtons({
     title: "更多",
-    text: "也可以看門市 / 官網🙂",
+    text: "也可以看 FAQ / 官網🙂",
     actions: [
       messageAction("成分規格", "成分規格"),
+      messageAction("常見問題", "FAQ"),
       messageAction("聯絡門市", "聯絡門市"),
-      messageAction("中醫師諮詢", "中醫師諮詢"),
       messageAction("更多", "更多")
     ]
   });
@@ -253,12 +253,12 @@ function secondMenuCard() {
 function moreMenuCard() {
   return makeButtons({
     title: "更多",
-    text: "也可以看門市 / 官網🙂",
+    text: "也可以直接看網站內容🙂",
     actions: [
-      uriAction("官網", STORE.website),
-      uriAction("加入 LINE", STORE.lineLink),
-      uriAction("一鍵來電", `tel:${STORE.phoneTel}`),
-      uriAction("地圖", STORE.mapUrl)
+      uriAction("官網首頁", STORE.website),
+      uriAction("龜鹿知識", `${STORE.website}knowledge.html`),
+      uriAction("中醫觀點", `${STORE.website}videos.html`),
+      uriAction("聯絡門市", `${STORE.website}contact.html`)
     ]
   });
 }
@@ -292,26 +292,26 @@ function compareMenuCard() {
 
 function recommendMenuCard() {
   return makeButtons({
-    title: "補養推薦組合",
-    text: "直接選一種🙂",
+    title: "怎麼選龜鹿",
+    text: "可依使用方式快速看方向🙂",
     actions: [
-      messageAction("日常補養組", "日常補養組"),
-      messageAction("加強搭配組", "加強搭配組"),
-      messageAction("長輩溫和組", "長輩溫和組"),
-      messageAction("回選單", "選單")
+      uriAction("查看選擇指南", `${STORE.website}choose.html`),
+      messageAction("膏跟飲差別", "膏跟飲差別"),
+      messageAction("膏跟湯塊差別", "膏跟湯塊差別"),
+      messageAction("粉類比較", "粉類比較")
     ]
   });
 }
 
 function foodMenuCard() {
   return makeButtons({
-    title: "飲食建議",
+    title: "料理搭配",
     text: "想先看哪一種？🙂",
     actions: [
-      messageAction("補養建議（綜合版）", "補養建議"),
-      messageAction("季節推薦", "季節推薦"),
+      uriAction("查看料理頁", `${STORE.website}recipes.html`),
       messageAction("燉煮建議", "燉煮建議"),
-      messageAction("常見問題 FAQ", "FAQ")
+      messageAction("龜鹿湯塊怎麼煮", "龜鹿湯塊怎麼煮"),
+      messageAction("回選單", "選單")
     ]
   });
 }
@@ -603,7 +603,7 @@ async function handleTextMessage(text) {
 
   if (looksMenu(t) || t === "你好" || t === "哈囉" || t === "您好") {
     return [
-      makeText("您好🙂 回「選單」可查看功能。"),
+      makeText("您好🙂 回「選單」可查看：產品介紹、怎麼選龜鹿、產品比較、料理搭配、成分規格與聯絡門市。"),
       mainMenuCard(),
       secondMenuCard()
     ];
@@ -621,11 +621,11 @@ async function handleTextMessage(text) {
     return [compareMenuCard()];
   }
 
-  if (t === "推薦組合") {
+  if (t === "推薦組合" || t === "怎麼選龜鹿" || t === "怎麼選") {
     return [recommendMenuCard()];
   }
 
-  if (t === "飲食建議" || t === "食用建議") {
+  if (t === "飲食建議" || t === "食用建議" || t === "料理搭配") {
     return [foodMenuCard()];
   }
 
@@ -643,6 +643,22 @@ async function handleTextMessage(text) {
 
   if (t === "官網") {
     return [makeText(`官網：${STORE.website}`), moreMenuCard()];
+  }
+
+  if (t === "龜鹿知識") {
+    return [makeText(`龜鹿知識：${STORE.website}knowledge.html`), moreMenuCard()];
+  }
+
+  if (t === "中醫觀點" || t === "影片") {
+    return [makeText(`中醫觀點：${STORE.website}videos.html`), moreMenuCard()];
+  }
+
+  if (t === "品牌介紹") {
+    return [makeText(`品牌介紹：${STORE.website}brand.html`), moreMenuCard()];
+  }
+
+  if (t === "產品總覽") {
+    return [makeText(`產品總覽：${STORE.website}dm.html`), moreMenuCard()];
   }
 
   if (t === "加入 line" || t === "加入line") {
@@ -735,7 +751,7 @@ async function handleTextMessage(text) {
         thumbnailImageUrl: product.imageUrl || product.image || undefined,
         actions: [
           postbackAction("成分規格", `ingredient:${product.id}`, `${product.name} 成分規格`),
-          postbackAction("怎麼吃", `usage:${product.id}`, `${product.name} 怎麼吃`),
+          postbackAction("食用方式", `usage:${product.id}`, `${product.name} 食用方式`),
           postbackAction("活動優惠", `promo:${product.id}`, `${product.name} 活動優惠`),
           messageAction("回選單", "選單")
         ]
@@ -744,7 +760,7 @@ async function handleTextMessage(text) {
   }
 
   return [
-    makeText("您好🙂 回「選單」查看功能。"),
+    makeText("您好🙂 回「選單」查看功能，或直接輸入：產品介紹 / 怎麼選龜鹿 / 產品比較 / 料理搭配。"),
     mainMenuCard(),
     secondMenuCard()
   ];
@@ -768,7 +784,7 @@ async function handlePostback(dataRaw) {
         thumbnailImageUrl: p.imageUrl || p.image || undefined,
         actions: [
           postbackAction("成分規格", `ingredient:${p.id}`, `${p.name} 成分規格`),
-          postbackAction("怎麼吃", `usage:${p.id}`, `${p.name} 怎麼吃`),
+          postbackAction("食用方式", `usage:${p.id}`, `${p.name} 食用方式`),
           postbackAction("活動優惠", `promo:${p.id}`, `${p.name} 活動優惠`),
           messageAction("回選單", "選單")
         ]
