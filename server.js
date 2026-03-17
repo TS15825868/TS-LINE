@@ -9,8 +9,8 @@ const config = {
   channelSecret: process.env.CHANNEL_SECRET,
 };
 
-// ✅ 已幫你寫死（不用 .env 也能跑）
-const GOOGLE_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbxRrxjdP-PzIzORZsAIML_vsNqFtEQrH7AE9n9HVoHy4kwXc0yVV9hMOIfOQ4NG1qo/exec";
+// ✅ 最新 webhook
+const GOOGLE_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbyS5_ptRtXNHavGLdpfi3aYtQ9GijVt3IsZ-_vIFNfQGcOm_PcGhqXiMQC7gTXQFJlRsg/exec";
 
 const app = express();
 const client = new line.Client(config);
@@ -36,19 +36,19 @@ async function handleEvent(event) {
   const orderLink = "https://ts15825868.github.io/xianjiawei/order.html";
 
   // =========================
-  // 🔥 CRM分類
+  // 🔥 CRM分類（最終版）
   // =========================
 
   let intent = "一般詢問";
 
   if (/日常補養|保養|調理/.test(msg)) intent = "高潛力客";
-  else if (/外出|方便/.test(msg)) intent = "外出需求";
+  else if (/外出|方便|攜帶/.test(msg)) intent = "外出需求";
   else if (/燉湯|雞湯|排骨/.test(msg)) intent = "料理需求";
   else if (/價格|多少|費用/.test(msg)) intent = "猶豫客";
   else if (/好|可以|下單|要買/.test(msg)) intent = "準成交";
 
   // =========================
-  // 🔥 傳到 Google Sheet
+  // 🔥 CRM送資料（不中斷主流程）
   // =========================
 
   axios.post(GOOGLE_SCRIPT_WEBHOOK, {
@@ -59,7 +59,7 @@ async function handleEvent(event) {
   }).catch(()=>{});
 
   // =========================
-  // 💰 成交回覆
+  // 💰 成交邏輯（優化）
   // =========================
 
   if (intent === "高潛力客") {
@@ -71,7 +71,7 @@ async function handleEvent(event) {
 
 🎁 現在會附 30cc × 3  
 
-👉 我幫你直接配好一組  
+👉 我幫你配好一組  
 👉 或直接下單（最快）  
 ${orderLink}
 `);
@@ -83,7 +83,7 @@ ${orderLink}
 
 ✔ 龜鹿飲  
 
-👉 我幫你配一組好攜帶的  
+👉 我幫你配一組方便攜帶的  
 👉 或直接下單  
 ${orderLink}
 `);
@@ -123,7 +123,25 @@ ${orderLink}
   }
 
   // =========================
-  // 預設
+  // 🔍 SEO導流
+  // =========================
+
+  if (/怎麼選/.test(msg)) {
+    return reply(event, `
+👉 這個看最快  
+https://ts15825868.github.io/xianjiawei/choose.html
+`);
+  }
+
+  if (/龜鹿知識|是什麼/.test(msg)) {
+    return reply(event, `
+👉 這裡整理好了  
+https://ts15825868.github.io/xianjiawei/articles.html
+`);
+  }
+
+  // =========================
+  // 🧠 預設引導
   // =========================
 
   return reply(event, `
@@ -148,4 +166,4 @@ function reply(event, text) {
 }
 
 app.listen(3000);
-console.log("🔥 CRM最終版已啟動");
+console.log("🔥 CRM最終爆單版已啟動");
