@@ -25,79 +25,85 @@ async function handleEvent(event){
 
 if(event.type !== 'message') return;
 
-const userId = event.source.userId;
 const text = event.message.text;
+const userId = event.source.userId;
 
-// ===== 取得LINE名稱 =====
+// ===== 取得名稱 =====
 let profile;
 try{
 profile = await client.getProfile(userId);
-}catch(e){
+}catch{
 profile = { displayName:"顧客" };
 }
-
 const name = profile.displayName;
 
-// ===== 寫入客戶（每次互動）=====
-await axios.post(CRM_URL,{
-action:"saveUser",
-userId,
-name
-});
+// ===== 寫入CRM =====
+await axios.post(CRM_URL,{action:"saveUser",userId,name});
 
-// ===== 取得分群 =====
-const res = await axios.post(CRM_URL,{
-action:"getUser",
-userId
-});
-
+// ===== 取得客戶 =====
+const res = await axios.post(CRM_URL,{action:"getUser",userId});
 const user = res.data || {};
 const level = user.level || "新客";
 
-// ===== 話術 =====
+// ===== 判斷需求 =====
+let intent = "";
+
+if(text.includes("保養")) intent="日常";
+if(text.includes("累")) intent="快速";
+if(text.includes("煮")) intent="料理";
+
+// ===== 存需求 =====
+if(intent){
+await axios.post(CRM_URL,{
+action:"saveIntent",
+userId,
+intent
+});
+}
+
+// ===== AI推薦 =====
+if(intent){
+return recommend(event, level, intent);
+}
+
+// ===== 下單 =====
 if(text.includes("買") || text.includes("下單")){
-return replyOrder(event, level);
+return orderFlow(event, level);
 }
 
-if(text.includes("保養")){
-return reply(event, level==="VIP"
-? "幫你搭VIP組合（膏＋飲＋湯）"
-: "建議：龜鹿膏（日常補養）");
+// ===== 預設 =====
+return menu(event, name, level);
 }
 
-if(text.includes("累")){
-return reply(event, level==="VIP"
-? "幫你進階搭配（膏＋飲）"
-: "建議：膏＋飲搭配");
+// ===== 推薦 =====
+function recommend(event, level, intent){
+
+let text="";
+
+if(intent==="日常"){
+text = level==="VIP"
+? "幫你配VIP組合（膏＋飲＋湯）"
+: "建議：龜鹿膏（日常）";
 }
 
-if(text.includes("煮")){
-return reply(event,"建議：龜鹿湯塊（料理用）");
+if(intent==="快速"){
+text = level==="VIP"
+? "進階快速補充（膏＋飲）"
+: "建議：膏＋飲";
 }
 
-// 主選單
+if(intent==="料理"){
+text = "建議：龜鹿湯塊";
+}
+
 return client.replyMessage(event.replyToken,{
-type:'flex',
-altText:'選單',
-contents:{
-type:'bubble',
-body:{
-type:'box',
-layout:'vertical',
-contents:[
-{type:'text',text:`${name}，你想怎麼補？`,weight:'bold'},
-btn("日常保養"),
-btn("最近比較累"),
-btn("料理搭配"),
-btn("直接購買")
-]
-}
-}
+type:'text',
+text
 });
 }
 
 // ===== 下單 =====
-function replyOrder(event, level){
+function orderFlow(event, level){
 
 let text = `
 請提供👇
@@ -119,10 +125,26 @@ text
 });
 }
 
-function reply(event,text){
+// ===== 選單 =====
+function menu(event, name, level){
+
 return client.replyMessage(event.replyToken,{
-type:'text',
-text
+type:'flex',
+altText:'選單',
+contents:{
+type:'bubble',
+body:{
+type:'box',
+layout:'vertical',
+contents:[
+{type:'text',text:`${name}，你想怎麼補？`,weight:'bold'},
+btn("日常保養"),
+btn("最近比較累"),
+btn("料理搭配"),
+btn("直接購買")
+]
+}
+}
 });
 }
 
