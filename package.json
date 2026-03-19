@@ -1,12 +1,9 @@
-
 {
-  "name": "line-crm-bot",
+  "name": "line-bot",
   "version": "1.0.0",
   "main": "server.js",
-  "license": "MIT",
   "dependencies": {
-    "@line/bot-sdk": "^7.5.0",
-    "axios": "^1.6.0",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "@line/bot-sdk": "^7.5.2"
   }
 }
