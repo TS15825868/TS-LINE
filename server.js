@@ -2,175 +2,215 @@
 
 const express = require("express");
 const line = require("@line/bot-sdk");
-const axios = require("axios");
 
 const app = express();
 
-// ===== LINE 設定 =====
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.CHANNEL_SECRET,
 };
 
-if (!config.channelAccessToken || !config.channelSecret) {
-  console.error("❌ 缺少 LINE ENV 變數");
-  process.exit(1);
-}
-
 const client = new line.Client(config);
 
-// ===== CRM（可選）=====
-const GOOGLE_SCRIPT_WEBHOOK =
-  process.env.GOOGLE_SCRIPT_WEBHOOK || "";
-
-// ===== 首頁 =====
-app.get("/", (req, res) => {
-  res.send("TS LINE OA is running.");
-});
-
-// ===== Webhook =====
 app.post("/webhook", line.middleware(config), async (req, res) => {
-  try {
-    const results = await Promise.all(req.body.events.map(handleEvent));
-    res.json(results);
-  } catch (err) {
-    console.error("❌ webhook error", err);
-    res.status(500).end();
-  }
+  Promise.all(req.body.events.map(handleEvent));
+  res.sendStatus(200);
 });
 
-// ===== 主邏輯 =====
 async function handleEvent(event) {
-  if (event.type !== "message" || event.message.type !== "text") {
-    return null;
-  }
+  if (event.type !== "message" || event.message.type !== "text") return null;
 
   const msg = event.message.text.trim();
-  const userId = event.source.userId;
 
   const orderLink =
     "https://ts15825868.github.io/xianjiawei/order.html";
 
-  // ===== 意圖判斷 =====
-  let intent = "unknown";
-
-  if (/日常補養/.test(msg)) intent = "daily";
-  else if (/外出補充/.test(msg)) intent = "outdoor";
-  else if (/燉湯料理/.test(msg)) intent = "cooking";
-  else if (/價格|多少/.test(msg)) intent = "price";
-  else if (/好|可以|下單/.test(msg)) intent = "ready";
-
-  // ===== CRM紀錄（可關）=====
-  if (GOOGLE_SCRIPT_WEBHOOK) {
-    axios.post(GOOGLE_SCRIPT_WEBHOOK, {
-      userId,
-      message: msg,
-      intent,
-      time: new Date().toISOString(),
-    }).catch(() => {});
-  }
-
-  // ===== 成交腳本 =====
-
-  // 🟢 日常補養（主力商品）
-  if (intent === "daily") {
+  // ===== 開場（最重要🔥）
+  if (msg === "我要搭配") {
     return reply(
       event,
       `
-一般會這樣搭 👍  
+我幫你看一下 👀
 
-✔ 龜鹿膏（主體日常補養）  
-✔ 搭配龜鹿飲（外出補充）  
+你大概是👇
+① 平常保養
+② 最近比較累
 
-🎁 現在都有附 30cc 體驗組  
+打個數字就好 👍
+`
+    );
+  }
 
-👉 我可以幫你配一組最剛好  
-👉 或直接下單（不用等）  
+  // ===== 分流 =====
+
+  if (msg === "1" || msg.includes("日常")) {
+    return reply(
+      event,
+      `
+了解 👍
+
+那我會建議你用比較穩的方式👇
+
+👉 龜鹿膏（平常用）
+👉 搭配龜鹿飲（外出補）
+
+這樣比較順 👍
+
+你是👇
+① 先試看看
+② 想穩定吃一段
+`
+    );
+  }
+
+  if (msg === "2" || msg.includes("累")) {
+    return reply(
+      event,
+      `
+這種通常會建議補一下 👍
+
+👉 可以用膏 + 飲搭著
+
+平常補
+忙的時候也能補
+
+你是👇
+① 想先試
+② 想直接調整一段
+`
+    );
+  }
+
+  // ===== 產品入口 =====
+
+  if (msg.includes("龜鹿膏")) {
+    return reply(
+      event,
+      `
+這個是最常用的 👍
+
+但通常不會單用
+
+👉 會搭龜鹿飲
+比較順 👍
+
+你是👇
+① 先試看看
+② 想穩定吃
+`
+    );
+  }
+
+  if (msg.includes("龜鹿飲")) {
+    return reply(
+      event,
+      `
+這個方便 👍
+
+外出或忙的時候很好用
+
+👉 很多人會搭膏一起
+效果比較穩 👍
+`
+    );
+  }
+
+  if (msg.includes("湯")) {
+    return reply(
+      event,
+      `
+這個是料理用 👍
+
+👉 雞湯 / 排骨都可以
+
+平常吃 + 補養一起做 👍
+`
+    );
+  }
+
+  // ===== 成交引導🔥
+
+  if (msg.includes("試") || msg.includes("1")) {
+    return reply(
+      event,
+      `
+那我會建議你先用👇
+
+👉 入門方式（比較好開始）
+
+大概 2000 多 👍
+
+要我幫你配一組嗎？
+`
+    );
+  }
+
+  if (msg.includes("穩定") || msg.includes("2")) {
+    return reply(
+      event,
+      `
+那你可以直接這樣👇
+
+👉 日常補養方式
+
+大概 4000～5000 👍
+
+這樣會比較穩
+
+我幫你配好可以直接出 👍
 ${orderLink}
 `
     );
   }
 
-  // 🟡 外出補充
-  if (intent === "outdoor") {
+  // ===== 價格抗拒處理🔥
+
+  if (msg.includes("貴")) {
     return reply(
       event,
       `
-外出方便會選 👍  
+我懂 👍
 
-✔ 龜鹿飲（30cc / 180cc）  
+很多人一開始也會這樣覺得
 
-👉 我幫你配方便攜帶組合  
-👉 或直接下單  
+所以通常會先用比較好入門的方式
+不用一次很多 👍
+
+我可以幫你抓一個比較剛好的
+`
+    );
+  }
+
+  // ===== 準備下單🔥
+
+  if (msg.includes("好") || msg.includes("可以")) {
+    return reply(
+      event,
+      `
+我幫你整理好了 👍
+
+👉 直接這邊填就可以安排出貨
 ${orderLink}
 `
     );
   }
 
-  // 🟠 燉湯料理
-  if (intent === "cooking") {
-    return reply(
-      event,
-      `
-燉湯會用 👍  
+  // ===== 預設（真人版🔥）
 
-✔ 龜鹿湯塊  
-
-👉 雞湯 / 排骨我可以幫你配  
-👉 或直接下單  
-${orderLink}
-`
-    );
-  }
-
-  // 💰 價格導成交
-  if (intent === "price") {
-    return reply(
-      event,
-      `
-現在有做搭配優惠 👍  
-
-🎁 體驗組會幫你升級  
-
-👉 要我幫你配一組最划算  
-👉 或直接下單  
-${orderLink}
-`
-    );
-  }
-
-  // 🔥 準備下單
-  if (intent === "ready") {
-    return reply(
-      event,
-      `
-我幫你整理好了 👍  
-
-👉 直接填這個就可以安排出貨  
-${orderLink}
-`
-    );
-  }
-
-  // 🧭 預設引導
   return reply(
     event,
     `
-你好 👋  
+我幫你看一下 👀
 
-可以直接選👇  
+你大概是👇
+① 平常保養
+② 最近比較累
 
-① 日常補養  
-② 外出補充  
-③ 燉湯料理  
-
-👉 或直接下單  
-${orderLink}
+打個數字就好 👍
 `
   );
 }
 
-// ===== 回覆函式 =====
 function reply(event, text) {
   return client.replyMessage(event.replyToken, {
     type: "text",
@@ -178,8 +218,4 @@ function reply(event, text) {
   });
 }
 
-// ===== 啟動 =====
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on ${PORT}`);
-});
+app.listen(3000, () => console.log("LINE Bot running"));
