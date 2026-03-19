@@ -28,7 +28,7 @@ if(event.type !== 'message') return;
 const text = event.message.text;
 const userId = event.source.userId;
 
-// ===== 取得名稱 =====
+// ===== 名稱 =====
 let profile;
 try{
 profile = await client.getProfile(userId);
@@ -46,12 +46,18 @@ name
 });
 }catch(e){}
 
-// ===== 判斷 =====
-if(text.includes("保養") || text.includes("日常")){
-return sendCarousel(event);
+// ===== 👉 自動下單判斷 =====
+if(text.startsWith("我想買")){
+return sendOrderForm(event,text.replace("我想買",""));
 }
 
-if(text.includes("全部產品") || text.includes("產品")){
+// ===== 👉 使用者填資料（判斷訂單）=====
+if(text.includes("商品：") && text.includes("電話")){
+return handleOrder(event,text,name,userId);
+}
+
+// ===== 推薦 =====
+if(text.includes("日常") || text.includes("保養")){
 return sendCarousel(event);
 }
 
@@ -66,7 +72,7 @@ return sendSoup(event);
 return sendMenu(event,name);
 }
 
-// ===== 🔥 商品滑動卡片 =====
+// ===== 商品卡片 =====
 function sendCarousel(event){
 return client.replyMessage(event.replyToken,{
 type:'flex',
@@ -75,103 +81,110 @@ contents:{
 type:'carousel',
 contents:[
 
-productBubble(
-"龜鹿膏",
-"日常補養首選",
+productBubble("龜鹿膏","日常補養",
 "https://ts15825868.github.io/xianjiawei/images/guilu-gao-100g.jpg",
-"我想買龜鹿膏"
-),
+"我想買龜鹿膏"),
 
-productBubble(
-"龜鹿飲",
-"外出方便補充",
+productBubble("龜鹿飲","外出補充",
 "https://ts15825868.github.io/xianjiawei/images/guilu-drink-30cc.jpg",
-"我想買龜鹿飲"
-),
+"我想買龜鹿飲"),
 
-productBubble(
-"龜鹿湯塊",
-"燉湯料理使用",
+productBubble("龜鹿湯塊","燉湯使用",
 "https://ts15825868.github.io/xianjiawei/images/guilu-block-300g.jpg",
-"我想買龜鹿湯塊"
-),
+"我想買龜鹿湯塊"),
 
-productBubble(
-"鹿茸粉",
-"可加咖啡牛奶",
+productBubble("鹿茸粉","日常搭配",
 "https://ts15825868.github.io/xianjiawei/images/lurong-powder-75g.jpg",
-"我想買鹿茸粉"
-)
+"我想買鹿茸粉")
 
 ]
 }
 });
 }
 
-// ===== 單卡片模板 =====
 function productBubble(title,desc,img,text){
 return {
 type:'bubble',
-hero:{
-type:'image',
-url:img,
-size:'full',
-aspectRatio:'1:1',
-aspectMode:'cover'
-},
+hero:{type:'image',url:img,size:'full',aspectRatio:'1:1',aspectMode:'cover'},
 body:{
 type:'box',
 layout:'vertical',
 contents:[
-{type:'text',text:title,weight:'bold',size:'lg'},
+{type:'text',text:title,weight:'bold'},
 {type:'text',text:desc,size:'sm',color:'#666'}
 ]
 },
 footer:{
 type:'box',
 layout:'vertical',
-spacing:'sm',
 contents:[
 {
 type:'button',
 style:'primary',
-action:{
-type:'message',
-label:'我要這個',
-text:text
-}
-},
-{
-type:'button',
-style:'secondary',
-action:{
-type:'uri',
-label:'LINE詢問',
-uri:'https://lin.ee/sHZW7NkR'
-}
+action:{type:'message',label:'我要這個',text:text}
 }
 ]
 }
 };
 }
 
-// ===== 快速補充 =====
+// ===== 👉 出訂單表單 =====
+function sendOrderForm(event,product){
+return client.replyMessage(event.replyToken,{
+type:'text',
+text:
+`請填寫訂單👇
+
+商品：${product}
+數量：
+姓名：
+電話：
+配送：7-11 / 宅配`
+});
+}
+
+// ===== 👉 處理訂單 =====
+async function handleOrder(event,text,name,userId){
+
+const product = text.match(/商品：(.*)/)?.[1]?.trim() || "";
+const qty = text.match(/數量：(.*)/)?.[1]?.trim() || "";
+const phone = text.match(/電話：(.*)/)?.[1]?.trim() || "";
+const delivery = text.match(/配送：(.*)/)?.[1]?.trim() || "";
+
+// 👉 寫入CRM
+try{
+await axios.post(CRM_URL,{
+action:"order",
+userId,
+name,
+product,
+qty,
+phone,
+delivery
+});
+}catch(e){}
+
+return client.replyMessage(event.replyToken,{
+type:'text',
+text:"✅ 已收到訂單，我會盡快幫你處理"
+});
+}
+
+// ===== 其他 =====
 function sendCombo(event){
 return client.replyMessage(event.replyToken,{
 type:'text',
-text:"建議：龜鹿膏＋龜鹿飲（快速補充）"
+text:"建議：龜鹿膏＋龜鹿飲"
 });
 }
 
-// ===== 料理 =====
 function sendSoup(event){
 return client.replyMessage(event.replyToken,{
 type:'text',
-text:"建議：龜鹿湯塊（燉湯）"
+text:"建議：龜鹿湯塊"
 });
 }
 
-// ===== 選單 =====
 function sendMenu(event,name){
 return client.replyMessage(event.replyToken,{
 type:'text',
