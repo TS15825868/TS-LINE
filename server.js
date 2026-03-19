@@ -18,151 +18,42 @@ const CRM_URL = 'https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2
 // ===== 價格 =====
 const PRICE = {
   "龜鹿膏": 2000,
-  "龜鹿飲180": 200,
-  "龜鹿飲30": 100,
-  "湯塊300": 4000,
-  "鹿茸粉": 2000
+  "膏+飲": 2600,
+  "湯塊": 4000
 };
 
-// ===== 搭配系統 =====
-function getCombo(product){
+// ===== 配送判斷 =====
+function checkDelivery(text){
 
-  if(product === "膏+飲"){
-    return {
-      name:"膏＋飲",
-      price:2000,
-      gift:"送龜鹿飲1包",
-      note:"🔥 最多人這樣搭"
-    };
+  if(text.includes("面交")){
+    if(/台北|新北|板橋|林口|三重|中和|永和|新店|淡水/.test(text)){
+      return "面交";
+    }else{
+      return "reject";
+    }
   }
 
-  if(product === "龜鹿膏"){
-    return {
-      name:"龜鹿膏",
-      price:2000,
-      gift:"送試飲",
-      note:"日常補養"
-    };
-  }
-
-  if(product === "龜鹿湯塊"){
-    return {
-      name:"湯塊",
-      price:4000,
-      gift:"送小包",
-      note:"料理進補"
-    };
-  }
-
-  return null;
-}
-
-// ===== 訂單解析 =====
-function detectProduct(text){
-
-  if(text.includes("膏") && text.includes("飲")) return "膏+飲";
-  if(text.includes("龜鹿膏")) return "龜鹿膏";
-  if(text.includes("湯塊")) return "龜鹿湯塊";
+  if(text.includes("7-11")) return "7-11";
+  if(text.includes("宅配")) return "宅配";
 
   return "";
 }
 
-// ===== webhook =====
-app.post('/webhook', line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-  .then(() => res.sendStatus(200));
-});
-
-// ===== 主流程 =====
-async function handleEvent(event){
-
-  if(event.type !== 'message') return;
-
-  const text = event.message.text;
-  const userId = event.source.userId;
-
-  // ===== 分流 =====
-  if(/日常|1/.test(text)){
-    return sendCombo(event,"膏+飲");
-  }
-
-  if(/累|2/.test(text)){
-    return sendCombo(event,"膏+飲");
-  }
-
-  if(/料理|3/.test(text)){
-    return sendCombo(event,"龜鹿湯塊");
-  }
-
-  if(/推薦|4/.test(text)){
-    return sendCombo(event,"膏+飲");
-  }
-
-  // ===== 點擊購買 =====
-  if(text.includes("我要")){
-    const product = detectProduct(text);
-    const combo = getCombo(product);
-
-    return reply(event,
-`🔥 幫你整理好
-
-商品：${combo.name}
-
-💰 本次：$${combo.price}
-🎁 ${combo.gift}
-
-${combo.note}
-
-👉 回「確認」直接幫你出單`
-    );
-  }
-
-  // ===== 成交 =====
-  if(text.includes("確認")){
-
-    await axios.post(CRM_URL,{
-      action:"order",
-      userId
-    });
-
-    return reply(event,
-`✅ 訂單完成
-
-🎁 已幫你保留優惠
-
-我們會儘快聯絡 🙌`
-    );
-  }
-
-  // ===== 預設 =====
-  return reply(event,
-`歡迎來到仙加味 🙌
-
-① 日常保養  
-② 最近比較累  
-③ 料理搭配  
-④ 直接推薦`
-  );
-
-}
-
-// ===== 推薦卡 =====
-function sendCombo(event,product){
-
-  const c = getCombo(product);
-
-  return client.replyMessage(event.replyToken,{
+// ===== 卡片 =====
+function card(title, desc, price, label){
+  return {
     type:"flex",
-    altText:"推薦",
+    altText:title,
     contents:{
       type:"bubble",
       body:{
         type:"box",
         layout:"vertical",
         contents:[
-          {type:"text",text:c.name,size:"xl",weight:"bold"},
-          {type:"text",text:c.note},
-          {type:"text",text:`🎁 ${c.gift}`}
+          {type:"text",text:title,weight:"bold",size:"lg"},
+          {type:"text",text:desc,size:"sm",margin:"md"},
+          {type:"separator",margin:"md"},
+          {type:"text",text:`$${price}`,weight:"bold",margin:"md"}
         ]
       },
       footer:{
@@ -174,23 +65,101 @@ function sendCombo(event,product){
             style:"primary",
             action:{
               type:"message",
-              label:"我要這個",
-              text:`我要 ${c.name}`
+              label:"直接安排",
+              text:`確認 ${label}`
             }
           }
         ]
       }
     }
-  });
-
+  };
 }
 
-// ===== reply =====
-function reply(event,text){
+// ===== webhook =====
+app.post('/webhook', line.middleware(config), (req,res)=>{
+  Promise.all(req.body.events.map(handleEvent))
+  .then(r=>res.json(r));
+});
+
+// ===== 主流程 =====
+async function handleEvent(event){
+
+  if(event.type !== 'message') return;
+
+  const text = event.message.text;
+  const userId = event.source.userId;
+
+  // ===== 分流 =====
+
+  if(text==="日常保養"){
+    return client.replyMessage(event.replyToken,
+      card("日常補養","龜鹿膏","2000","龜鹿膏")
+    );
+  }
+
+  if(text==="最近比較累"){
+    return client.replyMessage(event.replyToken,
+      card("調整狀態","膏＋飲搭配","2600","膏+飲")
+    );
+  }
+
+  if(text==="料理搭配"){
+    return client.replyMessage(event.replyToken,
+      card("燉湯使用","龜鹿湯塊","4000","湯塊")
+    );
+  }
+
+  if(text==="幫我推薦"){
+    return client.replyMessage(event.replyToken,
+      card("基礎搭配","膏＋飲","2600","膏+飲")
+    );
+  }
+
+  // ===== 確認購買 =====
+  if(text.includes("確認")){
+
+    return client.replyMessage(event.replyToken,{
+      type:"text",
+      text:`幫你安排 🙌  
+
+請提供👇  
+姓名：  
+電話：  
+配送方式（7-11 / 宅配 / 面交）  
+（面交僅限雙北）`
+    });
+  }
+
+  // ===== 配送判斷 =====
+  const delivery = checkDelivery(text);
+
+  if(delivery==="reject"){
+    return client.replyMessage(event.replyToken,{
+      type:"text",
+      text:"目前面交僅限雙北地區 🙏 建議選擇宅配或7-11"
+    });
+  }
+
+  // ===== 收單（寫CRM）=====
+  if(text.includes("姓名")){
+
+    await axios.post(CRM_URL,{
+      action:"order",
+      userId,
+      text
+    }).catch(()=>{});
+
+    return client.replyMessage(event.replyToken,{
+      type:"text",
+      text:"已幫你登記完成 🙌 我們會再與你確認"
+    });
+  }
+
   return client.replyMessage(event.replyToken,{
-    type:'text',
-    text
+    type:"text",
+    text:"請直接點選下方選單👇"
   });
+
 }
 
 app.listen(3000);
