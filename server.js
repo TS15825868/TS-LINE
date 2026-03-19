@@ -1,5 +1,6 @@
 const express = require('express');
 const line = require('@line/bot-sdk');
+const axios = require('axios');
 
 const app = express();
 
@@ -10,45 +11,83 @@ channelSecret: '7c3c4740afa5a281d54afb9f8ffc1e96'
 
 const client = new line.Client(config);
 
+// 👉 你的 GAS
+const CRM_URL = 'https://script.google.com/macros/s/AKfycbzymc5WXqVFhJr1cTBbVvnA4P6WDTNGdNEVtkcqBQDO6SJ03ZL_eQ7BI9ZAIVdyiwbHew/exec';
+
 app.post('/webhook', line.middleware(config), (req, res) => {
 Promise.all(req.body.events.map(handleEvent))
 .then((result) => res.json(result));
 });
 
-// ===== 主流程 =====
-function handleEvent(event){
+async function handleEvent(event){
 
-if(event.type !== 'message') return Promise.resolve(null);
+if(event.type !== 'message') return;
 
+const userId = event.source.userId;
 const text = event.message.text;
 
-// ===== 關鍵字分流 =====
-if(text.includes("保養")){
-return replyRecommend(event,"日常保養");
+// ===== 取得用戶資料 =====
+let profile;
+try{
+profile = await client.getProfile(userId);
+}catch(e){
+profile = { displayName: "顧客" };
 }
 
-if(text.includes("累")){
-return replyRecommend(event,"最近比較累");
-}
+const name = profile.displayName;
 
-if(text.includes("料理")){
-return replyRecommend(event,"料理搭配");
-}
+// ===== CRM查詢 =====
+const userData = await getUser(userId);
 
+// ===== 分群邏輯 =====
+const level = userData?.level || "新客";
+
+// ===== 不同話術 =====
 if(text.includes("買") || text.includes("下單")){
-return replyOrder(event);
+return replyOrder(event, level);
 }
 
-// ===== 預設：顯示按鈕選單 =====
-return replyMenu(event);
-
+if(text.includes("保養") || text.includes("累")){
+return replyRecommend(event, level);
 }
 
-// ===== 按鈕選單（封頂）=====
-function replyMenu(event){
+// ===== 預設選單 =====
+return replyMenu(event, level);
+}
+
+// ===== CRM：查客戶 =====
+async function getUser(userId){
+try{
+const res = await axios.post(CRM_URL,{
+action:"getUser",
+userId:userId
+});
+return res.data;
+}catch(e){
+return null;
+}
+}
+
+// ===== CRM：寫訂單 =====
+async function saveOrder(data){
+await axios.post(CRM_URL,{
+action:"order",
+...data
+});
+}
+
+// ===== 選單（根據等級變）=====
+function replyMenu(event, level){
+
+let msg = "請選擇需求";
+
+if(level==="VIP"){
+msg = "歡迎回來，幫你預留了組合 👇";
+}
+
 return client.replyMessage(event.replyToken,{
 type:'flex',
-altText:'請選擇需求',
+altText:'選單',
 contents:{
 type:'bubble',
 body:{
@@ -56,12 +95,7 @@ type:'box',
 layout:'vertical',
 spacing:'md',
 contents:[
-{
-type:'text',
-text:'請選擇你的需求',
-weight:'bold',
-size:'lg'
-},
+{type:'text',text:msg,weight:'bold'},
 btn("日常保養"),
 btn("最近比較累"),
 btn("料理搭配"),
@@ -72,78 +106,47 @@ btn("直接購買")
 });
 }
 
-// ===== 推薦邏輯 =====
-function replyRecommend(event,type){
+// ===== 推薦（分群）=====
+function replyRecommend(event, level){
 
-let text="";
+let text = "";
 
-if(type==="日常保養"){
-text = "建議：龜鹿膏（建立節奏）";
-}
-
-if(type==="最近比較累"){
-text = "建議：龜鹿膏＋龜鹿飲搭配";
-}
-
-if(type==="料理搭配"){
-text = "建議：龜鹿湯塊（燉湯使用）";
+if(level==="VIP"){
+text = "幫你搭一組進階搭配（膏＋飲＋湯）";
+}else{
+text = "建議：龜鹿膏 或 膏＋飲搭配";
 }
 
 return client.replyMessage(event.replyToken,{
-type:'flex',
-altText:'推薦結果',
-contents:{
-type:'bubble',
-body:{
-type:'box',
-layout:'vertical',
-spacing:'md',
-contents:[
-{
 type:'text',
-text:text,
-wrap:true
-},
-{
-type:'button',
-action:{
-type:'uri',
-label:'👉 直接詢問搭配',
-uri:'https://lin.ee/sHZW7NkR'
-}
-},
-{
-type:'button',
-action:{
-type:'message',
-label:'👉 直接下單',
-text:'我要下單'
-}
-}
-]
-}
-}
+text:text
 });
 }
 
-// ===== 下單流程 =====
-function replyOrder(event){
-return client.replyMessage(event.replyToken,{
-type:'text',
-text:
-`請提供以下資料👇
+// ===== 下單 =====
+function replyOrder(event, level){
 
-1️⃣ 商品（例：龜鹿膏）
+let text = `
+請提供以下資料👇
+
+1️⃣ 商品
 2️⃣ 數量
 3️⃣ 收件姓名
 4️⃣ 電話
-5️⃣ 地址或7-11店號
+5️⃣ 配送方式（7-11 / 宅配 / 面交）
+`;
 
-我會幫你安排出貨`
+if(level==="VIP"){
+text = "已幫你開VIP快速通道 👇\n" + text;
+}
+
+return client.replyMessage(event.replyToken,{
+type:'text',
+text:text
 });
 }
 
-// ===== 按鈕元件 =====
+// ===== 按鈕 =====
 function btn(label){
 return {
 type:'button',
