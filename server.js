@@ -14,7 +14,7 @@ channelSecret: '7c3c4740afa5a281d54afb9f8ffc1e96'
 const client = new line.Client(config);
 
 // 🔥 你的 GAS
-const CRM_URL = 'https://script.google.com/macros/s/AKfycbzymc5WXqVFhJr1cTBbVvnA4P6WDTNGdNEVtkcqBQDO6SJ03ZL_eQ7BI9ZAIVdyiwbHew/exec';
+const CRM_URL = 'https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec';
 
 app.post('/webhook', line.middleware(config), (req, res) => {
 Promise.all(req.body.events.map(handleEvent))
