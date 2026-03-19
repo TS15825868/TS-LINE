@@ -25,8 +25,16 @@ async function handleEvent(event) {
   const orderLink =
     "https://ts15825868.github.io/xianjiawei/order.html";
 
-  // ===== 開場（最重要🔥）
-  if (msg === "我要搭配") {
+  // ===== 精準判斷 =====
+  const isStart = msg === "我要搭配";
+  const isDaily = msg === "1" || msg === "①";
+  const isTired = msg === "2" || msg === "②";
+
+  const isTry = msg === "1試" || msg === "試" || msg === "①試";
+  const isLong = msg === "2穩" || msg === "穩定" || msg === "②";
+
+  // ===== 開場 =====
+  if (isStart) {
     return reply(
       event,
       `
@@ -42,57 +50,18 @@ async function handleEvent(event) {
   }
 
   // ===== 分流 =====
-
-  if (msg === "1" || msg.includes("日常")) {
+  if (isDaily) {
     return reply(
       event,
       `
 了解 👍
 
-那我會建議你用比較穩的方式👇
+日常會建議這樣👇
 
-👉 龜鹿膏（平常用）
-👉 搭配龜鹿飲（外出補）
+👉 龜鹿膏（主體）
+👉 龜鹿飲（外出）
 
-這樣比較順 👍
-
-你是👇
-① 先試看看
-② 想穩定吃一段
-`
-    );
-  }
-
-  if (msg === "2" || msg.includes("累")) {
-    return reply(
-      event,
-      `
-這種通常會建議補一下 👍
-
-👉 可以用膏 + 飲搭著
-
-平常補
-忙的時候也能補
-
-你是👇
-① 想先試
-② 想直接調整一段
-`
-    );
-  }
-
-  // ===== 產品入口 =====
-
-  if (msg.includes("龜鹿膏")) {
-    return reply(
-      event,
-      `
-這個是最常用的 👍
-
-但通常不會單用
-
-👉 會搭龜鹿飲
-比較順 👍
+比較穩 👍
 
 你是👇
 ① 先試看看
@@ -101,51 +70,40 @@ async function handleEvent(event) {
     );
   }
 
-  if (msg.includes("龜鹿飲")) {
+  if (isTired) {
     return reply(
       event,
       `
-這個方便 👍
+這種通常會建議補一下 👍
 
-外出或忙的時候很好用
+👉 膏 + 飲一起
 
-👉 很多人會搭膏一起
-效果比較穩 👍
+會比較順 👍
+
+你是👇
+① 想先試
+② 想調整一段
 `
     );
   }
 
-  if (msg.includes("湯")) {
+  // ===== 決策 =====
+  if (msg === "1" || msg === "①") {
     return reply(
       event,
       `
-這個是料理用 👍
+可以先用入門方式 👍
 
-👉 雞湯 / 排骨都可以
+👉 大概 2000多
 
-平常吃 + 補養一起做 👍
-`
-    );
-  }
-
-  // ===== 成交引導🔥
-
-  if (msg.includes("試") || msg.includes("1")) {
-    return reply(
-      event,
-      `
-那我會建議你先用👇
-
-👉 入門方式（比較好開始）
-
-大概 2000 多 👍
+比較好開始
 
 要我幫你配一組嗎？
 `
     );
   }
 
-  if (msg.includes("穩定") || msg.includes("2")) {
+  if (msg === "2" || msg === "②") {
     return reply(
       event,
       `
@@ -155,48 +113,53 @@ async function handleEvent(event) {
 
 大概 4000～5000 👍
 
-這樣會比較穩
-
-我幫你配好可以直接出 👍
+我幫你配好會比較快 👍
 ${orderLink}
 `
     );
   }
 
-  // ===== 價格抗拒處理🔥
+  // ===== 產品 =====
+  if (msg.includes("龜鹿膏")) {
+    return reply(
+      event,
+      `
+這個是主體 👍
 
+👉 通常會搭飲
+
+會比較穩 👍
+`
+    );
+  }
+
+  // ===== 價格抗拒 =====
   if (msg.includes("貴")) {
     return reply(
       event,
       `
 我懂 👍
 
-很多人一開始也會這樣覺得
-
-所以通常會先用比較好入門的方式
+可以先用比較好入門的方式
 不用一次很多 👍
-
-我可以幫你抓一個比較剛好的
 `
     );
   }
 
-  // ===== 準備下單🔥
-
+  // ===== 下單 =====
   if (msg.includes("好") || msg.includes("可以")) {
     return reply(
       event,
       `
 我幫你整理好了 👍
 
-👉 直接這邊填就可以安排出貨
+👉 直接填這邊就可以
 ${orderLink}
 `
     );
   }
 
-  // ===== 預設（真人版🔥）
-
+  // ===== 預設 =====
   return reply(
     event,
     `
@@ -205,8 +168,6 @@ ${orderLink}
 你大概是👇
 ① 平常保養
 ② 最近比較累
-
-打個數字就好 👍
 `
   );
 }
