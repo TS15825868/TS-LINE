@@ -37,122 +37,146 @@ profile = { displayName:"顧客" };
 }
 const name = profile.displayName;
 
-// ===== 寫入CRM =====
-await axios.post(CRM_URL,{action:"saveUser",userId,name});
-
-// ===== 取得客戶 =====
-const res = await axios.post(CRM_URL,{action:"getUser",userId});
-const user = res.data || {};
-const level = user.level || "新客";
-
-// ===== 判斷需求 =====
-let intent = "";
-
-if(text.includes("保養")) intent="日常";
-if(text.includes("累")) intent="快速";
-if(text.includes("煮")) intent="料理";
-
-// ===== 存需求 =====
-if(intent){
+// ===== CRM寫入 =====
+try{
 await axios.post(CRM_URL,{
-action:"saveIntent",
+action:"saveUser",
 userId,
-intent
+name
 });
+}catch(e){}
+
+// ===== 判斷 =====
+if(text.includes("保養") || text.includes("日常")){
+return sendCarousel(event);
 }
 
-// ===== AI推薦 =====
-if(intent){
-return recommend(event, level, intent);
+if(text.includes("全部產品") || text.includes("產品")){
+return sendCarousel(event);
 }
 
-// ===== 下單 =====
-if(text.includes("買") || text.includes("下單")){
-return orderFlow(event, level);
+if(text.includes("累")){
+return sendCombo(event);
 }
 
-// ===== 預設 =====
-return menu(event, name, level);
+if(text.includes("料理")){
+return sendSoup(event);
 }
 
-// ===== 推薦 =====
-function recommend(event, level, intent){
-
-let text="";
-
-if(intent==="日常"){
-text = level==="VIP"
-? "幫你配VIP組合（膏＋飲＋湯）"
-: "建議：龜鹿膏（日常）";
+return sendMenu(event,name);
 }
 
-if(intent==="快速"){
-text = level==="VIP"
-? "進階快速補充（膏＋飲）"
-: "建議：膏＋飲";
-}
-
-if(intent==="料理"){
-text = "建議：龜鹿湯塊";
-}
-
-return client.replyMessage(event.replyToken,{
-type:'text',
-text
-});
-}
-
-// ===== 下單 =====
-function orderFlow(event, level){
-
-let text = `
-請提供👇
-
-1. 商品
-2. 數量
-3. 姓名
-4. 電話
-5. 配送方式
-`;
-
-if(level==="VIP"){
-text = "VIP快速通道👇\n" + text;
-}
-
-return client.replyMessage(event.replyToken,{
-type:'text',
-text
-});
-}
-
-// ===== 選單 =====
-function menu(event, name, level){
-
+// ===== 🔥 商品滑動卡片 =====
+function sendCarousel(event){
 return client.replyMessage(event.replyToken,{
 type:'flex',
-altText:'選單',
+altText:'商品列表',
 contents:{
+type:'carousel',
+contents:[
+
+productBubble(
+"龜鹿膏",
+"日常補養首選",
+"https://ts15825868.github.io/xianjiawei/images/guilu-gao-100g.jpg",
+"我想買龜鹿膏"
+),
+
+productBubble(
+"龜鹿飲",
+"外出方便補充",
+"https://ts15825868.github.io/xianjiawei/images/guilu-drink-30cc.jpg",
+"我想買龜鹿飲"
+),
+
+productBubble(
+"龜鹿湯塊",
+"燉湯料理使用",
+"https://ts15825868.github.io/xianjiawei/images/guilu-block-300g.jpg",
+"我想買龜鹿湯塊"
+),
+
+productBubble(
+"鹿茸粉",
+"可加咖啡牛奶",
+"https://ts15825868.github.io/xianjiawei/images/lurong-powder-75g.jpg",
+"我想買鹿茸粉"
+)
+
+]
+}
+});
+}
+
+// ===== 單卡片模板 =====
+function productBubble(title,desc,img,text){
+return {
 type:'bubble',
+hero:{
+type:'image',
+url:img,
+size:'full',
+aspectRatio:'1:1',
+aspectMode:'cover'
+},
 body:{
 type:'box',
 layout:'vertical',
 contents:[
-{type:'text',text:`${name}，你想怎麼補？`,weight:'bold'},
-btn("日常保養"),
-btn("最近比較累"),
-btn("料理搭配"),
-btn("直接購買")
+{type:'text',text:title,weight:'bold',size:'lg'},
+{type:'text',text:desc,size:'sm',color:'#666'}
+]
+},
+footer:{
+type:'box',
+layout:'vertical',
+spacing:'sm',
+contents:[
+{
+type:'button',
+style:'primary',
+action:{
+type:'message',
+label:'我要這個',
+text:text
+}
+},
+{
+type:'button',
+style:'secondary',
+action:{
+type:'uri',
+label:'LINE詢問',
+uri:'https://lin.ee/sHZW7NkR'
+}
+}
 ]
 }
+};
 }
+
+// ===== 快速補充 =====
+function sendCombo(event){
+return client.replyMessage(event.replyToken,{
+type:'text',
+text:"建議：龜鹿膏＋龜鹿飲（快速補充）"
 });
 }
 
-function btn(label){
-return {
-type:'button',
-action:{type:'message',label,text:label}
-};
+// ===== 料理 =====
+function sendSoup(event){
+return client.replyMessage(event.replyToken,{
+type:'text',
+text:"建議：龜鹿湯塊（燉湯）"
+});
+}
+
+// ===== 選單 =====
+function sendMenu(event,name){
+return client.replyMessage(event.replyToken,{
+type:'text',
+text:`${name}，你想怎麼補？（日常保養 / 最近比較累 / 料理搭配）`
+});
 }
 
 app.listen(3000);
