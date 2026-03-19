@@ -13,7 +13,6 @@ channelSecret: '7c3c4740afa5a281d54afb9f8ffc1e96'
 
 const client = new line.Client(config);
 
-// 🔥 你的 GAS
 const CRM_URL = 'https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec';
 
 app.post('/webhook', line.middleware(config), (req, res) => {
@@ -29,175 +28,118 @@ if(event.type !== 'message') return;
 const userId = event.source.userId;
 const text = event.message.text;
 
-// ===== 使用者資料 =====
+// ===== 使用者 =====
 let profile;
 try{
 profile = await client.getProfile(userId);
 }catch{
 profile = { displayName:"顧客" };
 }
-
 const name = profile.displayName;
 
-// ===== 寫入CRM（客戶）=====
+// ===== CRM =====
 await saveUser(userId,name);
-
-// ===== 取得客戶資料 =====
 const userData = await getUser(userId);
-
-// ===== 等級判斷 =====
 const level = getLevel(userData);
 
-// ===== 👉 下單流程 =====
+// ===== 推薦搭配入口 =====
+if(text.includes("推薦搭配")){
+return askNeed(event);
+}
+
+// ===== 選需求 =====
+if(text.includes("日常補養")){
+return sendComboCard(event,"normal",level);
+}
+
+if(text.includes("最近比較累")){
+return sendComboCard(event,"tired",level);
+}
+
+if(text.includes("想煮湯")){
+return sendComboCard(event,"soup",level);
+}
+
+// ===== 商品列表 =====
+if(text.includes("商品")){
+return sendProductCarousel(event);
+}
+
+// ===== 下單 =====
 if(text.startsWith("我想買")){
 return sendOrderForm(event,text.replace("我想買",""),level);
 }
 
-// 👉 填單
+// ===== 填單 =====
 if(text.includes("商品：") && text.includes("電話")){
 return handleOrder(event,text,name,userId);
 }
 
-// ===== 👉 問需求 =====
-if(text.includes("保養") || text.includes("日常")){
-return sendRecommend(event,level);
-}
-
-if(text.includes("累")){
-return sendCombo(event,level);
-}
-
-if(text.includes("料理")){
-return sendSoup(event,level);
-}
-
-// ===== 預設 =====
+// ===== 其他 =====
 return sendMenu(event,name,level);
 }
 
-// ===== CRM =====
-async function getUser(userId){
-try{
-const res = await axios.post(CRM_URL,{
-action:"getUser",
-userId:userId
-});
-return res.data;
-}catch(e){
-return null;
-}
-}
-
-async function saveUser(userId,name){
-try{
-await axios.post(CRM_URL,{
-action:"saveUser",
-userId,
-name
-});
-}catch(e){}
-}
-
-// ===== 等級 =====
-function getLevel(user){
-if(!user) return "新客";
-
-const orders = user.orders || 0;
-
-if(orders >= 3) return "VIP";
-if(orders >= 1) return "回購";
-
-return "新客";
-}
-
-// ===== 主選單 =====
-function sendMenu(event,name,level){
-
-let text = `${name}，你想怎麼補？`;
-
-if(level==="VIP"){
-text = `${name}，幫你準備好VIP搭配 👇`;
-}
-
+// ===== 問需求 =====
+function askNeed(event){
 return client.replyMessage(event.replyToken,{
 type:'text',
-text: text + "\n👉 日常保養 / 最近比較累 / 料理搭配"
+text:
+`我幫你快速搭配👇
+
+① 日常補養
+② 最近比較累
+③ 想煮湯
+
+👉 直接回覆即可`
 });
 }
 
-// ===== 推薦 =====
-function sendRecommend(event,level){
+// ===== 搭配卡片 =====
+function sendComboCard(event,type,level){
 
-let text = "";
+let cards = [];
 
+if(type==="normal"){
+cards = [
+combo("入門補養","龜鹿膏","我想買龜鹿膏"),
+combo("日常搭配","膏＋飲","我想買膏＋飲")
+];
+}
+
+if(type==="tired"){
+cards = [
+combo("快速恢復","膏＋飲","我想買膏＋飲"),
+combo("加強補養","膏＋飲＋湯","我想買膏＋飲＋湯")
+];
+}
+
+if(type==="soup"){
+cards = [
+combo("燉湯補養","龜鹿湯塊","我想買龜鹿湯塊"),
+combo("湯＋膏","湯＋膏","我想買湯＋膏")
+];
+}
+
+// VIP 加一張
 if(level==="VIP"){
-text = "幫你搭一組進階（膏＋飲＋湯）直接穩";
-}
-else if(level==="回購"){
-text = "建議你這次可以膏＋飲一起搭";
-}
-else{
-text = "建議先從龜鹿膏開始";
+cards.push(
+combo("🔥 VIP組合","膏＋飲＋湯（含搭贈）","我想買VIP組合")
+);
 }
 
-return client.replyMessage(event.replyToken,{
-type:'text',
-text
-});
-}
-
-// ===== 累 =====
-function sendCombo(event,level){
-
-let text = "建議：膏＋飲搭配";
-
-if(level==="VIP"){
-text = "直接上（膏＋飲＋湯）效果會更快";
-}
-
-return client.replyMessage(event.replyToken,{
-type:'text',
-text
-});
-}
-
-// ===== 料理 =====
-function sendSoup(event,level){
-
-let text = "建議：龜鹿湯塊";
-
-if(level==="VIP"){
-text = "可以搭湯＋膏一起用";
-}
-
-return client.replyMessage(event.replyToken,{
-type:'text',
-text
-});
-}
-
-// ===== 商品卡片 =====
-function sendCarousel(event){
 return client.replyMessage(event.replyToken,{
 type:'flex',
-altText:'商品',
+altText:'推薦搭配',
 contents:{
 type:'carousel',
-contents:[
-
-bubble("龜鹿膏","日常補養","images/guilu-gao-100g.jpg","我想買龜鹿膏"),
-bubble("龜鹿飲","快速補充","images/guilu-drink-30cc.jpg","我想買龜鹿飲"),
-bubble("龜鹿湯塊","燉湯用","images/guilu-block-300g.jpg","我想買龜鹿湯塊")
-
-]
+contents:cards
 }
 });
 }
 
-function bubble(title,desc,img,text){
+function combo(title,desc,text){
 return {
 type:'bubble',
-hero:{type:'image',url:img,size:'full',aspectRatio:'1:1'},
 body:{
 type:'box',
 layout:'vertical',
@@ -213,14 +155,34 @@ contents:[
 {
 type:'button',
 style:'primary',
-action:{type:'message',label:'我要這個',text:text}
+action:{
+type:'message',
+label:'我要這個',
+text:text
+}
 }
 ]
 }
 };
 }
 
-// ===== 下單表單 =====
+// ===== 商品卡片 =====
+function sendProductCarousel(event){
+return client.replyMessage(event.replyToken,{
+type:'flex',
+altText:'商品',
+contents:{
+type:'carousel',
+contents:[
+combo("龜鹿膏","日常補養","我想買龜鹿膏"),
+combo("龜鹿飲","快速補充","我想買龜鹿飲"),
+combo("龜鹿湯塊","燉湯用","我想買龜鹿湯塊")
+]
+}
+});
+}
+
+// ===== 訂單表 =====
 function sendOrderForm(event,product,level){
 
 let prefix = "";
@@ -248,7 +210,6 @@ const qty = text.match(/數量：(.*)/)?.[1]?.trim() || "";
 const phone = text.match(/電話：(.*)/)?.[1]?.trim() || "";
 const delivery = text.match(/配送：(.*)/)?.[1]?.trim() || "";
 
-try{
 await axios.post(CRM_URL,{
 action:"order",
 userId,
@@ -258,32 +219,48 @@ qty,
 phone,
 delivery
 });
-}catch(e){}
 
 return client.replyMessage(event.replyToken,{
 type:'text',
-text:"✅ 已收到訂單，會盡快幫你處理"
+text:"✅ 已收到訂單"
 });
 }
 
-// ===== 回購推播（未來排程用）=====
-async function sendFollowUp(userId,type){
-
-let text = "";
-
-if(type==="7day"){
-text = "補養差不多一週，要補一罐嗎？";
+// ===== CRM =====
+async function getUser(userId){
+try{
+const res = await axios.post(CRM_URL,{
+action:"getUser",
+userId:userId
+});
+return res.data;
+}catch(e){
+return null;
 }
-if(type==="30day"){
-text = "一個月了，可以補下一輪";
-}
-if(type==="vip"){
-text = "幫你留VIP組合，要直接開嗎？";
 }
 
-return client.pushMessage(userId,{
+async function saveUser(userId,name){
+await axios.post(CRM_URL,{
+action:"saveUser",
+userId,
+name
+});
+}
+
+// ===== 等級 =====
+function getLevel(user){
+if(!user) return "新客";
+const c = user.count || 0;
+if(c>=3) return "VIP";
+if(c>=1) return "回購";
+return "新客";
+}
+
+// ===== 預設 =====
+function sendMenu(event,name,level){
+return client.replyMessage(event.replyToken,{
 type:'text',
-text
+text:`${name}，你想怎麼補？（日常補養 / 最近比較累 / 料理搭配 / 推薦搭配）`
 });
 }
 
