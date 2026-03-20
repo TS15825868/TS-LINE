@@ -39,18 +39,20 @@ async function handleEvent(event){
     return client.replyMessage(event.replyToken, welcomeFlex());
   }
 
-  if(event.type !== "message") return;
+  if(event.type !== "message" || event.message.type !== "text") return;
 
   const text = event.message.text;
 
   const user = await getUser(userId);
 
   // ===== VIP =====
-  if(user && user.count >= 2 && text.includes("回購")){
-    return client.replyMessage(event.replyToken, vipFlex());
+  if(user && user.count >= 2){
+    if(text.includes("回購") || text.includes("你好")){
+      return client.replyMessage(event.replyToken, vipFlex());
+    }
   }
 
-  // ===== 主入口 =====
+  // ===== 主選單 =====
   if(text.includes("選單") || text.includes("開始")){
     return client.replyMessage(event.replyToken, welcomeFlex());
   }
@@ -60,25 +62,38 @@ async function handleEvent(event){
     return client.replyMessage(event.replyToken, productFlex());
   }
 
+  // ===== 快速成交（關鍵🔥）=====
+  if(text.includes("直接買") || text.includes("推薦")){
+    return reply(event,
+`🔥 幫你配最熱賣組合
+
+✔ 龜鹿膏 + 龜鹿飲（最多人選）
+✔ 日常補養＋快速補充
+
+👉 回覆「我要組合」我直接幫你出單`);
+  }
+
   // ===== 下單 =====
-  if(text.includes("我要購買")){
+  if(text.includes("我要購買") || text.includes("我要組合")){
+
     const product = detectProduct(text);
     const item = getProductInfo(product);
 
     await saveOrder({
       userId,
-      product:item.name,
-      price:item.priceText,
+      product:item?.name || "組合",
       message:text
     });
 
     return reply(event,
-`🧾 已幫你建立訂單
+`🧾 幫你整理👇
 
-商品：${item.name}
+商品：${item?.name || "推薦組合"}
 
 👉 請提供：
-姓名 + 電話 + 地址`);
+姓名 + 電話 + 地址
+
+我直接幫你出貨 🙌`);
   }
 
   // ===== 搭配 =====
@@ -95,35 +110,19 @@ async function handleEvent(event){
   return reply(event,"👉 輸入「選單」開始");
 }
 
-// ===== Flex：歡迎 =====
+//
+// ===== FLEX 升級 =====
+//
+
 function welcomeFlex(){
-  return {
-    type:"flex",
-    altText:"選單",
-    contents:{
-      type:"bubble",
-      body:{
-        type:"box",
-        layout:"vertical",
-        contents:[
-          {type:"text",text:"仙加味",weight:"bold",size:"lg"},
-          {type:"text",text:"請選擇👇"}
-        ]
-      },
-      footer:{
-        type:"box",
-        layout:"vertical",
-        contents:[
-          btn("商品","商品"),
-          btn("幫我搭配","幫我搭配"),
-          btn("回購","回購")
-        ]
-      }
-    }
-  };
+  return flexBubble("仙加味",[
+    btn("🔥 熱門組合","直接買"),
+    btn("📦 商品","商品"),
+    btn("🧠 幫我搭配","幫我搭配"),
+    btn("♻️ 回購","回購")
+  ]);
 }
 
-// ===== Flex：商品 =====
 function productFlex(){
   return {
     type:"flex",
@@ -131,51 +130,31 @@ function productFlex(){
     contents:{
       type:"carousel",
       contents:[
-        productCard("龜鹿膏","guilu-gao"),
-        productCard("龜鹿飲","guilu-drink"),
-        productCard("龜鹿湯塊","guilu-block"),
-        productCard("鹿茸粉","lurong-powder")
+        productCard("龜鹿膏","日常補養","guilu-gao"),
+        productCard("龜鹿飲","快速補充","guilu-drink"),
+        productCard("龜鹿湯塊","燉湯進補","guilu-block"),
+        productCard("鹿茸粉","隨時添加","lurong-powder")
       ]
     }
   };
 }
 
-// ===== Flex：VIP =====
 function vipFlex(){
-  return {
-    type:"flex",
-    altText:"VIP",
-    contents:{
-      type:"bubble",
-      body:{
-        type:"box",
-        layout:"vertical",
-        contents:[
-          {type:"text",text:"VIP回購",weight:"bold"},
-          {type:"text",text:"推薦組合👇"}
-        ]
-      },
-      footer:{
-        type:"box",
-        layout:"vertical",
-        contents:[
-          btn("龜鹿膏＋龜鹿飲","我要購買龜鹿膏"),
-          btn("直接補貨","我要購買龜鹿膏")
-        ]
-      }
-    }
-  };
+  return flexBubble("VIP回購",[
+    btn("🔥 補貨推薦","我要組合"),
+    btn("📦 直接補貨","我要購買龜鹿膏")
+  ]);
 }
 
-// ===== 商品卡 =====
-function productCard(title,id){
+function productCard(title,desc,id){
   return {
     type:"bubble",
     body:{
       type:"box",
       layout:"vertical",
       contents:[
-        {type:"text",text:title,weight:"bold"}
+        {type:"text",text:title,weight:"bold",size:"lg"},
+        {type:"text",text:desc,size:"sm",color:"#666"}
       ]
     },
     footer:{
@@ -188,7 +167,28 @@ function productCard(title,id){
   };
 }
 
-// ===== 按鈕 =====
+function flexBubble(title,buttons){
+  return {
+    type:"flex",
+    altText:title,
+    contents:{
+      type:"bubble",
+      body:{
+        type:"box",
+        layout:"vertical",
+        contents:[
+          {type:"text",text:title,weight:"bold",size:"lg"}
+        ]
+      },
+      footer:{
+        type:"box",
+        layout:"vertical",
+        contents:buttons
+      }
+    }
+  };
+}
+
 function btn(label,text){
   return {
     type:"button",
@@ -196,7 +196,10 @@ function btn(label,text){
   };
 }
 
-// ===== 商品判斷 =====
+//
+// ===== 商品 =====
+//
+
 function detectProduct(text){
   if(text.includes("膏")) return "guilu-gao";
   if(text.includes("飲")) return "guilu-drink";
@@ -205,17 +208,19 @@ function detectProduct(text){
   return null;
 }
 
-// ===== 找商品 =====
 function getProductInfo(id){
   for(const cat of productsData.categories){
     for(const item of cat.items){
       if(item.id === id) return item;
     }
   }
-  return {};
+  return null;
 }
 
+//
 // ===== CRM =====
+//
+
 async function saveOrder(data){
   try{
     await axios.post(CRM_URL,{
@@ -237,7 +242,6 @@ async function getUser(userId){
   }
 }
 
-// ===== reply =====
 function reply(event,text){
   return client.replyMessage(event.replyToken,{
     type:"text",
