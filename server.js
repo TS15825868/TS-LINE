@@ -15,186 +15,259 @@ const client = new line.Client(config);
 
 const CRM_URL = 'https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec';
 
-// ===== 價格 =====
-const PRICE = {
-  "龜鹿膏": 2000,
-  "膏+飲": 2600,
-  "膏+飲+湯": 6000
-};
+// ========================
+// webhook
+// ========================
+app.post("/webhook", line.middleware(config), async (req, res) => {
+  Promise.all(req.body.events.map(handleEvent));
+  res.json({ success: true });
+});
 
-// ===== 地區判斷 =====
-function 判斷地區(text){
-  if(/台北|新北|板橋|林口|三重|中和|永和|新店|淡水/.test(text)){
-    return "雙北";
+// ========================
+// 主流程
+// ========================
+async function handleEvent(event) {
+
+  // 🔥 加好友
+  if (event.type === "follow") {
+    return client.replyMessage(event.replyToken, welcomeMessage());
   }
-  return "外縣市";
-}
 
-// ===== 配送 =====
-function 運費(方式){
-  if(方式.includes("7-11")) return 60;
-  if(方式.includes("宅配")) return 120;
-  if(方式.includes("面交")) return 0;
-  return 0;
-}
-
-// ===== 查用戶 =====
-async function 查用戶(userId){
-  try{
-    const res = await axios.post(CRM_URL,{
-      action:"查用戶",
-      userId
-    });
-    return res.data;
-  }catch{
+  if (event.type !== "message" || event.message.type !== "text") {
     return null;
   }
+
+  const msg = event.message.text;
+  const userId = event.source.userId;
+
+  // ========================
+  // 🔥 VIP判斷
+  // ========================
+  const user = await getUser(userId);
+
+  if (user && user.vip === "是") {
+    return reply(event, flexVIP());
+  }
+
+  // ========================
+  // 🔥 主分流
+  // ========================
+  if (msg === "日常保養") return reply(event, flexDaily());
+  if (msg === "最近比較累") return reply(event, flexTired());
+  if (msg === "想煮湯進補") return reply(event, flexCook());
+  if (msg === "先了解看看") return reply(event, flexLearn());
+
+  // ========================
+  // 🔥 成交入口
+  // ========================
+  if (msg.includes("搭配") || msg.includes("推薦")) {
+    return reply(event, flexDeal());
+  }
+
+  // ========================
+  // 🔥 下單
+  // ========================
+  if (msg.includes("我要購買")) {
+
+    const order = parseOrder(msg);
+
+    await saveOrder({
+      userId,
+      ...order
+    });
+
+    return reply(event, {
+      type: "text",
+      text:
+`🧾 已幫你登記
+
+商品：${order.product}
+數量：${order.qty}
+
+👉 我這邊會幫你確認出貨 🙌`
+    });
+  }
+
+  return null;
 }
 
-// ===== 存訂單 =====
-async function 存訂單(data){
-  await axios.post(CRM_URL,{
-    action:"訂單",
-    ...data
-  });
+// ========================
+// 💥 歡迎訊息
+// ========================
+function welcomeMessage() {
+  return [
+    {
+      type: "text",
+      text:
+        "歡迎加入【仙加味・龜鹿】\n\n我們把補養變簡單一點，不用研究太多，直接用點的就好 👇"
+    },
+    {
+      type: "text",
+      text: "請選擇你的狀況",
+      quickReply: {
+        items: [
+          quick("日常保養"),
+          quick("最近比較累"),
+          quick("想煮湯進補"),
+          quick("先了解看看")
+        ]
+      }
+    }
+  ];
 }
 
-// ===== 卡片 =====
-function 卡片(title,desc,price,product){
+// ========================
+// 💥 VIP
+// ========================
+function flexVIP() {
+  return bubble("VIP專屬", "幫你直接配好最適合的", [
+    btn("直接幫我配", "幫我做VIP搭配"),
+    btn("我要回購", "我要回購"),
+    btn("再看產品", "我要看產品")
+  ]);
+}
+
+// ========================
+// 💥 日常
+// ========================
+function flexDaily() {
+  return bubble("日常保養", "建立固定補養節奏", [
+    btn("龜鹿膏", "我想了解龜鹿膏"),
+    btn("龜鹿飲", "我想了解龜鹿飲"),
+    btn("幫我搭配", "幫我做日常搭配")
+  ]);
+}
+
+// ========================
+function flexTired() {
+  return bubble("最近比較累", "適合加強補充", [
+    btn("龜鹿飲（快速）", "我要快速補充"),
+    btn("龜鹿膏（穩定）", "我要穩定補養"),
+    btn("直接幫我配", "幫我搭配加強方案")
+  ]);
+}
+
+// ========================
+function flexCook() {
+  return bubble("料理搭配", "適合燉湯進補", [
+    btn("雞湯", "我要燉雞湯"),
+    btn("排骨湯", "我要燉排骨"),
+    btnUrl("看食譜", "https://ts15825868.github.io/xianjiawei/recipes.html")
+  ]);
+}
+
+// ========================
+function flexLearn() {
+  return bubble("了解龜鹿", "先看看再決定", [
+    btnUrl("產品介紹", "https://ts15825868.github.io/xianjiawei/"),
+    btnUrl("怎麼選", "https://ts15825868.github.io/xianjiawei/choose.html"),
+    btn("幫我推薦", "幫我推薦適合的")
+  ]);
+}
+
+// ========================
+function flexDeal() {
+  return bubble("推薦搭配", "直接幫你配好", [
+    btn("入門組合", "我要入門方案"),
+    btn("日常組合", "我要日常方案"),
+    btn("加強組合", "我要加強方案")
+  ]);
+}
+
+// ========================
+// 🧩 元件
+// ========================
+function bubble(title, text, buttons) {
   return {
-    type:"flex",
-    altText:title,
-    contents:{
-      type:"bubble",
-      body:{
-        type:"box",
-        layout:"vertical",
-        contents:[
-          {type:"text",text:title,weight:"bold",size:"lg"},
-          {type:"text",text:desc,size:"sm",margin:"md"},
-          {type:"text",text:`$${price}`,weight:"bold",margin:"lg"}
+    type: "flex",
+    altText: title,
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          { type: "text", text: title, weight: "bold", size: "lg" },
+          { type: "text", text: text, size: "sm", margin: "md" }
         ]
       },
-      footer:{
-        type:"box",
-        layout:"vertical",
-        contents:[
-          {
-            type:"button",
-            style:"primary",
-            action:{
-              type:"message",
-              label:"直接安排",
-              text:`確認購買 ${product}`
-            }
-          }
-        ]
+      footer: {
+        type: "box",
+        layout: "vertical",
+        contents: buttons
       }
     }
   };
 }
 
-// ===== webhook =====
-app.post('/webhook', line.middleware(config), (req,res)=>{
-  Promise.all(req.body.events.map(處理事件))
-  .then(r=>res.json(r));
-});
-
-// ===== 主流程 =====
-async function 處理事件(event){
-
-  if(event.type !== 'message') return;
-
-  const text = event.message.text;
-  const userId = event.source.userId;
-
-  // ===== VIP判斷 =====
-  const user = await 查用戶(userId);
-
-  if(user && user.等級 === "高VIP"){
-    return 回覆(event,
-`🔥 幫你抓進階搭配
-
-膏＋飲＋湯
-
-👉 要直接幫你安排嗎？`);
-  }
-
-  if(user && user.等級 === "VIP"){
-    return 回覆(event,
-`幫你抓一組穩定搭配👇  
-
-膏＋飲  
-
-👉 可以直接幫你安排`);
-  }
-
-  // ===== 分流 =====
-  if(text==="日常保養"){
-    return client.replyMessage(event.replyToken,
-      卡片("日常補養","穩定使用","2000","龜鹿膏")
-    );
-  }
-
-  if(text==="最近比較累"){
-    return client.replyMessage(event.replyToken,
-      卡片("調整狀態","膏＋飲搭配","2600","膏+飲")
-    );
-  }
-
-  if(text==="料理搭配"){
-    return client.replyMessage(event.replyToken,
-      卡片("燉湯使用","龜鹿湯塊","4000","龜鹿湯塊")
-    );
-  }
-
-  // ===== 確認購買 =====
-  if(text.includes("確認購買")){
-    return 回覆(event,
-`請提供👇  
-
-姓名：  
-電話：  
-配送方式（7-11 / 宅配 / 面交）  
-
-⚠️ 面交僅限雙北`);
-  }
-
-  // ===== 面交限制 =====
-  if(text.includes("面交")){
-    const area = 判斷地區(text);
-
-    if(area !== "雙北"){
-      return 回覆(event,"面交僅限雙北，建議使用宅配或7-11 🙏");
+function btn(label, text) {
+  return {
+    type: "button",
+    action: {
+      type: "message",
+      label,
+      text
     }
-  }
-
-  // ===== 收單 =====
-  if(text.includes("姓名")){
-
-    await 存訂單({
-      userId,
-      內容:text
-    }).catch(()=>{});
-
-    return 回覆(event,"已幫你登記完成 🙌 我們會再確認");
-  }
-
-  // ===== 回購 =====
-  if(/再買|補貨/.test(text)){
-    return 回覆(event,"幫你抓一組適合的搭配 👌");
-  }
-
-  return 回覆(event,"請直接點選選單👇");
-
+  };
 }
 
-// ===== 回覆 =====
-function 回覆(event,text){
-  return client.replyMessage(event.replyToken,{
-    type:'text',
-    text
+function btnUrl(label, url) {
+  return {
+    type: "button",
+    action: {
+      type: "uri",
+      label,
+      uri: url
+    }
+  };
+}
+
+function quick(label) {
+  return {
+    type: "action",
+    action: {
+      type: "message",
+      label,
+      text: label
+    }
+  };
+}
+
+// ========================
+// 💥 訂單解析
+// ========================
+function parseOrder(text){
+  return {
+    product: (text.match(/商品：(.*)/)||[])[1] || "",
+    qty: (text.match(/數量：(.*)/)||[])[1] || 1
+  };
+}
+
+// ========================
+// 💥 CRM
+// ========================
+async function saveOrder(data){
+  await axios.post(CRM_URL,{
+    action:"order",
+    ...data
   });
+}
+
+async function getUser(userId){
+  try{
+    const res = await axios.post(CRM_URL,{
+      action:"getUser",
+      userId
+    });
+    return JSON.parse(res.data);
+  }catch{
+    return null;
+  }
+}
+
+// ========================
+function reply(event, msg){
+  return client.replyMessage(event.replyToken, msg);
 }
 
 app.listen(3000);
