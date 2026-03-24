@@ -26,6 +26,9 @@ try{
   );
 }catch(e){}
 
+// ===== 記憶（簡單版）=====
+const userState = {};
+
 // ===== webhook =====
 app.post("/webhook", line.middleware(config), async (req, res) => {
   await Promise.all(req.body.events.map(handleEvent));
@@ -39,43 +42,78 @@ async function handleEvent(event) {
 
   // 加好友
   if (event.type === "follow") {
-    return client.replyMessage(event.replyToken, mainMenu());
+    return replyFlex(event, mainMenu());
   }
 
-  if (event.type !== "message") return;
+  if (event.type !== "message" || event.message.type !== "text") return;
 
-  const text = event.message.text;
+  const text = event.message.text.trim();
 
   // ===== 主選單 =====
-  if (text === "選單") {
-    return client.replyMessage(event.replyToken, mainMenu());
+  if (["選單","menu"].includes(text)) {
+    return replyFlex(event, mainMenu());
   }
 
-  // ===== 產品 =====
+  // ===== 看產品 =====
   if (text === "看產品") {
-    return client.replyMessage(event.replyToken, productMenu());
+    return replyFlex(event, productFlex());
   }
 
-  // ===== 下單 =====
+  // ===== 我要買 =====
   if (text === "我要買") {
-    return client.replyMessage(event.replyToken, orderMenu());
+    userState[userId] = { step: "chooseProduct" };
+    return replyFlex(event, productFlex());
   }
 
-  // ===== 客製流程 =====
-  if (text.includes("龜鹿膏") || text.includes("湯塊")) {
-    await saveOrder({ userId, product: text });
+  // ===== 怎麼吃 =====
+  if (text === "怎麼吃") {
+    return reply(event, "👉 不同型態用法不同，我直接幫你搭配會比較準🙂");
+  }
 
-    return client.replyMessage(event.replyToken, {
-      type: "text",
-      text: "👉 請提供：姓名 + 電話 + 地址"
+  // ===== 商品選擇 =====
+  if (text.includes("龜鹿膏")) return startOrder(event,userId,"龜鹿膏");
+  if (text.includes("龜鹿飲")) return startOrder(event,userId,"龜鹿飲");
+  if (text.includes("湯塊")) return startOrder(event,userId,"龜鹿湯塊");
+  if (text.includes("鹿茸")) return startOrder(event,userId,"鹿茸粉");
+
+  // ===== 收資料 =====
+  if (userState[userId]?.step === "fillInfo") {
+
+    await saveOrder({
+      userId,
+      product: userState[userId].product,
+      info: text
     });
+
+    userState[userId] = null;
+
+    return reply(event,
+`✅ 已收到訂單
+
+我們會幫你處理
+如需調整會再與你確認🙂`);
   }
 
-  return client.replyMessage(event.replyToken, mainMenu());
+  return replyFlex(event, mainMenu());
+}
+
+// ===== 開始下單 =====
+function startOrder(event,userId,product){
+
+  userState[userId] = {
+    step: "fillInfo",
+    product
+  };
+
+  return reply(event,
+`🧾 商品：${product}
+
+👉 請提供：
+姓名 + 電話 + 地址`);
 }
 
 // ===== 主選單 =====
-function mainMenu() {
+function mainMenu(){
   return {
     type: "flex",
     altText: "主選單",
@@ -84,11 +122,11 @@ function mainMenu() {
       body: {
         type: "box",
         layout: "vertical",
+        spacing:"md",
         contents: [
           btn("看產品"),
           btn("我要買"),
-          btn("怎麼吃"),
-          btn("客服")
+          btn("怎麼吃")
         ]
       }
     }
@@ -96,64 +134,80 @@ function mainMenu() {
 }
 
 // ===== 商品選單 =====
-function productMenu() {
+function productFlex(){
   return {
-    type: "flex",
-    altText: "產品",
-    contents: {
-      type: "bubble",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          btn("龜鹿膏"),
-          btn("龜鹿飲"),
-          btn("龜鹿湯塊"),
-          btn("鹿茸粉")
-        ]
-      }
+    type:"flex",
+    altText:"產品",
+    contents:{
+      type:"carousel",
+      contents:[
+        productCard("龜鹿膏"),
+        productCard("龜鹿飲"),
+        productCard("龜鹿湯塊"),
+        productCard("鹿茸粉")
+      ]
     }
-  };
+  }
 }
 
-// ===== 下單 =====
-function orderMenu() {
+function productCard(name){
   return {
-    type: "flex",
-    altText: "下單",
-    contents: {
-      type: "bubble",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          btn("我要買龜鹿膏"),
-          btn("我要買湯塊")
-        ]
-      }
+    type:"bubble",
+    body:{
+      type:"box",
+      layout:"vertical",
+      contents:[
+        {
+          type:"text",
+          text:name,
+          weight:"bold",
+          size:"lg"
+        },
+        {
+          type:"button",
+          action:{
+            type:"message",
+            label:"選這個",
+            text:name
+          },
+          style:"primary"
+        }
+      ]
     }
-  };
+  }
 }
 
 // ===== 按鈕 =====
-function btn(text) {
+function btn(text){
   return {
-    type: "button",
-    action: {
-      type: "message",
-      label: text,
-      text: text
+    type:"button",
+    action:{
+      type:"message",
+      label:text,
+      text:text
     },
-    style: "primary"
-  };
+    style:"primary"
+  }
+}
+
+// ===== 回覆 =====
+function reply(event,text){
+  return client.replyMessage(event.replyToken,{
+    type:"text",
+    text
+  });
+}
+
+function replyFlex(event,flex){
+  return client.replyMessage(event.replyToken,flex);
 }
 
 // ===== CRM =====
-async function saveOrder(data) {
-  if (!CRM_URL) return;
-  try {
-    await axios.post(CRM_URL, data);
-  } catch (e) {}
+async function saveOrder(data){
+  if(!CRM_URL) return;
+  try{
+    await axios.post(CRM_URL,data);
+  }catch(e){}
 }
 
 app.listen(3000);
