@@ -26,7 +26,7 @@ try{
   );
 }catch(e){}
 
-// ===== 記憶（簡單版）=====
+// ===== 記憶狀態 =====
 const userState = {};
 
 // ===== webhook =====
@@ -36,170 +36,58 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 });
 
 // ===== 主流程 =====
-async function handleEvent(event) {
+async function handleEvent(event){
 
   const userId = event.source.userId;
 
-  // 加好友
-  if (event.type === "follow") {
-    return replyFlex(event, mainMenu());
+  if(event.type === "follow"){
+    return reply(event,"👇 請直接選擇：看產品 / 我要買");
   }
 
-  if (event.type !== "message" || event.message.type !== "text") return;
+  if(event.type !== "message") return;
 
-  const text = event.message.text.trim();
-
-  // ===== 主選單 =====
-  if (["選單","menu"].includes(text)) {
-    return replyFlex(event, mainMenu());
-  }
+  const text = event.message.text;
 
   // ===== 看產品 =====
-  if (text === "看產品") {
-    return replyFlex(event, productFlex());
+  if(text === "看產品"){
+    return reply(event,"👉 請輸入：龜鹿膏 / 龜鹿飲 / 龜鹿湯塊 / 鹿茸粉");
   }
 
   // ===== 我要買 =====
-  if (text === "我要買") {
-    userState[userId] = { step: "chooseProduct" };
-    return replyFlex(event, productFlex());
+  if(text === "我要買"){
+    userState[userId] = { step:"choose" };
+    return reply(event,"👉 請輸入要購買的產品");
   }
 
-  // ===== 怎麼吃 =====
-  if (text === "怎麼吃") {
-    return reply(event, "👉 不同型態用法不同，我直接幫你搭配會比較準🙂");
+  // ===== 選產品 =====
+  if(["龜鹿膏","龜鹿飲","龜鹿湯塊","鹿茸粉"].includes(text)){
+    userState[userId] = {
+      step:"info",
+      product:text
+    };
+
+    return reply(event,
+`🧾 商品：${text}
+
+請提供：
+姓名 + 電話 + 地址`);
   }
 
-  // ===== 商品選擇 =====
-  if (text.includes("龜鹿膏")) return startOrder(event,userId,"龜鹿膏");
-  if (text.includes("龜鹿飲")) return startOrder(event,userId,"龜鹿飲");
-  if (text.includes("湯塊")) return startOrder(event,userId,"龜鹿湯塊");
-  if (text.includes("鹿茸")) return startOrder(event,userId,"鹿茸粉");
-
-  // ===== 收資料 =====
-  if (userState[userId]?.step === "fillInfo") {
+  // ===== 收單 =====
+  if(userState[userId]?.step === "info"){
 
     await saveOrder({
       userId,
-      product: userState[userId].product,
-      info: text
+      product:userState[userId].product,
+      info:text
     });
 
     userState[userId] = null;
 
-    return reply(event,
-`✅ 已收到訂單
-
-我們會幫你處理
-如需調整會再與你確認🙂`);
+    return reply(event,"✅ 訂單已收到，我們會幫你處理🙂");
   }
 
-  return replyFlex(event, mainMenu());
-}
-
-// ===== 開始下單 =====
-function startOrder(event,userId,product){
-
-  userState[userId] = {
-    step: "fillInfo",
-    product
-  };
-
-  return reply(event,
-`🧾 商品：${product}
-
-👉 請提供：
-姓名 + 電話 + 地址`);
-}
-
-// ===== 主選單 =====
-function mainMenu(){
-  return {
-    type: "flex",
-    altText: "主選單",
-    contents: {
-      type: "bubble",
-      body: {
-        type: "box",
-        layout: "vertical",
-        spacing:"md",
-        contents: [
-          btn("看產品"),
-          btn("我要買"),
-          btn("怎麼吃")
-        ]
-      }
-    }
-  };
-}
-
-// ===== 商品選單 =====
-function productFlex(){
-  return {
-    type:"flex",
-    altText:"產品",
-    contents:{
-      type:"carousel",
-      contents:[
-        productCard("龜鹿膏"),
-        productCard("龜鹿飲"),
-        productCard("龜鹿湯塊"),
-        productCard("鹿茸粉")
-      ]
-    }
-  }
-}
-
-function productCard(name){
-  return {
-    type:"bubble",
-    body:{
-      type:"box",
-      layout:"vertical",
-      contents:[
-        {
-          type:"text",
-          text:name,
-          weight:"bold",
-          size:"lg"
-        },
-        {
-          type:"button",
-          action:{
-            type:"message",
-            label:"選這個",
-            text:name
-          },
-          style:"primary"
-        }
-      ]
-    }
-  }
-}
-
-// ===== 按鈕 =====
-function btn(text){
-  return {
-    type:"button",
-    action:{
-      type:"message",
-      label:text,
-      text:text
-    },
-    style:"primary"
-  }
-}
-
-// ===== 回覆 =====
-function reply(event,text){
-  return client.replyMessage(event.replyToken,{
-    type:"text",
-    text
-  });
-}
-
-function replyFlex(event,flex){
-  return client.replyMessage(event.replyToken,flex);
+  return reply(event,"👉 輸入 看產品 或 我要買");
 }
 
 // ===== CRM =====
@@ -208,6 +96,14 @@ async function saveOrder(data){
   try{
     await axios.post(CRM_URL,data);
   }catch(e){}
+}
+
+// ===== 回覆 =====
+function reply(event,text){
+  return client.replyMessage(event.replyToken,{
+    type:"text",
+    text
+  });
 }
 
 app.listen(3000);
