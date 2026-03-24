@@ -19,9 +19,12 @@ const client = new line.Client(config);
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 
 // ===== 商品資料 =====
-const productsData = JSON.parse(
-  fs.readFileSync("./products.json", "utf8")
-);
+let productsData = [];
+try{
+  productsData = JSON.parse(
+    fs.readFileSync("./products.json", "utf8")
+  );
+}catch(e){}
 
 // ===== webhook =====
 app.post("/webhook", line.middleware(config), async (req, res) => {
@@ -34,30 +37,75 @@ async function handleEvent(event){
 
   const userId = event.source.userId;
 
+  // ===== 加好友 =====
   if(event.type === "follow"){
-    return reply(event,
-`歡迎加入【仙加味】
-
-👉 輸入「幫我搭配」
-我幫你直接配好`);
+    return replyFlex(event,"flex_main.json");
   }
 
   if(event.type !== "message" || event.message.type !== "text") return;
 
   const text = event.message.text;
 
-  // ===== 搭配 =====
-  if(text.includes("搭配")){
-    return reply(event,
-`🔥 幫你配最適合
-
-請說👇
-作息 + 想補什麼
-
-👉 我直接幫你配`);
+  // ===== 主入口（不用打字🔥）=====
+  if(text.includes("幫我選") || text.includes("搭配")){
+    return replyFlex(event,"flex_main.json");
   }
 
-  // ===== 商品判斷 =====
+  // ===== 直接買 =====
+  if(text.includes("直接買")){
+    return replyFlex(event,"flex_lifestyle.json");
+  }
+
+  // ===== 生活型態判斷 =====
+  if(text.includes("外食") || text === "1"){
+    return replyFlex(event,"flex_combo.json");
+  }
+
+  if(text.includes("偶爾") || text === "2"){
+    return reply(event,
+`我幫你配👇
+
+👉 日常補養組
+
+✔ 龜鹿膏（每天）
+✔ 龜鹿湯塊（燉湯）
+
+👉 很簡單就能維持🙂
+
+要幫你安排嗎？`);
+  }
+
+  if(text.includes("自己煮") || text === "3"){
+    return reply(event,
+`你很適合用湯塊👍
+
+✔ 一鍋放1～2塊
+✔ 可燉湯或保溫壺
+
+👉 很自然融入日常
+
+要幫你搭一組嗎🙂`);
+  }
+
+  // ===== 收單（CRM保留🔥）=====
+  if(text.includes("我要") || text.includes("安排")){
+    
+    await saveOrder({
+      userId,
+      product:"套餐",
+      message:text
+    });
+
+    return reply(event,
+`🧾 幫你安排🙂
+
+請提供👇
+姓名：
+電話：
+地址：`);
+  }
+
+  // ===== 商品判斷（保留你原本🔥）=====
   const product = detectProduct(text);
 
   if(product){
@@ -73,11 +121,44 @@ async function handleEvent(event){
 
 商品：${product}
 
-👉 請提供
-姓名 + 電話 + 地址`);
+請提供👇
+姓名：
+電話：
+地址：`);
   }
 
-  return reply(event,"👉 輸入「幫我搭配」開始");
+  // ===== 使用方式 =====
+  if(text.includes("怎麼用")){
+    return reply(event,
+`✔ 一鍋放1～2塊
+✔ 一盒8塊
+✔ 可燉雞湯、排骨湯
+✔ 可放保溫壺
+✔ 可不加藥材，也可依喜好添加`);
+  }
+
+  // ===== 敏感轉醫師 =====
+  if(text.includes("適合") || text.includes("可以吃嗎")){
+    return reply(event,
+`這部分會因個人體質不同，
+
+建議由合作中醫師了解🙂
+
+➤ Line ID：@changwuchi
+➤ https://lin.ee/1MK4NR9`);
+  }
+
+  return reply(event,"👉 點選下方選單開始");
+}
+
+// ===== Flex 回覆 =====
+function replyFlex(event,file){
+  try{
+    const flex = JSON.parse(fs.readFileSync(`./${file}`));
+    return client.replyMessage(event.replyToken,flex);
+  }catch(e){
+    return reply(event,"系統設定中");
+  }
 }
 
 // ===== 商品判斷 =====
