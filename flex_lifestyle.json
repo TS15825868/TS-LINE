@@ -1,0 +1,16 @@
+{
+  "type":"flex",
+  "altText":"選生活型態",
+  "contents":{
+    "type":"bubble",
+    "footer":{
+      "type":"box",
+      "layout":"vertical",
+      "contents":[
+        {"type":"button","style":"primary","action":{"type":"message","label":"外食多","text":"外食多"}},
+        {"type":"button","action":{"type":"message","label":"偶爾煮","text":"偶爾煮"}},
+        {"type":"button","action":{"type":"message","label":"常自己煮","text":"常自己煮"}}
+      ]
+    }
+  }
+}
