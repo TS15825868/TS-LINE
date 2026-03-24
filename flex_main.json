@@ -1,0 +1,23 @@
+{
+  "type":"flex",
+  "altText":"幫你選",
+  "contents":{
+    "type":"bubble",
+    "body":{
+      "type":"box",
+      "layout":"vertical",
+      "contents":[
+        {"type":"text","text":"怎麼幫你配？","weight":"bold"}
+      ]
+    },
+    "footer":{
+      "type":"box",
+      "layout":"vertical",
+      "contents":[
+        {"type":"button","style":"primary","action":{"type":"message","label":"幫我選","text":"幫我選"}},
+        {"type":"button","action":{"type":"message","label":"直接買","text":"直接買"}},
+        {"type":"button","action":{"type":"message","label":"怎麼用","text":"怎麼用"}}
+      ]
+    }
+  }
+}
