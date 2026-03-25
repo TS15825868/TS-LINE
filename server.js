@@ -19,78 +19,37 @@ const client = new line.Client(config);
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 
 app.post("/webhook", line.middleware(config), async (req, res) => {
-  await Promise.all(req.body.events.map(handleEvent));
-  res.json({});
-});
 
-async function handleEvent(event){
+  const event = req.body.events[0];
+  const msg = event.message.text;
 
-  if(event.type !== "message") return;
+  let reply = "";
 
-  const text = event.message.text;
-
-  /* ===== AI判斷 ===== */
-
-  if(text.includes("搭配")){
-    return reply(event,
-`我幫你分三種👇
-
-① 入門開始
-② 日常補養
-③ 完整搭配
-
-直接打數字就可以`);
+  if(msg.includes("入門")){
+    reply = "建議先從龜鹿膏或龜鹿飲開始🙂";
   }
 
-  if(text === "1"){
-    return reply(event,
-`👉 入門建議
-
-✔ 龜鹿膏 或 龜鹿飲
-
-需要我幫你配更適合的嗎🙂`);
+  else if(msg.includes("日常")){
+    reply = "建議：龜鹿膏＋龜鹿湯塊";
   }
 
-  if(text === "2"){
-    return reply(event,
-`👉 日常建議
-
-✔ 龜鹿膏 + 龜鹿湯塊
-
-最多人這樣搭`);
+  else if(msg.includes("完整")){
+    reply = "建議：全套搭配（膏＋飲＋湯塊＋鹿茸粉）";
   }
 
-  if(text === "3"){
-    return reply(event,
-`👉 完整搭配
-
-✔ 膏 + 飲 + 湯塊 + 鹿茸粉
-
-我可以幫你調整`);
+  else if(msg.includes("價格") || msg.includes("便宜")){
+    reply = "有搭配與活動，可以幫你算🙂";
   }
 
-  /* ===== 價格處理（不降價） ===== */
-
-  if(text.includes("便宜") || text.includes("優惠")){
-    return reply(event,
-`有的🙂
-
-通常用「搭配或多入」
-會比較划算
-
-👉 要我幫你算一組嗎？`);
+  else{
+    reply = "我先幫你分三種👇\n① 入門\n② 日常\n③ 完整\n直接打其中一個就好🙂";
   }
 
-  /* ===== 預設 ===== */
-
-  return reply(event,"👉 輸入「幫我搭配」開始");
-}
-
-function reply(event,text){
-  return client.replyMessage(event.replyToken,{
-    type:"text",
-    text
+  return client.replyMessage(event.replyToken, {
+    type: "text",
+    text: reply
   });
-}
+
+});
 
 app.listen(3000);
