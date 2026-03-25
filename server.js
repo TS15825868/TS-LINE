@@ -18,98 +18,63 @@ const client = new line.Client(config);
 // ===== CRM =====
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 
-const COMBO = {
-  "入門體驗組":4000,
-  "日常補養組":6000,
-  "完整補養組":6100,
-  "加強補養組":12000
+const COMBO={
+ "日常補養組":6000,
+ "完整補養組":6100
 };
 
-const userState = {};
-const userBuyTime = {};
-
-app.post("/webhook", line.middleware(config), async (req, res) => {
-  await Promise.all(req.body.events.map(handleEvent));
-  res.json({});
+app.post("/webhook",line.middleware(config),(req,res)=>{
+ Promise.all(req.body.events.map(handleEvent));
+ res.json({});
 });
 
-async function handleEvent(event){
+async function handleEvent(e){
 
-  if(event.type !== "message") return;
+ if(e.type!=="message")return;
 
-  const text = event.message.text;
-  const userId = event.source.userId;
+ const text=e.message.text;
 
-  if(text === "我要買"){
-    return client.replyMessage(event.replyToken, comboFlex());
-  }
+ if(text==="我要買"){
+  return client.replyMessage(e.replyToken,flex());
+ }
 
-  if(text === "看產品"){
-    return reply(event,"👉 直接點「我要買」比較快🙂");
-  }
+ if(text.includes("我想買")){
+  return reply(e,"請提供姓名+電話+地址");
+ }
 
-  if(text === "怎麼使用"){
-    return reply(event,"👉 日常吃＋燉湯搭配\n\n需要我幫你配嗎🙂");
-  }
-
-  if(text.includes("我想買")){
-    const combo = text.replace("我想買","");
-    const price = COMBO[combo];
-
-    userState[userId] = {combo};
-
-    return reply(event,
-`🧾 ${combo}
-
-💰 ${price} 元
-
-請提供：
-姓名 + 電話 + 地址`);
-  }
-
-  if(userState[userId]){
-    userBuyTime[userId] = Date.now();
-    delete userState[userId];
-
-    return reply(event,"✅ 已完成，我們會聯絡你🙂");
-  }
-
-  return reply(event,"👉 點「我要買」開始");
+ return reply(e,"👉 點「我要買」開始");
 }
 
-function comboFlex(){
-  return {
-    type:"flex",
-    altText:"選組合",
-    contents:{
-      type:"carousel",
-      contents:Object.keys(COMBO).map(name=>({
-        type:"bubble",
-        body:{
-          type:"box",
-          layout:"vertical",
-          contents:[
-            {type:"text",text:name,weight:"bold"},
-            {
-              type:"button",
-              action:{
-                type:"message",
-                label:"選這個",
-                text:"我想買"+name
-              }
-            }
-          ]
-        }
-      }))
+function flex(){
+ return{
+  type:"flex",
+  altText:"選組合",
+  contents:{
+   type:"carousel",
+   contents:Object.keys(COMBO).map(n=>({
+    type:"bubble",
+    body:{
+     type:"box",
+     layout:"vertical",
+     contents:[
+      {type:"text",text:n},
+      {
+       type:"button",
+       action:{
+        type:"message",
+        label:"選這個",
+        text:"我想買"+n
+       }
+      }
+     ]
     }
+   }))
   }
+ };
 }
 
-function reply(event,text){
-  return client.replyMessage(event.replyToken,{
-    type:"text",
-    text
-  });
+function reply(e,t){
+ return client.replyMessage(e.replyToken,{type:"text",text:t});
 }
 
 app.listen(3000);
