@@ -14,9 +14,10 @@ const client = new line.Client(config);
 
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 
-const userOrders = {};
+const userState = {};
 const lastMessage = {};
 
+// ===== 主入口 =====
 app.post("/webhook", line.middleware(config), async (req, res) => {
   await Promise.all(req.body.events.map(handleEvent));
   res.sendStatus(200);
@@ -28,69 +29,122 @@ async function handleEvent(event) {
   const userId = event.source.userId;
   const text = event.message.text.trim();
 
-  // ===== 防重複 =====
   if (lastMessage[userId] === text) return;
   lastMessage[userId] = text;
 
-  // ===== 基本指令 =====
-  if (text.includes("看產品")) {
-    return reply(event, "👉 請直接說產品名稱\n例如：龜鹿膏");
+  if (!userState[userId]) userState[userId] = {};
+
+  // ===== 推薦系統入口 =====
+  if (["1","2","3"].includes(text)) {
+    const comboMap = {
+      "1": "龜鹿飲 + 龜鹿湯塊",
+      "2": "龜鹿膏 + 龜鹿飲",
+      "3": "鹿茸粉 + 龜鹿膏"
+    };
+
+    userState[userId].combo = comboMap[text];
+
+    return reply(event, `
+👉 建議搭配：
+${comboMap[text]}
+
+需要我幫你準備嗎？
+（回：要 / 我要買）
+    `);
   }
 
-  if (text.includes("我要買")) {
+  // ===== 看產品 =====
+  if (text.includes("看") || text.includes("產品")) {
+    return reply(event, `
+👉 目前有：
+
+龜鹿膏
+龜鹿飲
+龜鹿湯塊
+鹿茸粉
+
+👉 直接輸入：
+龜鹿膏2（商品＋數量）
+    `);
+  }
+
+  // ===== 我要買 =====
+  if (text.includes("要") || text.includes("買")) {
     return reply(event, "👉 請輸入：商品＋數量\n例如：龜鹿膏2");
   }
 
-  // ===== 訂單解析 =====
-  if (text.match(/龜鹿|鹿茸/)) {
-    const match = text.match(/(龜鹿膏|龜鹿飲|龜鹿湯塊|鹿茸粉)(\d+)/);
+  // ===== 訂單解析（升級版）=====
+  const productMatch = text.match(/(龜鹿膏|龜鹿飲|龜鹿湯塊|鹿茸粉)/);
+  const qtyMatch = text.match(/\d+/);
 
-    if (!match) {
-      return reply(event, "請輸入正確格式，例如：龜鹿膏2");
-    }
+  if (productMatch) {
+    const product = productMatch[1];
+    const qty = qtyMatch ? qtyMatch[0] : 1;
 
-    const product = match[1];
-    const qty = match[2];
-
-    userOrders[userId] = {
+    userState[userId].order = {
       product,
-      qty,
+      qty
     };
 
     return reply(event, "請輸入姓名");
   }
 
-  if (userOrders[userId] && !userOrders[userId].name) {
-    userOrders[userId].name = text;
+  // ===== 收單流程 =====
+  if (userState[userId].order && !userState[userId].name) {
+    userState[userId].name = text;
     return reply(event, "請輸入電話");
   }
 
-  if (userOrders[userId] && !userOrders[userId].phone) {
-    userOrders[userId].phone = text;
+  if (userState[userId].order && !userState[userId].phone) {
+    userState[userId].phone = text;
     return reply(event, "請輸入地址");
   }
 
-  if (userOrders[userId] && !userOrders[userId].address) {
-    userOrders[userId].address = text;
+  if (userState[userId].order && !userState[userId].address) {
+    userState[userId].address = text;
 
-    // ===== 取得LINE名稱 =====
     const profile = await client.getProfile(userId);
-    userOrders[userId].lineName = profile.displayName;
 
-    // ===== 寫入Sheet =====
-    await sendToSheet(userId, userOrders[userId]);
+    const orderData = {
+      lineName: profile.displayName,
+      product: userState[userId].order.product,
+      qty: userState[userId].order.qty,
+      name: userState[userId].name,
+      phone: userState[userId].phone,
+      address: userState[userId].address
+    };
+
+    // ===== 存Sheet =====
+    await sendToSheet(userId, orderData);
 
     // ===== 通知你 =====
-    await notifyBoss(userOrders[userId]);
+    await notifyBoss(orderData);
 
-    delete userOrders[userId];
+    delete userState[userId];
 
-    return reply(event, "✅ 已收到訂單，我們會與你確認🙂");
+    return reply(event, `
+✅ 已收到訂單
+
+商品：${orderData.product}
+數量：${orderData.qty}
+
+我們會盡快與你確認 🙏
+    `);
   }
 
-  return reply(event, "請輸入：看產品 / 我要買");
+  // ===== fallback =====
+  return reply(event, `
+我可以幫你👇
+
+1️⃣ 幫你選適合的
+2️⃣ 看產品
+3️⃣ 直接購買
+
+👉 回 1 / 2 / 3
+  `);
 }
 
+// ===== 回覆 =====
 function reply(event, text) {
   return client.replyMessage(event.replyToken, {
     type: "text",
@@ -98,8 +152,10 @@ function reply(event, text) {
   });
 }
 
-// ===== 傳到Google Sheet =====
+// ===== Google Sheet =====
 async function sendToSheet(userId, data) {
+  if (!CRM_URL) return;
+
   await fetch(CRM_URL, {
     method: "POST",
     body: JSON.stringify({
@@ -112,7 +168,7 @@ async function sendToSheet(userId, data) {
 
 // ===== 通知你 =====
 async function notifyBoss(order) {
-  const bossId = "👉這裡換成你的U開頭ID";
+  const bossId = "👉換成你的U開頭ID";
 
   await client.pushMessage(bossId, {
     type: "text",
