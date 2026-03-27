@@ -17,9 +17,12 @@ const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfyc
 const userState = {};
 const lastMessage = {};
 
-// ===== 主入口 =====
+// 👉 簡易CRM（記憶用戶狀態）
+let users = {};
+
 app.post("/webhook", line.middleware(config), async (req, res) => {
-  await Promise.all(req.body.events.map(handleEvent));
+  const events = req.body.events;
+  await Promise.all(events.map(handleEvent));
   res.sendStatus(200);
 });
 
@@ -27,162 +30,85 @@ async function handleEvent(event) {
   if (event.type !== "message") return;
 
   const userId = event.source.userId;
-  const text = event.message.text.trim();
+  const msg = event.message.text;
 
-  if (lastMessage[userId] === text) return;
-  lastMessage[userId] = text;
+  if (!users[userId]) users[userId] = { step: 0 };
 
-  if (!userState[userId]) userState[userId] = {};
-
-  // ===== 推薦系統入口 =====
-  if (["1","2","3"].includes(text)) {
-    const comboMap = {
-      "1": "龜鹿飲 + 龜鹿湯塊",
-      "2": "龜鹿膏 + 龜鹿飲",
-      "3": "鹿茸粉 + 龜鹿膏"
-    };
-
-    userState[userId].combo = comboMap[text];
+  // 🔥 下單流程
+  if (msg.includes("我要")) {
+    users[userId].step = 1;
+    users[userId].product = msg;
 
     return reply(event, `
-👉 建議搭配：
-${comboMap[text]}
+好的👌
 
-需要我幫你準備嗎？
-（回：要 / 我要買）
-    `);
+請提供👇
+1️⃣ 姓名
+2️⃣ 電話
+3️⃣ 地址
+`);
   }
 
-  // ===== 看產品 =====
-  if (text.includes("看") || text.includes("產品")) {
-    return reply(event, `
-👉 目前有：
-
-龜鹿膏
-龜鹿飲
-龜鹿湯塊
-鹿茸粉
-
-👉 直接輸入：
-龜鹿膏2（商品＋數量）
-    `);
-  }
-
-  // ===== 我要買 =====
-  if (text.includes("要") || text.includes("買")) {
-    return reply(event, "👉 請輸入：商品＋數量\n例如：龜鹿膏2");
-  }
-
-  // ===== 訂單解析（升級版）=====
-  const productMatch = text.match(/(龜鹿膏|龜鹿飲|龜鹿湯塊|鹿茸粉)/);
-  const qtyMatch = text.match(/\d+/);
-
-  if (productMatch) {
-    const product = productMatch[1];
-    const qty = qtyMatch ? qtyMatch[0] : 1;
-
-    userState[userId].order = {
-      product,
-      qty
-    };
-
-    return reply(event, "請輸入姓名");
-  }
-
-  // ===== 收單流程 =====
-  if (userState[userId].order && !userState[userId].name) {
-    userState[userId].name = text;
+  if (users[userId].step === 1) {
+    users[userId].name = msg;
+    users[userId].step = 2;
     return reply(event, "請輸入電話");
   }
 
-  if (userState[userId].order && !userState[userId].phone) {
-    userState[userId].phone = text;
+  if (users[userId].step === 2) {
+    users[userId].phone = msg;
+    users[userId].step = 3;
     return reply(event, "請輸入地址");
   }
 
-  if (userState[userId].order && !userState[userId].address) {
-    userState[userId].address = text;
-
-    const profile = await client.getProfile(userId);
-
-    const orderData = {
-      lineName: profile.displayName,
-      product: userState[userId].order.product,
-      qty: userState[userId].order.qty,
-      name: userState[userId].name,
-      phone: userState[userId].phone,
-      address: userState[userId].address
-    };
-
-    // ===== 存Sheet =====
-    await sendToSheet(userId, orderData);
-
-    // ===== 通知你 =====
-    await notifyBoss(orderData);
-
-    delete userState[userId];
+  if (users[userId].step === 3) {
+    users[userId].address = msg;
+    users[userId].step = 0;
 
     return reply(event, `
-✅ 已收到訂單
+✅ 訂單完成
 
-商品：${orderData.product}
-數量：${orderData.qty}
+產品：${users[userId].product}
+姓名：${users[userId].name}
+電話：${users[userId].phone}
+地址：${users[userId].address}
 
-我們會盡快與你確認 🙏
-    `);
+👉 我們會盡快出貨
+`);
   }
 
-  // ===== fallback =====
+  // 🔥 產品回覆
+  if (msg.includes("龜鹿膏")) {
+    return reply(event, "龜鹿膏適合日常穩定補養 👉 回「我要龜鹿膏」直接下單");
+  }
+
+  if (msg.includes("龜鹿飲")) {
+    return reply(event, "龜鹿飲適合忙碌補養 👉 回「我要龜鹿飲」");
+  }
+
+  if (msg.includes("湯塊")) {
+    return reply(event, "湯塊適合料理 👉 回「我要湯塊」");
+  }
+
+  if (msg.includes("鹿茸")) {
+    return reply(event, "鹿茸粉適合進階 👉 回「我要鹿茸粉」");
+  }
+
+  // 🔥 預設
   return reply(event, `
-我可以幫你👇
+歡迎使用仙加味 👋
 
-1️⃣ 幫你選適合的
-2️⃣ 看產品
-3️⃣ 直接購買
-
-👉 回 1 / 2 / 3
-  `);
+你可以直接說👇
+✔ 龜鹿膏 / 龜鹿飲 / 湯塊 / 鹿茸粉
+✔ 我要購買
+✔ 幫我推薦
+`);
 }
 
-// ===== 回覆 =====
 function reply(event, text) {
   return client.replyMessage(event.replyToken, {
     type: "text",
-    text,
-  });
-}
-
-// ===== Google Sheet =====
-async function sendToSheet(userId, data) {
-  if (!CRM_URL) return;
-
-  await fetch(CRM_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "order",
-      userId,
-      ...data,
-    }),
-  });
-}
-
-// ===== 通知你 =====
-async function notifyBoss(order) {
-  const bossId = "👉換成你的U開頭ID";
-
-  await client.pushMessage(bossId, {
-    type: "text",
-    text: `
-🔥 新訂單
-
-LINE：${order.lineName}
-商品：${order.product}
-數量：${order.qty}
-
-姓名：${order.name}
-電話：${order.phone}
-地址：${order.address}
-    `,
+    text
   });
 }
 
