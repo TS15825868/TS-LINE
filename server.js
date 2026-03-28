@@ -56,26 +56,33 @@ async function handleEvent(event) {
   const state = getUserState(userId);
 
   if (event.type === "follow") {
-    return replyText(event.replyToken, DATA.welcomeText || buildDefaultText());
+    return replyFlexWithQuickReply(
+      event.replyToken,
+      DATA.flex.welcome,
+      DATA.quickReplies.main
+    );
   }
 
-  if (event.type !== "message" || event.message.type !== "text") {
-    return null;
-  }
+  if (event.type !== "message" || event.message.type !== "text") return null;
 
   const raw = String(event.message.text || "").trim();
   const msg = normalize(raw);
   state.history.push(raw);
 
-  if (handleCancel(state, msg)) {
-    return replyText(
+  if (handleCancel(state, raw, msg)) {
+    return replyTextWithQuickReply(
       event.replyToken,
-      "已取消目前流程。你可以直接輸入產品名稱，或輸入「幫我推薦」。"
+      "已取消目前流程。你可以直接點下面按鈕，或直接輸入產品名稱。",
+      DATA.quickReplies.main
     );
   }
 
   if (SENSITIVE_RE.test(raw)) {
-    return replyText(event.replyToken, DATA.doctorReferral);
+    return replyTextWithQuickReply(
+      event.replyToken,
+      DATA.doctorReferral,
+      DATA.quickReplies.main
+    );
   }
 
   if (state.order.step) {
@@ -86,100 +93,216 @@ async function handleEvent(event) {
   const intent = detectIntent(msg);
 
   if (intent === "welcome") {
-    return replyText(event.replyToken, DATA.welcomeText || buildDefaultText());
+    return replyFlexWithQuickReply(
+      event.replyToken,
+      DATA.flex.welcome,
+      DATA.quickReplies.main
+    );
   }
 
-  if (intent === "flex_main") {
-    return replyFlex(event.replyToken, DATA.flex.main);
-  }
-
-  if (intent === "flex_lifestyle") {
-    return replyFlex(event.replyToken, DATA.flex.lifestyle);
-  }
-
-  if (intent === "flex_combo") {
-    return replyFlex(event.replyToken, DATA.flex.combo);
+  if (intent === "products") {
+    return replyTextWithQuickReply(
+      event.replyToken,
+      "想看哪一個產品呢？請直接點選：",
+      DATA.quickReplies.products
+    );
   }
 
   if (intent === "recommend") {
     state.lastProduct = null;
-    return replyText(event.replyToken, buildRecommendText());
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildRecommendText(),
+      DATA.quickReplies.main
+    );
   }
 
   if (intent === "faq") {
-    return replyText(event.replyToken, buildFaqText());
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildFaqText(),
+      DATA.quickReplies.main
+    );
   }
 
   if (intent === "contact") {
-    return replyText(
+    return replyTextWithQuickReply(
       event.replyToken,
-      `可以直接加官方 LINE：${LINE_ID}\n${LINE_URL}`
+      `可以直接加官方 LINE：${LINE_ID}\n${LINE_URL}`,
+      DATA.quickReplies.main
     );
   }
 
   if (intent === "price") {
     if (product) {
       state.lastProduct = product;
-      return replyText(
+      return replyTextWithQuickReply(
         event.replyToken,
-        `${product.name}\n規格：${product.size}\n建議售價：${money(product.price)}`
+        `${product.name}
+規格：${product.size}
+建議售價：${money(product.price)}`,
+        [
+          { label: "成分", text: `${product.name} 成分` },
+          { label: "怎麼使用", text: `${product.name} 使用方式` },
+          { label: "我要買", text: `我要買 ${product.name}` },
+          { label: "看搭配組合", text: `${product.name} 搭配組合` }
+        ]
       );
     }
-    return replyText(event.replyToken, buildPriceText());
+
+    return replyTextWithQuickReply(
+      event.replyToken,
+      "想看哪一個產品的價格呢？請直接點選：",
+      [
+        { label: "龜鹿膏", text: "龜鹿膏 價格" },
+        { label: "龜鹿飲", text: "龜鹿飲 價格" },
+        { label: "龜鹿湯塊", text: "龜鹿湯塊 價格" },
+        { label: "鹿茸粉", text: "鹿茸粉 價格" }
+      ]
+    );
   }
 
-  if (intent === "combo") {
-    return replyText(event.replyToken, buildComboText());
+  if (intent === "combo" || intent === "offer") {
+    if (product) {
+      state.lastProduct = product;
+      return replyTextWithQuickReply(
+        event.replyToken,
+        buildOfferText(product),
+        [
+          { label: "看價格", text: `${product.name} 價格` },
+          { label: "我要買", text: `我要買 ${product.name}` },
+          { label: "成分", text: `${product.name} 成分` },
+          { label: "怎麼使用", text: `${product.name} 使用方式` }
+        ]
+      );
+    }
+
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildOfferText(null),
+      [
+        { label: "龜鹿膏組合", text: "龜鹿膏 搭配組合" },
+        { label: "龜鹿飲組合", text: "龜鹿飲 搭配組合" },
+        { label: "龜鹿湯塊組合", text: "龜鹿湯塊 搭配組合" },
+        { label: "鹿茸粉組合", text: "鹿茸粉 搭配組合" }
+      ]
+    );
   }
 
   if (intent === "payment") {
-    return replyText(event.replyToken, buildPaymentText());
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildPaymentText(),
+      DATA.quickReplies.main
+    );
   }
 
   if (intent === "shipping") {
-    return replyText(event.replyToken, buildShippingText());
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildShippingText(),
+      DATA.quickReplies.main
+    );
+  }
+
+  if (intent === "hesitate") {
+    if (product) {
+      state.lastProduct = product;
+      return replyTextWithQuickReply(
+        event.replyToken,
+        buildHesitateText(product),
+        [
+          { label: "看價格", text: `${product.name} 價格` },
+          { label: "看組合", text: `${product.name} 搭配組合` },
+          { label: "我要買", text: `我要買 ${product.name}` },
+          { label: "幫我推薦", text: "幫我推薦" }
+        ]
+      );
+    }
+
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildHesitateText(null),
+      [
+        { label: "先看單品", text: "看產品" },
+        { label: "看搭配組合", text: "看搭配組合" },
+        { label: "幫我推薦", text: "幫我推薦" }
+      ]
+    );
   }
 
   if (intent === "order") {
     const orderProduct = product || state.lastProduct;
     if (!orderProduct) {
-      return replyText(
+      return replyTextWithQuickReply(
         event.replyToken,
-        "你想下單哪一個呢？\n可直接輸入：龜鹿膏／龜鹿飲／龜鹿湯塊／鹿茸粉"
+        "你想下單哪一個呢？請直接點選：",
+        [
+          { label: "龜鹿膏", text: "我要買 龜鹿膏" },
+          { label: "龜鹿飲", text: "我要買 龜鹿飲" },
+          { label: "龜鹿湯塊", text: "我要買 龜鹿湯塊" },
+          { label: "鹿茸粉", text: "我要買 鹿茸粉" }
+        ]
       );
     }
     startOrder(state, orderProduct.name);
-    return replyText(
-      event.replyToken,
-      `好的，我幫你登記 ${orderProduct.name}。\n請先回覆收件姓名。`
-    );
+    return replyText(event.replyToken, `好的，我幫你登記 ${orderProduct.name}。\n請先回覆收件姓名。`);
   }
 
   if (product && ["spec", "usage", "ingredients", "detail"].includes(intent)) {
     state.lastProduct = product;
-    return replyText(event.replyToken, buildProductDetail(product, intent));
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildProductDetail(product, intent),
+      [
+        { label: "價格", text: `${product.name} 價格` },
+        { label: "成分", text: `${product.name} 成分` },
+        { label: "怎麼使用", text: `${product.name} 使用方式` },
+        { label: "我要買", text: `我要買 ${product.name}` }
+      ]
+    );
   }
 
   if (product) {
     state.lastProduct = product;
-    return replyText(event.replyToken, buildProductSummary(product));
+    return replyTextWithQuickReply(
+      event.replyToken,
+      buildProductSummary(product),
+      [
+        { label: "價格", text: `${product.name} 價格` },
+        { label: "成分", text: `${product.name} 成分` },
+        { label: "怎麼使用", text: `${product.name} 使用方式` },
+        { label: "看搭配組合", text: `${product.name} 搭配組合` },
+        { label: "我要買", text: `我要買 ${product.name}` }
+      ]
+    );
   }
 
   if (["spec", "usage", "ingredients"].includes(intent) && state.lastProduct) {
-    return replyText(
+    return replyTextWithQuickReply(
       event.replyToken,
-      buildProductDetail(state.lastProduct, intent)
+      buildProductDetail(state.lastProduct, intent),
+      [
+        { label: "價格", text: `${state.lastProduct.name} 價格` },
+        { label: "我要買", text: `我要買 ${state.lastProduct.name}` },
+        { label: "看搭配組合", text: `${state.lastProduct.name} 搭配組合` }
+      ]
     );
   }
 
   if (msg.includes("影片")) {
-    return replyText(
+    return replyTextWithQuickReply(
       event.replyToken,
-      "官網影片頁已整理公開影片，可直接查看：\nhttps://ts15825868.github.io/xianjiawei/videos.html"
+      "官網影片頁已整理公開影片，可直接查看：\nhttps://ts15825868.github.io/xianjiawei/videos.html",
+      DATA.quickReplies.main
     );
   }
 
-  return replyText(event.replyToken, buildDefaultText());
+  return replyTextWithQuickReply(
+    event.replyToken,
+    buildDefaultText(),
+    DATA.quickReplies.main
+  );
 }
 
 function getUserState(userId) {
@@ -194,8 +317,8 @@ function getUserState(userId) {
         phone: "",
         address: "",
         payment: "",
-        shipping: "",
-      },
+        shipping: ""
+      }
     };
   }
   return users[userId];
@@ -205,8 +328,8 @@ function normalize(text) {
   return String(text).trim().toLowerCase().replace(/\s+/g, "");
 }
 
-function handleCancel(state, msg) {
-  if (["取消", "重來", "重新開始"].includes(msg)) {
+function handleCancel(state, raw, msg) {
+  if (["取消", "重來", "重新開始"].includes(raw) || ["取消", "重來", "重新開始"].includes(msg)) {
     state.order = {
       step: 0,
       product: "",
@@ -214,7 +337,7 @@ function handleCancel(state, msg) {
       phone: "",
       address: "",
       payment: "",
-      shipping: "",
+      shipping: ""
     };
     return true;
   }
@@ -223,30 +346,25 @@ function handleCancel(state, msg) {
 
 function detectIntent(msg) {
   if (/(歡迎|你好|hi|hello)/.test(msg)) return "welcome";
-  if (/(幫我選|幫你配)/.test(msg)) return "flex_main";
-  if (/(生活型態|外食多|偶爾煮|常自己煮)/.test(msg)) return "flex_lifestyle";
-  if (/(推薦套餐|我要這組)/.test(msg)) return "flex_combo";
+  if (/(看產品|產品|商品|產品介紹|看商品)/.test(msg)) return "products";
   if (/(幫我推薦|推薦|怎麼選|選哪個|哪個適合)/.test(msg)) return "recommend";
-  if (/(下單|訂購|我要買|購買|我要訂|直接買|我要)/.test(msg)) return "order";
+  if (/(下單|訂購|我要買|購買|我要訂|直接買)/.test(msg)) return "order";
   if (/(規格|容量|幾g|幾cc|重量)/.test(msg)) return "spec";
-  if (/(怎麼吃|怎麼用|使用|食用|喝法)/.test(msg)) return "usage";
+  if (/(怎麼吃|怎麼用|怎麼使用|使用方式|使用|食用|喝法)/.test(msg)) return "usage";
   if (/(成分|內容物|原料)/.test(msg)) return "ingredients";
   if (/(價格|價錢|售價|多少錢|費用)/.test(msg)) return "price";
-  if (/(組合|搭配組|套組|組合價|套餐)/.test(msg)) return "combo";
+  if (/(搭配組合|看搭配組合|組合|搭配|套餐|搭配組|套組|買多少|送幾罐|贈送|優惠)/.test(msg)) return "offer";
   if (/(付款|匯款|貨到付款|付款方式)/.test(msg)) return "payment";
   if (/(宅配|賣貨便|7-11|711|超商|配送|運送|寄送|親送|雙北)/.test(msg)) return "shipping";
   if (/(faq|常見問題|問題)/.test(msg)) return "faq";
   if (/(聯絡|line|客服)/.test(msg)) return "contact";
+  if (/(貴|太貴|有點貴|便宜一點|算便宜|優惠嗎|可以便宜嗎|能不能算便宜|別家比較便宜|殺價)/.test(msg)) return "hesitate";
   return "detail";
 }
 
 function detectProduct(msg) {
   for (const [name, aliases] of Object.entries(PRODUCT_ALIASES)) {
-    if (
-      aliases.some((alias) =>
-        msg.includes(alias.toLowerCase().replace(/\s+/g, ""))
-      )
-    ) {
+    if (aliases.some((alias) => msg.includes(alias.toLowerCase().replace(/\s+/g, "")))) {
       return PRODUCT_MAP[name];
     }
   }
@@ -263,11 +381,7 @@ function buildRecommendText() {
     lines.push(`・${item.keyword} → ${item.result}`);
     lines.push(`  ${item.desc}`);
   }
-  lines.push(
-    "",
-    "也可以直接問我：價格／組合／付款方式／配送方式",
-    "如果你想下單，可直接輸入：我要買＋產品名稱"
-  );
+  lines.push("", "也可以直接點下面按鈕，我再幫你往下整理。");
   return lines.join("\n");
 }
 
@@ -275,32 +389,8 @@ function buildFaqText() {
   return DATA.faqs.map((f) => `Q：${f.q}\nA：${f.a}`).join("\n\n");
 }
 
-function buildPriceText() {
-  const lines = ["建議售價如下：", ""];
-  for (const p of DATA.products) {
-    lines.push(`・${p.name}`);
-    lines.push(`  規格：${p.size}`);
-    lines.push(`  建議售價：${money(p.price)}`);
-  }
-  return lines.join("\n");
-}
-
-function buildComboText() {
-  const lines = ["目前可參考這幾種搭配方向：", ""];
-  for (const combo of DATA.combos || []) {
-    lines.push(`【${combo.name}】`);
-    lines.push(`內容：${combo.items.join("＋")}`);
-    lines.push(combo.desc);
-    lines.push("");
-  }
-  lines.push("若你想要我依你的使用方式幫你挑組合，也可以直接輸入：幫我推薦");
-  return lines.join("\n").trim();
-}
-
 function buildPaymentText() {
-  return `付款方式目前可安排：\n・${DATA.payments.join(
-    "\n・"
-  )}\n\n若要直接下單，可先告訴我想買的品項與數量。`;
+  return `付款方式目前可安排：\n・${DATA.payments.join("\n・")}\n\n若要直接下單，可先告訴我想買的品項與數量。`;
 }
 
 function buildShippingText() {
@@ -316,33 +406,115 @@ function buildShippingText() {
 function buildProductSummary(product) {
   return `${product.name}
 規格：${product.size}
-建議售價：${money(product.price)}
 ${product.description}
 
-你可以直接再問我：
-・${product.name} 規格
-・${product.name} 使用方式
-・${product.name} 成分
-・${product.name} 價格
-・我要買${product.name}`;
+你可以直接再點下面按鈕查看價格、成分、使用方式或下單。`;
 }
 
 function buildProductDetail(product, intent) {
   if (intent === "spec") return `${product.name} 的規格是 ${product.size}。`;
-  if (intent === "ingredients")
-    return `${product.name} 成分：\n${product.ingredients.join("、")}`;
-  if (intent === "usage")
-    return `${product.name} 使用方式：\n${product.usage
-      .map((x) => `・${x}`)
-      .join("\n")}`;
+  if (intent === "ingredients") return `${product.name} 成分：\n${product.ingredients.join("、")}`;
+  if (intent === "usage") return `${product.name} 使用方式：\n${product.usage.map((x) => `・${x}`).join("\n")}`;
   return `${buildProductSummary(product)}\n\n成分：${product.ingredients.join("、")}`;
 }
 
-function buildDefaultText() {
-  return (
-    DATA.welcomeText ||
-    "您好，歡迎來到仙加味🙂\n可直接輸入：龜鹿膏／龜鹿飲／龜鹿湯塊／鹿茸粉／價格／幫我推薦"
+function buildOfferText(product) {
+  const offers = DATA.offers || {};
+  const comboOffers = offers.comboOffers || [];
+
+  if (!product) {
+    const lines = ["目前可參考這幾種搭配方式：", ""];
+    comboOffers.forEach((offer) => {
+      lines.push(`【${offer.name}】`);
+      lines.push(`內容：${offer.items.join("＋")}`);
+      if (offer.gift) lines.push(`附贈：${offer.gift}`);
+      if (offer.desc) lines.push(offer.desc);
+      lines.push("");
+    });
+    lines.push("你也可以直接點產品，我再幫你看該產品目前有沒有搭配方式。");
+    return lines.join("\n").trim();
+  }
+
+  const relatedComboOffers = comboOffers.filter((offer) =>
+    (offer.items || []).some((item) => item.includes(product.name))
   );
+
+  const lines = [`${product.name} 目前可參考：`, ""];
+
+  if (relatedComboOffers.length) {
+    lines.push("【搭配組合】");
+    relatedComboOffers.forEach((offer) => {
+      lines.push(`・${offer.name}`);
+      lines.push(`  內容：${offer.items.join("＋")}`);
+      if (offer.gift) lines.push(`  附贈：${offer.gift}`);
+      if (offer.desc) lines.push(`  ${offer.desc}`);
+    });
+  } else {
+    lines.push("目前這項沒有另外設定組合方式。");
+  }
+
+  return lines.join("\n").trim();
+}
+
+function buildHesitateText(product) {
+  const retention = DATA.retentionOffers || {};
+  const triggerText =
+    retention.triggerText ||
+    "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂";
+
+  if (product) {
+    const extra = (retention.products && retention.products[product.name]) || "";
+    const lines = [
+      "我理解，第一次看價格會想先評估🙂",
+      "",
+      "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
+      triggerText
+    ];
+
+    if (extra) {
+      lines.push("", `${product.name} 這邊可協助安排：`, `・${extra}`);
+    }
+
+    lines.push("", "如果您想，我也可以再幫您看搭配組合。");
+    return lines.join("\n");
+  }
+
+  const comboRetention = retention.combos || {};
+  const comboNames = Object.keys(comboRetention);
+
+  const lines = [
+    "我理解，第一次看價格會想先評估🙂",
+    "",
+    "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
+    triggerText
+  ];
+
+  if (comboNames.length) {
+    lines.push("", "若您是在評估搭配方式，也可參考：");
+    comboNames.forEach((name) => {
+      lines.push(`・${name}：${comboRetention[name]}`);
+    });
+  }
+
+  lines.push("", "您可以直接點下面想看的方向，我再幫您整理。");
+  return lines.join("\n");
+}
+
+function buildDefaultText() {
+  return DATA.welcomeText || "您好，歡迎來到仙加味🙂";
+}
+
+function buildQuickReply(items) {
+  return {
+    items: (items || []).slice(0, 13).map((item) => ({
+      type: "action",
+      action: {
+        type: "message",
+        label: item.label,
+        text: item.text
+      }
+    }))
+  };
 }
 
 function startOrder(state, productName) {
@@ -353,37 +525,37 @@ function startOrder(state, productName) {
     phone: "",
     address: "",
     payment: "",
-    shipping: "",
+    shipping: ""
   };
 }
 
-async function continueOrder(event, state, msg, userId) {
+async function continueOrder(event, state, raw, userId) {
   if (state.order.step === 1) {
-    state.order.name = msg;
+    state.order.name = raw;
     state.order.step = 2;
     return replyText(event.replyToken, "收到。請回覆收件電話。");
   }
 
   if (state.order.step === 2) {
-    state.order.phone = msg;
+    state.order.phone = raw;
     state.order.step = 3;
     return replyText(event.replyToken, "收到。請回覆收件地址。");
   }
 
   if (state.order.step === 3) {
-    state.order.address = msg;
+    state.order.address = raw;
     state.order.step = 4;
     return replyText(event.replyToken, "收到。請回覆付款方式：匯款／貨到付款");
   }
 
   if (state.order.step === 4) {
-    state.order.payment = msg;
+    state.order.payment = raw;
     state.order.step = 5;
     return replyText(event.replyToken, "收到。請回覆配送方式：宅配／7-11賣貨便／雙北親送");
   }
 
   if (state.order.step === 5) {
-    state.order.shipping = msg;
+    state.order.shipping = raw;
 
     const order = {
       userId,
@@ -393,7 +565,7 @@ async function continueOrder(event, state, msg, userId) {
       address: state.order.address,
       payment: state.order.payment,
       shipping: state.order.shipping,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     };
 
     state.order = {
@@ -403,7 +575,7 @@ async function continueOrder(event, state, msg, userId) {
       phone: "",
       address: "",
       payment: "",
-      shipping: "",
+      shipping: ""
     };
 
     await saveToCRM(order);
@@ -433,9 +605,9 @@ async function saveToCRM(data) {
     await fetch(CRM_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     });
   } catch (e) {
     console.error("CRM error", e.message);
@@ -445,15 +617,26 @@ async function saveToCRM(data) {
 function replyText(replyToken, text) {
   return client.replyMessage(replyToken, {
     type: "text",
-    text,
+    text
   });
 }
 
-function replyFlex(replyToken, flexPayload) {
+function replyTextWithQuickReply(replyToken, text, quickReplyItems) {
+  return client.replyMessage(replyToken, {
+    type: "text",
+    text,
+    quickReply: buildQuickReply(quickReplyItems)
+  });
+}
+
+function replyFlexWithQuickReply(replyToken, flexPayload, quickReplyItems) {
   if (!flexPayload) {
-    return replyText(replyToken, buildDefaultText());
+    return replyTextWithQuickReply(replyToken, buildDefaultText(), DATA.quickReplies.main);
   }
-  return client.replyMessage(replyToken, flexPayload);
+  return client.replyMessage(replyToken, {
+    ...flexPayload,
+    quickReply: buildQuickReply(quickReplyItems)
+  });
 }
 
 const port = process.env.PORT || 3000;
