@@ -2,188 +2,179 @@
 
 const line = require("@line/bot-sdk");
 const express = require("express");
-const fetch = require("node-fetch");
+const fs = require("fs");
+const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96"
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.CHANNEL_SECRET
 };
 
-const app = express();
+if (!config.channelAccessToken || !config.channelSecret) {
+  console.warn("Missing CHANNEL_ACCESS_TOKEN or CHANNEL_SECRET in environment variables.");
+}
+
 const client = new line.Client(config);
+const app = express();
+const CRM_URL = process.env.CRM_URL || "";
+const DATA = JSON.parse(fs.readFileSync(path.join(__dirname, "products.json"), "utf8"));
+const LINE_URL = DATA.lineUrl || "https://lin.ee/sHZW7NkR";
+const users = Object.create(null);
 
-// 🔥 Google Sheet CRM
-const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+const PRODUCT_ALIASES = {
+  "龜鹿膏": ["龜鹿膏", "膏"],
+  "龜鹿飲": ["龜鹿飲", "飲", "30cc", "30 cc"],
+  "龜鹿湯塊": ["龜鹿湯塊", "湯塊", "湯包"],
+  "鹿茸粉": ["鹿茸粉", "鹿茸", "粉"]
+};
+const PRODUCT_MAP = Object.fromEntries(DATA.products.map(p => [p.name, p]));
 
-// 🔥 使用者狀態
-const users = {};
-
+app.get("/", (req, res) => res.send("TS-LINE bot is running."));
 app.post("/webhook", line.middleware(config), async (req, res) => {
-  await Promise.all(req.body.events.map(handleEvent));
-  res.sendStatus(200);
+  try {
+    await Promise.all(req.body.events.map(handleEvent));
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
 });
 
 async function handleEvent(event) {
-  if (event.type !== "message" || event.message.type !== "text") return;
+  if (event.type !== "message" || event.message.type !== "text") return null;
+  const userId = event.source.userId || "anonymous";
+  const msg = normalize(event.message.text || "");
+  const state = getUserState(userId);
+  state.history.push(msg);
 
-  const userId = event.source.userId;
-  const msg = event.message.text.trim();
+  if (handleCancel(state, msg)) {
+    return replyText(event.replyToken, "已取消目前流程。你可以直接輸入產品名稱，或輸入「幫我推薦」。");
+  }
+  if (state.order.step) return continueOrder(event, state, msg);
 
-  if (!users[userId]) {
-    users[userId] = {
-      step: 0,
-      history: [],
-      level: "new"
-    };
+  const product = detectProduct(msg);
+  const intent = detectIntent(msg);
+
+  if (intent === "recommend") {
+    state.lastProduct = null;
+    return replyText(event.replyToken, buildRecommendText());
+  }
+  if (intent === "faq") return replyText(event.replyToken, buildFaqText());
+  if (intent === "contact") return replyText(event.replyToken, `可以直接加官方 LINE：${DATA.lineId}\n${LINE_URL}`);
+
+  if (intent === "order") {
+    const orderProduct = product || state.lastProduct;
+    if (!orderProduct) return replyText(event.replyToken, "你想下單哪一個呢？\n可直接輸入：龜鹿膏／龜鹿飲／龜鹿湯塊／鹿茸粉");
+    startOrder(state, orderProduct.name);
+    return replyText(event.replyToken, `好的，我幫你登記 ${orderProduct.name}。\n請先回覆收件姓名。`);
   }
 
-  users[userId].history.push(msg);
-
-  // 🔥 === 一鍵成交 ===
-  if (msg.includes("我要")) {
-    users[userId].step = 1;
-    users[userId].product = msg;
-
-    return reply(event, `
-好的👌 我幫你安排
-
-請提供👇
-1️⃣ 姓名
-2️⃣ 電話
-3️⃣ 地址
-`);
+  if (product && (intent === "spec" || intent === "usage" || intent === "ingredients" || intent === "detail")) {
+    state.lastProduct = product;
+    return replyText(event.replyToken, buildProductDetail(product, intent));
   }
-
-  // 🔥 === 下單流程 ===
-  if (users[userId].step === 1) {
-    users[userId].name = msg;
-    users[userId].step = 2;
-    return reply(event, "請輸入電話");
+  if (product) {
+    state.lastProduct = product;
+    return replyText(event.replyToken, buildProductSummary(product));
   }
-
-  if (users[userId].step === 2) {
-    users[userId].phone = msg;
-    users[userId].step = 3;
-    return reply(event, "請輸入地址");
+  if ((intent === "spec" || intent === "usage" || intent === "ingredients") && state.lastProduct) {
+    return replyText(event.replyToken, buildProductDetail(state.lastProduct, intent));
   }
-
-  if (users[userId].step === 3) {
-    users[userId].address = msg;
-    users[userId].step = 0;
-
-    // 🔥 CRM寫入
-    await saveToCRM(users[userId]);
-
-    return reply(event, `
-✅ 訂單完成
-
-產品：${users[userId].product}
-姓名：${users[userId].name}
-
-👉 已幫你登記，我們會盡快出貨
-`);
+  if (msg.includes("影片")) {
+    return replyText(event.replyToken, "官網影片頁已整理公開影片，可直接查看：\nhttps://ts15825868.github.io/xianjiawei/videos.html");
   }
-
-  // 🔥 === 智能推薦 ===
-  if (msg.includes("推薦") || msg.includes("怎麼選")) {
-    return reply(event, `
-我幫你快速配👇
-
-✔ 忙碌 → 龜鹿飲  
-✔ 想穩定 → 龜鹿膏  
-✔ 料理 → 湯塊  
-✔ 進階 → 鹿茸粉  
-
-👉 直接說「我要＋產品」
-`);
-  }
-
-  // 🔥 === 套餐推 ===
-  if (msg.includes("忙") || msg.includes("累")) {
-    return reply(event, `
-👉 建議：龜鹿飲（方便補養）
-
-直接回👇
-👉 我要龜鹿飲
-`);
-  }
-
-  // 🔥 === 客戶分級 ===
-  if (users[userId].history.length > 5) {
-    users[userId].level = "warm";
-  }
-
-  if (users[userId].history.length > 10) {
-    users[userId].level = "hot";
-  }
-
-  // 🔥 === 產品導購 ===
-  if (msg.includes("龜鹿膏")) {
-    return reply(event, `
-龜鹿膏｜日常穩定補養
-
-👉 回「我要龜鹿膏」直接下單
-`);
-  }
-
-  if (msg.includes("龜鹿飲")) {
-    return reply(event, `
-龜鹿飲｜快速補充
-
-👉 回「我要龜鹿飲」
-`);
-  }
-
-  if (msg.includes("湯塊")) {
-    return reply(event, `
-龜鹿湯塊｜料理補養
-
-👉 回「我要湯塊」
-`);
-  }
-
-  if (msg.includes("鹿茸")) {
-    return reply(event, `
-鹿茸粉｜進階調養
-
-👉 回「我要鹿茸粉」
-`);
-  }
-
-  // 🔥 預設入口（成交導向）
-  return reply(event, `
-歡迎使用仙加味 👋
-
-你可以直接👇
-
-✔ 我要龜鹿膏  
-✔ 我要龜鹿飲  
-✔ 我要湯塊  
-✔ 我要鹿茸粉  
-✔ 幫我推薦  
-
-👉 我會直接幫你處理
-`);
+  return replyText(event.replyToken, buildDefaultText());
 }
 
-// 🔥 CRM寫入
+function getUserState(userId) {
+  if (!users[userId]) users[userId] = { history: [], lastProduct: null, order: { step: 0, product: "", name: "", phone: "", address: "" } };
+  return users[userId];
+}
+function normalize(text) { return String(text).trim(); }
+function handleCancel(state, msg) {
+  if (["取消", "重來", "重新開始"].includes(msg)) {
+    state.order = { step: 0, product: "", name: "", phone: "", address: "" };
+    return true;
+  }
+  return false;
+}
+function detectIntent(msg) {
+  if (/幫我推薦|推薦|怎麼選|選哪個|哪個適合/.test(msg)) return "recommend";
+  if (/下單|訂購|我要|購買/.test(msg)) return "order";
+  if (/規格|容量|幾g|幾cc|重量/.test(msg)) return "spec";
+  if (/怎麼吃|怎麼用|使用|食用|喝法/.test(msg)) return "usage";
+  if (/成分|內容物|原料/.test(msg)) return "ingredients";
+  if (/FAQ|常見問題|問題/.test(msg)) return "faq";
+  if (/聯絡|line|客服/.test(msg)) return "contact";
+  return "detail";
+}
+function detectProduct(msg) {
+  for (const [name, aliases] of Object.entries(PRODUCT_ALIASES)) {
+    if (aliases.some(alias => msg.includes(alias))) return PRODUCT_MAP[name];
+  }
+  return null;
+}
+function buildRecommendText() {
+  const lines = ["我幫你快速整理：", ""];
+  for (const item of DATA.recommend) {
+    lines.push(`・${item.keyword} → ${item.result}`);
+    lines.push(`  ${item.desc}`);
+  }
+  lines.push("", "直接回產品名稱，我就整理規格與使用方式給你。", "也可以直接回：我要＋產品名稱");
+  return lines.join("\n");
+}
+function buildFaqText() {
+  return DATA.faqs.map(f => `Q：${f.q}\nA：${f.a}`).join("\n\n");
+}
+function buildProductSummary(product) {
+  return `${product.name}\n規格：${product.size}\n${product.description}\n\n你可以直接再問我：\n・${product.name} 規格\n・${product.name} 使用方式\n・${product.name} 成分\n・我要${product.name}`;
+}
+function buildProductDetail(product, intent) {
+  if (intent === "spec") return `${product.name} 的規格是 ${product.size}。`;
+  if (intent === "ingredients") return `${product.name} 成分：\n${product.ingredients.join('、')}`;
+  if (intent === "usage") return `${product.name} 使用方式：\n${product.usage.map(x => `・${x}`).join("\n")}`;
+  return `${buildProductSummary(product)}\n\n成分：${product.ingredients.join('、')}`;
+}
+function buildDefaultText() {
+  return "歡迎使用仙加味。\n\n你可以直接輸入：\n・龜鹿膏\n・龜鹿飲\n・龜鹿湯塊\n・鹿茸粉\n・幫我推薦\n・FAQ\n\n如果要下單，也可以直接輸入：我要龜鹿膏";
+}
+function startOrder(state, productName) {
+  state.order = { step: 1, product: productName, name: "", phone: "", address: "" };
+}
+async function continueOrder(event, state, msg) {
+  if (state.order.step === 1) {
+    state.order.name = msg;
+    state.order.step = 2;
+    return replyText(event.replyToken, "收到。請回覆收件電話。");
+  }
+  if (state.order.step === 2) {
+    state.order.phone = msg;
+    state.order.step = 3;
+    return replyText(event.replyToken, "收到。請回覆收件地址。");
+  }
+  if (state.order.step === 3) {
+    state.order.address = msg;
+    const order = { ...state.order, createdAt: new Date().toISOString() };
+    state.order = { step: 0, product: "", name: "", phone: "", address: "" };
+    await saveToCRM(order);
+    return replyText(event.replyToken, `已收到你的資料。\n\n產品：${order.product}\n姓名：${order.name}\n電話：${order.phone}\n地址：${order.address}\n\n我們會再為你確認。`);
+  }
+  return replyText(event.replyToken, "請重新輸入一次，或輸入「取消」結束目前流程。");
+}
 async function saveToCRM(data) {
+  if (!CRM_URL || typeof fetch !== "function") return;
   try {
     await fetch(CRM_URL, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
   } catch (e) {
-    console.log("CRM error");
+    console.error("CRM error", e.message);
   }
 }
-
-// 回覆
-function reply(event, text) {
-  return client.replyMessage(event.replyToken, {
-    type: "text",
-    text
-  });
+function replyText(replyToken, text) {
+  return client.replyMessage(replyToken, { type: "text", text });
 }
-
-app.listen(3000);
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`TS-LINE bot listening on ${port}`));
