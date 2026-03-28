@@ -2,7 +2,7 @@
   "brand": "仙加味",
   "lineUrl": "https://lin.ee/sHZW7NkR",
   "lineId": "@762jybnm",
-  "welcomeText": "您好，歡迎來到仙加味🙂\n\n這裡可以直接詢問：\n・龜鹿膏\n・龜鹿飲\n・龜鹿湯塊\n・鹿茸粉\n・價格\n・付款方式\n・配送方式\n・幫我推薦\n・我要下單\n\n若您有身體狀況、是否適合食用、特殊體質或正在服用藥物等問題，建議直接由合作中醫師一對一了解。",
+  "welcomeText": "您好，歡迎來到仙加味🙂\n\n這裡可以直接查看產品、價格、搭配方式、付款與配送，也可以直接下單。\n\n若您有身體狀況、是否適合食用、特殊體質或正在服用藥物等問題，建議直接由合作中醫師一對一了解。",
   "payments": [
     "匯款",
     "貨到付款"
@@ -108,47 +108,151 @@
   "combos": [
     {
       "name": "日常節奏組",
-      "items": ["龜鹿膏", "龜鹿飲"],
-      "desc": "適合想用膏建立固定節奏，也想保留快速便利選擇的人。"
+      "items": ["龜鹿膏", "龜鹿湯塊"],
+      "desc": "適合想固定安排，也想從餐桌一起搭配的人。"
     },
     {
-      "name": "料理搭配組",
+      "name": "日常便利組",
+      "items": ["龜鹿膏", "龜鹿飲"],
+      "desc": "適合想固定節奏，也想保留方便快速選擇的人。"
+    },
+    {
+      "name": "餐桌搭配組",
       "items": ["龜鹿湯塊", "鹿茸粉"],
-      "desc": "適合想從餐桌與日常熱飲一起安排的人。"
+      "desc": "適合想從料理與熱飲一起安排的人。"
     },
     {
       "name": "完整體驗組",
-      "items": ["龜鹿膏", "龜鹿飲", "龜鹿湯塊", "鹿茸粉"],
-      "desc": "四種型態一次整理，方便依生活情境分配。"
+      "items": ["龜鹿膏", "龜鹿湯塊", "鹿茸粉"],
+      "desc": "適合想一次整理不同型態、依生活情境安排的人。"
     }
   ],
+  "offers": {
+    "comboOffers": [
+      {
+        "name": "日常節奏組",
+        "items": ["龜鹿膏 1 罐", "龜鹿湯塊 1 盒"],
+        "gift": "附贈龜鹿飲 2 罐體驗",
+        "desc": "適合想固定安排，也想從餐桌一起搭配的人。"
+      },
+      {
+        "name": "日常便利組",
+        "items": ["龜鹿膏 1 罐", "龜鹿飲 10 罐"],
+        "gift": "",
+        "desc": "適合想固定節奏，也想保留方便快速選擇的人。"
+      },
+      {
+        "name": "餐桌搭配組",
+        "items": ["龜鹿湯塊 1 盒", "鹿茸粉 1 罐"],
+        "gift": "附贈龜鹿飲 1 罐體驗",
+        "desc": "適合想從料理與熱飲一起安排的人。"
+      },
+      {
+        "name": "完整體驗組",
+        "items": ["龜鹿膏 1 罐", "龜鹿湯塊 1 盒", "鹿茸粉 1 罐"],
+        "gift": "附贈龜鹿飲 3 罐體驗",
+        "desc": "適合想一次整理不同型態、依生活情境安排的人。"
+      }
+    ]
+  },
+  "retentionOffers": {
+    "triggerText": "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂",
+    "products": {
+      "龜鹿膏": "可加附龜鹿飲 1 罐體驗",
+      "龜鹿湯塊": "可加附龜鹿飲 1 罐體驗",
+      "鹿茸粉": "可加附龜鹿飲 1 罐體驗",
+      "龜鹿飲": ""
+    },
+    "combos": {
+      "日常節奏組": "原方案附贈龜鹿飲 2 罐體驗，若您是第一次想試，可協助加到 3 罐。",
+      "餐桌搭配組": "原方案附贈龜鹿飲 1 罐體驗，若您是第一次想試，可協助加到 2 罐。",
+      "完整體驗組": "原方案附贈龜鹿飲 3 罐體驗，若您是第一次想試，可協助加到 5 罐。",
+      "日常便利組": "這組本身已包含龜鹿飲，會比較建議維持原安排。"
+    }
+  },
+  "quickReplies": {
+    "main": [
+      { "label": "看產品", "text": "看產品" },
+      { "label": "幫我推薦", "text": "幫我推薦" },
+      { "label": "看搭配組合", "text": "看搭配組合" },
+      { "label": "價格", "text": "價格" },
+      { "label": "我要買", "text": "我要買" }
+    ],
+    "products": [
+      { "label": "龜鹿膏", "text": "龜鹿膏" },
+      { "label": "龜鹿飲", "text": "龜鹿飲" },
+      { "label": "龜鹿湯塊", "text": "龜鹿湯塊" },
+      { "label": "鹿茸粉", "text": "鹿茸粉" },
+      { "label": "幫我推薦", "text": "幫我推薦" }
+    ]
+  },
   "flex": {
-    "main": {
+    "welcome": {
       "type": "flex",
-      "altText": "幫你選",
+      "altText": "歡迎來到仙加味",
       "contents": {
         "type": "bubble",
+        "header": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            {
+              "type": "text",
+              "text": "仙加味",
+              "weight": "bold",
+              "size": "xl"
+            },
+            {
+              "type": "text",
+              "text": "歡迎來到官方 LINE",
+              "size": "sm",
+              "color": "#666666",
+              "margin": "md"
+            }
+          ]
+        },
         "body": {
           "type": "box",
           "layout": "vertical",
           "contents": [
             {
               "type": "text",
-              "text": "怎麼幫你配？",
-              "weight": "bold"
+              "text": "可以直接點下面按鈕快速查看",
+              "wrap": true,
+              "size": "md"
+            },
+            {
+              "type": "separator",
+              "margin": "lg"
+            },
+            {
+              "type": "text",
+              "text": "・產品介紹\n・單品價格\n・搭配組合\n・付款與配送",
+              "wrap": true,
+              "margin": "lg",
+              "size": "sm"
             }
           ]
         },
         "footer": {
           "type": "box",
           "layout": "vertical",
+          "spacing": "sm",
           "contents": [
             {
               "type": "button",
               "style": "primary",
               "action": {
                 "type": "message",
-                "label": "幫我選",
+                "label": "看產品",
+                "text": "看產品"
+              }
+            },
+            {
+              "type": "button",
+              "action": {
+                "type": "message",
+                "label": "幫我推薦",
                 "text": "幫我推薦"
               }
             },
@@ -156,91 +260,16 @@
               "type": "button",
               "action": {
                 "type": "message",
-                "label": "直接買",
+                "label": "看搭配組合",
+                "text": "看搭配組合"
+              }
+            },
+            {
+              "type": "button",
+              "action": {
+                "type": "message",
+                "label": "我要買",
                 "text": "我要買"
-              }
-            },
-            {
-              "type": "button",
-              "action": {
-                "type": "message",
-                "label": "怎麼用",
-                "text": "怎麼使用"
-              }
-            }
-          ]
-        }
-      }
-    },
-    "lifestyle": {
-      "type": "flex",
-      "altText": "選生活型態",
-      "contents": {
-        "type": "bubble",
-        "footer": {
-          "type": "box",
-          "layout": "vertical",
-          "contents": [
-            {
-              "type": "button",
-              "style": "primary",
-              "action": {
-                "type": "message",
-                "label": "外食多",
-                "text": "想方便快速"
-              }
-            },
-            {
-              "type": "button",
-              "action": {
-                "type": "message",
-                "label": "偶爾煮",
-                "text": "想放進料理"
-              }
-            },
-            {
-              "type": "button",
-              "action": {
-                "type": "message",
-                "label": "常自己煮",
-                "text": "想固定節奏"
-              }
-            }
-          ]
-        }
-      }
-    },
-    "combo": {
-      "type": "flex",
-      "altText": "推薦套餐",
-      "contents": {
-        "type": "bubble",
-        "body": {
-          "type": "box",
-          "layout": "vertical",
-          "contents": [
-            {
-              "type": "text",
-              "text": "日常補養組",
-              "weight": "bold"
-            },
-            {
-              "type": "text",
-              "text": "龜鹿膏＋龜鹿飲"
-            }
-          ]
-        },
-        "footer": {
-          "type": "box",
-          "layout": "vertical",
-          "contents": [
-            {
-              "type": "button",
-              "style": "primary",
-              "action": {
-                "type": "message",
-                "label": "我要這組",
-                "text": "我要買 日常節奏組"
               }
             }
           ]
