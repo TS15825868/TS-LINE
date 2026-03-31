@@ -56,11 +56,8 @@ async function handleEvent(event) {
   const state = getUserState(userId);
 
   if (event.type === "follow") {
-    return replyFlexWithQuickReply(
-      event.replyToken,
-      DATA.flex.welcome,
-      DATA.quickReplies.main
-    );
+    state.hasSeenWelcome = true;
+    return replyFlex(event.replyToken, buildWelcomeFlex());
   }
 
   if (event.type !== "message" || event.message.type !== "text") return null;
@@ -69,12 +66,16 @@ async function handleEvent(event) {
   const msg = normalize(raw);
   state.history.push(raw);
 
+  if (!state.hasSeenWelcome) {
+    state.hasSeenWelcome = true;
+    return replyFlex(event.replyToken, buildWelcomeFlex());
+  }
+
+  const product = detectProduct(msg);
+  const intent = detectIntent(msg);
+
   if (handleCancel(state, raw, msg)) {
-    return replyTextWithQuickReply(
-      event.replyToken,
-      "已取消目前流程。你可以直接點下面按鈕，或直接輸入產品名稱。",
-      DATA.quickReplies.main
-    );
+    return replyFlex(event.replyToken, buildWelcomeFlex());
   }
 
   if (SENSITIVE_RE.test(raw)) {
@@ -85,209 +86,68 @@ async function handleEvent(event) {
     );
   }
 
-  if (state.order.step) {
-    return continueOrder(event, state, raw, userId);
+  // 全域功能優先，避免被下單流程吃掉
+  if (intent === "welcome") return replyFlex(event.replyToken, buildWelcomeFlex());
+  if (intent === "products") return replyFlex(event.replyToken, buildProductsCarousel());
+  if (intent === "recommend") return replyFlex(event.replyToken, buildRecommendFlex());
+  if (intent === "offer") {
+    if (product) return replyFlex(event.replyToken, buildSingleProductOfferFlex(product));
+    return replyFlex(event.replyToken, buildOfferCarousel());
   }
-
-  const product = detectProduct(msg);
-  const intent = detectIntent(msg);
-
-  if (intent === "welcome") {
-    return replyFlexWithQuickReply(
-      event.replyToken,
-      DATA.flex.welcome,
-      DATA.quickReplies.main
-    );
+  if (intent === "payment") {
+    return replyTextWithQuickReply(event.replyToken, buildPaymentText(), DATA.quickReplies.main);
   }
-
-  if (intent === "products") {
-    return replyTextWithQuickReply(
-      event.replyToken,
-      "想看哪一個產品呢？請直接點選：",
-      DATA.quickReplies.products
-    );
+  if (intent === "shipping") {
+    return replyTextWithQuickReply(event.replyToken, buildShippingText(), DATA.quickReplies.main);
   }
-
-  if (intent === "recommend") {
-    state.lastProduct = null;
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildRecommendText(),
-      DATA.quickReplies.main
-    );
-  }
-
   if (intent === "faq") {
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildFaqText(),
-      DATA.quickReplies.main
-    );
+    return replyTextWithQuickReply(event.replyToken, buildFaqText(), DATA.quickReplies.main);
   }
-
-  if (intent === "contact") {
-    return replyTextWithQuickReply(
-      event.replyToken,
-      `可以直接加官方 LINE：${LINE_ID}\n${LINE_URL}`,
-      DATA.quickReplies.main
-    );
+  if (intent === "hesitate") {
+    if (product) return replyFlex(event.replyToken, buildRetentionFlex(product));
+    return replyFlex(event.replyToken, buildGeneralRetentionFlex());
   }
 
   if (intent === "price") {
     if (product) {
       state.lastProduct = product;
-      return replyTextWithQuickReply(
-        event.replyToken,
-        `${product.name}
-規格：${product.size}
-建議售價：${money(product.price)}`,
-        [
-          { label: "成分", text: `${product.name} 成分` },
-          { label: "怎麼使用", text: `${product.name} 使用方式` },
-          { label: "我要買", text: `我要買 ${product.name}` },
-          { label: "看搭配組合", text: `${product.name} 搭配組合` }
-        ]
-      );
+      return replyFlex(event.replyToken, buildSingleProductPriceFlex(product));
     }
-
-    return replyTextWithQuickReply(
-      event.replyToken,
-      "想看哪一個產品的價格呢？請直接點選：",
-      [
-        { label: "龜鹿膏", text: "龜鹿膏 價格" },
-        { label: "龜鹿飲", text: "龜鹿飲 價格" },
-        { label: "龜鹿湯塊", text: "龜鹿湯塊 價格" },
-        { label: "鹿茸粉", text: "鹿茸粉 價格" }
-      ]
-    );
+    return replyFlex(event.replyToken, buildPriceSelectorFlex());
   }
 
-  if (intent === "combo" || intent === "offer") {
+  if (intent === "usage") {
     if (product) {
       state.lastProduct = product;
-      return replyTextWithQuickReply(
-        event.replyToken,
-        buildOfferText(product),
-        [
-          { label: "看價格", text: `${product.name} 價格` },
-          { label: "我要買", text: `我要買 ${product.name}` },
-          { label: "成分", text: `${product.name} 成分` },
-          { label: "怎麼使用", text: `${product.name} 使用方式` }
-        ]
-      );
+      return replyFlex(event.replyToken, buildSingleProductUsageFlex(product));
     }
-
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildOfferText(null),
-      [
-        { label: "龜鹿膏組合", text: "龜鹿膏 搭配組合" },
-        { label: "龜鹿飲組合", text: "龜鹿飲 搭配組合" },
-        { label: "龜鹿湯塊組合", text: "龜鹿湯塊 搭配組合" },
-        { label: "鹿茸粉組合", text: "鹿茸粉 搭配組合" }
-      ]
-    );
+    return replyFlex(event.replyToken, buildUsageSelectorFlex());
   }
 
-  if (intent === "payment") {
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildPaymentText(),
-      DATA.quickReplies.main
-    );
-  }
-
-  if (intent === "shipping") {
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildShippingText(),
-      DATA.quickReplies.main
-    );
-  }
-
-  if (intent === "hesitate") {
+  if (intent === "ingredients") {
     if (product) {
       state.lastProduct = product;
-      return replyTextWithQuickReply(
-        event.replyToken,
-        buildHesitateText(product),
-        [
-          { label: "看價格", text: `${product.name} 價格` },
-          { label: "看組合", text: `${product.name} 搭配組合` },
-          { label: "我要買", text: `我要買 ${product.name}` },
-          { label: "幫我推薦", text: "幫我推薦" }
-        ]
-      );
+      return replyFlex(event.replyToken, buildSingleProductIngredientsFlex(product));
     }
-
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildHesitateText(null),
-      [
-        { label: "先看單品", text: "看產品" },
-        { label: "看搭配組合", text: "看搭配組合" },
-        { label: "幫我推薦", text: "幫我推薦" }
-      ]
-    );
+    return replyFlex(event.replyToken, buildIngredientsSelectorFlex());
   }
 
   if (intent === "order") {
     const orderProduct = product || state.lastProduct;
     if (!orderProduct) {
-      return replyTextWithQuickReply(
-        event.replyToken,
-        "你想下單哪一個呢？請直接點選：",
-        [
-          { label: "龜鹿膏", text: "我要買 龜鹿膏" },
-          { label: "龜鹿飲", text: "我要買 龜鹿飲" },
-          { label: "龜鹿湯塊", text: "我要買 龜鹿湯塊" },
-          { label: "鹿茸粉", text: "我要買 鹿茸粉" }
-        ]
-      );
+      return replyFlex(event.replyToken, buildOrderSelectorFlex());
     }
     startOrder(state, orderProduct.name);
     return replyText(event.replyToken, `好的，我幫你登記 ${orderProduct.name}。\n請先回覆收件姓名。`);
   }
 
-  if (product && ["spec", "usage", "ingredients", "detail"].includes(intent)) {
-    state.lastProduct = product;
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildProductDetail(product, intent),
-      [
-        { label: "價格", text: `${product.name} 價格` },
-        { label: "成分", text: `${product.name} 成分` },
-        { label: "怎麼使用", text: `${product.name} 使用方式` },
-        { label: "我要買", text: `我要買 ${product.name}` }
-      ]
-    );
+  if (state.order.step) {
+    return continueOrder(event, state, raw, userId);
   }
 
   if (product) {
     state.lastProduct = product;
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildProductSummary(product),
-      [
-        { label: "價格", text: `${product.name} 價格` },
-        { label: "成分", text: `${product.name} 成分` },
-        { label: "怎麼使用", text: `${product.name} 使用方式` },
-        { label: "看搭配組合", text: `${product.name} 搭配組合` },
-        { label: "我要買", text: `我要買 ${product.name}` }
-      ]
-    );
-  }
-
-  if (["spec", "usage", "ingredients"].includes(intent) && state.lastProduct) {
-    return replyTextWithQuickReply(
-      event.replyToken,
-      buildProductDetail(state.lastProduct, intent),
-      [
-        { label: "價格", text: `${state.lastProduct.name} 價格` },
-        { label: "我要買", text: `我要買 ${state.lastProduct.name}` },
-        { label: "看搭配組合", text: `${state.lastProduct.name} 搭配組合` }
-      ]
-    );
+    return replyFlex(event.replyToken, buildSingleProductFlex(product));
   }
 
   if (msg.includes("影片")) {
@@ -298,17 +158,14 @@ async function handleEvent(event) {
     );
   }
 
-  return replyTextWithQuickReply(
-    event.replyToken,
-    buildDefaultText(),
-    DATA.quickReplies.main
-  );
+  return replyFlex(event.replyToken, buildWelcomeFlex());
 }
 
 function getUserState(userId) {
   if (!users[userId]) {
     users[userId] = {
       history: [],
+      hasSeenWelcome: false,
       lastProduct: null,
       order: {
         step: 0,
@@ -349,15 +206,13 @@ function detectIntent(msg) {
   if (/(看產品|產品|商品|產品介紹|看商品)/.test(msg)) return "products";
   if (/(幫我推薦|推薦|怎麼選|選哪個|哪個適合)/.test(msg)) return "recommend";
   if (/(下單|訂購|我要買|購買|我要訂|直接買)/.test(msg)) return "order";
-  if (/(規格|容量|幾g|幾cc|重量)/.test(msg)) return "spec";
-  if (/(怎麼吃|怎麼用|怎麼使用|使用方式|使用|食用|喝法)/.test(msg)) return "usage";
+  if (/(怎麼吃|怎麼用|怎麼使用|使用方式|食用方式|使用|食用|喝法)/.test(msg)) return "usage";
   if (/(成分|內容物|原料)/.test(msg)) return "ingredients";
   if (/(價格|價錢|售價|多少錢|費用)/.test(msg)) return "price";
   if (/(搭配組合|看搭配組合|組合|搭配|套餐|搭配組|套組|買多少|送幾罐|贈送|優惠)/.test(msg)) return "offer";
   if (/(付款|匯款|貨到付款|付款方式)/.test(msg)) return "payment";
   if (/(宅配|賣貨便|7-11|711|超商|配送|運送|寄送|親送|雙北)/.test(msg)) return "shipping";
   if (/(faq|常見問題|問題)/.test(msg)) return "faq";
-  if (/(聯絡|line|客服)/.test(msg)) return "contact";
   if (/(貴|太貴|有點貴|便宜一點|算便宜|優惠嗎|可以便宜嗎|能不能算便宜|別家比較便宜|殺價)/.test(msg)) return "hesitate";
   return "detail";
 }
@@ -375,136 +230,7 @@ function money(n) {
   return `$${Number(n).toLocaleString("en-US")}`;
 }
 
-function buildRecommendText() {
-  const lines = ["我幫你快速整理：", ""];
-  for (const item of DATA.recommend) {
-    lines.push(`・${item.keyword} → ${item.result}`);
-    lines.push(`  ${item.desc}`);
-  }
-  lines.push("", "也可以直接點下面按鈕，我再幫你往下整理。");
-  return lines.join("\n");
-}
-
-function buildFaqText() {
-  return DATA.faqs.map((f) => `Q：${f.q}\nA：${f.a}`).join("\n\n");
-}
-
-function buildPaymentText() {
-  return `付款方式目前可安排：\n・${DATA.payments.join("\n・")}\n\n若要直接下單，可先告訴我想買的品項與數量。`;
-}
-
-function buildShippingText() {
-  const lines = ["配送方式目前可安排：", ...DATA.shipping.map((x) => `・${x}`), ""];
-  if (DATA.shippingNotes) {
-    Object.entries(DATA.shippingNotes).forEach(([k, v]) => {
-      lines.push(`${k}：${v}`);
-    });
-  }
-  return lines.join("\n");
-}
-
-function buildProductSummary(product) {
-  return `${product.name}
-規格：${product.size}
-${product.description}
-
-你可以直接再點下面按鈕查看價格、成分、使用方式或下單。`;
-}
-
-function buildProductDetail(product, intent) {
-  if (intent === "spec") return `${product.name} 的規格是 ${product.size}。`;
-  if (intent === "ingredients") return `${product.name} 成分：\n${product.ingredients.join("、")}`;
-  if (intent === "usage") return `${product.name} 使用方式：\n${product.usage.map((x) => `・${x}`).join("\n")}`;
-  return `${buildProductSummary(product)}\n\n成分：${product.ingredients.join("、")}`;
-}
-
-function buildOfferText(product) {
-  const offers = DATA.offers || {};
-  const comboOffers = offers.comboOffers || [];
-
-  if (!product) {
-    const lines = ["目前可參考這幾種搭配方式：", ""];
-    comboOffers.forEach((offer) => {
-      lines.push(`【${offer.name}】`);
-      lines.push(`內容：${offer.items.join("＋")}`);
-      if (offer.gift) lines.push(`附贈：${offer.gift}`);
-      if (offer.desc) lines.push(offer.desc);
-      lines.push("");
-    });
-    lines.push("你也可以直接點產品，我再幫你看該產品目前有沒有搭配方式。");
-    return lines.join("\n").trim();
-  }
-
-  const relatedComboOffers = comboOffers.filter((offer) =>
-    (offer.items || []).some((item) => item.includes(product.name))
-  );
-
-  const lines = [`${product.name} 目前可參考：`, ""];
-
-  if (relatedComboOffers.length) {
-    lines.push("【搭配組合】");
-    relatedComboOffers.forEach((offer) => {
-      lines.push(`・${offer.name}`);
-      lines.push(`  內容：${offer.items.join("＋")}`);
-      if (offer.gift) lines.push(`  附贈：${offer.gift}`);
-      if (offer.desc) lines.push(`  ${offer.desc}`);
-    });
-  } else {
-    lines.push("目前這項沒有另外設定組合方式。");
-  }
-
-  return lines.join("\n").trim();
-}
-
-function buildHesitateText(product) {
-  const retention = DATA.retentionOffers || {};
-  const triggerText =
-    retention.triggerText ||
-    "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂";
-
-  if (product) {
-    const extra = (retention.products && retention.products[product.name]) || "";
-    const lines = [
-      "我理解，第一次看價格會想先評估🙂",
-      "",
-      "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
-      triggerText
-    ];
-
-    if (extra) {
-      lines.push("", `${product.name} 這邊可協助安排：`, `・${extra}`);
-    }
-
-    lines.push("", "如果您想，我也可以再幫您看搭配組合。");
-    return lines.join("\n");
-  }
-
-  const comboRetention = retention.combos || {};
-  const comboNames = Object.keys(comboRetention);
-
-  const lines = [
-    "我理解，第一次看價格會想先評估🙂",
-    "",
-    "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
-    triggerText
-  ];
-
-  if (comboNames.length) {
-    lines.push("", "若您是在評估搭配方式，也可參考：");
-    comboNames.forEach((name) => {
-      lines.push(`・${name}：${comboRetention[name]}`);
-    });
-  }
-
-  lines.push("", "您可以直接點下面想看的方向，我再幫您整理。");
-  return lines.join("\n");
-}
-
-function buildDefaultText() {
-  return DATA.welcomeText || "您好，歡迎來到仙加味🙂";
-}
-
-function buildQuickReply(items) {
+function quickReply(items) {
   return {
     items: (items || []).slice(0, 13).map((item) => ({
       type: "action",
@@ -515,6 +241,370 @@ function buildQuickReply(items) {
       }
     }))
   };
+}
+
+function heroBubble(title, subtitle, buttons) {
+  return {
+    type: "bubble",
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "md",
+      contents: [
+        { type: "text", text: title, weight: "bold", size: "xl" },
+        { type: "text", text: subtitle, wrap: true, size: "sm", color: "#666666" }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: buttons.map((b, i) => ({
+        type: "button",
+        style: i === 0 ? "primary" : "link",
+        action: {
+          type: "message",
+          label: b.label,
+          text: b.text
+        }
+      }))
+    }
+  };
+}
+
+function buildWelcomeFlex() {
+  return {
+    type: "flex",
+    altText: "歡迎來到仙加味",
+    contents: heroBubble(
+      "仙加味",
+      "歡迎來到官方 LINE\n\n可以直接點下面按鈕快速查看：\n・產品介紹\n・單品價格\n・搭配組合\n・付款與配送",
+      [
+        { label: "看產品", text: "看產品" },
+        { label: "幫我推薦", text: "幫我推薦" },
+        { label: "看搭配組合", text: "看搭配組合" },
+        { label: "我要買", text: "我要買" }
+      ]
+    )
+  };
+}
+
+function buildProductsCarousel() {
+  return {
+    type: "flex",
+    altText: "產品介紹",
+    contents: {
+      type: "carousel",
+      contents: DATA.products.map((p) => ({
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "md",
+          contents: [
+            { type: "text", text: p.name, weight: "bold", size: "lg" },
+            { type: "text", text: p.description, wrap: true, size: "sm", color: "#666666" },
+            { type: "text", text: `規格：${p.size}`, size: "sm" }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            btn("看價格", `${p.name} 價格`, "primary"),
+            btn("怎麼使用", `${p.name} 使用方式`),
+            btn("我要買", `我要買 ${p.name}`)
+          ]
+        }
+      }))
+    }
+  };
+}
+
+function buildPriceSelectorFlex() {
+  return {
+    type: "flex",
+    altText: "選擇價格產品",
+    contents: {
+      type: "carousel",
+      contents: DATA.products.map((p) => singleActionBubble(p.name, `查看 ${p.name} 的價格`, "看價格", `${p.name} 價格`))
+    }
+  };
+}
+
+function buildUsageSelectorFlex() {
+  return {
+    type: "flex",
+    altText: "選擇使用方式產品",
+    contents: {
+      type: "carousel",
+      contents: DATA.products.map((p) => singleActionBubble(p.name, `查看 ${p.name} 的使用方式`, "怎麼使用", `${p.name} 使用方式`))
+    }
+  };
+}
+
+function buildIngredientsSelectorFlex() {
+  return {
+    type: "flex",
+    altText: "選擇成分產品",
+    contents: {
+      type: "carousel",
+      contents: DATA.products.map((p) => singleActionBubble(p.name, `查看 ${p.name} 的成分`, "看成分", `${p.name} 成分`))
+    }
+  };
+}
+
+function buildOrderSelectorFlex() {
+  return {
+    type: "flex",
+    altText: "選擇購買產品",
+    contents: {
+      type: "carousel",
+      contents: DATA.products.map((p) => singleActionBubble(p.name, `開始下單 ${p.name}`, "我要買", `我要買 ${p.name}`))
+    }
+  };
+}
+
+function buildOfferCarousel() {
+  return {
+    type: "flex",
+    altText: "搭配組合",
+    contents: {
+      type: "carousel",
+      contents: (DATA.offers.comboOffers || []).map((o) => ({
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "md",
+          contents: [
+            { type: "text", text: o.name, weight: "bold", size: "lg" },
+            { type: "text", text: `內容：${o.items.join("＋")}`, wrap: true, size: "sm" },
+            ...(o.gift ? [{ type: "text", text: `附贈：${o.gift}`, wrap: true, size: "sm", color: "#D35400" }] : []),
+            { type: "text", text: o.desc, wrap: true, size: "sm", color: "#666666" }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            btn("我要這組", `我要買 ${o.name}` , "primary"),
+            btn("幫我推薦", "幫我推薦")
+          ]
+        }
+      }))
+    }
+  };
+}
+
+function buildRecommendFlex() {
+  return {
+    type: "flex",
+    altText: "幫我推薦",
+    contents: {
+      type: "carousel",
+      contents: DATA.recommend.map((r) => ({
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "md",
+          contents: [
+            { type: "text", text: r.keyword, weight: "bold", size: "lg" },
+            { type: "text", text: `建議：${r.result}`, size: "md", color: "#1F4E79" },
+            { type: "text", text: r.desc, wrap: true, size: "sm", color: "#666666" }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            btn("看這個產品", r.result, "primary"),
+            btn("我要買", `我要買 ${r.result}`)
+          ]
+        }
+      }))
+    }
+  };
+}
+
+function buildSingleProductFlex(product) {
+  return {
+    type: "flex",
+    altText: product.name,
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          { type: "text", text: product.name, weight: "bold", size: "xl" },
+          { type: "text", text: product.description, wrap: true, size: "sm", color: "#666666" },
+          { type: "text", text: `規格：${product.size}`, size: "sm" }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          btn("看價格", `${product.name} 價格`, "primary"),
+          btn("看成分", `${product.name} 成分`),
+          btn("怎麼使用", `${product.name} 使用方式`),
+          btn("看搭配組合", `${product.name} 搭配組合`),
+          btn("我要買", `我要買 ${product.name}`)
+        ]
+      }
+    }
+  };
+}
+
+function buildSingleProductPriceFlex(product) {
+  return flexInfoCard(
+    `${product.name} 價格`,
+    `規格：${product.size}\n建議售價：${money(product.price)}`,
+    [
+      btn("看成分", `${product.name} 成分`, "primary"),
+      btn("怎麼使用", `${product.name} 使用方式`),
+      btn("我要買", `我要買 ${product.name}`)
+    ]
+  );
+}
+
+function buildSingleProductUsageFlex(product) {
+  return flexInfoCard(
+    `${product.name} 使用方式`,
+    product.usage.map((u) => `・${u}`).join("\n"),
+    [
+      btn("看價格", `${product.name} 價格`, "primary"),
+      btn("看成分", `${product.name} 成分`),
+      btn("我要買", `我要買 ${product.name}`)
+    ]
+  );
+}
+
+function buildSingleProductIngredientsFlex(product) {
+  return flexInfoCard(
+    `${product.name} 成分`,
+    product.ingredients.join("、"),
+    [
+      btn("看價格", `${product.name} 價格`, "primary"),
+      btn("怎麼使用", `${product.name} 使用方式`),
+      btn("我要買", `我要買 ${product.name}`)
+    ]
+  );
+}
+
+function buildSingleProductOfferFlex(product) {
+  const related = (DATA.offers.comboOffers || []).filter((o) =>
+    (o.items || []).some((item) => item.includes(product.name))
+  );
+
+  if (!related.length) {
+    return flexInfoCard(
+      `${product.name} 搭配方式`,
+      "目前這項沒有另外設定組合方式。",
+      [
+        btn("看價格", `${product.name} 價格`, "primary"),
+        btn("怎麼使用", `${product.name} 使用方式`),
+        btn("我要買", `我要買 ${product.name}`)
+      ]
+    );
+  }
+
+  return {
+    type: "flex",
+    altText: `${product.name} 搭配方式`,
+    contents: {
+      type: "carousel",
+      contents: related.map((o) => ({
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "md",
+          contents: [
+            { type: "text", text: o.name, weight: "bold", size: "lg" },
+            { type: "text", text: `內容：${o.items.join("＋")}`, wrap: true, size: "sm" },
+            ...(o.gift ? [{ type: "text", text: `附贈：${o.gift}`, wrap: true, size: "sm", color: "#D35400" }] : []),
+            { type: "text", text: o.desc, wrap: true, size: "sm", color: "#666666" }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            btn("我要這組", `我要買 ${o.name}`, "primary"),
+            btn("看價格", `${product.name} 價格`)
+          ]
+        }
+      }))
+    }
+  };
+}
+
+function buildRetentionFlex(product) {
+  const extra = (DATA.retentionOffers.products || {})[product.name] || "如果您是第一次想試，我可以再幫您安排比較好入手的方式🙂";
+  return flexInfoCard(
+    "如果您在評估價格",
+    `仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。\n\n${product.name} 可協助安排：\n${extra}`,
+    [
+      btn("看價格", `${product.name} 價格`, "primary"),
+      btn("看搭配組合", `${product.name} 搭配組合`),
+      btn("我要買", `我要買 ${product.name}`)
+    ]
+  );
+}
+
+function buildGeneralRetentionFlex() {
+  return flexInfoCard(
+    "如果您在評估價格",
+    "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。\n\n如果您是第一次想試，我可以幫您安排比較好入手的方式。",
+    [
+      btn("先看產品", "看產品", "primary"),
+      btn("看搭配組合", "看搭配組合"),
+      btn("幫我推薦", "幫我推薦")
+    ]
+  );
+}
+
+function buildPaymentText() {
+  return `付款方式目前可安排：
+
+・匯款
+・貨到付款
+
+其中貨到付款可配合：
+・宅配
+・7-11 賣貨便店到店
+
+若要直接下單，可先告訴我想買的品項與數量。`;
+}
+
+function buildShippingText() {
+  return `配送方式目前可安排：
+
+・宅配
+・7-11 賣貨便店到店
+・雙北親送
+
+補充說明：
+宅配：可安排宅配寄送，實際出貨與到貨時間會依訂單順序確認，也可視情況安排貨到付款。
+7-11 賣貨便店到店：可店到店取貨，也可安排貨到付款。
+雙北親送：雙北地區可協助親送，實際區域與時間請先私訊確認。`;
+}
+
+function buildFaqText() {
+  return DATA.faqs.map((f) => `Q：${f.q}\nA：${f.a}`).join("\n\n");
+}
+
+function buildDefaultText() {
+  return `${DATA.welcomeText}\n\n可直接點選：看產品／幫我推薦／看搭配組合／付款方式／配送方式`;
 }
 
 function startOrder(state, productName) {
@@ -539,19 +629,19 @@ async function continueOrder(event, state, raw, userId) {
   if (state.order.step === 2) {
     state.order.phone = raw;
     state.order.step = 3;
-    return replyText(event.replyToken, "收到。請回覆收件地址。");
+    return replyText(event.replyToken, "收到。請回覆收件地址或 7-11 門市資訊。");
   }
 
   if (state.order.step === 3) {
     state.order.address = raw;
     state.order.step = 4;
-    return replyText(event.replyToken, "收到。請回覆付款方式：匯款／貨到付款");
+    return replyText(event.replyToken, "收到。請回覆付款方式：匯款／貨到付款\n若選貨到付款，可配合宅配或 7-11 賣貨便店到店。");
   }
 
   if (state.order.step === 4) {
     state.order.payment = raw;
     state.order.step = 5;
-    return replyText(event.replyToken, "收到。請回覆配送方式：宅配／7-11賣貨便／雙北親送");
+    return replyText(event.replyToken, "收到。請回覆配送方式：宅配／7-11賣貨便店到店／雙北親送");
   }
 
   if (state.order.step === 5) {
@@ -587,7 +677,7 @@ async function continueOrder(event, state, raw, userId) {
 產品：${order.product}
 姓名：${order.name}
 電話：${order.phone}
-地址：${order.address}
+地址 / 門市：${order.address}
 付款：${order.payment}
 配送：${order.shipping}
 
@@ -600,18 +690,72 @@ async function continueOrder(event, state, raw, userId) {
 
 async function saveToCRM(data) {
   if (!CRM_URL || typeof fetch !== "function") return;
-
   try {
     await fetch(CRM_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
   } catch (e) {
     console.error("CRM error", e.message);
   }
+}
+
+function btn(label, text, style = "link") {
+  return {
+    type: "button",
+    style,
+    action: {
+      type: "message",
+      label,
+      text
+    }
+  };
+}
+
+function singleActionBubble(title, subtitle, label, text) {
+  return {
+    type: "bubble",
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "md",
+      contents: [
+        { type: "text", text: title, weight: "bold", size: "lg" },
+        { type: "text", text: subtitle, wrap: true, size: "sm", color: "#666666" }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [btn(label, text, "primary")]
+    }
+  };
+}
+
+function flexInfoCard(title, bodyText, buttons) {
+  return {
+    type: "flex",
+    altText: title,
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          { type: "text", text: title, weight: "bold", size: "lg" },
+          { type: "text", text: bodyText, wrap: true, size: "sm", color: "#333333" }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: buttons
+      }
+    }
+  };
 }
 
 function replyText(replyToken, text) {
@@ -621,22 +765,16 @@ function replyText(replyToken, text) {
   });
 }
 
-function replyTextWithQuickReply(replyToken, text, quickReplyItems) {
+function replyTextWithQuickReply(replyToken, text, items) {
   return client.replyMessage(replyToken, {
     type: "text",
     text,
-    quickReply: buildQuickReply(quickReplyItems)
+    quickReply: quickReply(items)
   });
 }
 
-function replyFlexWithQuickReply(replyToken, flexPayload, quickReplyItems) {
-  if (!flexPayload) {
-    return replyTextWithQuickReply(replyToken, buildDefaultText(), DATA.quickReplies.main);
-  }
-  return client.replyMessage(replyToken, {
-    ...flexPayload,
-    quickReply: buildQuickReply(quickReplyItems)
-  });
+function replyFlex(replyToken, flexPayload) {
+  return client.replyMessage(replyToken, flexPayload);
 }
 
 const port = process.env.PORT || 3000;
