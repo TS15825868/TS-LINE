@@ -1,7 +1,7 @@
 {
   "name": "ts-line-bot",
-  "version": "3.0.0",
-  "description": "仙加味 LINE 卡片按鈕高級版自動回覆與收單系統",
+  "version": "3.1.0",
+  "description": "仙加味 LINE 成交版自動回覆與收單系統",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
