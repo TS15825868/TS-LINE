@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -30,6 +30,11 @@ const users = Object.create(null);
 const PRODUCT_MAP = Object.fromEntries(DATA.products.map((p) => [p.name, p]));
 const PRODUCT_ALIASES = Object.fromEntries(
   DATA.products.map((p) => [p.name, p.aliases || [p.name]])
+);
+const COMBOS = (DATA.offers && DATA.offers.comboOffers) || [];
+const COMBO_MAP = Object.fromEntries(COMBOS.map((c) => [c.name, c]));
+const COMBO_ALIASES = Object.fromEntries(
+  COMBOS.map((c) => [c.name, buildComboAliases(c)])
 );
 
 const SENSITIVE_RE =
@@ -77,7 +82,13 @@ async function handleEvent(event) {
     return replyFlex(event.replyToken, buildWelcomeFlex());
   }
 
+  const autoLead = detectAutoLead(raw, msg);
+  if (autoLead) {
+    return handleAutoLead(event.replyToken, state, autoLead);
+  }
+
   const product = findProduct(msg);
+  const combo = findCombo(msg);
   const intent = detectIntent(msg);
 
   if (SENSITIVE_RE.test(raw)) {
@@ -88,7 +99,6 @@ async function handleEvent(event) {
     );
   }
 
-  // 全域功能優先，不讓下單流程吃掉指令
   if (intent === "welcome") {
     return replyFlex(event.replyToken, buildWelcomeFlex());
   }
@@ -99,10 +109,15 @@ async function handleEvent(event) {
 
   if (intent === "recommend") {
     state.lastProduct = null;
+    state.lastCombo = null;
     return replyFlex(event.replyToken, buildRecommendCarousel());
   }
 
   if (intent === "offer") {
+    if (combo) {
+      state.lastCombo = combo;
+      return replyFlex(event.replyToken, buildSingleComboFlex(combo));
+    }
     if (product) {
       state.lastProduct = product;
       return replyFlex(event.replyToken, buildSingleProductOfferFlex(product));
@@ -135,6 +150,10 @@ async function handleEvent(event) {
   }
 
   if (intent === "hesitate") {
+    if (combo) {
+      state.lastCombo = combo;
+      return replyFlex(event.replyToken, buildComboRetentionFlex(combo));
+    }
     if (product) {
       state.lastProduct = product;
       return replyFlex(event.replyToken, buildRetentionFlex(product));
@@ -167,6 +186,15 @@ async function handleEvent(event) {
   }
 
   if (intent === "order") {
+    if (combo) {
+      state.lastCombo = combo;
+      startOrder(state, combo.name);
+      return replyText(
+        event.replyToken,
+        `好的，我幫你登記 ${combo.name}。\n請先回覆收件姓名。`
+      );
+    }
+
     if (product) {
       state.lastProduct = product;
       startOrder(state, product.name);
@@ -184,11 +212,24 @@ async function handleEvent(event) {
       );
     }
 
+    if (state.lastCombo) {
+      startOrder(state, state.lastCombo.name);
+      return replyText(
+        event.replyToken,
+        `好的，我幫你登記 ${state.lastCombo.name}。\n請先回覆收件姓名。`
+      );
+    }
+
     return replyFlex(event.replyToken, buildOrderSelectorFlex());
   }
 
   if (state.order.step) {
     return continueOrder(event.replyToken, state, raw, userId);
+  }
+
+  if (combo) {
+    state.lastCombo = combo;
+    return replyFlex(event.replyToken, buildSingleComboFlex(combo));
   }
 
   if (product) {
@@ -213,6 +254,7 @@ function getUserState(userId) {
       history: [],
       welcomed: false,
       lastProduct: null,
+      lastCombo: null,
       order: emptyOrder(),
     };
   }
@@ -232,7 +274,7 @@ function emptyOrder() {
 }
 
 function normalize(text) {
-  return String(text).trim().toLowerCase().replace(/\s+/g, "");
+  return String(text).trim().toLowerCase().replace(/[\s\u3000]+/g, "");
 }
 
 function handleCancel(state, raw, msg) {
@@ -259,6 +301,17 @@ function detectIntent(msg) {
   return "detail";
 }
 
+function buildComboAliases(combo) {
+  return Array.from(
+    new Set([
+      combo.name,
+      combo.name.replace(/組/g, ""),
+      combo.name.replace(/套餐/g, ""),
+      ...(combo.items || []),
+    ])
+  );
+}
+
 function findProduct(msg) {
   for (const [name, aliases] of Object.entries(PRODUCT_ALIASES)) {
     if (aliases.some((alias) => msg.includes(normalize(alias))) || msg.includes(normalize(name))) {
@@ -266,6 +319,80 @@ function findProduct(msg) {
     }
   }
   return null;
+}
+
+function findCombo(msg) {
+  for (const [name, aliases] of Object.entries(COMBO_ALIASES)) {
+    if (aliases.some((alias) => msg.includes(normalize(alias))) || msg.includes(normalize(name))) {
+      return COMBO_MAP[name];
+    }
+  }
+  return null;
+}
+
+function detectAutoLead(raw, msg) {
+  const quoted = extractQuotedName(raw);
+  const product = quoted ? PRODUCT_MAP[quoted] || findProduct(normalize(quoted)) : findProduct(msg);
+  const combo = quoted ? COMBO_MAP[quoted] || findCombo(normalize(quoted)) : findCombo(msg);
+
+  if (/適合我的龜鹿|幫我整理|看適合/.test(raw) && !product && !combo) {
+    return { type: "recommend" };
+  }
+
+  if (combo && /(這組適不適合我|幫我看這組|套餐)/.test(raw)) {
+    return { type: "combo", combo };
+  }
+
+  if (product && /(適不適合我|幫我看|看適合)/.test(raw)) {
+    return { type: "product", product };
+  }
+
+  if (combo && /(我要這組|我想買這組|下單這組)/.test(raw)) {
+    return { type: "order_combo", combo };
+  }
+
+  if (product && /(我要買|我想買|下單)/.test(raw)) {
+    return { type: "order_product", product };
+  }
+
+  return null;
+}
+
+function extractQuotedName(raw) {
+  const m = String(raw).match(/[「『"]([^」』"]+)[」』"]/);
+  return m ? m[1].trim() : "";
+}
+
+function handleAutoLead(replyToken, state, autoLead) {
+  if (autoLead.type === "recommend") {
+    state.lastProduct = null;
+    state.lastCombo = null;
+    return replyFlex(replyToken, buildWebsiteLeadRecommendFlex());
+  }
+
+  if (autoLead.type === "product") {
+    state.lastProduct = autoLead.product;
+    return replyFlex(replyToken, buildWebsiteLeadProductFlex(autoLead.product));
+  }
+
+  if (autoLead.type === "combo") {
+    state.lastCombo = autoLead.combo;
+    return replyFlex(replyToken, buildWebsiteLeadComboFlex(autoLead.combo));
+  }
+
+  if (autoLead.type === "order_product") {
+    state.lastProduct = autoLead.product;
+    startOrder(state, autoLead.product.name);
+    return replyText(replyToken, `好的，我幫你登記 ${autoLead.product.name}。\n請先回覆收件姓名。`);
+  }
+
+  if (autoLead.type === "order_combo") {
+    state.lastCombo = autoLead.combo;
+    startOrder(state, autoLead.combo.name);
+    return replyText(replyToken, `好的，我幫你登記 ${autoLead.combo.name}。\n請先回覆收件姓名。`);
+  }
+
+  return replyFlex(replyToken, buildWelcomeFlex());
 }
 
 function money(n) {
@@ -360,6 +487,67 @@ function buildWelcomeFlex() {
   };
 }
 
+function buildWebsiteLeadRecommendFlex() {
+  return {
+    type: "flex",
+    altText: "幫你快速整理",
+    contents: bubble(
+      "幫你快速整理",
+      [
+        "如果你是第一次看，也沒關係🙂",
+        "我可以直接幫你從生活方式整理比較適合的方向。",
+        "你也可以直接點下面按鈕看產品或搭配組合。",
+      ],
+      [
+        btn("幫我推薦", "幫我推薦", "primary"),
+        btn("看產品", "看產品"),
+        btn("看搭配組合", "看搭配組合"),
+      ]
+    ),
+  };
+}
+
+function buildWebsiteLeadProductFlex(product) {
+  return {
+    type: "flex",
+    altText: `${product.name} 適合怎麼看`,
+    contents: bubble(
+      `${product.name}`,
+      [
+        product.description,
+        `規格：${product.size}`,
+        "如果你想看這一種適不適合你，我可以直接幫你整理。",
+      ],
+      [
+        btn("看價格", `${product.name} 價格`, "primary"),
+        btn("怎麼使用", `${product.name} 使用方式`),
+        btn("我要這個", `我要買 ${product.name}`),
+      ]
+    ),
+  };
+}
+
+function buildWebsiteLeadComboFlex(combo) {
+  return {
+    type: "flex",
+    altText: `${combo.name} 適合怎麼看`,
+    contents: bubble(
+      combo.name,
+      [
+        `內容：${combo.items.join("＋")}`,
+        ...(combo.gift ? [`附贈：${combo.gift}`] : []),
+        combo.desc,
+        "如果你想直接看這組適不適合你，我可以接著幫你整理。",
+      ],
+      [
+        btn("我要這組", `我要買 ${combo.name}`, "primary"),
+        btn("付款方式", "付款方式"),
+        btn("配送方式", "配送方式"),
+      ]
+    ),
+  };
+}
+
 function buildProductsCarousel() {
   return {
     type: "flex",
@@ -438,13 +626,22 @@ function buildOrderSelectorFlex() {
     altText: "選擇要買的產品",
     contents: {
       type: "carousel",
-      contents: DATA.products.map((p) =>
-        bubble(
-          p.name,
-          [p.description, `規格：${p.size}`],
-          [btn("我要這個", `我要買 ${p.name}`, "primary")]
-        )
-      ),
+      contents: [
+        ...DATA.products.map((p) =>
+          bubble(
+            p.name,
+            [p.description, `規格：${p.size}`],
+            [btn("我要這個", `我要買 ${p.name}`, "primary")]
+          )
+        ),
+        ...COMBOS.map((c) =>
+          bubble(
+            c.name,
+            [`內容：${c.items.join("＋")}`, ...(c.gift ? [`附贈：${c.gift}`] : []), c.desc],
+            [btn("我要這組", `我要買 ${c.name}`, "primary")]
+          )
+        ),
+      ],
     },
   };
 }
@@ -528,7 +725,7 @@ function buildOfferCarousel() {
     altText: "搭配組合",
     contents: {
       type: "carousel",
-      contents: (DATA.offers.comboOffers || []).map((o) =>
+      contents: COMBOS.map((o) =>
         bubble(
           o.name,
           [
@@ -544,7 +741,7 @@ function buildOfferCarousel() {
 }
 
 function buildSingleProductOfferFlex(product) {
-  const related = (DATA.offers.comboOffers || []).filter((o) =>
+  const related = COMBOS.filter((o) =>
     (o.items || []).some((item) => item.includes(product.name))
   );
 
@@ -583,6 +780,28 @@ function buildSingleProductOfferFlex(product) {
   };
 }
 
+function buildSingleComboFlex(combo) {
+  const retention = DATA.retentionOffers?.combos?.[combo.name] || "";
+  return {
+    type: "flex",
+    altText: combo.name,
+    contents: bubble(
+      combo.name,
+      [
+        `內容：${combo.items.join("＋")}`,
+        ...(combo.gift ? [`附贈：${combo.gift}`] : []),
+        combo.desc,
+        ...(retention ? [retention] : []),
+      ],
+      [
+        btn("我要這組", `我要買 ${combo.name}`, "primary"),
+        btn("付款方式", "付款方式"),
+        btn("配送方式", "配送方式"),
+      ]
+    ),
+  };
+}
+
 function buildRecommendCarousel() {
   return {
     type: "flex",
@@ -609,11 +828,7 @@ function buildRetentionFlex(product) {
     "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂";
 
   const extra =
-    (product &&
-      DATA.retentionOffers &&
-      DATA.retentionOffers.products &&
-      DATA.retentionOffers.products[product.name]) ||
-    "";
+    (product && DATA.retentionOffers?.products?.[product.name]) || "";
 
   const lines = [
     "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
@@ -633,6 +848,25 @@ function buildRetentionFlex(product) {
       [
         btn("看搭配組合", product ? `${product.name} 搭配組合` : "看搭配組合", "primary"),
         btn("我要這個", product ? `我要買 ${product.name}` : "我要買"),
+      ]
+    ),
+  };
+}
+
+function buildComboRetentionFlex(combo) {
+  const text = DATA.retentionOffers?.combos?.[combo.name] || DATA.retentionOffers?.triggerText || "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂";
+  return {
+    type: "flex",
+    altText: "如果在評估價格",
+    contents: bubble(
+      "如果在評估價格",
+      [
+        "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
+        text,
+      ],
+      [
+        btn("我要這組", `我要買 ${combo.name}`, "primary"),
+        btn("付款方式", "付款方式"),
       ]
     ),
   };
@@ -748,16 +982,7 @@ async function continueOrder(replyToken, state, raw, userId) {
 
     return replyText(
       replyToken,
-      `已收到你的資料。
-
-產品：${order.product}
-姓名：${order.name}
-電話：${order.phone}
-地址 / 門市：${order.address}
-付款：${order.payment}
-配送：${order.shipping}
-
-我們會再為你確認。`
+      `已收到你的資料。\n\n產品：${order.product}\n姓名：${order.name}\n電話：${order.phone}\n地址 / 門市：${order.address}\n付款：${order.payment}\n配送：${order.shipping}\n\n我們會再為你確認。`
     );
   }
 
