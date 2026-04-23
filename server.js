@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -38,7 +38,8 @@ const COMBO_ALIASES = Object.fromEntries(
   (DATA.offers?.comboOffers || []).map((o) => [o.name, o.aliases || [o.name]])
 );
 
-const MEDICAL_RE = /(懷孕|孕婦|哺乳|高血壓|糖尿病|心臟|腎臟|肝|癌|化療|慢性病|過敏|體質|中藥|西藥|服藥|吃藥|藥物|手術|月經|經期|感冒|發燒|兒童|小孩|寶寶|老人|長輩|失眠|睡不著|副作用|禁忌|醫師|醫生|診斷)/;
+// 僅保留真正需要轉介醫師的高風險情境，避免誤傷一般成交句
+const MEDICAL_RE = /(懷孕|孕婦|哺乳|高血壓|糖尿病|心臟|腎臟|肝|癌|化療|慢性病|中藥|西藥|服藥|吃藥|藥物|手術|副作用|禁忌|醫師|醫生|診斷)/;
 
 app.get("/", (req, res) => {
   res.send("TS-LINE bot is running.");
@@ -73,9 +74,9 @@ async function handleEvent(event) {
   const msg = normalize(raw);
   state.history.push(raw);
 
+  // 第一次訊息不要被 welcome 吃掉，先標記 welcomed 再繼續正常流程
   if (!state.welcomed) {
     state.welcomed = true;
-    return replyFlex(event.replyToken, buildWelcomeFlex());
   }
 
   if (handleCancel(state, raw, msg)) {
@@ -101,8 +102,7 @@ async function handleEvent(event) {
   if (pendingSwitchAction === "switched") {
     return replyTextWithQuickReply(
       event.replyToken,
-      `好的，已改成登記「${state.order.product}」。
-請先回覆收件姓名。`,
+      `好的，已改成登記「${state.order.product}」。\n請先回覆收件姓名。`,
       buildOrderFlowQuickReplies(state)
     );
   }
@@ -111,7 +111,7 @@ async function handleEvent(event) {
   const combo = findCombo(msg);
   const intent = detectIntent(msg);
 
-  if (MEDICAL_RE.test(raw)) {
+  if (shouldRedirectMedical(raw)) {
     return replyTextWithQuickReply(
       event.replyToken,
       DATA.doctorReferral,
@@ -305,6 +305,10 @@ async function handleEvent(event) {
   }
 
   return replyFlex(event.replyToken, buildWelcomeFlex());
+}
+
+function shouldRedirectMedical(raw) {
+  return MEDICAL_RE.test(raw);
 }
 
 function getUserState(userId) {
@@ -519,7 +523,7 @@ function buildWelcomeFlex() {
         contents: [
           btn("看產品", "看產品", "primary"),
           btn("幫我推薦", "幫我推薦"),
-          btn("我要買", "我要買"),
+          btn("我要買", "我想直接下單"),
         ],
       },
     },
@@ -529,28 +533,73 @@ function buildWelcomeFlex() {
 function buildProductsCarousel() {
   return {
     type: "flex",
-    altText: "看產品",
+    altText: "產品介紹",
     contents: {
       type: "carousel",
-      contents: DATA.products.map((p) => buildProductBubble(p)),
+      contents: DATA.products.map((p) =>
+        bubble(
+          p.name,
+          [
+            p.description,
+            `建議售價：${money(p.price)}`,
+            `規格：${p.size}`,
+          ],
+          [
+            btn("我要這個", `我要買 ${p.name}`, "primary"),
+            btn("怎麼使用", `${p.name} 使用方式`),
+            btn("看價格", `${p.name} 價格`),
+          ]
+        )
+      ),
     },
   };
 }
 
-function buildProductBubble(product) {
-  return bubble(
-    product.name,
-    [
-      product.description,
-      `規格：${product.size}`,
-      `建議售價：${money(product.price)}`,
-    ],
-    [
-      btn("我要這個", `我要買 ${product.name}`, "primary"),
-      btn("怎麼使用", `${product.name} 使用方式`),
-      btn("看價格", `${product.name} 價格`),
-    ]
-  );
+function buildRecommendCarousel() {
+  return {
+    type: "flex",
+    altText: "幫我推薦",
+    contents: {
+      type: "carousel",
+      contents: DATA.recommend.map((r) =>
+        bubble(
+          r.keyword,
+          [`建議：${r.result}`, r.desc],
+          [
+            btn("看這個產品", r.result, "primary"),
+            btn("我要這個", `我要買 ${r.result}`),
+          ]
+        )
+      ),
+    },
+  };
+}
+
+function buildOfferCarousel() {
+  const offers = DATA.offers?.comboOffers || [];
+  return {
+    type: "flex",
+    altText: "搭配組合",
+    contents: {
+      type: "carousel",
+      contents: offers.map((o) =>
+        bubble(
+          o.name,
+          [
+            `內容：${o.items.join("＋")}`,
+            `建議安排：${money(o.price)}（${o.priceNote || "可依需求調整"}）`,
+            o.gift ? `附贈：${o.gift}` : "",
+            o.desc,
+            "這組如果你可以，我可以直接幫你安排🙂",
+          ],
+          [
+            btn("我要這組", `我要買 ${o.name}`, "primary"),
+            btn("想再看看", "看產品"),
+          ]
+        )
+      ),
+    },
+  };
 }
 
 function buildPriceSelectorFlex() {
@@ -560,7 +609,11 @@ function buildPriceSelectorFlex() {
     contents: {
       type: "carousel",
       contents: DATA.products.map((p) =>
-        bubble(p.name, [`規格：${p.size}`], [btn("看價格", `${p.name} 價格`, "primary")])
+        bubble(
+          p.name,
+          [`規格：${p.size}`, `建議售價：${money(p.price)}`],
+          [btn("我要這個", `我要買 ${p.name}`, "primary"), btn("怎麼使用", `${p.name} 使用方式`)]
+        )
       ),
     },
   };
@@ -569,11 +622,15 @@ function buildPriceSelectorFlex() {
 function buildUsageSelectorFlex() {
   return {
     type: "flex",
-    altText: "選擇產品使用方式",
+    altText: "選擇使用方式",
     contents: {
       type: "carousel",
       contents: DATA.products.map((p) =>
-        bubble(p.name, ["點下面看這一項的使用方式"], [btn("怎麼使用", `${p.name} 使用方式`, "primary")])
+        bubble(
+          p.name,
+          ["點下面查看這一項的使用方式"],
+          [btn("怎麼使用", `${p.name} 使用方式`, "primary")]
+        )
       ),
     },
   };
@@ -582,24 +639,46 @@ function buildUsageSelectorFlex() {
 function buildIngredientsSelectorFlex() {
   return {
     type: "flex",
-    altText: "選擇產品成分",
+    altText: "選擇成分",
     contents: {
       type: "carousel",
       contents: DATA.products.map((p) =>
-        bubble(p.name, ["點下面看這一項的成分"], [btn("看成分", `${p.name} 成分`, "primary")])
+        bubble(
+          p.name,
+          ["點下面查看這一項的成分"],
+          [btn("看成分", `${p.name} 成分`, "primary")]
+        )
       ),
     },
   };
 }
 
 function buildOrderSelectorFlex() {
-  const comboBubbles = (DATA.offers?.comboOffers || []).map((o) => buildComboBubble(o));
   return {
     type: "flex",
-    altText: "選擇要買的商品或套餐",
+    altText: "選擇想買的商品",
     contents: {
       type: "carousel",
-      contents: [...DATA.products.map((p) => buildProductBubble(p)), ...comboBubbles].slice(0, 12),
+      contents: [
+        ...DATA.products.map((p) =>
+          bubble(
+            p.name,
+            [p.description, `規格：${p.size}`, `建議售價：${money(p.price)}`],
+            [btn("我要這個", `我要買 ${p.name}`, "primary")]
+          )
+        ),
+        ...(DATA.offers?.comboOffers || []).map((o) =>
+          bubble(
+            o.name,
+            [
+              `內容：${o.items.join("＋")}`,
+              `建議安排：${money(o.price)}（${o.priceNote || "可依需求調整"}）`,
+              o.gift ? `附贈：${o.gift}` : "",
+            ],
+            [btn("我要這組", `我要買 ${o.name}`, "primary")]
+          )
+        ),
+      ],
     },
   };
 }
@@ -614,7 +693,6 @@ function buildSingleProductFlex(product) {
         product.description,
         `規格：${product.size}`,
         `建議售價：${money(product.price)}`,
-        `建議：${product.suitable || "可依日常節奏安排"}`,
       ],
       [
         btn("我要這個", `我要買 ${product.name}`, "primary"),
@@ -630,15 +708,10 @@ function buildSingleProductPriceFlex(product) {
     type: "flex",
     altText: `${product.name} 價格`,
     contents: bubble(
-      `${product.name}`,
-      [
-        `規格：${product.size}`,
-        `建議售價：${money(product.price)}`,
-        "如果這項可以，我可以直接幫你安排🙂",
-      ],
+      `${product.name} 價格`,
+      [`規格：${product.size}`, `建議售價：${money(product.price)}`],
       [
         btn("我要這個", `我要買 ${product.name}`, "primary"),
-        btn("看搭配組合", `${product.name} 搭配組合`),
         btn("怎麼使用", `${product.name} 使用方式`),
       ]
     ),
@@ -653,8 +726,8 @@ function buildSingleProductUsageFlex(product) {
       `${product.name} 使用方式`,
       product.usage.map((u) => `・${u}`),
       [
-        btn("我要這個", `我要買 ${product.name}`, "primary"),
-        btn("看價格", `${product.name} 價格`),
+        btn("看價格", `${product.name} 價格`, "primary"),
+        btn("我要這個", `我要買 ${product.name}`),
       ]
     ),
   };
@@ -668,43 +741,42 @@ function buildSingleProductIngredientsFlex(product) {
       `${product.name} 成分`,
       [product.ingredients.join("、")],
       [
-        btn("我要這個", `我要買 ${product.name}`, "primary"),
-        btn("看價格", `${product.name} 價格`),
-        btn("怎麼使用", `${product.name} 使用方式`),
+        btn("看價格", `${product.name} 價格`, "primary"),
+        btn("我要這個", `我要買 ${product.name}`),
       ]
     ),
   };
 }
 
-function buildComboBubble(combo) {
-  return bubble(
-    combo.name,
-    [
-      `內容：${combo.items.join("＋")}`,
-      combo.gift ? `附贈：${combo.gift}` : "",
-      `建議安排：${money(combo.price)}${combo.priceNote ? `（${combo.priceNote}）` : ""}`,
-      combo.desc,
-    ],
-    [
-      btn("我要這組", `我要買 ${combo.name}`, "primary"),
-      btn("付款方式", "付款方式"),
-      btn("配送方式", "配送方式"),
-    ]
+function buildSingleProductOfferFlex(product) {
+  const related = (DATA.offers?.comboOffers || []).filter((o) =>
+    (o.items || []).some((item) => item.includes(product.name))
   );
-}
-
-function buildOfferCarousel() {
+  if (!related.length) {
+    return buildSingleProductFlex(product);
+  }
   return {
     type: "flex",
-    altText: "搭配組合",
+    altText: `${product.name} 搭配方式`,
     contents: {
       type: "carousel",
-      contents: (DATA.offers?.comboOffers || []).map((o) => buildComboBubble(o)),
+      contents: related.map((o) =>
+        bubble(
+          o.name,
+          [
+            `內容：${o.items.join("＋")}`,
+            `建議安排：${money(o.price)}（${o.priceNote || "可依需求調整"}）`,
+            o.gift ? `附贈：${o.gift}` : "",
+            o.desc,
+          ],
+          [btn("我要這組", `我要買 ${o.name}`, "primary"), btn("看產品", product.name)]
+        )
+      ),
     },
   };
 }
 
-function buildSingleComboFlex(combo, showActionText = false) {
+function buildSingleComboFlex(combo, includePrice = false) {
   return {
     type: "flex",
     altText: combo.name,
@@ -712,10 +784,10 @@ function buildSingleComboFlex(combo, showActionText = false) {
       combo.name,
       [
         `內容：${combo.items.join("＋")}`,
+        includePrice ? `建議安排：${money(combo.price)}（${combo.priceNote || "可依需求調整"}）` : "",
         combo.gift ? `附贈：${combo.gift}` : "",
-        `建議安排：${money(combo.price)}${combo.priceNote ? `（${combo.priceNote}）` : ""}`,
         combo.desc,
-        showActionText ? "這組如果你可以，我可以直接幫你安排🙂" : "",
+        "這組如果你可以，我可以直接幫你安排🙂",
       ],
       [
         btn("我要這組", `我要買 ${combo.name}`, "primary"),
@@ -726,69 +798,20 @@ function buildSingleComboFlex(combo, showActionText = false) {
   };
 }
 
-function buildSingleProductOfferFlex(product) {
-  const related = (DATA.offers?.comboOffers || []).filter((o) =>
-    (o.items || []).some((item) => item.includes(product.name))
-  );
-
-  if (!related.length) {
-    return {
-      type: "flex",
-      altText: `${product.name} 搭配組合`,
-      contents: bubble(
-        `${product.name} 搭配組合`,
-        ["目前這一項沒有另外設定組合方式。"],
-        [
-          btn("我要這個", `我要買 ${product.name}`, "primary"),
-          btn("看價格", `${product.name} 價格`),
-        ]
-      ),
-    };
-  }
-
-  return {
-    type: "flex",
-    altText: `${product.name} 搭配組合`,
-    contents: {
-      type: "carousel",
-      contents: related.map((o) => buildComboBubble(o)),
-    },
-  };
-}
-
-function buildRecommendCarousel() {
-  return {
-    type: "flex",
-    altText: "幫我推薦",
-    contents: {
-      type: "carousel",
-      contents: DATA.recommend.map((r) =>
-        bubble(
-          r.keyword,
-          [`建議：${r.result}`, r.desc],
-          [btn("看這個產品", r.result, "primary"), btn("我要這個", `我要買 ${r.result}`)]
-        )
-      ),
-    },
-  };
-}
-
 function buildRetentionFlex(product) {
-  const triggerText = DATA.retentionOffers?.triggerText || "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂";
-  const extra = DATA.retentionOffers?.products?.[product.name] || "";
+  const extra = (DATA.retentionOffers?.products || {})[product.name] || "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂";
   return {
     type: "flex",
-    altText: "如果在評估價格",
+    altText: `${product.name} 優惠安排`,
     contents: bubble(
-      "如果在評估價格",
+      `${product.name} 優惠安排`,
       [
-        "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
-        triggerText,
-        extra ? `可協助安排：${extra}` : "",
+        `建議售價：${money(product.price)}`,
+        extra,
       ],
       [
         btn("我要這個", `我要買 ${product.name}`, "primary"),
-        btn("看搭配組合", `${product.name} 搭配組合`),
+        btn("看搭配組合", `看搭配組合`),
       ]
     ),
   };
@@ -797,18 +820,11 @@ function buildRetentionFlex(product) {
 function buildGeneralRetentionFlex() {
   return {
     type: "flex",
-    altText: "如果在評估價格",
+    altText: "優惠安排",
     contents: bubble(
-      "如果在評估價格",
-      [
-        "仙加味這邊比較重視原料、型態與日常安排方式，所以平常不會做太多大幅促銷。",
-        DATA.retentionOffers?.triggerText || "如果您是第一次想試，這邊可以幫您安排成比較好入手的方式🙂",
-      ],
-      [
-        btn("先看產品", "看產品", "primary"),
-        btn("看搭配組合", "看搭配組合"),
-        btn("幫我推薦", "幫我推薦"),
-      ]
+      "如果您在評估價格",
+      ["如果您是第一次想試，我可以幫您安排比較好入手的方式。"],
+      [btn("幫我推薦", "幫我推薦", "primary"), btn("看產品", "看產品")]
     ),
   };
 }
@@ -825,7 +841,7 @@ function buildFaqText() {
   return DATA.faqs.map((f) => `Q：${f.q}\nA：${f.a}`).join("\n\n");
 }
 
-function startOrder(state, targetName, type) {
+function startOrder(state, targetName, type = "product") {
   state.order = {
     step: 1,
     type,
@@ -840,20 +856,12 @@ function startOrder(state, targetName, type) {
 }
 
 function buildCurrentStepPrompt(state) {
-  switch (state.order.step) {
-    case 1:
-      return `目前正在登記「${state.order.product}」。\n請先回覆收件姓名。`;
-    case 2:
-      return `目前正在登記「${state.order.product}」。\n請回覆收件電話。`;
-    case 3:
-      return `目前正在登記「${state.order.product}」。\n請回覆收件地址或 7-11 門市資訊。`;
-    case 4:
-      return "請選擇付款方式：";
-    case 5:
-      return "請選擇配送方式：";
-    default:
-      return "如果還需要其他安排，也可以再跟我說🙂";
-  }
+  if (state.order.step === 1) return `目前正在登記「${state.order.product}」。\n請回覆收件姓名。`;
+  if (state.order.step === 2) return `目前正在登記「${state.order.product}」。\n請回覆收件電話。`;
+  if (state.order.step === 3) return `目前正在登記「${state.order.product}」。\n請回覆收件地址或 7-11 門市資訊。`;
+  if (state.order.step === 4) return "請選擇付款方式：";
+  if (state.order.step === 5) return "請選擇配送方式：";
+  return "如果還需要其他安排，也可以再跟我說🙂";
 }
 
 async function continueOrder(replyToken, state, raw, userId) {
@@ -876,14 +884,14 @@ async function continueOrder(replyToken, state, raw, userId) {
   }
 
   if (state.order.step === 4) {
-    return replyTextWithQuickReply(replyToken, "請直接點下面付款方式按鈕🙂", paymentQuickReplies());
+    return replyTextWithQuickReply(replyToken, "請選擇付款方式：", paymentQuickReplies());
   }
 
   if (state.order.step === 5) {
-    return replyTextWithQuickReply(replyToken, "請直接點下面配送方式按鈕🙂", shippingQuickReplies());
+    return replyTextWithQuickReply(replyToken, "請選擇配送方式：", shippingQuickReplies());
   }
 
-  return replyTextWithQuickReply(replyToken, "請重新輸入一次，或輸入「取消」結束目前流程。", buildOrderFlowQuickReplies(state));
+  return replyTextWithQuickReply(replyToken, "如果還需要其他安排，也可以再跟我說🙂", DATA.quickReplies.main);
 }
 
 async function finishOrder(replyToken, state, userId) {
@@ -900,7 +908,6 @@ async function finishOrder(replyToken, state, userId) {
 
   state.order = emptyOrder();
   state.pendingSwitch = "";
-
   await saveToCRM(order);
 
   return replyTextWithQuickReply(
@@ -912,7 +919,6 @@ async function finishOrder(replyToken, state, userId) {
 
 async function saveToCRM(data) {
   if (!CRM_URL || typeof fetch !== "function") return;
-
   try {
     await fetch(CRM_URL, {
       method: "POST",
@@ -925,14 +931,17 @@ async function saveToCRM(data) {
 }
 
 function replyText(replyToken, text) {
-  return client.replyMessage(replyToken, { type: "text", text });
-}
-
-function replyTextWithQuickReply(replyToken, text, quickReplyItems) {
   return client.replyMessage(replyToken, {
     type: "text",
     text,
-    quickReply: buildQuickReply(quickReplyItems),
+  });
+}
+
+function replyTextWithQuickReply(replyToken, text, quickItems) {
+  return client.replyMessage(replyToken, {
+    type: "text",
+    text,
+    quickReply: buildQuickReply(quickItems),
   });
 }
 
@@ -940,10 +949,10 @@ function replyFlex(replyToken, flexPayload) {
   return client.replyMessage(replyToken, flexPayload);
 }
 
-function replyFlexWithQuickReply(replyToken, flexPayload, quickReplyItems) {
+function replyFlexWithQuickReply(replyToken, flexPayload, quickItems) {
   return client.replyMessage(replyToken, {
     ...flexPayload,
-    quickReply: buildQuickReply(quickReplyItems),
+    quickReply: buildQuickReply(quickItems),
   });
 }
 
