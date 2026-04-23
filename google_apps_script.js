@@ -1,10 +1,10 @@
 function doPost(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("Sheet1");
+    var sheet = ss.getSheetByName("Orders") || ss.getSheetByName("Sheet1");
 
     if (!sheet) {
-      sheet = ss.insertSheet("Sheet1");
+      sheet = ss.insertSheet("Orders");
     }
 
     if (sheet.getLastRow() === 0) {
@@ -14,7 +14,7 @@ function doPost(e) {
         "產品",
         "姓名",
         "電話",
-        "地址",
+        "地址/門市",
         "付款方式",
         "配送方式"
       ]);
@@ -38,10 +38,7 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService
-      .createTextOutput(JSON.stringify({
-        ok: false,
-        error: String(err)
-      }))
+      .createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

@@ -1,14 +1,11 @@
 {
   "name": "ts-line-bot",
-  "version": "3.1.0",
-  "description": "仙加味 LINE 成交版自動回覆與收單系統",
+  "version": "1.5.4",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
+  "type": "commonjs",
   "dependencies": {
-    "@line/bot-sdk": "^9.7.0",
-    "express": "^4.21.2"
+    "@line/bot-sdk": "^7.5.2",
+    "express": "^4.18.2"
   },
   "engines": {
     "node": ">=18"
