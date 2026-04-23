@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -61,6 +61,7 @@ async function handleEvent(event) {
 
   const userId = event.source.userId || "anon";
   const state = getUserState(userId);
+  state._lastUserId = userId;
 
   if (event.type === "follow") {
     state.welcomed = true;
@@ -289,6 +290,9 @@ function handlePendingSwitch(state, raw, msg) {
 function detectIntent(msg) {
   if (/^付款/.test(msg)) return "payment_select";
   if (/^配送/.test(msg)) return "shipping_select";
+  if (/(確認送出|送出訂單|確認下單)/.test(msg)) return "confirm_checkout";
+  if (/(修改清單|回購物清單|修改訂單)/.test(msg)) return "edit_cart";
+  if (/(只買這個|只買這組)/.test(msg)) return "single_buy";
   if (/(查看購買清單|購買清單|看購物車|購物車)/.test(msg)) return "cart";
   if (/(直接結帳|去結帳|結帳)/.test(msg)) return "checkout";
   if (/(清空購買清單|清空清單)/.test(msg)) return "clear_cart";
@@ -336,6 +340,22 @@ function makeProductCartItem(product) {
 
 function makeComboCartItem(combo) {
   return { type: "combo", name: combo.name, qty: 1, unitPrice: combo.price, subtotal: combo.price };
+}
+
+function buildPendingAddQuickReplies(name) {
+  return [
+    { label: "加入清單", text: `加入清單 ${name}` },
+    { label: "只買這個", text: `只買這個 ${name}` },
+    { label: "查看清單", text: "查看購買清單" },
+  ];
+}
+
+function checkoutConfirmQuickReplies() {
+  return [
+    { label: "確認送出", text: "確認送出" },
+    { label: "修改清單", text: "修改清單" },
+    { label: "取消本次", text: "取消" },
+  ];
 }
 
 function addItemToCart(state, item) {
@@ -763,9 +783,15 @@ function handleCartActions(state, raw, msg, product, combo) {
     const name = raw.replace(/^加入清單\s*/, "").trim();
     return { type: "add_by_name", name };
   }
+  if (raw.startsWith("只買這個 ") || raw.startsWith("只買這組 ")) {
+    const name = raw.replace(/^只買這[個組]\s*/, "").trim();
+    return { type: "single_buy_by_name", name };
+  }
   const intent = detectIntent(msg);
   if (intent === "cart") return { type: "view" };
   if (intent === "checkout") return { type: "checkout" };
+  if (intent === "confirm_checkout") return { type: "confirm_checkout" };
+  if (intent === "edit_cart") return { type: "view" };
   if (intent === "clear_cart") return { type: "clear" };
   if (intent === "add_to_cart" && product) return { type: "add_product", product };
   if (intent === "add_to_cart" && combo) return { type: "add_combo", combo };
@@ -796,6 +822,16 @@ function dispatchCartAction(replyToken, state, action) {
   if (action.type === "add_by_name") {
     if (PRODUCT_MAP[action.name]) item = makeProductCartItem(PRODUCT_MAP[action.name]);
     if (COMBO_MAP[action.name]) item = makeComboCartItem(COMBO_MAP[action.name]);
+  }
+  if (action.type === "single_buy_by_name") {
+    if (PRODUCT_MAP[action.name]) item = makeProductCartItem(PRODUCT_MAP[action.name]);
+    if (COMBO_MAP[action.name]) item = makeComboCartItem(COMBO_MAP[action.name]);
+    if (item) {
+      state.cart = [item];
+      startCheckout(state, item.name, item.type);
+      return replyTextWithQuickReply(replyToken, `好的，改成直接購買「${item.name}」。
+請先回覆收件姓名。`, buildCheckoutQuickReplies(state));
+    }
   }
   if (item) {
     addItemToCart(state, item);
@@ -862,9 +898,34 @@ async function continueCheckout(replyToken, state, raw, userId) {
     const msg = normalize(raw);
     if (/^配送/.test(msg)) {
       state.checkout.shipping = raw.replace(/^配送\s*/, "").trim();
-      return finishCheckout(replyToken, state, userId);
+      state.checkout.step = 6;
+      const summaryLines = state.cart.map((item) => `・${item.name} × ${item.qty}　${money(item.subtotal)}`);
+      return replyTextWithQuickReply(
+        replyToken,
+        `幫你整理一下訂單：
+
+${summaryLines.join("
+")}
+合計：${money(cartTotal(state.cart))}
+
+付款：${state.checkout.payment}
+配送：${state.checkout.shipping}
+
+這樣可以嗎？`,
+        checkoutConfirmQuickReplies()
+      );
     }
     return replyTextWithQuickReply(replyToken, "請選擇配送方式：", shippingQuickReplies());
+  }
+  if (state.checkout.step === 6) {
+    if (raw === "確認送出" || normalize(raw) === normalize("確認送出")) {
+      return finishCheckout(replyToken, state, userId);
+    }
+    if (raw === "修改清單" || normalize(raw) === normalize("修改清單")) {
+      state.checkout.step = 0;
+      return replyTextWithQuickReply(replyToken, buildCartText(state.cart), cartQuickReplies(false));
+    }
+    return replyTextWithQuickReply(replyToken, "請確認是否送出這筆訂單：", checkoutConfirmQuickReplies());
   }
   return replyTextWithQuickReply(replyToken, "如果還需要其他安排，也可以再跟我說🙂", DATA.quickReplies.main);
 }
