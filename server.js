@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -37,6 +37,17 @@ const COMBO_MAP = Object.fromEntries(
 const COMBO_ALIASES = Object.fromEntries(
   (DATA.offers?.comboOffers || []).map((o) => [o.name, o.aliases || [o.name]])
 );
+
+const AUTO_KEYWORDS = [
+  { keys: ["龜鹿膏", "膏"], product: "龜鹿膏" },
+  { keys: ["龜鹿飲", "飲"], product: "龜鹿飲" },
+  { keys: ["鹿茸", "鹿茸粉"], product: "鹿茸粉" },
+  { keys: ["湯塊", "湯包", "燉", "料理", "煮湯"], product: "龜鹿湯塊" },
+  { keys: ["節奏組", "日常節奏組"], combo: "日常節奏組" },
+  { keys: ["便利組", "日常便利組"], combo: "日常便利組" },
+  { keys: ["餐桌搭配組"], combo: "餐桌搭配組" },
+  { keys: ["完整體驗組"], combo: "完整體驗組" },
+];
 
 const MEDICAL_RE = /(懷孕|孕婦|哺乳|高血壓|糖尿病|心臟|腎臟|肝|癌|化療|慢性病|中藥|西藥|服藥|吃藥|藥物|手術|副作用|禁忌|醫師|醫生|診斷)/;
 
@@ -83,8 +94,13 @@ async function handleEvent(event) {
     return replyTextWithQuickReply(event.replyToken, DATA.doctorReferral, DATA.quickReplies.main);
   }
 
-  const product = findProduct(msg);
-  const combo = findCombo(msg);
+  let product = findProduct(msg);
+  let combo = findCombo(msg);
+  if (!product && !combo) {
+    const auto = autoMatchEntry(raw);
+    if (auto.product) product = auto.product;
+    if (auto.combo) combo = auto.combo;
+  }
 
   // 加入清單 / 查看清單 / 結帳 / 清空
   const cartAction = handleCartActions(state, raw, msg, product, combo);
@@ -191,11 +207,23 @@ async function handleEvent(event) {
   if (intent === "order") {
     if (combo || product) {
       const item = combo ? makeComboCartItem(combo) : makeProductCartItem(product);
+      if (state.cart.length > 0) {
+        return replyTextWithQuickReply(
+          event.replyToken,
+          `你目前購買清單裡已經有商品，要怎麼處理「${item.name}」？`,
+          [
+            { label: "加入購買清單", text: `加入清單 ${item.name}` },
+            { label: "只買這個", text: `只買這個 ${item.name}` },
+            { label: "查看清單", text: "查看購買清單" },
+          ]
+        );
+      }
       state.cart = [item];
       startCheckout(state, item.name, item.type);
       return replyTextWithQuickReply(
         event.replyToken,
-        `好的，我幫你登記 ${item.name}。\n請先回覆收件姓名。`,
+        `好的，我幫你登記 ${item.name}。
+請先回覆收件姓名。`,
         buildCheckoutQuickReplies(state)
       );
     }
@@ -299,7 +327,7 @@ function detectIntent(msg) {
   if (/(歡迎|你好|hi|hello)/.test(msg)) return "welcome";
   if (/(看產品|產品|商品|產品介紹|看商品)/.test(msg)) return "products";
   if (/(幫我推薦|推薦|怎麼選|選哪個|哪個適合|第一次怎麼買|第一次)/.test(msg)) return "recommend";
-  if (/(下單|訂購|我要買|購買|我要訂|直接買|我要這個|我要這組)/.test(msg)) return "order";
+  if (/(下單|訂購|我要買|購買|我要訂|直接買|我要這個|我要這組|我想直接下單|直接下單)/.test(msg)) return "order";
   if (/(加入購買清單|加入清單|加到清單)/.test(msg)) return "add_to_cart";
   if (/(怎麼吃|怎麼用|怎麼使用|使用方式|食用方式|使用|食用|喝法)/.test(msg)) return "usage";
   if (/(成分|內容物|原料)/.test(msg)) return "ingredients";
@@ -330,6 +358,39 @@ function findCombo(msg) {
   return null;
 }
 
+
+function autoMatchEntry(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return { product: null, combo: null };
+  for (const entry of AUTO_KEYWORDS) {
+    if (entry.keys.some((k) => text.includes(k))) {
+      return {
+        product: entry.product ? PRODUCT_MAP[entry.product] : null,
+        combo: entry.combo ? COMBO_MAP[entry.combo] : null,
+      };
+    }
+  }
+  return { product: null, combo: null };
+}
+
+function addonQuickReplies(itemName, hasCheckout = false) {
+  const items = [];
+  if (itemName === "龜鹿膏") items.push({ label: "加龜鹿飲", text: "加入清單 龜鹿飲" });
+  if (itemName === "龜鹿湯塊") items.push({ label: "加鹿茸粉", text: "加入清單 鹿茸粉" });
+  if (itemName === "日常節奏組") items.push({ label: "加鹿茸粉", text: "加入清單 鹿茸粉" });
+  items.push(
+    { label: "查看清單", text: "查看購買清單" },
+    { label: "繼續加商品", text: "看產品" },
+    { label: "直接結帳", text: "直接結帳" }
+  );
+  if (hasCheckout) items.unshift({ label: "繼續原本", text: "繼續原本下單" });
+  return items.slice(0, 13);
+}
+
+function buildCartSummaryText(cart) {
+  const lines = cart.map((item, idx) => `${idx + 1}. ${item.name} × ${item.qty}　${money(item.subtotal)}`);
+  return `${lines.join("\n")}\n\n合計：${money(cartTotal(cart))}`;
+}
 function money(n) {
   return `$${Number(n).toLocaleString("en-US")}`;
 }
@@ -497,8 +558,8 @@ function buildWelcomeFlex() {
         contents: [
           btn("看產品", "看產品", "primary"),
           btn("幫我推薦", "幫我推薦"),
-          btn("我要買", "我想直接下單"),
           btn("查看清單", "查看購買清單"),
+          btn("直接下單", "我想直接下單"),
         ],
       },
     },
@@ -835,7 +896,11 @@ function dispatchCartAction(replyToken, state, action) {
   }
   if (item) {
     addItemToCart(state, item);
-    return replyTextWithQuickReply(replyToken, `${item.name} 已加入購買清單🙂\n\n${buildCartText(state.cart)}`, cartQuickReplies(state.checkout.step > 0));
+    return replyTextWithQuickReply(
+      replyToken,
+      `${item.name} 已加入購買清單🙂\n\n${buildCartText(state.cart)}`,
+      addonQuickReplies(item.name, state.checkout.step > 0)
+    );
   }
   return replyTextWithQuickReply(replyToken, "找不到要加入的商品，請再點一次商品或套餐。", DATA.quickReplies.main);
 }
@@ -904,8 +969,7 @@ async function continueCheckout(replyToken, state, raw, userId) {
         replyToken,
         `幫你整理一下訂單：
 
-${summaryLines.join("
-")}
+${summaryLines.join("\n")}
 合計：${money(cartTotal(state.cart))}
 
 付款：${state.checkout.payment}
@@ -913,6 +977,7 @@ ${summaryLines.join("
 
 這樣可以嗎？`,
         checkoutConfirmQuickReplies()
+
       );
     }
     return replyTextWithQuickReply(replyToken, "請選擇配送方式：", shippingQuickReplies());
