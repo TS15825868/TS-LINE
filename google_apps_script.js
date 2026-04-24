@@ -3,20 +3,20 @@ function doPost(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName("Orders") || ss.getSheetByName("Sheet1");
 
-    if (!sheet) {
-      sheet = ss.insertSheet("Orders");
-    }
+    if (!sheet) sheet = ss.insertSheet("Orders");
 
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         "時間",
         "userId",
-        "產品",
+        "購買內容",
+        "合計",
         "姓名",
         "電話",
         "地址/門市",
         "付款方式",
-        "配送方式"
+        "配送方式",
+        "備註"
       ]);
     }
 
@@ -25,12 +25,14 @@ function doPost(e) {
     sheet.appendRow([
       data.createdAt || new Date(),
       data.userId || "",
-      data.product || "",
+      data.itemsText || data.product || "",
+      data.total || "",
       data.name || "",
       data.phone || "",
       data.address || "",
       data.payment || "",
-      data.shipping || ""
+      data.shipping || "",
+      data.note || ""
     ]);
 
     return ContentService

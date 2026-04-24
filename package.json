@@ -1,6 +1,6 @@
 {
   "name": "ts-line-bot",
-  "version": "1.6.2",
+  "version": "1.6.6",
   "main": "server.js",
   "type": "commonjs",
   "dependencies": {
