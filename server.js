@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -92,6 +92,12 @@ async function handleEvent(event) {
 
   if (MEDICAL_RE.test(raw)) {
     return replyTextWithQuickReply(event.replyToken, DATA.doctorReferral, DATA.quickReplies.main);
+  }
+
+  // v60.2：購買清單高優先處理，避免被商品關鍵字、結帳流程或其他 intent 誤吃掉
+  const immediateCartAction = handleImmediateCartCommand(state, raw, msg);
+  if (immediateCartAction) {
+    return dispatchCartAction(event.replyToken, state, immediateCartAction);
   }
 
   let product = findProduct(msg);
@@ -854,6 +860,26 @@ function currentCheckoutItem(state) {
   return state.cart.find((x) => x.name === state.checkout.targetName) || null;
 }
 
+function handleImmediateCartCommand(state, raw, msg) {
+  const text = String(raw || "").trim();
+  const compact = normalize(text);
+
+  if (["清空購買清單", "清空購物清單", "清空清單", "清空購物車"].some((x) => compact === normalize(x) || compact.includes(normalize(x)))) {
+    return { type: "clear" };
+  }
+
+  if (compact === normalize("移除商品") || compact === normalize("刪除商品")) {
+    return { type: "remove_prompt" };
+  }
+
+  if (text.startsWith("刪除 ") || text.startsWith("移除 ")) {
+    const name = text.replace(/^(刪除|移除)\s*/, "").trim();
+    if (name) return { type: "remove_by_name", name };
+  }
+
+  return null;
+}
+
 function handleCartActions(state, raw, msg, product, combo) {
   if (raw.startsWith("加入清單 ")) {
     const name = raw.replace(/^加入清單\s*/, "").trim();
@@ -863,10 +889,11 @@ function handleCartActions(state, raw, msg, product, combo) {
     const name = raw.replace(/^只買這[個組]\s*/, "").trim();
     return { type: "single_buy_by_name", name };
   }
-  if (raw.startsWith("刪除 ")) {
-    const name = raw.replace(/^刪除\s*/, "").trim();
+  if (raw.startsWith("刪除 ") || raw.startsWith("移除 ")) {
+    const name = raw.replace(/^(刪除|移除)\s*/, "").trim();
     return { type: "remove_by_name", name };
   }
+  if (msg === normalize("移除商品") || msg === normalize("刪除商品")) return { type: "remove_prompt" };
   const intent = detectIntent(msg);
   if (intent === "cart") return { type: "view" };
   if (intent === "checkout") return { type: "checkout" };
@@ -882,11 +909,67 @@ function dispatchCartAction(replyToken, state, action) {
   if (action.type === "view") {
     return replyTextWithQuickReply(replyToken, buildCartText(state.cart), cartQuickReplies(state.checkout.step > 0));
   }
+
   if (action.type === "clear") {
     state.cart = [];
-    if (state.checkout.step > 0) state.checkout = emptyCheckout();
-    return replyTextWithQuickReply(replyToken, "已清空購買清單。", DATA.quickReplies.main);
+    state.checkout = emptyCheckout();
+    state.pendingSwitch = "";
+    state.pendingSwitchType = "";
+    return replyTextWithQuickReply(
+      replyToken,
+      "購買清單已清空，可以重新挑選🙂",
+      [
+        { label: "看產品", text: "看產品" },
+        { label: "幫我推薦", text: "幫我推薦" },
+        { label: "搭配組合", text: "看搭配組合" },
+      ]
+    );
   }
+
+  if (action.type === "remove_prompt") {
+    if (!state.cart.length) {
+      return replyTextWithQuickReply(replyToken, "目前購買清單是空的。", DATA.quickReplies.main);
+    }
+    return replyTextWithQuickReply(
+      replyToken,
+      "要移除哪一個？",
+      state.cart.map((item) => ({ label: item.name.slice(0, 20), text: `刪除 ${item.name}` }))
+    );
+  }
+
+  if (action.type === "remove_by_name") {
+    const name = action.name;
+    const before = state.cart.length;
+    removeItemFromCart(state, name);
+    if (state.checkout.targetName === name) state.checkout = emptyCheckout();
+
+    if (state.cart.length === before) {
+      return replyTextWithQuickReply(
+        replyToken,
+        `購買清單裡沒有「${name}」🙂`,
+        cartQuickReplies(state.checkout.step > 0)
+      );
+    }
+
+    if (!state.cart.length) {
+      return replyTextWithQuickReply(
+        replyToken,
+        `${name} 已移除，購買清單目前是空的。`,
+        [
+          { label: "看產品", text: "看產品" },
+          { label: "搭配組合", text: "看搭配組合" },
+          { label: "幫我推薦", text: "幫我推薦" },
+        ]
+      );
+    }
+
+    return replyTextWithQuickReply(
+      replyToken,
+      `${name} 已移除🙂\n\n${buildCartText(state.cart)}`,
+      cartQuickReplies(state.checkout.step > 0)
+    );
+  }
+
   if (action.type === "checkout") {
     if (!state.cart.length) {
       return replyTextWithQuickReply(replyToken, "目前購買清單是空的，先加入想買的商品或套餐吧🙂", DATA.quickReplies.main);
