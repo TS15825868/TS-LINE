@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -106,6 +106,17 @@ async function handleEvent(event) {
   const cartAction = handleCartActions(state, raw, msg, product, combo);
   if (cartAction) {
     return dispatchCartAction(event.replyToken, state, cartAction);
+  }
+
+  if (raw === "移除商品" || msg === normalize("移除商品")) {
+    if (!state.cart.length) {
+      return replyTextWithQuickReply(event.replyToken, "目前購買清單是空的。", DATA.quickReplies.main);
+    }
+    return replyTextWithQuickReply(
+      event.replyToken,
+      "要移除哪一個？",
+      state.cart.map((item) => ({ label: item.name.slice(0, 20), text: `刪除 ${item.name}` }))
+    );
   }
 
   // 已在結帳流程中，先優先處理填資料步驟，避免地址或門市被誤判成配送查詢
@@ -429,6 +440,10 @@ function addItemToCart(state, item) {
   }
 }
 
+function removeItemFromCart(state, name) {
+  state.cart = state.cart.filter((x) => x.name !== name);
+}
+
 function cartTotal(cart) {
   return cart.reduce((sum, item) => sum + item.subtotal, 0);
 }
@@ -447,7 +462,7 @@ function cartQuickReplies(hasCheckout = false) {
   const items = [
     { label: "看產品", text: "看產品" },
     { label: "看搭配組合", text: "看搭配組合" },
-    { label: "查看清單", text: "查看購買清單" },
+    { label: "移除商品", text: "移除商品" },
     { label: "直接結帳", text: "直接結帳" },
     { label: "清空清單", text: "清空購買清單" },
   ];
@@ -847,6 +862,10 @@ function handleCartActions(state, raw, msg, product, combo) {
   if (raw.startsWith("只買這個 ") || raw.startsWith("只買這組 ")) {
     const name = raw.replace(/^只買這[個組]\s*/, "").trim();
     return { type: "single_buy_by_name", name };
+  }
+  if (raw.startsWith("刪除 ")) {
+    const name = raw.replace(/^刪除\s*/, "").trim();
+    return { type: "remove_by_name", name };
   }
   const intent = detectIntent(msg);
   if (intent === "cart") return { type: "view" };
