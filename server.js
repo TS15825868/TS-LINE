@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
-  channelSecret: process.env.CHANNEL_SECRET || ""
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
+  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96"
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -16,7 +16,7 @@ if (!config.channelAccessToken || !config.channelSecret) {
 
 const client = new line.Client(config);
 const app = express();
-const CRM_URL = process.env.CRM_URL || "";
+const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const DATA = JSON.parse(fs.readFileSync(path.join(__dirname, "products.json"), "utf8"));
 const users = new Map();
 
