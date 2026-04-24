@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96"
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || ""
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -16,7 +16,7 @@ if (!config.channelAccessToken || !config.channelSecret) {
 
 const client = new line.Client(config);
 const app = express();
-const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+const CRM_URL = process.env.CRM_URL || "";
 const DATA = JSON.parse(fs.readFileSync(path.join(__dirname, "products.json"), "utf8"));
 const users = new Map();
 
@@ -28,7 +28,28 @@ const COMBO_ALIASES = Object.fromEntries((DATA.offers?.comboOffers || []).map((o
 // 不把「適不適合」列入敏感，避免一般成交導流被誤轉介。
 const SENSITIVE_RE = /(懷孕|孕婦|哺乳|高血壓|糖尿病|心臟|腎臟|腎病|肝|肝病|癌|化療|慢性病|嚴重過敏|中藥|西藥|服藥|吃藥|藥物|手術|月經|經期|感冒|發燒|兒童|小孩|寶寶|老人|長輩|副作用|禁忌|醫師|醫生|診斷)/;
 
-app.get("/", (req, res) => res.send("仙加味 LINE bot v66 is running."));
+// v68 Google / 官網 / 廣告入口自動導單：安全引導，不做療效宣稱。
+const LEAD_SOURCE_RULES = [
+  { key: "google", re: /(google|地圖|google商家|google看到|在google看到|從google來|搜尋看到|地圖看到)/i, title: "Google 入口" },
+  { key: "website", re: /(官網|網站|網頁|xianjiawei|在網站看到|官網看到)/i, title: "官網入口" },
+  { key: "ad", re: /(廣告|fb|facebook|ig|instagram|貼文|粉專|社群看到|廣告看到)/i, title: "廣告入口" }
+];
+const GENERAL_NEED_RE = /(補身體|食補|調養|日常調養|想補|想了解龜鹿|龜鹿怎麼選|怎麼挑|第一次買|不知道怎麼選|適合哪個|幫我看)/;
+const QUICK_ORDER_RE = /(直接填單|填單模板|快速填單|我要填資料|懶人填單)/;
+
+function detectLeadSource(raw, msg) {
+  const sourceText = `${raw || ""} ${msg || ""}`;
+  return LEAD_SOURCE_RULES.find((r) => r.re.test(sourceText)) || null;
+}
+function isGeneralNeedMessage(msg) {
+  return GENERAL_NEED_RE.test(msg);
+}
+function isQuickOrderTemplate(msg) {
+  return QUICK_ORDER_RE.test(msg);
+}
+
+
+app.get("/", (req, res) => res.send("仙加味 LINE bot v68 is running."));
 app.post("/webhook", line.middleware(config), async (req, res) => {
   try {
     await Promise.all((req.body.events || []).map(handleEvent));
@@ -88,6 +109,28 @@ async function handleEvent(event) {
 
   if (SENSITIVE_RE.test(raw)) {
     return replyTextWithQuickReply(token, DATA.doctorReferral, mainQuickReplies());
+  }
+
+  // v68：Google / 官網 / 廣告入口，先自動分流，不讓客人自己想要問什麼。
+  const leadSource = detectLeadSource(raw, msg);
+  if (leadSource) {
+    if (product) return replyFlex(token, buildSingleProductFlex(product));
+    if (combo) return replyFlex(token, buildSingleComboFlex(combo));
+    return replyTextWithQuickReply(token, buildLeadEntryText(leadSource), leadEntryQuickReplies());
+  }
+
+  // v68：客人只說「食補 / 調養 / 不知道怎麼選」時，直接給安全選擇入口。
+  if (isGeneralNeedMessage(msg) && !product && !combo) {
+    return replyTextWithQuickReply(token, buildGeneralNeedText(), leadEntryQuickReplies());
+  }
+
+  // v68：直接填單模板入口與簡易表單解析。
+  if (isQuickOrderTemplate(msg)) {
+    return replyTextWithQuickReply(token, buildQuickOrderTemplateText(), quickOrderReplies());
+  }
+  const directForm = parseDirectOrderForm(raw);
+  if (directForm) {
+    return handleDirectOrderForm(token, state, directForm);
   }
 
   // 購物車命令
@@ -434,11 +477,12 @@ function buildWelcomeFlex() {
   return {
     type: "flex",
     altText: "歡迎來到仙加味",
-    contents: heroBubble("仙加味", "歡迎來到官方 LINE。\n\n你可以直接點下面按鈕，我幫你整理產品、搭配與購買清單。", [
+    contents: heroBubble("仙加味", "歡迎來到官方 LINE。\n\n你可以直接點下面按鈕，我幫你整理產品、搭配與購買清單；也可以用快速填單。", [
       { label: "看產品", text: "看產品", primary: true },
       { label: "幫我推薦", text: "幫我推薦" },
       { label: "查看購買清單", text: "查看購買清單" },
-      { label: "直接下單", text: "我想直接下單" }
+      { label: "直接下單", text: "我想直接下單" },
+      { label: "快速填單", text: "直接填單" }
     ])
   };
 }
@@ -525,6 +569,78 @@ function buildRecommendFlex() {
   }) } };
 }
 
+
+function buildLeadEntryText(source) {
+  const sourceName = source?.title || "入口";
+  return `${sourceName}收到🙂\n\n我先用「日常安排」的方式幫你整理，不談誇張效果。你可以直接選一個方向：\n\n・想固定節奏 → 看龜鹿膏\n・想方便快速 → 看龜鹿飲\n・想放進料理 → 看龜鹿湯塊\n・想自己搭配 → 看鹿茸粉\n\n也可以直接讓我幫你推薦。`;
+}
+function buildGeneralNeedText() {
+  return "我先幫你用生活方式整理方向🙂\n\n如果你不確定怎麼選，可以先從下面幾個入口開始，我會再帶你看產品、搭配或購買清單。";
+}
+function leadEntryQuickReplies() {
+  return [
+    { label: "固定節奏", text: "看龜鹿膏" },
+    { label: "方便快速", text: "看龜鹿飲" },
+    { label: "放進料理", text: "看龜鹿湯塊" },
+    { label: "幫我推薦", text: "幫我推薦" },
+    { label: "看搭配", text: "看搭配組合" },
+    { label: "快速填單", text: "直接填單" }
+  ];
+}
+function buildQuickOrderTemplateText() {
+  return `可以，若你想快速下單，也可以直接照這個格式回覆：\n\n姓名：\n電話：\n地址 / 7-11門市：\n付款：匯款 / 貨到付款\n配送：宅配 / 7-11賣貨便 / 雙北親送\n商品：龜鹿膏 × 1\n\n我收到後會幫你整理訂單確認🙂`;
+}
+function quickOrderReplies() {
+  return [
+    { label: "看產品", text: "看產品" },
+    { label: "看搭配", text: "看搭配組合" },
+    { label: "查看清單", text: "查看購買清單" },
+    { label: "開始結帳", text: "直接結帳" }
+  ];
+}
+function parseDirectOrderForm(raw) {
+  const text = String(raw || "");
+  if (!/(姓名[:：]|電話[:：]|商品[:：])/.test(text)) return null;
+  const get = (label) => {
+    const re = new RegExp(`${label}[:：]\\s*([^\\n]+)`, "i");
+    const m = text.match(re);
+    return m ? m[1].trim() : "";
+  };
+  return {
+    name: get("姓名"),
+    phone: get("電話"),
+    address: get("地址") || get("門市"),
+    payment: get("付款"),
+    shipping: get("配送"),
+    productText: get("商品")
+  };
+}
+function handleDirectOrderForm(token, state, form) {
+  const item = form.productText ? findItemByText(`加入清單 ${form.productText}`) : null;
+  if (item) {
+    state.cart = [];
+    addItemToCart(state, item);
+  }
+  if (!state.cart.length) {
+    return replyTextWithQuickReply(token, "我有收到你的資料，但商品品項還不夠清楚。請先選商品或搭配組合。", productAndComboQuickReplies());
+  }
+  state.checkout = {
+    step: "confirm",
+    name: form.name || "",
+    phone: form.phone || "",
+    address: form.address || "",
+    payment: form.payment || "",
+    shipping: form.shipping || "",
+    confirmed: false
+  };
+  if (!state.checkout.name) { state.checkout.step = "name"; return replyTextWithQuickReply(token, `${cartSummaryText(state.cart)}\n\n請再補收件姓名👇`, orderQuickReplies()); }
+  if (!state.checkout.phone) { state.checkout.step = "phone"; return replyTextWithQuickReply(token, `${cartSummaryText(state.cart)}\n\n請再補收件電話👇`, orderQuickReplies()); }
+  if (!state.checkout.address) { state.checkout.step = "address"; return replyTextWithQuickReply(token, `${cartSummaryText(state.cart)}\n\n請再補收件地址或 7-11 門市資訊👇`, orderQuickReplies()); }
+  if (!state.checkout.payment) return askPayment(token, state);
+  if (!state.checkout.shipping) return askShipping(token, state);
+  return askOrderConfirm(token, state);
+}
+
 function buildPaymentText() {
   return `付款方式目前可安排：\n\n・匯款\n・貨到付款\n\n貨到付款可配合宅配或 7-11 賣貨便店到店。`;
 }
@@ -560,7 +676,8 @@ function mainQuickReplies() {
     { label: "幫我推薦", text: "幫我推薦" },
     { label: "查看清單", text: "查看購買清單" },
     { label: "搭配組合", text: "看搭配組合" },
-    { label: "直接下單", text: "我想直接下單" }
+    { label: "直接下單", text: "我想直接下單" },
+    { label: "快速填單", text: "直接填單" }
   ];
 }
 function orderQuickReplies() {
@@ -594,4 +711,4 @@ async function saveToCRM(data) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE bot v66 listening on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE bot v68 listening on ${port}`));
