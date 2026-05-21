@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96"
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.CHANNEL_SECRET
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -49,7 +49,7 @@ function isQuickOrderTemplate(msg) {
 }
 
 
-app.get("/", (req, res) => res.send("仙加味 LINE bot v68 is running."));
+app.get("/", (req, res) => res.send("仙加味 LINE bot v74 is running."));
 app.post("/webhook", line.middleware(config), async (req, res) => {
   try {
     await Promise.all((req.body.events || []).map(handleEvent));
@@ -190,6 +190,8 @@ function normalize(text) {
 function isCancel(msg) { return ["取消", "取消本次", "重來", "重新開始"].includes(msg); }
 function isClearCart(msg) { return msg.includes("清空購買清單") || msg.includes("清空購物清單") || msg === "清空清單"; }
 function money(n) { return `$${Number(n || 0).toLocaleString("en-US")}`; }
+function displayPrice(item) { return item.price > 0 ? money(item.price * (item.qty || 1)) : (item.priceText || "LINE 詢問"); }
+function productPriceText(p) { return p.priceText || (p.price > 0 ? money(p.price) : "請透過 LINE 詢問"); }
 function normalizeNameText(text) { return String(text || "").replace(/[「」]/g, "").trim(); }
 
 function detectProduct(msg) {
@@ -227,10 +229,10 @@ function detectIntent(msg) {
 }
 
 function makeProductCartItem(product) {
-  return { type: "product", key: `product:${product.name}`, name: product.name, qty: 1, price: Number(product.price || 0) };
+  return { type: "product", key: `product:${product.name}`, name: product.name, qty: 1, price: Number(product.price || 0), priceText: product.priceText || "LINE 詢問" };
 }
 function makeComboCartItem(combo) {
-  return { type: "combo", key: `combo:${combo.name}`, name: combo.name, qty: 1, price: Number(combo.price || 0) };
+  return { type: "combo", key: `combo:${combo.name}`, name: combo.name, qty: 1, price: Number(combo.price || 0), priceText: combo.priceText || "" };
 }
 function addItemToCart(state, item) {
   const found = state.cart.find((x) => x.key === item.key);
@@ -240,11 +242,12 @@ function addItemToCart(state, item) {
 function cartTotal(cart) { return cart.reduce((sum, i) => sum + Number(i.price || 0) * Number(i.qty || 1), 0); }
 function cartItemsText(cart) {
   if (!cart.length) return "目前購買清單是空的。";
-  return cart.map((i, idx) => `${idx + 1}. ${i.name} × ${i.qty}　${money(i.price * i.qty)}`).join("\n");
+  return cart.map((i, idx) => `${idx + 1}. ${i.name} × ${i.qty}　${displayPrice(i)}`).join("\n");
 }
 function cartSummaryText(cart) {
   if (!cart.length) return "目前購買清單是空的。";
-  return `目前購買清單：\n\n${cartItemsText(cart)}\n\n合計：${money(cartTotal(cart))}`;
+  const hasInquiry = cart.some((i) => !i.price || i.price <= 0);
+  return `目前購買清單：\n\n${cartItemsText(cart)}\n\n合計：${money(cartTotal(cart))}${hasInquiry ? "\n※部分品項需由 LINE 另行確認" : ""}`;
 }
 
 function handleAddToCart(token, state, raw, msg) {
@@ -504,14 +507,20 @@ function buildProductsCarousel() {
     contents: { type: "carousel", contents: DATA.products.map((p) => productBubble(p)) }
   };
 }
+function getProductImageUrl(p) {
+  if (p.imageUrl) return p.imageUrl;
+  const base = DATA.siteBaseUrl || "https://ts15825868.github.io/xianjiawei";
+  return `${base}/${p.image || "images/hero.jpg"}`;
+}
 function productBubble(p) {
   return {
     type: "bubble",
+    hero: { type: "image", url: getProductImageUrl(p), size: "full", aspectRatio: "1.51:1", aspectMode: "cover" },
     body: { type: "box", layout: "vertical", spacing: "md", contents: [
       { type: "text", text: p.name, weight: "bold", size: "lg" },
       { type: "text", text: p.description, wrap: true, size: "sm", color: "#666666" },
       { type: "text", text: `規格：${p.size}`, size: "sm" },
-      { type: "text", text: `建議售價：${money(p.price)}`, size: "md", weight: "bold", color: "#1F4E79" },
+      { type: "text", text: `建議售價：${productPriceText(p)}`, size: "md", weight: "bold", color: "#1F4E79" },
       { type: "text", text: "不確定怎麼選也沒關係，我可以幫你整理🙂", wrap: true, size: "xs", color: "#666666" }
     ]},
     footer: { type: "box", layout: "vertical", spacing: "sm", contents: [
