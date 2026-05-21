@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
@@ -82,7 +82,8 @@ function productFlex(p){
       {type:"text", text:p.displayName || p.name, weight:"bold", size:"xl", wrap:true},
       {type:"text", text:p.description || "", wrap:true, size:"sm", color:"#555555"},
       {type:"text", text:`規格：${p.spec || p.size || ""}`, wrap:true, size:"sm", color:"#555555"},
-      {type:"text", text:price, wrap:true, weight:"bold", color:"#7B1E1E"}
+      {type:"text", text:price, wrap:true, weight:"bold", color:"#7B1E1E"},
+      {type:"text", text:"想了解搭配方式與方案，歡迎加入 LINE 詢問。", wrap:true, size:"xs", color:"#777777"}
     ]},
     footer:{ type:"box", layout:"vertical", spacing:"sm", contents:[
       {type:"button", style:"primary", color:"#7B1E1E", action:{type:"message", label:"加入清單", text:`加入清單 ${p.displayName || p.name}`}},
@@ -95,7 +96,7 @@ function productCarousel(products=DATA.products){
   return { type:"flex", altText:"仙加味產品", contents:{ type:"carousel", contents:products.map(productFlex) } };
 }
 function comboFlex(c){
-  const body = [`內容：${(c.items||[]).join("＋")}`, c.gift?`附贈：${c.gift}`:"", `建議安排：${money(c.price)}（${c.priceNote||"可依需求調整"}）`, c.desc||""].filter(Boolean).join("\n");
+  const body = [`內容：${(c.items||[]).join("＋")}`, `建議安排：${money(c.price)}（${c.priceNote||"依搭配方式整理"}）`, c.desc||"", "想了解搭配方式與方案，歡迎加入 LINE 詢問。"].filter(Boolean).join("\n");
   return { type:"bubble", body:{ type:"box", layout:"vertical", spacing:"md", contents:[
     {type:"text", text:c.name, weight:"bold", size:"xl"},
     {type:"text", text:body, wrap:true, size:"sm", color:"#555555"}
@@ -106,6 +107,9 @@ function comboFlex(c){
   ]}};
 }
 function comboCarousel(){ return { type:"flex", altText:"仙加味搭配組合", contents:{ type:"carousel", contents:DATA.combos.map(comboFlex) } }; }
+function offerQuick(){ return [{label:"龜鹿膏",text:"龜鹿膏"},{label:"龜鹿飲",text:"龜鹿飲"},{label:"龜鹿湯塊",text:"龜鹿湯塊"},{label:"鹿茸粉",text:"鹿茸粉"},{label:"幫我推薦",text:"幫我推薦"}]; }
+function isOfferQuestion(msg){ return /優惠|折扣|活動|比較便宜|便宜一點|買多|方案|有比較划算|有沒有優惠|能不能便宜/.test(msg); }
+
 function reply(token, messages){ return client.replyMessage(token, Array.isArray(messages)?messages:[messages]); }
 
 app.get("/", (req,res)=>res.send("仙加味 LINE Bot is running"));
@@ -122,6 +126,10 @@ async function handleEvent(event){
   const state = getState(userId);
   const msg = event.message.text.trim();
   state.welcomed = true;
+
+  if(isOfferQuestion(msg)){
+    return reply(event.replyToken, textMsg("目前會依搭配方式、數量與需求協助整理較適合的方案🙂\n你想先了解哪一項呢？", offerQuick()));
+  }
 
   // highest priority cart management
   if(/^(清空購買清單|清空清單|清空購物清單)$/.test(msg)){
