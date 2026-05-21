@@ -6,15 +6,28 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 if (!config.channelAccessToken || !config.channelSecret) {
   console.warn("CHANNEL_ACCESS_TOKEN / CHANNEL_SECRET 尚未設定，請至 Render Environment 設定。");
 }
 
-const DATA = JSON.parse(fs.readFileSync(path.join(__dirname, "products.json"), "utf8"));
+function loadData(){
+  const dataPath = fs.existsSync(path.join(__dirname, "data.json")) ? path.join(__dirname, "data.json") : path.join(__dirname, "products.json");
+  const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+  data.combos = data.combos || (data.offers && data.offers.comboOffers) || [];
+  data.products = (data.products || []).map(p => ({
+    ...p,
+    spec: p.spec || p.size || "",
+    displayName: p.displayName || p.name,
+    imageUrl: p.imageUrl || ((data.siteUrl || "https://ts15825868.github.io/xianjiawei/") + (p.image || "images/logo.png"))
+  }));
+  return data;
+}
+
+const DATA = loadData();
 const CRM_URL = process.env.CRM_URL || "";
 const app = express();
 const client = new line.Client(config);
@@ -25,12 +38,15 @@ function getState(userId){
   if(!states.has(userId)) states.set(userId, { cart: [], checkout: null, welcomed: false });
   return states.get(userId);
 }
+function cleanName(text){
+  return String(text || "").replace(/我要買|我要|加入清單|加入購買清單|直接買|只買|看|了解|刪除|移除/g, "").trim();
+}
 function productByName(text){
-  const raw = String(text || "").replace(/我要買|我要|加入清單|加入購買清單|直接買|看|了解|刪除|移除/g, "").trim();
+  const raw = cleanName(text);
   return DATA.products.find(p => p.name === raw || p.displayName === raw || (p.aliases||[]).some(a => raw.includes(a) || String(text).includes(a)));
 }
 function comboByName(text){
-  const raw = String(text || "").replace(/我要買|我要|加入清單|加入購買清單|直接買|看|了解|刪除|移除/g, "").trim();
+  const raw = cleanName(text);
   return DATA.combos.find(c => c.name === raw || (c.aliases||[]).some(a => raw.includes(a) || String(text).includes(a)));
 }
 function cartItemFromProduct(p){ return { type:"product", id:p.id, name:p.displayName || p.name, qty:1, price:p.price || 0 }; }
@@ -51,19 +67,25 @@ function textMsg(text, quick){
   if(quick) m.quickReply = qr(quick);
   return m;
 }
+function priceUnit(p){
+  if(p.id === "guilu-drink") return " / 包";
+  if(p.id === "guilu-gao" || p.id === "lurong") return " / 罐";
+  if(p.id && p.id.includes("block")) return " / 盒";
+  return "";
+}
 function productFlex(p){
-  const price = p.price ? `建議售價：${money(p.price)}${p.id==='guilu-drink'?' / 包':p.id==='guilu-block-red'?' / 盒':''}` : "價格：LINE 詢問";
+  const price = p.price ? `建議售價：${money(p.price)}${priceUnit(p)}` : "價格：LINE 詢問";
   return {
     type:"bubble", size:"mega",
     hero:{ type:"image", url:p.imageUrl, size:"full", aspectRatio:"1:1", aspectMode:"cover" },
     body:{ type:"box", layout:"vertical", spacing:"md", contents:[
       {type:"text", text:p.displayName || p.name, weight:"bold", size:"xl", wrap:true},
-      {type:"text", text:p.description, wrap:true, size:"sm", color:"#555555"},
-      {type:"text", text:`規格：${p.spec}`, wrap:true, size:"sm", color:"#555555"},
-      {type:"text", text:price, wrap:true, weight:"bold", color:"#0B1F3B"}
+      {type:"text", text:p.description || "", wrap:true, size:"sm", color:"#555555"},
+      {type:"text", text:`規格：${p.spec || p.size || ""}`, wrap:true, size:"sm", color:"#555555"},
+      {type:"text", text:price, wrap:true, weight:"bold", color:"#7B1E1E"}
     ]},
     footer:{ type:"box", layout:"vertical", spacing:"sm", contents:[
-      {type:"button", style:"primary", color:"#06C755", action:{type:"message", label:"加入清單", text:`加入清單 ${p.displayName || p.name}`}},
+      {type:"button", style:"primary", color:"#7B1E1E", action:{type:"message", label:"加入清單", text:`加入清單 ${p.displayName || p.name}`}},
       {type:"button", style:"secondary", action:{type:"message", label:"直接買", text:`直接買 ${p.displayName || p.name}`}},
       {type:"button", style:"link", action:{type:"message", label:"查看清單", text:"查看購買清單"}}
     ]}
@@ -78,7 +100,7 @@ function comboFlex(c){
     {type:"text", text:c.name, weight:"bold", size:"xl"},
     {type:"text", text:body, wrap:true, size:"sm", color:"#555555"}
   ]}, footer:{ type:"box", layout:"vertical", spacing:"sm", contents:[
-    {type:"button", style:"primary", color:"#06C755", action:{type:"message", label:"加入清單", text:`加入清單 ${c.name}`}},
+    {type:"button", style:"primary", color:"#7B1E1E", action:{type:"message", label:"加入清單", text:`加入清單 ${c.name}`}},
     {type:"button", style:"secondary", action:{type:"message", label:"直接買", text:`直接買 ${c.name}`}},
     {type:"button", style:"link", action:{type:"message", label:"查看清單", text:"查看購買清單"}}
   ]}};
@@ -87,13 +109,14 @@ function comboCarousel(){ return { type:"flex", altText:"仙加味搭配組合",
 function reply(token, messages){ return client.replyMessage(token, Array.isArray(messages)?messages:[messages]); }
 
 app.get("/", (req,res)=>res.send("仙加味 LINE Bot is running"));
+app.get("/healthz", (req,res)=>res.json({ok:true, time:new Date().toISOString()}));
 app.post("/webhook", line.middleware(config), async (req,res)=>{
   try { await Promise.all((req.body.events||[]).map(handleEvent)); res.sendStatus(200); }
   catch(e){ console.error(e); res.sendStatus(500); }
 });
 
 async function handleEvent(event){
-  if(event.type === "follow") return reply(event.replyToken, textMsg("歡迎來到仙加味・龜鹿🙂\n可以直接點下面按鈕，不用自己打字。", mainQuick()));
+  if(event.type === "follow") return reply(event.replyToken, textMsg("歡迎來到仙加味・龜鹿🙂\n自1978延續至今，仙加味品牌創立於2008。\n可以直接點下面按鈕，不用自己打字。", mainQuick()));
   if(event.type !== "message" || event.message.type !== "text") return;
   const userId = event.source.userId;
   const state = getState(userId);
@@ -161,7 +184,7 @@ async function handleEvent(event){
     return reply(event.replyToken, textMsg("這部分會因每個人的身體狀況不同，建議先由合作中醫師協助了解，會比較準確🙂\n\n章無忌中醫師 LINE：@changwuchi\nhttps://lin.ee/1MK4NR9", mainQuick()));
   }
   if(/推薦|怎麼選|適合哪個|不知道|Google|廣告|網站|食補|調養/.test(msg)){
-    return reply(event.replyToken, textMsg("我先幫你用生活方式整理👇\n\n想固定節奏 → 龜鹿膏\n想方便快速 → 龜鹿飲\n想放進料理 → 龜鹿湯塊\n想自己搭配 → 鹿茸粉", [
+    return reply(event.replyToken, textMsg("我先幫你用生活方式整理👇\n\n想固定節奏 → 龜鹿膏\n想方便快速 → 龜鹿飲\n想放進料理 → 龜鹿湯塊\n想自己搭配 → 鹿茸粉\n想了解傳統規格 → 傳統紅盒一斤裝", [
       {label:"看產品",text:"看產品"},{label:"搭配組合",text:"看搭配組合"},{label:"直接填單",text:"直接填單"}
     ]));
   }
@@ -186,8 +209,8 @@ async function continueCheckout(event, state, msg){
   const ck = state.checkout;
   if(ck.step === "name") { ck.name=msg; ck.step="phone"; return reply(event.replyToken, textMsg("收到。請回覆收件電話。", [{label:"取消",text:"取消"}])); }
   if(ck.step === "phone") { ck.phone=msg; ck.step="address"; return reply(event.replyToken, textMsg("收到。請回覆收件地址或 7-11 門市資訊。", [{label:"取消",text:"取消"}])); }
-  if(ck.step === "address") { ck.address=msg; ck.step="payment"; return reply(event.replyToken, textMsg("請選擇付款方式：", DATA.payments.map(x=>({label:x,text:`付款 ${x}`})))); }
-  if(ck.step === "payment") { ck.payment=msg.replace(/^付款\s*/,""); ck.step="shipping"; return reply(event.replyToken, textMsg("請選擇配送方式：", DATA.shipping.map(x=>({label:x.slice(0,20),text:`配送 ${x}`})))); }
+  if(ck.step === "address") { ck.address=msg; ck.step="payment"; return reply(event.replyToken, textMsg("請選擇付款方式：", (DATA.payments||[]).map(x=>({label:x,text:`付款 ${x}`})))); }
+  if(ck.step === "payment") { ck.payment=msg.replace(/^付款\s*/,""); ck.step="shipping"; return reply(event.replyToken, textMsg("請選擇配送方式：", (DATA.shipping||[]).map(x=>({label:x.slice(0,20),text:`配送 ${x}`})))); }
   if(ck.step === "shipping") {
     ck.shipping=msg.replace(/^配送\s*/,""); ck.step="confirm";
     return reply(event.replyToken, textMsg(`請確認訂單👇\n\n${cartText(state.cart)}\n\n姓名：${ck.name}\n電話：${ck.phone}\n地址／門市：${ck.address}\n付款：${ck.payment}\n配送：${ck.shipping}`, [{label:"確認送出",text:"確認送出"},{label:"修改清單",text:"查看購買清單"},{label:"取消",text:"取消"}]));
