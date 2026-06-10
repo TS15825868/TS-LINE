@@ -11,5 +11,23 @@
   "dependencies": {
     "@line/bot-sdk": "^8.5.0",
     "express": "^4.18.2"
+  },
+  "xianjiaweiFinalV80": {
+    "noPublicPriceOnWebsite": true,
+    "products": [
+      "龜鹿膏100g",
+      "龜鹿飲30cc玻璃瓶",
+      "龜鹿飲180cc鋁袋",
+      "龜鹿湯塊75g",
+      "龜鹿膠一斤裝",
+      "鹿茸粉75g"
+    ],
+    "shipping": [
+      "宅配",
+      "7-11賣貨便",
+      "門市自取",
+      "雙北親送"
+    ],
+    "tangkuaiJiaoNote": "龜鹿湯塊與龜鹿膠內容物相同，差異在包裝方式與規格。龜鹿湯塊為精品小包裝，龜鹿膠為一斤裝。"
   }
 }
