@@ -1,3 +1,4 @@
+
 "use strict";
 const line = require("@line/bot-sdk");
 const express = require("express");
@@ -5,10 +6,12 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.CHANNEL_SECRET,
 };
-if (!config.channelAccessToken || !config.channelSecret) console.warn("CHANNEL_ACCESS_TOKEN / CHANNEL_SECRET 尚未設定。");
+if (!config.channelAccessToken || !config.channelSecret) {
+  console.warn("CHANNEL_ACCESS_TOKEN / CHANNEL_SECRET 尚未設定。");
+}
 
 function loadData(){
   const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data.json"), "utf8"));
@@ -25,14 +28,14 @@ function loadData(){
 }
 
 const DATA = loadData();
-const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+const CRM_URL = process.env.CRM_URL || "";
 const app = express();
 const client = new line.Client(config);
 const states = new Map();
 
 function money(n){ return `$${Number(n || 0).toLocaleString("zh-TW")}`; }
 function getState(userId){ if(!states.has(userId)) states.set(userId,{cart:[],checkout:null}); return states.get(userId); }
-function cleanName(text){ return String(text||"").replace(/我要買|我要|加入清單|加入購買清單|直接買|只買|看|了解|刪除|移除/g,"").trim(); }
+function cleanName(text){ return String(text||"").replace(/我要買|我要|加入清單|加入購買清單|直接買|只買|建議售價|活動優惠|食用方式|看|了解|刪除|移除/g,"").trim(); }
 function productByName(text){
   const raw = cleanName(text);
   return DATA.products.find(p => p.name===raw || p.displayName===raw || String(text).includes(p.name) || String(text).includes(p.displayName) || (p.aliases||[]).some(a => raw.includes(a) || String(text).includes(a)));
@@ -47,12 +50,27 @@ function addToCart(state,item){ const found=state.cart.find(x=>x.type===item.typ
 function cartTotal(cart){ return cart.reduce((s,i)=>s+(i.price||0)*(i.qty||1),0); }
 function cartText(cart){
   if(!cart.length) return "目前購買清單是空的。";
-  const lines = cart.map((i,idx)=>`${idx+1}. ${i.name} × ${i.qty}${i.price ? "　"+money((i.price||0)*(i.qty||1)) : ""}`);
-  return `目前購買清單：\n\n${lines.join("\n")}\n\n預估合計：${money(cartTotal(cart))}\n\n實際金額、活動與配送方式會由客服再協助確認。`;
+  const lines = cart.map((i,idx)=>`${idx+1}. ${i.name} × ${i.qty}${i.price ? "\n"+money((i.price||0)*(i.qty||1)) : ""}`);
+  return `目前購買清單：\n\n${lines.join("\n\n")}\n\n預估合計：${money(cartTotal(cart))}\n\n實際金額、活動與配送方式會由客服再協助確認。`;
 }
 function qr(items){ return {items:items.slice(0,13).map(i=>({type:"action",action:{type:"message",label:i.label,text:i.text}}))}; }
 function textMsg(text,quick){ const m={type:"text",text}; if(quick) m.quickReply=qr(quick); return m; }
 function reply(token,messages){ return client.replyMessage(token,Array.isArray(messages)?messages:[messages]); }
+
+function productPriceText(p){
+  const activity = (p.activity && p.activity.length) ? `\n\n活動優惠：\n${p.activity.map(x => `・${x}`).join("\n")}` : "";
+  return `【${p.displayName || p.name}】\n\n規格：${p.spec || p.size || ""}\n建議售價：${money(p.price)} / ${p.unit || "件"}${activity}\n\n配送方式：\n✓ 宅配\n✓ 7-11賣貨便\n✓ 門市自取\n✓ 雙北親送`;
+}
+function productActivityText(p){
+  if(p.activity && p.activity.length){
+    return `【${p.displayName || p.name}｜活動優惠】\n\n${p.activity.map(x => `・${x}`).join("\n")}\n\n單品建議售價：${money(p.price)} / ${p.unit || "件"}\n\n實際活動與配送方式由客服協助確認。`;
+  }
+  return `【${p.displayName || p.name}｜活動優惠】\n\n目前多入優惠請洽客服確認。\n\n單品建議售價：${money(p.price)} / ${p.unit || "件"}`;
+}
+function productUsageText(p){
+  const ing = p.ingredients && p.ingredients.length ? `\n\n成分：${p.ingredients.join("、")}` : "";
+  return `【${p.displayName || p.name}｜食用方式】\n\n${(p.usage || []).join("\n\n")}${ing}`;
+}
 
 function productFlex(p){
   return {type:"bubble",size:"mega",
@@ -61,11 +79,14 @@ function productFlex(p){
       {type:"text",text:p.displayName||p.name,weight:"bold",size:"xl",wrap:true},
       {type:"text",text:p.description||"",wrap:true,size:"sm",color:"#555555"},
       {type:"text",text:`規格：${p.spec||p.size||""}`,wrap:true,size:"sm",color:"#555555"},
-      {type:"text",text:"價格與搭配方案可直接詢問LINE",wrap:true,weight:"bold",color:"#7B1E1E"}
+      {type:"text",text:"價格、活動與搭配方案可點下方按鈕查看",wrap:true,weight:"bold",color:"#7B1E1E"}
     ]},
     footer:{type:"box",layout:"vertical",spacing:"sm",contents:[
       {type:"button",style:"primary",color:"#7B1E1E",action:{type:"message",label:"加入清單",text:`加入清單 ${p.displayName||p.name}`}},
-      {type:"button",style:"secondary",action:{type:"message",label:"直接買",text:`直接買 ${p.displayName||p.name}`}},
+      {type:"button",style:"secondary",action:{type:"message",label:"立即下單",text:`直接買 ${p.displayName||p.name}`}},
+      {type:"button",style:"link",action:{type:"message",label:"建議售價",text:`建議售價 ${p.displayName||p.name}`}},
+      {type:"button",style:"link",action:{type:"message",label:"活動優惠",text:`活動優惠 ${p.displayName||p.name}`}},
+      {type:"button",style:"link",action:{type:"message",label:"食用方式",text:`食用方式 ${p.displayName||p.name}`}},
       {type:"button",style:"link",action:{type:"message",label:"查看清單",text:"查看購買清單"}}
     ]}
   };
@@ -78,55 +99,15 @@ function comboFlex(c){
     {type:"text",text:body,wrap:true,size:"sm",color:"#555555"}
   ]},footer:{type:"box",layout:"vertical",spacing:"sm",contents:[
     {type:"button",style:"primary",color:"#7B1E1E",action:{type:"message",label:"加入清單",text:`加入清單 ${c.name}`}},
-    {type:"button",style:"secondary",action:{type:"message",label:"直接買",text:`直接買 ${c.name}`}},
+    {type:"button",style:"secondary",action:{type:"message",label:"立即下單",text:`直接買 ${c.name}`}},
     {type:"button",style:"link",action:{type:"message",label:"查看清單",text:"查看購買清單"}}
   ]}};
 }
 function comboCarousel(){ return {type:"flex",altText:"仙加味搭配組合",contents:{type:"carousel",contents:DATA.combos.map(comboFlex)}}; }
 
 function priceQuick(){ return [{label:"單項售價",text:"單項售價"},{label:"套餐售價",text:"套餐售價"},{label:"看產品",text:"看產品"}]; }
-function singlePriceReply(){ return `【仙加味｜單項售價與活動】
-
-龜鹿飲 30cc玻璃瓶
-單瓶 50元
-12瓶 500元
-24瓶 900元
-
-龜鹿飲 180cc鋁袋
-單包 200元
-6包 1000元
-12包 1800元
-
-龜鹿膏 100g
-單罐 2000元
-2罐優惠請洽客服
-
-龜鹿湯塊 75g（2兩／8塊）
-單盒 2000元
-2盒優惠請洽客服
-
-鹿茸粉 75g
-單罐 2000元
-2罐優惠請洽客服
-
-龜鹿膠 600g（一斤裝／32塊）
-單盒 15000元
-大量／通路合作請洽客服`; }
-function comboPriceReply(){ return `【仙加味｜套餐搭配】
-
-日常節奏組
-龜鹿膏＋龜鹿飲
-
-養生燉湯組
-龜鹿湯塊＋鹿茸粉
-
-完整體驗組
-龜鹿膏＋龜鹿飲＋龜鹿湯塊＋鹿茸粉
-
-專業補養組
-龜鹿膠＋龜鹿湯塊
-
-套餐優惠會依數量、配送方式與活動內容，由客服協助確認。`; }
+function singlePriceReply(){ return `【仙加味｜單項售價與活動】\n\n龜鹿飲 30cc玻璃瓶\n單瓶 50元\n12瓶 500元\n24瓶 900元\n\n龜鹿飲 180cc鋁袋\n單包 200元\n6包 1000元\n12包 1800元\n\n龜鹿膏 100g\n單罐 2000元\n2罐優惠請洽客服\n\n龜鹿湯塊 75g（2兩／8塊）\n單盒 2000元\n2盒優惠請洽客服\n\n鹿茸粉 75g\n單罐 2000元\n2罐優惠請洽客服\n\n龜鹿膠 600g（一斤裝／32塊）\n單盒 15000元\n大量／通路合作請洽客服`; }
+function comboPriceReply(){ return `【仙加味｜套餐搭配】\n\n日常節奏組\n龜鹿膏＋龜鹿飲\n\n養生燉湯組\n龜鹿湯塊＋鹿茸粉\n\n完整體驗組\n龜鹿膏＋龜鹿飲＋龜鹿湯塊＋鹿茸粉\n\n專業補養組\n龜鹿膠＋龜鹿湯塊\n\n套餐優惠會依數量、配送方式與活動內容，由客服協助確認。`; }
 function mainQuick(){ return [{label:"看產品",text:"看產品"},{label:"單項售價",text:"單項售價"},{label:"套餐售價",text:"套餐售價"},{label:"查看清單",text:"查看購買清單"},{label:"直接下單",text:"我想直接下單"}]; }
 function cartActions(state){ return state.cart.length ? [{label:"繼續加商品",text:"看產品"},{label:"移除商品",text:"移除商品"},{label:"清空清單",text:"清空購買清單"},{label:"直接結帳",text:"直接結帳"}] : [{label:"看產品",text:"看產品"},{label:"套餐售價",text:"套餐售價"}]; }
 function isOfferQuestion(msg){ return /優惠|折扣|活動|比較便宜|便宜一點|買多|方案|有比較划算|有沒有優惠|能不能便宜/.test(msg); }
@@ -139,6 +120,10 @@ async function handleEvent(event){
   if(event.type==="follow") return reply(event.replyToken,textMsg("歡迎來到仙加味・龜鹿🙂\n可以直接點下面按鈕，不用自己打字。",mainQuick()));
   if(event.type!=="message" || event.message.type!=="text") return;
   const userId=event.source.userId; const state=getState(userId); const msg=event.message.text.trim();
+
+  if(msg.startsWith("建議售價")){ const p=productByName(msg); return reply(event.replyToken,textMsg(p?productPriceText(p):"請先點產品卡上的建議售價按鈕。",mainQuick())); }
+  if(msg.startsWith("活動優惠")){ const p=productByName(msg); return reply(event.replyToken,textMsg(p?productActivityText(p):"請先點產品卡上的活動優惠按鈕。",mainQuick())); }
+  if(msg.startsWith("食用方式")){ const p=productByName(msg); return reply(event.replyToken,textMsg(p?productUsageText(p):"請先點產品卡上的食用方式按鈕。",mainQuick())); }
 
   if(/價格|售價|價錢|多少錢/.test(msg)) return reply(event.replyToken,textMsg("請問想了解哪一種價格？",priceQuick()));
   if(/單項售價|單品售價|單項價格/.test(msg)) return reply(event.replyToken,textMsg(singlePriceReply(),mainQuick()));

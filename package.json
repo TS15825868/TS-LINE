@@ -6,7 +6,8 @@
     "node": "22.x"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "npm install"
   },
   "dependencies": {
     "@line/bot-sdk": "10.8.0",
