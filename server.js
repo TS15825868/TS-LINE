@@ -1,4 +1,5 @@
 "use strict";
+
 const line = require("@line/bot-sdk");
 const express = require("express");
 const fs = require("fs");
@@ -9,14 +10,14 @@ const config = {
   channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
 };
 
-if (!config.channelAccessToken || !config.channelSecret) {
-  console.warn("CHANNEL_ACCESS_TOKEN / CHANNEL_SECRET 尚未設定。");
-}
+const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+
+const app = express();
+const client = new line.Client(config);
+const states = new Map();
 
 function loadData() {
-  const data = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "data.json"), "utf8")
-  );
+  const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data.json"), "utf8"));
 
   data.products = (data.products || []).map((p) => ({
     ...p,
@@ -36,13 +37,6 @@ function loadData() {
 }
 
 const DATA = loadData();
-const CRM_URL =
-  process.env.CRM_URL ||
-  "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
-
-const app = express();
-const client = new line.Client(config);
-const states = new Map();
 
 function money(n) {
   return `$${Number(n || 0).toLocaleString("zh-TW")}`;
@@ -53,6 +47,29 @@ function getState(userId) {
     states.set(userId, { cart: [], checkout: null });
   }
   return states.get(userId);
+}
+
+function qr(items) {
+  return {
+    items: items.slice(0, 13).map((i) => ({
+      type: "action",
+      action: {
+        type: "message",
+        label: i.label,
+        text: i.text,
+      },
+    })),
+  };
+}
+
+function textMsg(text, quick) {
+  const m = { type: "text", text };
+  if (quick) m.quickReply = qr(quick);
+  return m;
+}
+
+function reply(token, messages) {
+  return client.replyMessage(token, Array.isArray(messages) ? messages : [messages]);
 }
 
 function cleanName(text) {
@@ -128,34 +145,37 @@ function cartText(cart) {
     return `${idx + 1}. ${i.name} × ${i.qty}${i.price ? "\n" + money(subtotal) : ""}`;
   });
 
-  return `目前購買清單：\n\n${lines.join(
-    "\n\n"
-  )}\n\n預估合計：${money(
-    cartTotal(cart)
-  )}\n\n實際金額、活動與配送方式會由客服再協助確認。`;
+  return `目前購買清單：
+
+${lines.join("\n\n")}
+
+預估合計：${money(cartTotal(cart))}
+
+實際金額、活動與配送方式會由客服再協助確認。`;
 }
 
-function qr(items) {
-  return {
-    items: items.slice(0, 13).map((i) => ({
-      type: "action",
-      action: {
-        type: "message",
-        label: i.label,
-        text: i.text,
-      },
-    })),
-  };
+function mainQuick() {
+  return [
+    { label: "看產品", text: "看產品" },
+    { label: "單項售價", text: "單項售價" },
+    { label: "套餐售價", text: "套餐售價" },
+    { label: "查看清單", text: "查看購買清單" },
+    { label: "直接下單", text: "我想直接下單" },
+  ];
 }
 
-function textMsg(text, quick) {
-  const m = { type: "text", text };
-  if (quick) m.quickReply = qr(quick);
-  return m;
-}
-
-function reply(token, messages) {
-  return client.replyMessage(token, Array.isArray(messages) ? messages : [messages]);
+function cartActions(state) {
+  return state.cart.length
+    ? [
+        { label: "繼續加商品", text: "看產品" },
+        { label: "移除商品", text: "移除商品" },
+        { label: "清空清單", text: "清空購買清單" },
+        { label: "直接結帳", text: "直接結帳" },
+      ]
+    : [
+        { label: "看產品", text: "看產品" },
+        { label: "套餐售價", text: "套餐售價" },
+      ];
 }
 
 function productPriceText(p) {
@@ -396,14 +416,6 @@ function comboCarousel() {
   };
 }
 
-function priceQuick() {
-  return [
-    { label: "單項售價", text: "單項售價" },
-    { label: "套餐售價", text: "套餐售價" },
-    { label: "看產品", text: "看產品" },
-  ];
-}
-
 function singlePriceReply() {
   return `【仙加味｜單項售價與活動】
 
@@ -452,28 +464,12 @@ function comboPriceReply() {
 套餐優惠會依數量、配送方式與活動內容，由客服協助確認。`;
 }
 
-function mainQuick() {
+function priceQuick() {
   return [
-    { label: "看產品", text: "看產品" },
     { label: "單項售價", text: "單項售價" },
     { label: "套餐售價", text: "套餐售價" },
-    { label: "查看清單", text: "查看購買清單" },
-    { label: "直接下單", text: "我想直接下單" },
+    { label: "看產品", text: "看產品" },
   ];
-}
-
-function cartActions(state) {
-  return state.cart.length
-    ? [
-        { label: "繼續加商品", text: "看產品" },
-        { label: "移除商品", text: "移除商品" },
-        { label: "清空清單", text: "清空購買清單" },
-        { label: "直接結帳", text: "直接結帳" },
-      ]
-    : [
-        { label: "看產品", text: "看產品" },
-        { label: "套餐售價", text: "套餐售價" },
-      ];
 }
 
 function isOfferQuestion(msg) {
@@ -482,11 +478,147 @@ function isOfferQuestion(msg) {
   );
 }
 
+function checkoutCard(title, desc, buttons) {
+  return {
+    type: "flex",
+    altText: title,
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          {
+            type: "text",
+            text: title,
+            weight: "bold",
+            size: "xl",
+            color: "#7B1E1E",
+            wrap: true,
+          },
+          {
+            type: "text",
+            text: desc,
+            size: "sm",
+            color: "#555555",
+            wrap: true,
+          },
+        ],
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: buttons.map((b, idx) => ({
+          type: "button",
+          style: idx === 0 ? "primary" : "secondary",
+          color: idx === 0 ? "#7B1E1E" : undefined,
+          action: {
+            type: "message",
+            label: b.label,
+            text: b.text,
+          },
+        })),
+      },
+    },
+  };
+}
+
+function orderConfirmFlex(state, ck) {
+  return {
+    type: "flex",
+    altText: "請確認訂單",
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          {
+            type: "text",
+            text: "請確認訂單",
+            weight: "bold",
+            size: "xl",
+            color: "#7B1E1E",
+          },
+          {
+            type: "text",
+            text: cartText(state.cart),
+            wrap: true,
+            size: "sm",
+          },
+          {
+            type: "separator",
+          },
+          {
+            type: "text",
+            text: `姓名：${ck.name}
+電話：${ck.phone}
+地址／門市：${ck.address}
+付款：${ck.payment}
+配送：${ck.shipping}`,
+            wrap: true,
+            size: "sm",
+            color: "#555555",
+          },
+        ],
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            color: "#7B1E1E",
+            action: {
+              type: "message",
+              label: "確認送出",
+              text: "確認送出",
+            },
+          },
+          {
+            type: "button",
+            style: "secondary",
+            action: {
+              type: "message",
+              label: "取消",
+              text: "取消",
+            },
+          },
+        ],
+      },
+    },
+  };
+}
+
+async function saveCRM(data) {
+  if (!CRM_URL) return;
+
+  try {
+    await fetch(CRM_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+  } catch (e) {
+    console.error("CRM error", e);
+  }
+}
+
 app.get("/", (req, res) => res.send("仙加味 LINE Bot is running"));
 
-app.get("/healthz", (req, res) =>
-  res.json({ ok: true, time: new Date().toISOString() })
-);
+app.get("/healthz", (req, res) => {
+  res.json({
+    ok: true,
+    time: new Date().toISOString(),
+  });
+});
 
 app.post("/webhook", line.middleware(config), async (req, res) => {
   try {
@@ -514,29 +646,19 @@ async function handleEvent(event) {
 
   if (msg.startsWith("建議售價")) {
     const p = productByName(msg);
-    return reply(
-      event.replyToken,
-      textMsg(p ? productPriceText(p) : "請先點產品卡上的建議售價按鈕。", mainQuick())
-    );
+    return reply(event.replyToken, textMsg(p ? productPriceText(p) : "請先點產品卡上的建議售價按鈕。", mainQuick()));
   }
 
   if (msg.startsWith("活動優惠")) {
     const p = productByName(msg);
-    return reply(
-      event.replyToken,
-      textMsg(p ? productActivityText(p) : "請先點產品卡上的活動優惠按鈕。", mainQuick())
-    );
+    return reply(event.replyToken, textMsg(p ? productActivityText(p) : "請先點產品卡上的活動優惠按鈕。", mainQuick()));
   }
 
   if (msg.startsWith("食用方式")) {
     const p = productByName(msg);
-    return reply(
-      event.replyToken,
-      textMsg(p ? productUsageText(p) : "請先點產品卡上的食用方式按鈕。", mainQuick())
-    );
+    return reply(event.replyToken, textMsg(p ? productUsageText(p) : "請先點產品卡上的食用方式按鈕。", mainQuick()));
   }
 
-  // 順序很重要：先判斷單項 / 套餐，再判斷一般價格
   if (/單項售價|單品售價|單項價格/.test(msg)) {
     return reply(event.replyToken, textMsg(singlePriceReply(), mainQuick()));
   }
@@ -550,21 +672,14 @@ async function handleEvent(event) {
   }
 
   if (isOfferQuestion(msg)) {
-    return reply(
-      event.replyToken,
-      textMsg("目前會依搭配方式、數量與需求協助整理較適合的方案🙂\n你想先了解哪一項呢？", [
-        { label: "單項活動", text: "單項售價" },
-        { label: "套餐搭配", text: "套餐售價" },
-        { label: "看產品", text: "看產品" },
-      ])
-    );
+    return reply(event.replyToken, textMsg("目前會依搭配方式、數量與需求協助整理較適合的方案🙂", priceQuick()));
   }
 
   if (/龜鹿膠|湯塊跟膠|湯塊.*膠|膠.*湯塊|差別/.test(msg)) {
     return reply(
       event.replyToken,
       textMsg(
-        "龜鹿湯塊與龜鹿膠使用相同原料與製程，內容物相同，差異在包裝方式與規格。\n\n龜鹿湯塊：75g（2兩／8塊，每塊約9.375g），精品小包裝，方便燉湯與沖泡。\n\n龜鹿膠：600g（一斤裝／32塊，每塊約18.75g），適合固定使用、家庭使用與通路合作。",
+        "龜鹿湯塊與龜鹿膠使用相同原料與製程，內容物相同，差異在包裝方式與規格。\n\n龜鹿湯塊：75g（2兩／8塊，每塊約9.375g）\n\n龜鹿膠：600g（一斤裝／32塊，每塊約18.75g）",
         mainQuick()
       )
     );
@@ -573,10 +688,12 @@ async function handleEvent(event) {
   if (/配送|運費|寄送|親送|宅配/.test(msg)) {
     return reply(
       event.replyToken,
-      textMsg(
-        "【配送方式】\n\n✓ 宅配\n✓ 7-11賣貨便\n✓ 萬華門市自取\n✓ 雙北地區可安排親送\n\n詳細配送與運費由客服協助確認。",
-        mainQuick()
-      )
+      checkoutCard("配送方式", "請選擇你方便的配送方式。", [
+        { label: "宅配", text: "宅配" },
+        { label: "7-11賣貨便", text: "7-11賣貨便" },
+        { label: "門市自取", text: "門市自取" },
+        { label: "雙北親送", text: "雙北親送" },
+      ])
     );
   }
 
@@ -605,20 +722,11 @@ async function handleEvent(event) {
 
   if (msg.startsWith("刪除 ") || msg.startsWith("移除 ")) {
     const name = msg.replace(/^刪除\s*|^移除\s*/, "").trim();
-    const before = state.cart.length;
     state.cart = state.cart.filter((i) => i.name !== name);
-
-    if (state.cart.length === before) {
-      return reply(event.replyToken, textMsg("購買清單裡沒有這個品項🙂", mainQuick()));
-    }
-
     return reply(event.replyToken, textMsg(`${name} 已移除。\n\n${cartText(state.cart)}`, cartActions(state)));
   }
 
-  if (
-    state.checkout &&
-    !["看產品", "看搭配組合", "查看購買清單", "取消"].includes(msg)
-  ) {
+  if (state.checkout && !["看產品", "看搭配組合", "查看購買清單", "取消"].includes(msg)) {
     return continueCheckout(event, state, msg);
   }
 
@@ -654,10 +762,7 @@ async function handleEvent(event) {
     const item = c ? cartItemFromCombo(c) : cartItemFromProduct(p);
     addToCart(state, item);
 
-    return reply(
-      event.replyToken,
-      textMsg(`${item.name} 已加入購買清單🙂\n\n${cartText(state.cart)}`, cartActions(state))
-    );
+    return reply(event.replyToken, textMsg(`${item.name} 已加入購買清單🙂\n\n${cartText(state.cart)}`, cartActions(state)));
   }
 
   if (msg.startsWith("直接買") || msg.startsWith("我要買") || msg.startsWith("我要 ")) {
@@ -668,54 +773,8 @@ async function handleEvent(event) {
       return reply(event.replyToken, textMsg("可以先看產品或搭配組合，再點按鈕直接加入。", mainQuick()));
     }
 
-    const item = c ? cartItemFromCombo(c) : cartItemFromProduct(p);
-
-    if (state.cart.length) {
-      return reply(
-        event.replyToken,
-        textMsg(`你目前購買清單裡已有品項。\n要把「${item.name}」加入清單，還是只買這個？`, [
-          { label: "加入清單", text: `加入清單 ${item.name}` },
-          { label: "只買這個", text: `只買 ${item.name}` },
-          { label: "查看清單", text: "查看購買清單" },
-        ])
-      );
-    }
-
-    state.cart = [item];
-    return startCheckout(event, state);
-  }
-
-  if (msg.startsWith("只買 ")) {
-    const p = productByName(msg);
-    const c = comboByName(msg);
-
-    if (!p && !c) {
-      return reply(event.replyToken, textMsg("找不到這個品項，請再點一次。", mainQuick()));
-    }
-
     state.cart = [c ? cartItemFromCombo(c) : cartItemFromProduct(p)];
     return startCheckout(event, state);
-  }
-
-  if (/懷孕|哺乳|高血壓|糖尿病|心臟|腎臟|肝|癌|化療|服藥|吃藥|藥物|手術|禁忌|副作用|診斷|醫師|醫生/.test(msg)) {
-    return reply(
-      event.replyToken,
-      textMsg(
-        "這部分會因每個人的身體狀況不同，建議先由合作中醫師協助了解，會比較準確🙂\n\n章無忌中醫師 LINE：@changwuchi\nhttps://lin.ee/1MK4NR9",
-        mainQuick()
-      )
-    );
-  }
-
-  if (/推薦|怎麼選|適合哪個|不知道|Google|廣告|網站|食補|調養/.test(msg)) {
-    return reply(
-      event.replyToken,
-      textMsg("我先幫你用生活方式整理👇\n\n想固定節奏 → 龜鹿膏\n想方便快速 → 龜鹿飲\n想放進料理 → 龜鹿湯塊\n想固定使用或通路合作 → 龜鹿膠\n想自己搭配 → 鹿茸粉", [
-        { label: "看產品", text: "看產品" },
-        { label: "單項售價", text: "單項售價" },
-        { label: "套餐售價", text: "套餐售價" },
-      ])
-    );
   }
 
   const p = productByName(msg);
@@ -744,79 +803,89 @@ function startCheckout(event, state) {
     shipping: "",
   };
 
-  return reply(
-    event.replyToken,
-    textMsg(`${cartText(state.cart)}\n\n請先回覆收件姓名。`, [
-      { label: "看產品", text: "看產品" },
-      { label: "查看清單", text: "查看購買清單" },
+  return reply(event.replyToken, [
+    textMsg(cartText(state.cart)),
+    checkoutCard("填寫收件姓名", "請直接回覆收件人姓名。", [
       { label: "取消", text: "取消" },
-    ])
-  );
+    ]),
+  ]);
 }
 
 async function continueCheckout(event, state, msg) {
   const ck = state.checkout;
+  const text = msg.trim();
 
   if (ck.step === "name") {
-    ck.name = msg;
+    ck.name = text;
     ck.step = "phone";
-    return reply(event.replyToken, textMsg("收到。請回覆收件電話。", [{ label: "取消", text: "取消" }]));
+    return reply(event.replyToken, checkoutCard("填寫收件電話", "請直接回覆收件人電話。", [
+      { label: "取消", text: "取消" },
+    ]));
   }
 
   if (ck.step === "phone") {
-    ck.phone = msg;
+    ck.phone = text;
     ck.step = "address";
-    return reply(event.replyToken, textMsg("收到。請回覆收件地址、7-11門市資訊，或雙北親送地址。", [{ label: "取消", text: "取消" }]));
+    return reply(event.replyToken, checkoutCard("填寫收件地址", "請回覆收件地址、7-11門市資訊，或門市自取備註。", [
+      { label: "取消", text: "取消" },
+    ]));
   }
 
   if (ck.step === "address") {
-    ck.address = msg;
+    ck.address = text;
     ck.step = "payment";
-    return reply(
-      event.replyToken,
-      textMsg(
-        "請選擇付款方式：",
-        DATA.payments.map((x) => ({
-          label: x,
-          text: `付款 ${x}`,
-        }))
-      )
-    );
+    return reply(event.replyToken, checkoutCard("選擇付款方式", "請選擇付款方式。", [
+      { label: "匯款", text: "匯款" },
+      { label: "貨到付款", text: "貨到付款" },
+      { label: "取消", text: "取消" },
+    ]));
   }
 
   if (ck.step === "payment") {
-    ck.payment = msg.replace(/^付款\s*/, "");
+    if (/匯款/.test(text)) ck.payment = "匯款";
+    else if (/貨到付款|貨付|到付/.test(text)) ck.payment = "貨到付款";
+    else {
+      return reply(event.replyToken, checkoutCard("選擇付款方式", "請選擇付款方式。", [
+        { label: "匯款", text: "匯款" },
+        { label: "貨到付款", text: "貨到付款" },
+        { label: "取消", text: "取消" },
+      ]));
+    }
+
     ck.step = "shipping";
-    return reply(
-      event.replyToken,
-      textMsg(
-        "請選擇配送方式：",
-        DATA.shipping.map((x) => ({
-          label: x.slice(0, 20),
-          text: `配送 ${x}`,
-        }))
-      )
-    );
+    return reply(event.replyToken, checkoutCard("選擇配送方式", "請選擇配送方式。", [
+      { label: "宅配", text: "宅配" },
+      { label: "7-11賣貨便", text: "7-11賣貨便" },
+      { label: "門市自取", text: "門市自取" },
+      { label: "雙北親送", text: "雙北親送" },
+      { label: "取消", text: "取消" },
+    ]));
   }
 
   if (ck.step === "shipping") {
-    ck.shipping = msg.replace(/^配送\s*/, "");
-    ck.step = "confirm";
+    if (/宅配/.test(text)) ck.shipping = "宅配";
+    else if (/7-11|711|賣貨便|超商/.test(text)) ck.shipping = "7-11賣貨便";
+    else if (/自取|門市/.test(text)) ck.shipping = "門市自取";
+    else if (/雙北|親送/.test(text)) ck.shipping = "雙北親送";
+    else {
+      return reply(event.replyToken, checkoutCard("選擇配送方式", "請選擇配送方式。", [
+        { label: "宅配", text: "宅配" },
+        { label: "7-11賣貨便", text: "7-11賣貨便" },
+        { label: "門市自取", text: "門市自取" },
+        { label: "雙北親送", text: "雙北親送" },
+        { label: "取消", text: "取消" },
+      ]));
+    }
 
-    return reply(
-      event.replyToken,
-      textMsg(
-        `請確認訂單👇\n\n${cartText(state.cart)}\n\n姓名：${ck.name}\n電話：${ck.phone}\n地址／門市：${ck.address}\n付款：${ck.payment}\n配送：${ck.shipping}`,
-        [
-          { label: "確認送出", text: "確認送出" },
-          { label: "修改清單", text: "查看購買清單" },
-          { label: "取消", text: "取消" },
-        ]
-      )
-    );
+    ck.step = "confirm";
+    return reply(event.replyToken, orderConfirmFlex(state, ck));
   }
 
-  if (ck.step === "confirm" && msg === "確認送出") {
+  if (ck.step === "confirm") {
+    if (!/確認送出|確認|送出/.test(text)) {
+      return reply(event.replyToken, orderConfirmFlex(state, ck));
+    }
+
     const summary = {
       cart: state.cart,
       total: cartTotal(state.cart),
@@ -830,28 +899,6 @@ async function continueCheckout(event, state, msg) {
     state.checkout = null;
 
     return reply(event.replyToken, textMsg("已收到你的資料，我們會再為你確認金額、活動與配送安排🙂", mainQuick()));
-  }
-
-  return reply(
-    event.replyToken,
-    textMsg("請依照按鈕或提示回覆。", [
-      { label: "確認送出", text: "確認送出" },
-      { label: "取消", text: "取消" },
-    ])
-  );
-}
-
-async function saveCRM(data) {
-  if (!CRM_URL) return;
-
-  try {
-    await fetch(CRM_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  } catch (e) {
-    console.error("CRM error", e);
   }
 }
 
