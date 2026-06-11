@@ -1,0 +1,13 @@
+{
+  "version": "v107",
+  "fixes": [
+    "Google Sheet 訂單總表改成一項商品一列",
+    "商品、數量、單位、方案、小計分欄",
+    "同一筆訂單共用同一個訂單編號",
+    "出貨管理也改成一項商品一列",
+    "匯款對帳仍維持一筆訂單一列",
+    "客戶資料仍維持一位客戶一列"
+  ],
+  "apps_script": "google_apps_script_v107.js",
+  "note": "請用 google_apps_script_v107.js 覆蓋 Apps Script，並重新部署新版本。"
+}
