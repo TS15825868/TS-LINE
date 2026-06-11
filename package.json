@@ -1,6 +1,6 @@
 {
-  "name": "xianjiawei-lineoa-v107",
-  "version": "1.0.7",
+  "name": "xianjiawei-lineoa-v108",
+  "version": "1.0.8",
   "main": "server.js",
   "engines": {
     "node": "22.x"

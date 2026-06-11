@@ -6,11 +6,11 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
-const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+const CRM_URL = process.env.CRM_URL || "";
 const app = express();
 const client = new line.Client(config);
 const states = new Map();
@@ -660,14 +660,8 @@ async function continueCheckout(event, state, msg) {
 
   if (ck.step === "phone") {
     ck.phone = text;
-    ck.step = "address";
-    return reply(event.replyToken, flexCard("第三步｜地址或門市資訊", "請回覆收件地址、7-11門市資訊，或門市自取備註。", [{ label: "取消", text: "取消" }]));
-  }
-
-  if (ck.step === "address") {
-    ck.address = text;
     ck.step = "payment";
-    return reply(event.replyToken, flexCard("第四步｜付款方式", "請選擇付款方式。", [
+    return reply(event.replyToken, flexCard("第三步｜付款方式", "請選擇付款方式。", [
       { label: "匯款", text: "匯款" },
       { label: "貨到付款", text: "貨到付款" },
       { label: "取消", text: "取消" }
@@ -677,14 +671,14 @@ async function continueCheckout(event, state, msg) {
   if (ck.step === "payment") {
     if (/匯款/.test(text)) ck.payment = "匯款";
     else if (/貨到付款|貨付|到付/.test(text)) ck.payment = "貨到付款";
-    else return reply(event.replyToken, flexCard("第四步｜付款方式", "請選擇付款方式。", [
+    else return reply(event.replyToken, flexCard("第三步｜付款方式", "請選擇付款方式。", [
       { label: "匯款", text: "匯款" },
       { label: "貨到付款", text: "貨到付款" },
       { label: "取消", text: "取消" }
     ]));
 
     ck.step = "shipping";
-    return reply(event.replyToken, flexCard("第五步｜配送方式", "請選擇配送方式。", [
+    return reply(event.replyToken, flexCard("第四步｜配送方式", "請選擇配送方式。", [
       { label: "宅配", text: "宅配" },
       { label: "7-11賣貨便", text: "7-11賣貨便" },
       { label: "門市自取", text: "門市自取" },
@@ -694,18 +688,42 @@ async function continueCheckout(event, state, msg) {
   }
 
   if (ck.step === "shipping") {
-    if (/宅配/.test(text)) ck.shipping = "宅配";
-    else if (/7-11|711|賣貨便|超商/.test(text)) ck.shipping = "7-11賣貨便";
-    else if (/自取|門市/.test(text)) ck.shipping = "門市自取";
-    else if (/雙北|親送/.test(text)) ck.shipping = "雙北親送";
-    else return reply(event.replyToken, flexCard("第五步｜配送方式", "請選擇配送方式。", [
+    if (/宅配/.test(text)) {
+      ck.shipping = "宅配";
+      ck.step = "address";
+      return reply(event.replyToken, flexCard("第五步｜收件地址", "請回覆完整收件地址。", [{ label: "取消", text: "取消" }]));
+    }
+
+    if (/7-11|711|賣貨便|超商/.test(text)) {
+      ck.shipping = "7-11賣貨便";
+      ck.step = "address";
+      return reply(event.replyToken, flexCard("第五步｜7-11門市資訊", "請回覆 7-11 門市名稱或門市地址。\n例如：內江門市、台北市萬華區⋯⋯", [{ label: "取消", text: "取消" }]));
+    }
+
+    if (/自取|門市/.test(text)) {
+      ck.shipping = "門市自取";
+      ck.address = "門市自取，客服確認取貨時間";
+      ck.step = "confirm";
+      return reply(event.replyToken, orderConfirmFlex(state, ck));
+    }
+
+    if (/雙北|親送/.test(text)) {
+      ck.shipping = "雙北親送";
+      ck.step = "address";
+      return reply(event.replyToken, flexCard("第五步｜親送地址", "請回覆雙北親送地址與方便聯繫時間。", [{ label: "取消", text: "取消" }]));
+    }
+
+    return reply(event.replyToken, flexCard("第四步｜配送方式", "請選擇配送方式。", [
       { label: "宅配", text: "宅配" },
       { label: "7-11賣貨便", text: "7-11賣貨便" },
       { label: "門市自取", text: "門市自取" },
       { label: "雙北親送", text: "雙北親送" },
       { label: "取消", text: "取消" }
     ]));
+  }
 
+  if (ck.step === "address") {
+    ck.address = text;
     ck.step = "confirm";
     return reply(event.replyToken, orderConfirmFlex(state, ck));
   }
