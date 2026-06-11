@@ -1,0 +1,28 @@
+{
+  "version": "v104",
+  "features": [
+    "活動優惠改 Flex Carousel 並提供直接加入／直接下單按鈕",
+    "所有產品卡改為選數量加入／選數量下單",
+    "新增數量選擇器",
+    "符合活動數量自動套活動價：30cc 12瓶500、24瓶900；180cc 6包1000、12包1800",
+    "可自行輸入數量，若剛好符合活動數量也會自動套優惠",
+    "套餐搭配卡片保留加入清單與直接購買",
+    "購物車顯示數量、方案、小計、預估合計"
+  ],
+  "keep": [
+    "server.js",
+    "data.json",
+    "package.json",
+    "images/",
+    "google_apps_script_v103.js"
+  ],
+  "delete_old": [
+    "products.json",
+    "flex_combo.json",
+    "flex_lifestyle.json",
+    "flex_main.json",
+    "google_apps_script.js",
+    "google_script.js",
+    "舊 README txt"
+  ]
+}
