@@ -854,11 +854,11 @@
     }
   ],
   "store": {
-    "name": "萬華門市",
+    "name": "仙加味",
     "address": "台北市萬華區西昌街52號",
-    "mapUrl": "https://www.google.com/maps?q=台北市萬華區西昌街52號",
-    "note": "建議先透過 LINE 聯絡，確認現場與安排時間。",
-    "heritage": "自1978延續至今・仙加味品牌創立於2008"
+    "area": "台北市萬華區",
+    "pickupNote": "門市自取請先透過官方 LINE 確認取貨時間。",
+    "lineId": "@762jybnm"
   },
   "brandStory": {
     "originTitle": "自1978延續至今",
