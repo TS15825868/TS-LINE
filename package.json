@@ -1,6 +1,6 @@
 {
-  "name": "xianjiawei-lineoa-v121-master",
-  "version": "1.2.1",
+  "name": "xianjiawei-lineoa-v122-master",
+  "version": "1.2.2",
   "main": "server.js",
   "engines": {
     "node": "22.x"

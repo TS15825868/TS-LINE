@@ -538,8 +538,8 @@ async function handlePostback(event) {
   return reply(event.replyToken, textMsg("可以直接點下面按鈕，我幫你整理🙂", mainQuick()));
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v110 running"));
-app.get("/healthz", (req, res) => res.json({ ok: true, version: "v110", time: new Date().toISOString() }));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v122 running"));
+app.get("/healthz", (req, res) => res.json({ ok: true, version: "v122", time: new Date().toISOString() }));
 
 app.post("/webhook", line.middleware(config), async (req, res) => {
   try {
@@ -655,6 +655,17 @@ async function continueCheckout(event, state, msg) {
   const ck = state.checkout;
   const text = msg.trim();
 
+  if (text === "返回付款方式") {
+    ck.step = "payment";
+    return reply(event.replyToken, flexCard("第三步｜付款方式", "請選擇付款方式。", [
+      { label: "現金付款", text: "現金付款" },
+      { label: "匯款", text: "匯款" },
+      { label: "貨到付款", text: "貨到付款" },
+      { label: "TWQR建置中", text: "TWQR（建置中）" },
+      { label: "取消", text: "取消" }
+    ]));
+  }
+
   if (ck.step === "name") {
     ck.name = text;
     ck.step = "phone";
@@ -665,18 +676,29 @@ async function continueCheckout(event, state, msg) {
     ck.phone = text;
     ck.step = "payment";
     return reply(event.replyToken, flexCard("第三步｜付款方式", "請選擇付款方式。", [
+      { label: "現金付款", text: "現金付款" },
       { label: "匯款", text: "匯款" },
       { label: "貨到付款", text: "貨到付款" },
+      { label: "TWQR建置中", text: "TWQR（建置中）" },
       { label: "取消", text: "取消" }
     ]));
   }
 
   if (ck.step === "payment") {
-    if (/匯款/.test(text)) ck.payment = "匯款";
+    if (/TWQR|台灣Pay|台灣支付/.test(text)) {
+      return reply(event.replyToken, flexCard("仙加味｜TWQR付款", "TWQR付款功能建置中，請先選擇其他付款方式。\n\n目前可先選擇：\n・現金付款\n・匯款\n・貨到付款", [
+        { label: "返回付款方式", text: "返回付款方式" },
+        { label: "聯絡客服", text: "聯絡客服" }
+      ]));
+    }
+    if (/現金|現金付款|付現/.test(text)) ck.payment = "現金付款";
+    else if (/匯款/.test(text)) ck.payment = "匯款";
     else if (/貨到付款|貨付|到付/.test(text)) ck.payment = "貨到付款";
     else return reply(event.replyToken, flexCard("第三步｜付款方式", "請選擇付款方式。", [
+      { label: "現金付款", text: "現金付款" },
       { label: "匯款", text: "匯款" },
       { label: "貨到付款", text: "貨到付款" },
+      { label: "TWQR建置中", text: "TWQR（建置中）" },
       { label: "取消", text: "取消" }
     ]));
 
@@ -753,4 +775,4 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v110 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v122 running on ${port}`));
