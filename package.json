@@ -1,15 +1,15 @@
 {
-  "name": "xianjiawei-lineoa-v127-master",
-  "version": "1.2.7",
+  "name": "xianjiawei-lineoa-v128-master",
+  "version": "1.2.8",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
   "engines": {
     "node": "22.x"
   },
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "@line/bot-sdk": "^8.5.0",
+    "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
   }
 }
