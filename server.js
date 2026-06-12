@@ -559,8 +559,8 @@ function smartFallbackFlex() {
   ]);
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v128 running"));
-app.get("/healthz", (req, res) => res.json({ ok: true, version: "v128", time: new Date().toISOString() }));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v129 running"));
+app.get("/healthz", (req, res) => res.json({ ok: true, version: "v129", time: new Date().toISOString() }));
 
 
 function afterActionButtons(productId) {
@@ -711,7 +711,7 @@ function websiteSourceReplyV125(source) {
   if (/怎麼選|首頁/.test(source)) return choiceHubFlex();
   if (/FAQ|問題/.test(source)) return faqHubFlex();
   if (/套餐/.test(source)) return comboCarousel();
-  return flexCard("歡迎來到仙加味・龜鹿", "我看到您是從「" + source + "」進來的。\n\n可以先依照平常使用習慣選擇，我會幫您整理方向。", [
+  return flexCard("歡迎來到仙加味", "我看到您是從「" + source + "」進來的。\n\n可以先依照平常使用習慣選擇，我會幫您整理方向。", [
     { label: "怎麼選龜鹿", text: "怎麼選龜鹿" },
     { label: "看看產品", data: pb("products") },
     { label: "了解價格方案", data: pb("price_menu") },
@@ -975,7 +975,7 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v128 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v129 running on ${port}`));
 function choiceHubFlex() {
   return flexCard("仙加味｜怎麼選龜鹿", "如果不知道從哪一項開始，可以先依照平常使用習慣選擇。\n\n請點選最接近您的情況：", [
     { label: "固定補養（龜鹿膏）", text: "固定補養" },
@@ -1048,7 +1048,7 @@ function websiteSourceReplyV125(source) {
   if (/鹿茸粉/.test(source)) return recommendationFlexV125("自行搭配熱飲");
   if (/怎麼選/.test(source)) return choiceHubFlex();
   if (/套餐/.test(source)) return comboCarousel();
-  return flexCard("歡迎來到仙加味・龜鹿", "我看到您是從「" + source + "」進來的。\n\n可以先依照平常使用習慣選擇，我會幫您整理方向。", [
+  return flexCard("歡迎來到仙加味", "我看到您是從「" + source + "」進來的。\n\n可以先依照平常使用習慣選擇，我會幫您整理方向。", [
     { label: "怎麼選龜鹿", text: "怎麼選龜鹿" },
     { label: "看產品", data: pb("products") },
     { label: "價格方案", data: pb("price_menu") },
