@@ -538,8 +538,165 @@ async function handlePostback(event) {
   return reply(event.replyToken, textMsg("可以直接點下面按鈕，我幫你整理🙂", mainQuick()));
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v124 running"));
-app.get("/healthz", (req, res) => res.json({ ok: true, version: "v124", time: new Date().toISOString() }));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v125 running"));
+app.get("/healthz", (req, res) => res.json({ ok: true, version: "v125", time: new Date().toISOString() }));
+
+
+function afterActionButtons(productId) {
+  return [
+    { label: "看看使用方式", data: pb("usage", { productId }) },
+    { label: "了解價格方案", data: pb("price", { productId }) },
+    { label: "加入清單", data: pb("qty_menu", { productId, mode: "add" }) },
+    { label: "看看其他產品", data: pb("products") }
+  ];
+}
+
+function choiceHubFlex() {
+  return flexCard("仙加味｜怎麼選龜鹿", "先不用急著看全部產品。\n\n從平常最容易執行的方式開始就好🙂\n\n請問您比較偏向哪一種？", [
+    { label: "固定安排", text: "固定安排" },
+    { label: "方便飲用", text: "方便飲用" },
+    { label: "料理燉湯", text: "料理燉湯" },
+    { label: "家庭使用", text: "家庭使用" },
+    { label: "自行搭配", text: "自行搭配" }
+  ]);
+}
+
+function fallbackChoiceFlex() {
+  return flexCard("我幫您整理", "沒關係🙂\n\n我用最簡單的方式幫您整理。\n\n請問您平常比較像哪一種？", [
+    { label: "第一次接觸", text: "第一次接觸" },
+    { label: "固定安排", text: "固定安排" },
+    { label: "方便飲用", text: "方便飲用" },
+    { label: "料理燉湯", text: "料理燉湯" },
+    { label: "家庭使用", text: "家庭使用" }
+  ]);
+}
+
+function productFitFlex(productId) {
+  const map = {
+    "guilu-gao": {
+      title: "龜鹿膏｜適合我嗎？",
+      desc: "龜鹿膏比較適合：\n\n✓ 想建立固定補養節奏\n✓ 習慣熱飲安排\n✓ 希望搭配料理使用\n\n請問您比較接近哪種情況？",
+      buttons: [
+        { label: "固定安排", text: "固定安排" },
+        { label: "熱飲使用", text: "熱飲使用" },
+        { label: "料理搭配", text: "料理搭配" },
+        { label: "看價格方案", data: pb("price", { productId }) }
+      ]
+    },
+    "guilu-drink-30": {
+      title: "龜鹿飲｜適合我嗎？",
+      desc: "龜鹿飲比較適合：\n\n✓ 第一次體驗\n✓ 外出攜帶\n✓ 希望方便飲用\n\n請問您比較偏向哪種情況？",
+      buttons: [
+        { label: "第一次體驗", text: "第一次體驗" },
+        { label: "外出攜帶", text: "外出攜帶" },
+        { label: "固定飲用", text: "固定飲用" },
+        { label: "看價格方案", data: pb("price", { productId }) }
+      ]
+    },
+    "guilu-drink-180": {
+      title: "龜鹿飲180cc｜適合我嗎？",
+      desc: "180cc鋁袋與30cc玻璃瓶內容相同。\n\n差異在容量與包裝，比較適合家庭分享、固定回購與日常飲用安排。",
+      buttons: [
+        { label: "家庭使用", text: "家庭使用" },
+        { label: "固定飲用", text: "固定飲用" },
+        { label: "看優惠方案", data: pb("price", { productId }) },
+        { label: "加入清單", data: pb("qty_menu", { productId, mode: "add" }) }
+      ]
+    },
+    "guilu-tangkuai": {
+      title: "龜鹿湯塊｜適合我嗎？",
+      desc: "龜鹿湯塊比較適合：\n\n✓ 雞湯燉煮\n✓ 排骨燉煮\n✓ 熱飲沖泡\n✓ 喜歡料理\n\n請問您比較想怎麼使用？",
+      buttons: [
+        { label: "雞湯燉煮", text: "雞湯燉煮" },
+        { label: "排骨燉煮", text: "排骨燉煮" },
+        { label: "熱飲沖泡", text: "熱飲沖泡" },
+        { label: "看價格方案", data: pb("price", { productId }) }
+      ]
+    },
+    "guilu-jiao": {
+      title: "龜鹿膠｜適合我嗎？",
+      desc: "龜鹿膠與龜鹿湯塊內容物相同。\n\n差異在規格與包裝。\n\n比較適合：\n✓ 固定使用\n✓ 家庭使用\n✓ 通路合作",
+      buttons: [
+        { label: "家庭使用", text: "家庭使用" },
+        { label: "固定安排", text: "固定安排" },
+        { label: "通路合作", text: "通路合作" },
+        { label: "看價格方案", data: pb("price", { productId }) }
+      ]
+    },
+    "luerong-fen": {
+      title: "鹿茸粉｜適合我嗎？",
+      desc: "鹿茸粉比較適合：\n\n✓ 熱飲搭配\n✓ 牛奶豆漿\n✓ 自行調飲\n✓ 習慣粉狀產品",
+      buttons: [
+        { label: "熱飲搭配", text: "熱飲搭配" },
+        { label: "牛奶搭配", text: "牛奶搭配" },
+        { label: "豆漿搭配", text: "豆漿搭配" },
+        { label: "看價格方案", data: pb("price", { productId }) }
+      ]
+    }
+  };
+  const item = map[productId] || map["guilu-gao"];
+  return flexCard(item.title, item.desc, item.buttons);
+}
+
+function recommendationFlexV125(kind) {
+  let productId = "guilu-gao";
+  let title = "推薦｜龜鹿膏";
+  let desc = "適合希望把補養安排進日常節奏的人。\n\n可直接食用，也可搭配熱飲與料理。";
+  if (/方便|外出|第一次|偶爾|飲用/.test(kind)) {
+    productId = "guilu-drink-30";
+    title = "推薦｜龜鹿飲";
+    desc = "適合外出攜帶、工作忙碌或第一次接觸龜鹿系列的人。\n\n開封即可飲用。";
+  } else if (/料理|燉湯|雞湯|排骨/.test(kind)) {
+    productId = "guilu-tangkuai";
+    title = "推薦｜龜鹿湯塊";
+    desc = "適合雞湯、排骨湯與日常料理。\n\n也可熱水沖泡後飲用。";
+  } else if (/家庭|大包裝|長期|固定使用/.test(kind)) {
+    productId = "guilu-jiao";
+    title = "推薦｜龜鹿膠";
+    desc = "與龜鹿湯塊內容物相同。\n\n差異在包裝與規格，一斤裝較適合固定使用者與家庭安排。";
+  } else if (/自行|搭配|牛奶|豆漿|粉/.test(kind)) {
+    productId = "luerong-fen";
+    title = "推薦｜鹿茸粉";
+    desc = "可加入熱水、牛奶或豆漿。\n\n適合習慣自行調整的人。";
+  }
+  return flexCard(title, desc, afterActionButtons(productId));
+}
+
+function faqHubFlex() {
+  return flexCard("仙加味｜常見問題", "請選擇想了解的方向，我幫您整理。", [
+    { label: "產品問題", text: "產品問題" },
+    { label: "使用方式", text: "使用方式" },
+    { label: "配送付款", text: "配送付款" },
+    { label: "門市資訊", text: "門市資訊" },
+    { label: "合作洽詢", text: "合作洽詢" }
+  ]);
+}
+
+function endGuideFlex() {
+  return flexCard("還想了解什麼呢？", "可以繼續看其他產品，或直接了解價格方案與下單方式。", [
+    { label: "看看其他產品", data: pb("products") },
+    { label: "怎麼選龜鹿", text: "怎麼選龜鹿" },
+    { label: "了解價格方案", data: pb("price_menu") },
+    { label: "聯絡客服", text: "聯絡客服" }
+  ]);
+}
+
+function websiteSourceReplyV125(source) {
+  if (/龜鹿膏/.test(source)) return productFitFlex("guilu-gao");
+  if (/龜鹿飲/.test(source)) return productFitFlex("guilu-drink-30");
+  if (/湯塊/.test(source)) return productFitFlex("guilu-tangkuai");
+  if (/龜鹿膠/.test(source)) return productFitFlex("guilu-jiao");
+  if (/鹿茸粉/.test(source)) return productFitFlex("luerong-fen");
+  if (/怎麼選|首頁/.test(source)) return choiceHubFlex();
+  if (/FAQ|問題/.test(source)) return faqHubFlex();
+  if (/套餐/.test(source)) return comboCarousel();
+  return flexCard("歡迎來到仙加味・龜鹿", "我看到您是從「" + source + "」進來的。\n\n可以先依照平常使用習慣選擇，我會幫您整理方向。", [
+    { label: "怎麼選龜鹿", text: "怎麼選龜鹿" },
+    { label: "看看產品", data: pb("products") },
+    { label: "了解價格方案", data: pb("price_menu") },
+    { label: "聯絡客服", text: "聯絡客服" }
+  ]);
+}
 
 app.post("/webhook", line.middleware(config), async (req, res) => {
   try {
@@ -562,18 +719,18 @@ async function handleEvent(event) {
   const source = detectWebsiteSource(msg);
   if (source) {
     state.source = source;
-    return reply(event.replyToken, websiteSourceReply(source));
+    return reply(event.replyToken, websiteSourceReplyV125(source));
   }
 
   if (/怎麼選龜鹿|怎麼選|推薦產品|適合哪個|我不知道怎麼選|不知道怎麼選/.test(msg)) {
-    return reply(event.replyToken, chooseGuideFlex());
+    return reply(event.replyToken, choiceHubFlex());
   }
 
-  if (/固定補養/.test(msg)) return reply(event.replyToken, recommendProductFlex("固定補養"));
-  if (/方便飲用/.test(msg)) return reply(event.replyToken, recommendProductFlex("方便飲用"));
-  if (/料理燉湯/.test(msg)) return reply(event.replyToken, recommendProductFlex("料理燉湯"));
-  if (/大包裝固定使用|固定使用|長期使用/.test(msg)) return reply(event.replyToken, recommendProductFlex("大包裝固定使用"));
-  if (/自行搭配熱飲|自行搭配|熱飲搭配/.test(msg)) return reply(event.replyToken, recommendProductFlex("自行搭配熱飲"));
+  if (/固定補養/.test(msg)) return reply(event.replyToken, recommendationFlexV125("固定補養"));
+  if (/方便飲用/.test(msg)) return reply(event.replyToken, recommendationFlexV125("方便飲用"));
+  if (/料理燉湯/.test(msg)) return reply(event.replyToken, recommendationFlexV125("料理燉湯"));
+  if (/大包裝固定使用|固定使用|長期使用/.test(msg)) return reply(event.replyToken, recommendationFlexV125("大包裝固定使用"));
+  if (/自行搭配熱飲|自行搭配|熱飲搭配/.test(msg)) return reply(event.replyToken, recommendationFlexV125("自行搭配熱飲"));
 
   if (state.customQty && /^\d+$/.test(msg)) {
     const product = getProduct(state.customQty.productId);
@@ -792,8 +949,8 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v124 running on ${port}`));
-function chooseGuideFlex() {
+app.listen(port, () => console.log(`仙加味 LINE Bot v125 running on ${port}`));
+function choiceHubFlex() {
   return flexCard("仙加味｜怎麼選龜鹿", "如果不知道從哪一項開始，可以先依照平常使用習慣選擇。\n\n請點選最接近您的情況：", [
     { label: "固定補養（龜鹿膏）", text: "固定補養" },
     { label: "方便飲用（龜鹿飲）", text: "方便飲用" },
@@ -803,7 +960,7 @@ function chooseGuideFlex() {
   ]);
 }
 
-function recommendProductFlex(kind) {
+function recommendationFlexV125(kind) {
   let id = "guilu-gao";
   let title = "推薦：龜鹿膏";
   let desc = "適合希望建立固定日常補養節奏的人。\n\n可直接食用，也可搭配熱飲與料理使用。";
@@ -857,13 +1014,13 @@ function detectWebsiteSource(text) {
   return "官網";
 }
 
-function websiteSourceReply(source) {
-  if (/龜鹿膏/.test(source)) return recommendProductFlex("固定補養");
-  if (/龜鹿飲/.test(source)) return recommendProductFlex("方便飲用");
-  if (/湯塊/.test(source)) return recommendProductFlex("料理燉湯");
-  if (/龜鹿膠/.test(source)) return recommendProductFlex("大包裝固定使用");
-  if (/鹿茸粉/.test(source)) return recommendProductFlex("自行搭配熱飲");
-  if (/怎麼選/.test(source)) return chooseGuideFlex();
+function websiteSourceReplyV125(source) {
+  if (/龜鹿膏/.test(source)) return recommendationFlexV125("固定補養");
+  if (/龜鹿飲/.test(source)) return recommendationFlexV125("方便飲用");
+  if (/湯塊/.test(source)) return recommendationFlexV125("料理燉湯");
+  if (/龜鹿膠/.test(source)) return recommendationFlexV125("大包裝固定使用");
+  if (/鹿茸粉/.test(source)) return recommendationFlexV125("自行搭配熱飲");
+  if (/怎麼選/.test(source)) return choiceHubFlex();
   if (/套餐/.test(source)) return comboCarousel();
   return flexCard("歡迎來到仙加味・龜鹿", "我看到您是從「" + source + "」進來的。\n\n可以先依照平常使用習慣選擇，我會幫您整理方向。", [
     { label: "怎麼選龜鹿", text: "怎麼選龜鹿" },
