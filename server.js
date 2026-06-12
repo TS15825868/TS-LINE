@@ -535,11 +535,32 @@ async function handlePostback(event) {
     return startCheckout(event, state);
   }
 
-  return reply(event.replyToken, textMsg("可以直接點下面按鈕，我幫你整理🙂", mainQuick()));
+  return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v125 running"));
-app.get("/healthz", (req, res) => res.json({ ok: true, version: "v125", time: new Date().toISOString() }));
+
+function fastProductIntent(msg) {
+  if (/龜鹿膏.*適不適合|龜鹿膏.*適合|了解龜鹿膏/.test(msg)) return "guilu-gao";
+  if (/龜鹿飲180.*適不適合|龜鹿飲180.*適合|了解龜鹿飲180/.test(msg)) return "guilu-drink-180";
+  if (/龜鹿飲.*適不適合|龜鹿飲.*適合|了解龜鹿飲/.test(msg)) return "guilu-drink-30";
+  if (/龜鹿湯塊.*適不適合|龜鹿湯塊.*適合|了解龜鹿湯塊/.test(msg)) return "guilu-tangkuai";
+  if (/龜鹿膠.*適不適合|龜鹿膠.*適合|了解龜鹿膠/.test(msg)) return "guilu-jiao";
+  if (/鹿茸粉.*適不適合|鹿茸粉.*適合|了解鹿茸粉/.test(msg)) return "luerong-fen";
+  return "";
+}
+
+function smartFallbackFlex() {
+  return flexCard("我幫您整理", "沒關係🙂\n\n我用最簡單的方式幫您整理。\n\n請問您平常比較像哪一種？", [
+    { label: "第一次接觸", text: "第一次接觸" },
+    { label: "固定安排", text: "固定安排" },
+    { label: "方便飲用", text: "方便飲用" },
+    { label: "料理燉湯", text: "料理燉湯" },
+    { label: "家庭使用", text: "家庭使用" }
+  ]);
+}
+
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v126 running"));
+app.get("/healthz", (req, res) => res.json({ ok: true, version: "v126", time: new Date().toISOString() }));
 
 
 function afterActionButtons(productId) {
@@ -709,12 +730,17 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 });
 
 async function handleEvent(event) {
-  if (event.type === "follow") return reply(event.replyToken, textMsg("歡迎來到仙加味・龜鹿🙂\n可以直接點下面按鈕，不用自己打字。", mainQuick()));
+  if (event.type === "follow") return reply(event.replyToken, choiceHubFlex());
   if (event.type === "postback") return handlePostback(event);
   if (event.type !== "message" || event.message.type !== "text") return;
 
   const state = getState(event.source.userId);
   const msg = event.message.text.trim();
+
+  const productIntentId = fastProductIntent(msg);
+  if (productIntentId) return reply(event.replyToken, productFitFlex(productIntentId));
+
+  if (/^(好|嗯|看看|不知道|可以|了解)$/.test(msg)) return reply(event.replyToken, smartFallbackFlex());
 
   const source = detectWebsiteSource(msg);
   if (source) {
@@ -815,7 +841,7 @@ async function handleEvent(event) {
   const product = productByName(msg);
   if (product) return reply(event.replyToken, { type: "flex", altText: product.displayName, contents: productFlex(product) });
 
-  return reply(event.replyToken, textMsg("可以直接點下面按鈕，我幫你整理🙂", mainQuick()));
+  return reply(event.replyToken, smartFallbackFlex());
 }
 
 function startCheckout(event, state) {
@@ -949,7 +975,7 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v125 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v126 running on ${port}`));
 function choiceHubFlex() {
   return flexCard("仙加味｜怎麼選龜鹿", "如果不知道從哪一項開始，可以先依照平常使用習慣選擇。\n\n請點選最接近您的情況：", [
     { label: "固定補養（龜鹿膏）", text: "固定補養" },
