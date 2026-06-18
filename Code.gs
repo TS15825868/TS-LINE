@@ -194,6 +194,6 @@ function updateDashboard(dashboard, masterSheet, customerSheet) {
     todayRevenue,
     Math.max(customers.length - 1, 0),
     totalRevenue,
-    "仙加味 v129 CRM 自動更新"
+    "仙加味 v200 CRM 自動更新"
   ]);
 }

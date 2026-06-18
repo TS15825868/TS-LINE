@@ -559,8 +559,8 @@ function smartFallbackFlex() {
   ]);
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v129 running"));
-app.get("/healthz", (req, res) => res.json({ ok: true, version: "v129", time: new Date().toISOString() }));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v200 running"));
+app.get("/healthz", (req, res) => res.json({ ok: true, version: "v200", time: new Date().toISOString() }));
 
 
 function afterActionButtons(productId) {
@@ -975,7 +975,7 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v129 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v200 running on ${port}`));
 function choiceHubFlex() {
   return flexCard("仙加味｜怎麼選龜鹿", "如果不知道從哪一項開始，可以先依照平常使用習慣選擇。\n\n請點選最接近您的情況：", [
     { label: "固定補養（龜鹿膏）", text: "固定補養" },
@@ -1000,7 +1000,7 @@ function recommendationFlexV125(kind) {
     desc = "可搭配雞湯、排骨湯燉煮。\n\n也可熱水沖泡後加入枸杞、紅棗。";
   } else if (/大包裝|固定使用|長期/.test(kind)) {
     id = "guilu-jiao";
-    title = "推薦：龜鹿膠（一斤裝）";
+    title = "推薦：龜鹿膠";
     desc = "一斤裝，適合固定使用者、家庭使用與通路合作。";
   } else if (/自行|搭配|熱飲|粉/.test(kind)) {
     id = "luerong-fen";

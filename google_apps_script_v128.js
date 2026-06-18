@@ -194,6 +194,6 @@ function updateDashboard(dashboard, masterSheet, customerSheet) {
     todayRevenue,
     Math.max(customers.length - 1, 0),
     totalRevenue,
-    "v128 CRM 自動更新"
+    "v200 CRM 自動更新"
   ]);
 }
