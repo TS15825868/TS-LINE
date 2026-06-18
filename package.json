@@ -1,6 +1,6 @@
 {
-  "name": "xianjiawei-lineoa-v200-final",
-  "version": "2.0.0",
+  "name": "xianjiawei-lineoa-v110",
+  "version": "2.3.1",
   "main": "server.js",
   "engines": {
     "node": "22.x"
@@ -11,5 +11,6 @@
   "dependencies": {
     "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
-  }
+  },
+  "description": "仙加味 LINE OA v231 fixed - product intent routing"
 }

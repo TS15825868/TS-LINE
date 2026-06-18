@@ -1,0 +1,16 @@
+{
+  "version": "LINEOA_v231_fixed_package",
+  "source_zip": "TS-LINE-main.zip",
+  "project_root": "TS-LINE-main",
+  "server_js_replaced": true,
+  "backup_created": true,
+  "node_check_server_js": "passed",
+  "created_at": "2026-06-18 10:51:56",
+  "fixes": [
+    "官網產品詢問文字優先接到產品 intent",
+    "龜鹿飲30cc/180cc 精準辨識",
+    "看產品DM 回 DM 頁連結",
+    "移除重複 function",
+    "版本統一 v231"
+  ]
+}
