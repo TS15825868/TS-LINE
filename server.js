@@ -2,7 +2,7 @@
 
 /**
  * 仙加味 LINE OA Bot
- * Version: v252_lineoa_product_packaging_dm
+ * Version: v253_lineoa_force_dm_only
  *
  * 修正重點：
  * 1. 官網帶入「我要詢問【龜鹿飲 30cc】」會先被產品 intent 接住。
@@ -282,7 +282,7 @@ function productDmFlex(productName) {
   const product = getProduct(productId);
   const dmUrl =
     product?.dmImageUrl ||
-    absoluteAssetUrl(siteUrl, product?.dmImage || product?.image || "images/logo.png");
+    absoluteAssetUrl(siteUrl, product?.dmImage || (Array.isArray(product?.detailImages) && product.detailImages[0]) || "images/logo.png");
 
   const dmImageMessage = {
     type: "image",
@@ -1180,11 +1180,11 @@ async function handlePostback(event) {
   return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v252 running"));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v253 running"));
 app.get("/healthz", (req, res) => {
   res.json({
     ok: true,
-    version: "v252",
+    version: "v253",
     time: new Date().toISOString(),
   });
 });
@@ -1540,4 +1540,4 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v252 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v253 running on ${port}`));

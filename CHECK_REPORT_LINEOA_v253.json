@@ -1,0 +1,15 @@
+{
+  "version": "v253_lineoa_force_dm_only",
+  "changes": [
+    "LINE OA 產品卡圖片使用官網實際外包裝圖",
+    "LINE OA 看產品DM只回 1 張該產品 DM 圖",
+    "data.json/gallery 清空避免舊多圖",
+    "同步官網 v253 圖片路徑"
+  ],
+  "updated_data_files": [
+    "data.json",
+    "products.json"
+  ],
+  "server_js_check": "passed",
+  "created_at": "2026-06-25 11:02:33"
+}

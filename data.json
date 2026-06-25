@@ -165,7 +165,8 @@
       ],
       "image": "images/products-v2/guilu-gao.jpeg",
       "dmImage": "images/dm-final/01_龜鹿膏_100g_DM.jpg",
-      "gallery": [
+      "gallery": [],
+      "detailImages": [
         "images/dm-final/01_龜鹿膏_100g_DM.jpg"
       ]
     },
@@ -216,7 +217,8 @@
       ],
       "image": "images/products-v2/guilu-drink-30.jpeg",
       "dmImage": "images/dm-final/02_龜鹿飲30cc_DM.jpg",
-      "gallery": [
+      "gallery": [],
+      "detailImages": [
         "images/dm-final/02_龜鹿飲30cc_DM.jpg"
       ]
     },
@@ -266,7 +268,8 @@
       ],
       "image": "images/products-v2/guilu-drink-180.jpeg",
       "dmImage": "images/dm-final/03_龜鹿飲180cc_DM.jpg",
-      "gallery": [
+      "gallery": [],
+      "detailImages": [
         "images/dm-final/03_龜鹿飲180cc_DM.jpg"
       ]
     },
@@ -313,7 +316,8 @@
       ],
       "image": "images/products-v2/guilu-tangkuai.jpeg",
       "dmImage": "images/dm-final/05_龜鹿湯塊75g_DM.jpg",
-      "gallery": [
+      "gallery": [],
+      "detailImages": [
         "images/dm-final/05_龜鹿湯塊75g_DM.jpg"
       ]
     },
@@ -361,7 +365,8 @@
       ],
       "image": "images/products-v2/guilu-jiao.jpeg",
       "dmImage": "images/dm-final/06_龜鹿膠600g_DM.jpg",
-      "gallery": [
+      "gallery": [],
+      "detailImages": [
         "images/dm-final/06_龜鹿膠600g_DM.jpg"
       ]
     },
@@ -405,7 +410,8 @@
       ],
       "image": "images/products-v2/luerong-fen.jpeg",
       "dmImage": "images/dm-final/04_鹿茸粉75g_DM.jpg",
-      "gallery": [
+      "gallery": [],
+      "detailImages": [
         "images/dm-final/04_鹿茸粉75g_DM.jpg"
       ]
     }
@@ -921,5 +927,5 @@
       "priceNote": "專業補養優惠"
     }
   ],
-  "version": "v252_lineoa_product_packaging_dm"
+  "version": "v253_force_modal_dm_only"
 }

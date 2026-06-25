@@ -147,10 +147,11 @@
       "size": "100 g / 罐",
       "price": 2000,
       "image": "images/products-v2/guilu-gao.jpeg",
-      "gallery": [
+      "gallery": [],
+      "dmImage": "images/dm-final/01_龜鹿膏_100g_DM.jpg",
+      "detailImages": [
         "images/dm-final/01_龜鹿膏_100g_DM.jpg"
-      ],
-      "dmImage": "images/dm-final/01_龜鹿膏_100g_DM.jpg"
+      ]
     },
     {
       "id": "guilu-drink",
@@ -799,5 +800,5 @@
     ],
     "tangkuaiJiaoNote": "龜鹿湯塊與龜鹿膠內容物相同，差異在包裝方式與規格。龜鹿湯塊為精品小包裝，龜鹿膠為一斤裝。"
   },
-  "version": "v252_lineoa_product_packaging_dm"
+  "version": "v253_force_modal_dm_only"
 }
