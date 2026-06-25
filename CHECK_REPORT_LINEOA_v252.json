@@ -1,0 +1,17 @@
+{
+  "version": "v252_lineoa_product_packaging_dm",
+  "changes": [
+    "LINE OA product carousel images point to actual packaging images on website",
+    "data.json product dmImage points to one DM image",
+    "product DM request returns one DM image plus action card",
+    "product usage/detail quick actions include 看產品DM",
+    "does not replace LOGO",
+    "does not use unapproved future packaging DM"
+  ],
+  "updated_data_files": [
+    "data.json",
+    "products.json"
+  ],
+  "server_js_check": "passed",
+  "created_at": "2026-06-25 10:40:11"
+}

@@ -2,7 +2,7 @@
 
 /**
  * 仙加味 LINE OA Bot
- * Version: v252_lineoa_product_packaging_dm
+ * Version: v231_fixed
  *
  * 修正重點：
  * 1. 官網帶入「我要詢問【龜鹿飲 30cc】」會先被產品 intent 接住。
@@ -31,13 +31,6 @@ const client = new line.Client(config);
 const states = new Map();
 const DATA = loadData();
 
-function absoluteAssetUrl(siteUrl, asset) {
-  if (!asset) return "";
-  const raw = String(asset || "").trim();
-  if (/^https?:\/\//i.test(raw)) return encodeURI(raw);
-  return encodeURI(siteUrl.replace(/\/?$/, "/") + raw.replace(/^\/+/, ""));
-}
-
 function loadData() {
   const file = path.join(__dirname, "data.json");
   const data = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -47,10 +40,7 @@ function loadData() {
     ...p,
     spec: p.spec || p.size || "",
     displayName: p.displayName || p.name,
-    // 產品卡：使用官網上的實際外包裝圖
-    imageUrl: p.imageUrl || absoluteAssetUrl(siteUrl, p.image || "images/logo.png"),
-    // 產品DM／詳情：只用一張 DM 圖
-    dmImageUrl: p.dmImageUrl || absoluteAssetUrl(siteUrl, p.dmImage || (Array.isArray(p.gallery) && p.gallery[0]) || p.image || "images/logo.png"),
+    imageUrl: p.imageUrl || siteUrl + (p.image || "images/logo.png"),
     offers: p.offers || [],
   }));
 
@@ -279,20 +269,10 @@ function detectDmRequest(text) {
 function productDmFlex(productName) {
   const siteUrl = DATA.siteUrl || "https://ts15825868.github.io/xianjiawei/";
   const productId = productNameToId(productName) || "guilu-gao";
-  const product = getProduct(productId);
-  const dmUrl =
-    product?.dmImageUrl ||
-    absoluteAssetUrl(siteUrl, product?.dmImage || product?.image || "images/logo.png");
 
-  const dmImageMessage = {
-    type: "image",
-    originalContentUrl: dmUrl,
-    previewImageUrl: dmUrl,
-  };
-
-  const actionCard = flexCard(
+  return flexCard(
     `${productName}｜產品DM`,
-    "這張是產品介紹DM，先看規格、成分、使用方式與保存方式。\n\n想要確認怎麼選或怎麼買，可以直接點下方按鈕。",
+    "產品DM已整理在官網DM頁。\n\n點下方按鈕可直接開啟DM頁，也可以繼續看使用方式或加入購物車。",
     [
       { label: "開啟DM頁", uri: siteUrl.replace(/\/?$/, "/") + "dm.html" },
       { label: "使用方式", data: pb("usage", { productId }) },
@@ -300,8 +280,6 @@ function productDmFlex(productName) {
       { label: "人工客服", text: "我要人工客服" },
     ]
   );
-
-  return [dmImageMessage, actionCard];
 }
 
 function fastProductIntent(msg) {
@@ -526,7 +504,6 @@ function productUsageFlex(p) {
   return flexCard(`${p.displayName || p.name}｜食用方式`, productUsageText(p), [
     { label: "選擇數量", data: pb("qty_menu", { productId: p.id, mode: "add" }) },
     { label: "價格方案", data: pb("price", { productId: p.id }) },
-    { label: "看產品DM", text: `我想看${p.displayName || p.name}DM` },
     { label: "返回產品", data: pb("products") },
     { label: "購物車", data: pb("cart") },
   ]);
@@ -1180,11 +1157,11 @@ async function handlePostback(event) {
   return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v252 running"));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v231 running"));
 app.get("/healthz", (req, res) => {
   res.json({
     ok: true,
-    version: "v252",
+    version: "v231",
     time: new Date().toISOString(),
   });
 });
@@ -1540,4 +1517,4 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v252 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v231 running on ${port}`));

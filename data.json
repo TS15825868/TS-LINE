@@ -163,7 +163,11 @@
         "【燉煮】雞腿、雞塊或排骨可先汆燙去除雜質與多餘油脂。依個人需求加入適量龜鹿膏燉煮。可依個人口味搭配枸杞、紅棗等食材一同燉煮後食用。",
         "【熱飲】依個人需求取適量龜鹿膏加入約100～300毫升熱水中攪拌均勻後飲用。可依個人口味搭配枸杞、紅棗等食材一同使用。"
       ],
-      "image": "images/guilu-gao.jpg"
+      "image": "images/products-v2/guilu-gao.jpeg",
+      "dmImage": "images/dm-final/01_龜鹿膏_100g_DM.jpg",
+      "gallery": [
+        "images/dm-final/01_龜鹿膏_100g_DM.jpg"
+      ]
     },
     {
       "id": "guilu-drink-30",
@@ -210,7 +214,11 @@
       "usage": [
         "開封即可飲用，建議溫熱後飲用；建議早上或白天飲用，避免冰飲。"
       ],
-      "image": "images/guilu-drink-30cc-glass.jpg"
+      "image": "images/products-v2/guilu-drink-30.jpeg",
+      "dmImage": "images/dm-final/02_龜鹿飲30cc_DM.jpg",
+      "gallery": [
+        "images/dm-final/02_龜鹿飲30cc_DM.jpg"
+      ]
     },
     {
       "id": "guilu-drink-180",
@@ -256,7 +264,11 @@
       "usage": [
         "開封即可飲用，建議溫熱後飲用；建議早上或白天飲用，避免冰飲。"
       ],
-      "image": "images/guilu-drink-180cc.jpg"
+      "image": "images/products-v2/guilu-drink-180.jpeg",
+      "dmImage": "images/dm-final/03_龜鹿飲180cc_DM.jpg",
+      "gallery": [
+        "images/dm-final/03_龜鹿飲180cc_DM.jpg"
+      ]
     },
     {
       "id": "guilu-tangkuai",
@@ -299,7 +311,11 @@
         "【燉煮】雞腿、雞塊或排骨可先汆燙去除雜質與多餘油脂。依個人需求加入適量龜鹿湯塊，再搭配枸杞、紅棗等食材，以小火燉煮至完全融化後即可食用。可依個人口味酌量加入少許鹽或米酒調味。",
         "【熱飲】取1塊龜鹿湯塊加入約300～500毫升熱水中。可依個人口味搭配枸杞、紅棗等食材一同沖泡。亦可於前一晚沖泡，隔日溫熱後飲用。"
       ],
-      "image": "images/guilu-tangkuai-open-box.jpg"
+      "image": "images/products-v2/guilu-tangkuai.jpeg",
+      "dmImage": "images/dm-final/05_龜鹿湯塊75g_DM.jpg",
+      "gallery": [
+        "images/dm-final/05_龜鹿湯塊75g_DM.jpg"
+      ]
     },
     {
       "id": "guilu-jiao",
@@ -343,7 +359,11 @@
         "【燉煮】雞腿、雞塊或排骨可先汆燙去除雜質與多餘油脂。依個人需求加入適量龜鹿膠，再搭配枸杞、紅棗等食材，以小火燉煮至完全融化後即可食用。可依個人口味酌量加入少許鹽或米酒調味。",
         "【熱飲】取1塊龜鹿膠加入約300～500毫升熱水中。可依個人口味搭配枸杞、紅棗等食材一同沖泡。亦可於前一晚沖泡，隔日溫熱後飲用。"
       ],
-      "image": "images/guilu-jiao.jpg"
+      "image": "images/products-v2/guilu-jiao.jpeg",
+      "dmImage": "images/dm-final/06_龜鹿膠600g_DM.jpg",
+      "gallery": [
+        "images/dm-final/06_龜鹿膠600g_DM.jpg"
+      ]
     },
     {
       "id": "luerong-fen",
@@ -383,7 +403,11 @@
       "usage": [
         "可加入溫水、熱飲、牛奶或豆漿。建議由少量開始，依個人日常安排調整。避免冰飲，避免接近睡前。"
       ],
-      "image": "images/luerong-fen.jpg"
+      "image": "images/products-v2/luerong-fen.jpeg",
+      "dmImage": "images/dm-final/04_鹿茸粉75g_DM.jpg",
+      "gallery": [
+        "images/dm-final/04_鹿茸粉75g_DM.jpg"
+      ]
     }
   ],
   "recipes": [
@@ -896,5 +920,6 @@
       "unit": "組",
       "priceNote": "專業補養優惠"
     }
-  ]
+  ],
+  "version": "v252_lineoa_product_packaging_dm"
 }
