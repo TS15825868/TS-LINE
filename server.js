@@ -2,7 +2,7 @@
 
 /**
  * 仙加味 LINE OA Bot
- * Version: v253_lineoa_force_dm_only
+ * Version: v254_lineoa_combo_buttons
  *
  * 修正重點：
  * 1. 官網帶入「我要詢問【龜鹿飲 30cc】」會先被產品 intent 接住。
@@ -127,6 +127,7 @@ function parsePB(data) {
 function mainQuick() {
   return [
     { label: "看產品", data: pb("products") },
+    { label: "看套餐優惠", data: pb("combo") },
     { label: "價格方案", data: pb("price_menu") },
     { label: "推薦商品", data: pb("recommend_menu") },
     { label: "購物車", data: pb("cart") },
@@ -628,7 +629,7 @@ function priceMenuFlex() {
   return flexCard("仙加味｜價格方案", "請選擇要查看的方案。LINE OA 會自動計算階梯優惠與購物車金額。", [
     { label: "單品優惠", data: pb("single_price") },
     { label: "活動優惠", data: pb("activity_menu") },
-    { label: "套餐搭配", data: pb("combo") },
+    { label: "套餐優惠", data: pb("combo") },
     { label: "看產品", data: pb("products") },
   ]);
 }
@@ -798,17 +799,22 @@ function comboFlex(c) {
           type: "button",
           style: "primary",
           color: "#7B1E1E",
-          action: { type: "postback", label: "加入清單", data: pb("add_combo", { comboId: c.id }) },
+          action: { type: "postback", label: "加入購物車", data: pb("add_combo", { comboId: c.id }) },
         },
         {
           type: "button",
           style: "secondary",
-          action: { type: "postback", label: "直接購買", data: pb("buy_combo", { comboId: c.id }) },
+          action: { type: "postback", label: "直接下單", data: pb("buy_combo", { comboId: c.id }) },
         },
         {
           type: "button",
           style: "secondary",
-          action: { type: "postback", label: "購物車", data: pb("cart") },
+          action: { type: "postback", label: "看其他套餐", data: pb("combo") },
+        },
+        {
+          type: "button",
+          style: "secondary",
+          action: { type: "message", label: "詢問客服", text: "我想詢問套餐優惠" },
         },
       ],
     },
@@ -1180,7 +1186,7 @@ async function handlePostback(event) {
   return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v253 running"));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v254 combo buttons running"));
 app.get("/healthz", (req, res) => {
   res.json({
     ok: true,
@@ -1267,8 +1273,8 @@ async function handleEvent(event) {
   if (msg === "看產品" || msg === "直接下單" || msg === "我想直接下單") return reply(event.replyToken, productCarousel());
   if (msg === "價格方案" || /價格|售價|價錢|多少錢/.test(msg)) return reply(event.replyToken, priceMenuFlex());
   if (/單項售價|單品售價|單品價格|單項價格/.test(msg)) return reply(event.replyToken, singlePriceFlex());
-  if (/活動|優惠|折扣|比較便宜|買多|方案/.test(msg)) return reply(event.replyToken, activityFlex());
-  if (/套餐|搭配組合|搭配/.test(msg)) return reply(event.replyToken, comboCarousel());
+  if (/活動|優惠|折扣|比較便宜|買多|方案/.test(msg)) return reply(event.replyToken, priceMenuFlex());
+  if (/套餐|搭配組合|搭配|套餐優惠|看套餐優惠/.test(msg)) return reply(event.replyToken, comboCarousel());
   if (/怎麼使用|使用方式|怎麼吃|食用方式/.test(msg)) return reply(event.replyToken, usageMenuFlex());
   if (/幫我推薦|推薦|適合哪個|不知道/.test(msg)) return reply(event.replyToken, recommendFlex());
   if (msg === "查看購買清單" || msg === "查看清單" || msg === "購物車") return reply(event.replyToken, cartFlex(state));
@@ -1540,4 +1546,4 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v253 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v254 combo buttons running on ${port}`));
