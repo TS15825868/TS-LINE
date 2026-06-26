@@ -2,7 +2,7 @@
 
 /**
  * 仙加味 LINE OA Bot
- * Version: v254_lineoa_combo_buttons
+ * Version: v255_latest_lineoa_combo_dm
  *
  * 修正重點：
  * 1. 官網帶入「我要詢問【龜鹿飲 30cc】」會先被產品 intent 接住。
@@ -18,8 +18,8 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-channelAccessToken: 'IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=',
-channelSecret: '7c3c4740afa5a281d54afb9f8ffc1e96'
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 const CRM_URL =
@@ -1186,7 +1186,7 @@ async function handlePostback(event) {
   return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v254 combo buttons running"));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v255 latest running"));
 app.get("/healthz", (req, res) => {
   res.json({
     ok: true,
@@ -1546,4 +1546,4 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v254 combo buttons running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v255 latest running on ${port}`));
