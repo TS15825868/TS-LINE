@@ -31,8 +31,8 @@
         ],
         "gift": "",
         "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
-        "price": 3000,
-        "priceNote": "依搭配方式整理"
+        "price": 2800,
+        "priceNote": "依目前單品建議售價試算"
       },
       {
         "name": "日常便利組",
@@ -46,8 +46,8 @@
         ],
         "gift": "",
         "desc": "適合想固定節奏，也想增加外出或忙碌時的便利性。",
-        "price": 4000,
-        "priceNote": "依搭配方式整理"
+        "price": 3800,
+        "priceNote": "依目前單品建議售價試算"
       },
       {
         "name": "餐桌搭配組",
@@ -61,8 +61,8 @@
         ],
         "gift": "",
         "desc": "適合想從料理與熱飲一起安排的人。",
-        "price": 4000,
-        "priceNote": "依搭配方式整理"
+        "price": 3600,
+        "priceNote": "依目前單品建議售價試算"
       },
       {
         "name": "完整體驗組",
@@ -78,8 +78,8 @@
         ],
         "gift": "",
         "desc": "適合想一次了解不同型態，依生活情境安排的人。",
-        "price": 7000,
-        "priceNote": "依搭配方式整理"
+        "price": 6400,
+        "priceNote": "依目前單品建議售價試算"
       },
       {
         "name": "傳統燉煮組",
@@ -90,13 +90,13 @@
           "傳統組"
         ],
         "items": [
-          "龜鹿湯塊 傳統紅盒一斤裝 1 盒",
+          "龜鹿膠一斤裝 1 盒",
           "鹿茸粉 1 罐"
         ],
         "gift": "",
-        "desc": "適合想了解傳統紅盒一斤裝、切塊規格與較大份量燉煮安排的人。",
-        "price": 17000,
-        "priceNote": "依搭配方式整理"
+        "desc": "適合想了解一斤裝大份量與鹿茸粉搭配安排的人。",
+        "price": 14000,
+        "priceNote": "依目前單品建議售價試算"
       }
     ]
   },
@@ -106,7 +106,7 @@
       "龜鹿膏": "可依需求協助整理較適合的搭配方式與方案。",
       "龜鹿飲": "可依需求協助整理較適合的搭配方式與方案。",
       "龜鹿湯塊（75g藍盒）": "可依需求協助整理較適合的搭配方式與方案。",
-      "龜鹿湯塊（傳統紅盒一斤裝）": "可依需求協助整理較適合的搭配方式與方案。",
+      "龜鹿湯塊（龜鹿膠一斤裝）": "可依需求協助整理較適合的搭配方式與方案。",
       "鹿茸粉": "可依需求協助整理較適合的搭配方式與方案。"
     },
     "combos": {
@@ -145,18 +145,40 @@
       ],
       "storage": "開封後需冷藏，請依標示保存。",
       "size": "100 g / 罐",
-      "price": 2000,
+      "price": 1800,
       "image": "images/products-v2/guilu-gao.jpeg",
       "gallery": [],
       "dmImage": "images/dm-final/01_龜鹿膏_100g_DM.jpg",
       "detailImages": [
         "images/dm-final/01_龜鹿膏_100g_DM.jpg"
-      ]
+      ],
+      "unit": "罐",
+      "priceText": "$1800 / 罐",
+      "spec": "100g"
+    },
+    {
+      "id": "guilu-drink-30",
+      "name": "龜鹿飲30cc玻璃瓶",
+      "displayName": "龜鹿飲30cc玻璃瓶",
+      "spec": "30cc玻璃瓶",
+      "price": 50,
+      "unit": "瓶",
+      "priceText": "$50 / 瓶",
+      "ingredients": [
+        "水",
+        "鹿角萃取物",
+        "龜板萃取物",
+        "枸杞",
+        "紅棗",
+        "黃耆",
+        "粉光蔘"
+      ],
+      "usage": "開瓶即可飲用，建議溫熱後飲用。"
     },
     {
       "id": "guilu-drink",
-      "name": "龜鹿飲",
-      "displayName": "龜鹿飲",
+      "name": "龜鹿飲180cc鋁袋",
+      "displayName": "龜鹿飲180cc鋁袋",
       "aliases": [
         "龜鹿飲",
         "飲",
@@ -192,12 +214,13 @@
         "images/guilu-drink-pour.jpg"
       ],
       "spec": "180 cc / 包",
-      "priceText": "$200 / 包"
+      "priceText": "$200 / 包",
+      "unit": "包"
     },
     {
       "id": "guilu-block",
-      "name": "龜鹿湯塊（75g藍盒）",
-      "displayName": "龜鹿湯塊｜75g藍盒",
+      "name": "龜鹿湯塊",
+      "displayName": "龜鹿湯塊",
       "aliases": [
         "龜鹿湯塊",
         "湯塊",
@@ -220,15 +243,15 @@
       ],
       "storage": "請置於陰涼乾燥處保存。",
       "size": "75 g / 盒（8入；單塊2.5錢）",
-      "price": 2000,
+      "price": 1600,
       "image": "images/guilu-block-content-card.jpg",
       "gallery": [
         "images/guilu-block-content.jpg",
         "images/guilu-block-box.jpg",
         "images/guilu-block-stack.jpg"
       ],
-      "spec": "75 g / 盒（8入；單塊2.5錢）",
-      "priceText": "$2000 / 盒",
+      "spec": "75 g / 盒（8入）",
+      "priceText": "$1600 / 盒",
       "specOptions": [
         {
           "title": "75g 藍盒",
@@ -238,12 +261,13 @@
             "適合料理搭配與日常飲食使用"
           ]
         }
-      ]
+      ],
+      "unit": "盒"
     },
     {
       "id": "guilu-block-red",
-      "name": "龜鹿湯塊（傳統紅盒）",
-      "displayName": "龜鹿湯塊｜傳統紅盒",
+      "name": "龜鹿膠",
+      "displayName": "龜鹿膠（一斤裝）",
       "aliases": [
         "紅盒",
         "傳統紅盒",
@@ -276,15 +300,15 @@
       ],
       "storage": "請置於陰涼乾燥處保存。",
       "size": "半斤 / 一斤規格（可選切塊）",
-      "price": 15000,
-      "priceText": "$15000 / 一斤裝",
+      "price": 12000,
+      "priceText": "$12000 / 盒",
       "orderable": true,
       "image": "images/guilu-block-redbox-card.jpg",
       "gallery": [
         "images/guilu-block-redbox.jpg",
         "images/guilu-block-redbox-content.jpg"
       ],
-      "spec": "傳統紅盒規格；可選半斤／一斤與切塊版本",
+      "spec": "一斤裝",
       "specOptions": [
         {
           "title": "大塊版（5錢）",
@@ -307,11 +331,12 @@
         {
           "title": "建議售價",
           "lines": [
-            "一斤裝（600g）建議售價 $15000",
+            "一斤裝建議售價 $12000",
             "半斤規格與切塊方式建議先透過 LINE 確認"
           ]
         }
-      ]
+      ],
+      "unit": "盒"
     },
     {
       "id": "lurong",
@@ -339,7 +364,10 @@
       "image": "images/lurong-card.jpg",
       "gallery": [
         "images/lurong.jpg"
-      ]
+      ],
+      "unit": "罐",
+      "priceText": "$2000 / 罐",
+      "spec": "75g"
     }
   ],
   "recipes": [
@@ -569,7 +597,7 @@
     },
     {
       "q": "龜鹿湯塊有哪幾種規格？",
-      "a": "目前可了解 75g 藍盒與傳統紅盒一斤裝。若不確定哪一種適合，可先透過 LINE 詢問。"
+      "a": "目前可了解 75g 藍盒與龜鹿膠一斤裝。若不確定哪一種適合，可先透過 LINE 詢問。"
     },
     {
       "q": "網站為什麼不放價格？",
@@ -577,7 +605,7 @@
     },
     {
       "q": "龜鹿湯塊傳統紅盒怎麼選？",
-      "a": "傳統紅盒一斤裝為 600g，可依需求選擇 5錢版（一斤 32 塊）或 2.5錢版（一斤 64 塊），建議透過 LINE 先確認切塊規格與安排方式。"
+      "a": "龜鹿膠一斤裝為 600g，可依需求選擇 5錢版（一斤 32 塊）或 2.5錢版（一斤 64 塊），建議透過 LINE 先確認切塊規格與安排方式。"
     },
     {
       "q": "龜鹿湯塊75g藍盒和傳統紅盒差在哪？",
@@ -713,7 +741,7 @@
     },
     {
       "keyword": "想了解傳統規格",
-      "result": "龜鹿湯塊（傳統紅盒一斤裝）",
+      "result": "龜鹿湯塊（龜鹿膠一斤裝）",
       "desc": "適合想詢問傳統紅盒或較大份量規格的人。"
     },
     {
