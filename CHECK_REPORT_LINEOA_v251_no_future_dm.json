@@ -1,7 +1,0 @@
-{
-  "version": "v251_no_future_packaging_dm_live",
-  "source": "仙加味_LINEOA_v231_serverjs修正版_可直接部署.zip",
-  "rule": "最新換包裝的3個DM暫不放到 LINE OA 正式上線版。",
-  "server_js_check": "passed",
-  "created_at": "2026-06-25 04:54:44"
-}
