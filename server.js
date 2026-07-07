@@ -2,7 +2,7 @@
 
 /**
  * 仙加味 LINE OA Bot
- * Version: v280_lineoa_checked_price_update
+ * Version: v284_lineoa_safe_qa
  *
  * 修正重點：
  * 1. 官網帶入「我要詢問【龜鹿飲 30cc】」會先被產品 intent 接住。
@@ -18,11 +18,11 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
-const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+const CRM_URL = process.env.CRM_URL || "";
 
 if (!config.channelAccessToken || !config.channelSecret) {
   console.warn("LINE credentials are not set. Please configure CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in environment variables.");
@@ -218,6 +218,54 @@ function detectXjwProductIntent(text) {
   if (t.indexOf("龜鹿飲") >= 0) return "龜鹿飲";
 
   return "";
+}
+
+function safeHealthKnowledgeReply(text) {
+  const raw = String(text || "").trim();
+  const t = normalizeXjwText(raw);
+
+  if (!t) return null;
+
+  if (/空腹|飯前|飯後|最佳時間|什麼時間|何時吃/.test(raw)) {
+    return textMsg(
+      "仙加味不把「空腹效果最好」當成所有人的固定規則。可依產品標示與個人飲食習慣安排；龜鹿膏建議放在早上或下午，熱水化開後調到適合溫度飲用。腸胃較敏感者可改在餐後。若有特殊狀況，建議先詢問醫師、中醫師或藥師。",
+      mainQuick()
+    );
+  }
+
+  if (/骨質疏鬆|骨鬆|骨密度|骨質流失/.test(raw)) {
+    return textMsg(
+      "龜鹿產品不是用來診斷、治療或預防骨質疏鬆，也不能取代骨密度檢查與醫療建議。骨骼保養可從均衡飲食、足夠蛋白質與鈣、維生素D、規律負重運動及定期評估開始；有疑慮請詢問醫師。",
+      mainQuick()
+    );
+  }
+
+  if (/功效|效果|好處|改善|治療|預防|虛弱|疲勞|貧血|掉髮|白髮|腰酸|腰痠|背痛|記憶力|耳鳴|性功能|壯陽|補腎/.test(raw)) {
+    return textMsg(
+      "這類說法涉及疾病、症狀或醫療效能，仙加味不以食品宣稱治療、改善或預防效果。我們可以協助您了解產品型態、規格、成分、使用方式與保存方式；若有健康狀況，建議先詢問醫師、中醫師或藥師。",
+      [
+        { label: "怎麼選產品", text: "不知道怎麼選" },
+        { label: "使用方式", text: "怎麼使用" },
+        { label: "聯絡客服", text: "聯絡客服" }
+      ]
+    );
+  }
+
+  if (/懷孕|孕婦|哺乳|小孩|兒童|服藥|吃藥|慢性病|手術|過敏|特殊體質/.test(raw)) {
+    return textMsg(
+      "這會牽涉個人體質、用藥與專業判斷。懷孕、哺乳、兒童、正在服藥、慢性疾病、手術前後、成分過敏或特殊體質者，建議先詢問醫師、中醫師或藥師。",
+      mainQuick()
+    );
+  }
+
+  if (/取代藥物|代替藥物|不用看醫生|取代醫療/.test(raw)) {
+    return textMsg(
+      "不可以。仙加味產品屬日常飲食與使用安排，不能取代藥物、診斷、治療或醫療追蹤。",
+      mainQuick()
+    );
+  }
+
+  return null;
 }
 
 function productNameToId(productName) {
@@ -1199,11 +1247,11 @@ async function handlePostback(event) {
   return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v280 checked running"));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v284 safe QA running"));
 app.get("/healthz", (req, res) => {
   res.json({
     ok: true,
-    version: "v280",
+    version: "v284",
     time: new Date().toISOString(),
   });
 });
@@ -1229,6 +1277,11 @@ async function handleEvent(event) {
   const dmIntent = detectDmRequest(msg);
   if (dmIntent) {
     return reply(event.replyToken, productDmFlex(dmIntent));
+  }
+
+  const safeKnowledge = safeHealthKnowledgeReply(msg);
+  if (safeKnowledge) {
+    return reply(event.replyToken, safeKnowledge);
   }
 
   const productIntent = detectXjwProductIntent(msg);
@@ -1376,7 +1429,7 @@ async function handleEvent(event) {
     return reply(
       event.replyToken,
       textMsg(
-        "這部分會因每個人的身體狀況不同，建議先由合作中醫師協助了解，會比較準確🙂\n\n章無忌中醫師 LINE：@changwuchi\nhttps://lin.ee/1MK4NR9",
+        "這部分會因個人體質、疾病狀況與用藥而不同，仙加味不做醫療判斷。建議先詢問醫師、中醫師或藥師。\n\n合作中醫師：章無忌中醫師\nLINE：@changwuchi\nhttps://lin.ee/1MK4NR9",
         mainQuick()
       )
     );

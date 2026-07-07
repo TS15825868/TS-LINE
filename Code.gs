@@ -1,31 +1,69 @@
-function doPost(e) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var data = JSON.parse((e && e.postData && e.postData.contents) || "{}");
-    var now = new Date();
-    var orderId = data.orderId || ("XJW" + Utilities.formatDate(now, "Asia/Taipei", "yyyyMMddHHmmss"));
+/**
+ * 仙加味 CRM 訂單寫入系統
+ * Version: v231_stable
+ *
+ * 本版重點：
+ * - 保留 v230 穩定版邏輯
+ * - 訂單編號改成毫秒＋亂碼，避免同一秒下單被誤判重複
+ * - 修正空 cart 物件被當成商品寫入
+ * - 付款方式、配送方式做基本標準化，避免空格或不同寫法造成狀態判斷失準
+ * - 保留防重複訂單、LockService、SPREADSHEET_ID、CRM儀表板
+ */
 
-    var cart = data.cart || [];
-    var total = Number(data.total || 0);
-    var userId = data.userId || data.lineUserId || "";
-    var name = data.name || "";
-    var phone = data.phone || "";
-    var payment = data.payment || "";
-    var shipping = data.shipping || "";
-    var address = data.address || "";
+var CONFIG = {
+  TZ: "Asia/Taipei",
+  DEFAULT_SOURCE: "LINE OA",
+  VERSION_NOTE: "仙加味 v231 CRM 自動更新",
+  STORE_PICKUP_ADDRESS: "台北市萬華區西昌街52號（客服確認取貨時間）"
+};
+
+function doGet(e) {
+  return jsonOutput({
+    ok: true,
+    service: "仙加味 CRM",
+    version: "v231_stable",
+    message: "Webhook is running"
+  });
+}
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+
+  try {
+    lock.waitLock(10000);
+
+    var ss = getSpreadsheet_();
+    var data = parsePostData_(e);
+    var now = new Date();
+
+    var orderId = sanitize_(data.orderId) || createOrderId_(now);
+    var cart = normalizeCart_(data.cart);
+    var total = Number(data.total || calcCartTotal_(cart) || 0);
+
+    var userId = sanitize_(data.userId || data.lineUserId || "");
+    var name = sanitize_(data.name || "");
+    var phone = sanitize_(data.phone || "");
+    var payment = normalizePayment_(data.payment || "");
+    var shipping = normalizeShipping_(data.shipping || "");
+    var address = sanitize_(data.address || "");
+    var source = sanitize_(data.source || data.orderSource || CONFIG.DEFAULT_SOURCE);
+
+    if (shipping === "門市自取" && (!address || address === "門市自取")) {
+      address = CONFIG.STORE_PICKUP_ADDRESS;
+    }
 
     var masterSheet = getSheet(ss, "訂單主表", [
       "時間", "訂單編號", "LINE UserID", "姓名", "電話", "訂單總額",
-      "付款方式", "配送方式", "地址／取貨資訊", "訂單狀態", "備註"
+      "付款方式", "配送方式", "地址／取貨資訊", "來源", "訂單狀態", "客服備註"
     ]);
 
     var detailSheet = getSheet(ss, "訂單明細", [
-      "時間", "訂單編號", "商品", "數量", "單位", "方案", "小計", "備註"
+      "時間", "訂單編號", "商品", "數量", "單位", "方案", "小計", "來源", "備註"
     ]);
 
     var shipSheet = getSheet(ss, "出貨管理", [
       "時間", "訂單編號", "姓名", "電話", "商品", "數量", "單位",
-      "配送方式", "地址／取貨資訊", "物流單號", "出貨狀態", "備註"
+      "配送方式", "地址／取貨資訊", "物流單號", "出貨狀態", "完成日期", "備註"
     ]);
 
     var remitSheet = getSheet(ss, "匯款對帳", [
@@ -35,112 +73,380 @@ function doPost(e) {
 
     var customerSheet = getSheet(ss, "客戶資料", [
       "LINE UserID", "姓名", "電話", "最後購買時間", "最近購買商品",
-      "累積次數", "累積金額", "客戶等級"
+      "累積次數", "累積金額", "客戶等級", "客戶來源", "最近來源", "主購商品", "回購天數"
     ]);
 
-    masterSheet.appendRow([
-      now, orderId, userId, name, phone, total,
-      payment, shipping, address, "待確認", ""
+    var dashboardSheet = getSheet(ss, "CRM儀表板", [
+      "更新時間", "今日訂單數", "今日營業額", "總客戶數", "總營業額", "備註"
     ]);
 
-    if (cart.length === 0) {
-      detailSheet.appendRow([now, orderId, "", "", "", "", "", "空購物車"]);
-    } else {
-      cart.forEach(function(i) {
-        detailSheet.appendRow([
-          now,
-          orderId,
-          i.name || "",
-          i.qty || 1,
-          i.unit || "",
-          i.label || "",
-          i.total || "",
-          ""
-        ]);
-
-        shipSheet.appendRow([
-          now,
-          orderId,
-          name,
-          phone,
-          i.name || "",
-          i.qty || 1,
-          i.unit || "",
-          shipping,
-          address,
-          "",
-          shipping === "門市自取" ? "待自取" : "未出貨",
-          ""
-        ]);
+    if (orderExists_(masterSheet, orderId)) {
+      return jsonOutput({
+        ok: true,
+        duplicated: true,
+        orderId: orderId,
+        message: "訂單已存在，未重複寫入"
       });
     }
-
-    remitSheet.appendRow([
-      now,
-      orderId,
-      name,
-      phone,
-      total,
-      "",
-      "",
-      payment === "匯款" ? "待匯款" : "不需匯款",
-      ""
-    ]);
 
     var productText = cart.map(function(i) {
       return (i.name || "") + " × " + (i.qty || 1) + (i.unit || "") + (i.label ? "（" + i.label + "）" : "");
     }).join("、");
 
-    updateCustomer(customerSheet, userId, name, phone, productText, total);
+    var mainProduct = calcMainProduct(cart);
 
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: true, orderId: orderId }))
-      .setMimeType(ContentService.MimeType.JSON);
+    masterSheet.appendRow([
+      now, orderId, userId, name, phone, total,
+      payment, shipping, address, source, "待確認", ""
+    ]);
+
+    if (cart.length === 0) {
+      detailSheet.appendRow([now, orderId, "", "", "", "", "", source, "空購物車"]);
+      shipSheet.appendRow([
+        now, orderId, name, phone, "", "", "",
+        shipping, address, "", shippingStatus_(shipping), "", "空購物車，需人工確認"
+      ]);
+    } else {
+      cart.forEach(function(i) {
+        detailSheet.appendRow([
+          now, orderId, i.name || "", i.qty || 1, i.unit || "",
+          i.label || "", i.total || "", source, ""
+        ]);
+
+        shipSheet.appendRow([
+          now, orderId, name, phone, i.name || "", i.qty || 1, i.unit || "",
+          shipping, address, "", shippingStatus_(shipping), "", ""
+        ]);
+      });
+    }
+
+    remitSheet.appendRow([
+      now, orderId, name, phone, total, "", "",
+      remitStatus_(payment),
+      remitNote_(payment)
+    ]);
+
+    updateCustomer(customerSheet, userId, name, phone, productText, total, source, mainProduct);
+    updateDashboard(dashboardSheet, masterSheet, customerSheet);
+
+    autoResizeSheets_([masterSheet, detailSheet, shipSheet, remitSheet, customerSheet, dashboardSheet]);
+
+    return jsonOutput({
+      ok: true,
+      orderId: orderId,
+      total: total,
+      cartCount: cart.length
+    });
 
   } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonOutput({
+      ok: false,
+      error: String(err),
+      stack: err && err.stack ? String(err.stack) : ""
+    });
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (e) {}
   }
+}
+
+function createOrderId_(dateObj) {
+  var now = dateObj || new Date();
+  var main = Utilities.formatDate(now, CONFIG.TZ, "yyyyMMddHHmmssSSS");
+  var rand = Math.floor(Math.random() * 900) + 100;
+  return "XJW" + main + rand;
+}
+
+function getSpreadsheet_() {
+  var propId = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID");
+  if (propId) return SpreadsheetApp.openById(propId);
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error("找不到試算表。若此 Apps Script 不是綁定在試算表上，請到 Script Properties 設定 SPREADSHEET_ID。");
+  }
+  return ss;
+}
+
+function parsePostData_(e) {
+  var raw = (e && e.postData && e.postData.contents) || "{}";
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    throw new Error("POST JSON 格式錯誤：" + String(err));
+  }
+}
+
+function normalizeCart_(cart) {
+  if (!Array.isArray(cart)) return [];
+
+  return cart.map(function(i) {
+    i = i || {};
+    var name = sanitize_(i.name || i.productName || "");
+    var qty = Number(i.qty || i.quantity || 1);
+    if (!qty || qty < 1) qty = 1;
+
+    var price = Number(i.price || 0);
+    var total = Number(i.total || i.subtotal || 0);
+    if (!total && price) total = price * qty;
+
+    return {
+      name: name,
+      qty: qty,
+      unit: sanitize_(i.unit || ""),
+      label: sanitize_(i.label || i.plan || ""),
+      price: price,
+      total: total
+    };
+  }).filter(function(i) {
+    return !!i.name;
+  });
+}
+
+function calcCartTotal_(cart) {
+  if (!cart || !cart.length) return 0;
+  return cart.reduce(function(sum, i) {
+    return sum + Number(i.total || 0);
+  }, 0);
+}
+
+function sanitize_(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+}
+
+function normalizeOptionText_(value) {
+  return sanitize_(value).replace(/\s+/g, "").replace(/[　]/g, "");
+}
+
+function normalizePayment_(value) {
+  var t = normalizeOptionText_(value);
+  if (!t) return "";
+
+  if (t === "匯款" || t === "銀行匯款" || t === "轉帳") return "匯款";
+  if (t === "TWQR" || t === "台灣Pay" || t === "台灣PAY") return "TWQR";
+  if (t === "TWQR（建置中）" || t === "TWQR(建置中)") return "TWQR（建置中）";
+  if (t === "現金" || t === "現金付款" || t === "自取付款") return "現金付款";
+  if (t === "貨到付款" || t === "貨到") return "貨到付款";
+
+  return sanitize_(value);
+}
+
+function normalizeShipping_(value) {
+  var t = normalizeOptionText_(value);
+  if (!t) return "";
+
+  if (t === "門市自取" || t === "自取" || t === "店取") return "門市自取";
+  if (t === "雙北親送" || t === "親送") return "雙北親送";
+  if (t === "7-11賣貨便" || t === "711賣貨便" || t === "7-ELEVEN賣貨便") return "7-11賣貨便";
+  if (t === "宅配" || t === "黑貓宅配" || t === "配送") return "宅配";
+
+  return sanitize_(value);
 }
 
 function getSheet(ss, name, headers) {
   var sheet = ss.getSheetByName(name);
   if (!sheet) sheet = ss.insertSheet(name);
+
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
     sheet.setFrozenRows(1);
+    styleHeader_(sheet, headers.length);
+  } else {
+    ensureHeaders_(sheet, headers);
   }
+
   return sheet;
+}
+
+function ensureHeaders_(sheet, headers) {
+  var lastCol = Math.max(sheet.getLastColumn(), headers.length);
+  var existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  var changed = false;
+  for (var i = 0; i < headers.length; i++) {
+    if (!existing[i]) {
+      existing[i] = headers[i];
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([existing.slice(0, headers.length)]);
+    sheet.setFrozenRows(1);
+    styleHeader_(sheet, headers.length);
+  }
+}
+
+function styleHeader_(sheet, colCount) {
+  try {
+    sheet.getRange(1, 1, 1, colCount)
+      .setFontWeight("bold")
+      .setBackground("#7B1E1E")
+      .setFontColor("#FFFFFF");
+  } catch (e) {}
+}
+
+function autoResizeSheets_(sheets) {
+  sheets.forEach(function(sheet) {
+    try {
+      var cols = sheet.getLastColumn();
+      if (cols > 0) sheet.autoResizeColumns(1, cols);
+    } catch (e) {}
+  });
+}
+
+function orderExists_(sheet, orderId) {
+  if (!orderId || sheet.getLastRow() < 2) return false;
+  var values = sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (String(values[i][0]) === String(orderId)) return true;
+  }
+  return false;
+}
+
+function shippingStatus_(shipping) {
+  if (shipping === "門市自取") return "待自取";
+  if (shipping === "雙北親送") return "待親送";
+  if (shipping === "7-11賣貨便") return "待建單";
+  if (shipping === "宅配") return "待出貨";
+  return "待確認";
+}
+
+function remitStatus_(payment) {
+  if (payment === "匯款") return "待匯款";
+  if (payment === "TWQR") return "待核對";
+  if (payment === "TWQR（建置中）") return "TWQR待建置";
+  if (payment === "現金付款") return "現金付款";
+  if (payment === "貨到付款") return "貨到付款";
+  return "不需匯款";
+}
+
+function remitNote_(payment) {
+  if (payment === "現金付款") return "現金付款，現場確認";
+  if (payment === "TWQR") return "TWQR付款，待確認金流或截圖";
+  if (payment === "TWQR（建置中）") return "TWQR尚未完成建置，請人工確認";
+  if (payment === "貨到付款") return "貨到付款，出貨時確認";
+  return "";
 }
 
 function customerLevel(total) {
   total = Number(total || 0);
   if (total >= 100000) return "經銷合作";
-  if (total >= 30000) return "金牌會員";
-  if (total >= 10000) return "VIP會員";
+  if (total >= 50000) return "VIP會員";
+  if (total >= 20000) return "金卡會員";
+  if (total >= 5000) return "銀卡會員";
   return "一般會員";
 }
 
-function updateCustomer(sheet, userId, name, phone, productText, total) {
+function daysBetween(a, b) {
+  if (!a) return "";
+  var start = new Date(a);
+  var end = new Date(b);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return "";
+  return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function calcMainProduct(cart) {
+  if (!cart || cart.length === 0) return "";
+  var best = cart[0];
+
+  cart.forEach(function(i) {
+    var qty = Number(i.qty || 0);
+    var bestQty = Number(best.qty || 0);
+    var total = Number(i.total || 0);
+    var bestTotal = Number(best.total || 0);
+
+    if (qty > bestQty || (qty === bestQty && total > bestTotal)) best = i;
+  });
+
+  return best.name || "";
+}
+
+function updateCustomer(sheet, userId, name, phone, productText, total, source, mainProduct) {
   if (!phone && !userId) return;
+
   var values = sheet.getDataRange().getValues();
+  var now = new Date();
 
   for (var i = 1; i < values.length; i++) {
-    if ((userId && values[i][0] === userId) || (phone && values[i][2] === phone)) {
+    var sameUser = userId && String(values[i][0]) === String(userId);
+    var samePhone = phone && String(values[i][2]) === String(phone);
+
+    if (sameUser || samePhone) {
+      var lastDate = values[i][3];
+      var repurchaseDays = daysBetween(lastDate, now);
       var count = Number(values[i][5] || 0) + 1;
       var sum = Number(values[i][6] || 0) + Number(total || 0);
-      sheet.getRange(i + 1, 2).setValue(name);
-      sheet.getRange(i + 1, 3).setValue(phone);
-      sheet.getRange(i + 1, 4).setValue(new Date());
+      var originalSource = values[i][8] || source || "";
+
+      sheet.getRange(i + 1, 1).setValue(userId || values[i][0]);
+      sheet.getRange(i + 1, 2).setValue(name || values[i][1]);
+      sheet.getRange(i + 1, 3).setValue(phone || values[i][2]);
+      sheet.getRange(i + 1, 4).setValue(now);
       sheet.getRange(i + 1, 5).setValue(productText);
       sheet.getRange(i + 1, 6).setValue(count);
       sheet.getRange(i + 1, 7).setValue(sum);
       sheet.getRange(i + 1, 8).setValue(customerLevel(sum));
+      sheet.getRange(i + 1, 9).setValue(originalSource);
+      sheet.getRange(i + 1, 10).setValue(source || "");
+      sheet.getRange(i + 1, 11).setValue(mainProduct || "");
+      sheet.getRange(i + 1, 12).setValue(repurchaseDays);
       return;
     }
   }
 
   var firstTotal = Number(total || 0);
-  sheet.appendRow([userId, name, phone, new Date(), productText, 1, firstTotal, customerLevel(firstTotal)]);
+  sheet.appendRow([
+    userId, name, phone, now, productText, 1, firstTotal,
+    customerLevel(firstTotal), source || "", source || "", mainProduct || "", 0
+  ]);
+}
+
+function updateDashboard(dashboard, masterSheet, customerSheet) {
+  var now = new Date();
+  var orders = masterSheet.getDataRange().getValues();
+  var customers = customerSheet.getDataRange().getValues();
+
+  var today = Utilities.formatDate(now, CONFIG.TZ, "yyyy-MM-dd");
+  var todayCount = 0;
+  var todayRevenue = 0;
+  var totalRevenue = 0;
+
+  for (var i = 1; i < orders.length; i++) {
+    var d = orders[i][0];
+    var amount = Number(orders[i][5] || 0);
+    totalRevenue += amount;
+
+    if (d && Utilities.formatDate(new Date(d), CONFIG.TZ, "yyyy-MM-dd") === today) {
+      todayCount++;
+      todayRevenue += amount;
+    }
+  }
+
+  if (dashboard.getLastRow() > 1) {
+    dashboard.getRange(2, 1, dashboard.getLastRow() - 1, dashboard.getLastColumn()).clearContent();
+  }
+
+  dashboard.getRange(2, 1, 1, 6).setValues([[
+    now,
+    todayCount,
+    todayRevenue,
+    Math.max(customers.length - 1, 0),
+    totalRevenue,
+    CONFIG.VERSION_NOTE
+  ]]);
+
+  try {
+    dashboard.getRange("A:A").setNumberFormat("yyyy/mm/dd hh:mm:ss");
+    dashboard.getRange("C:C").setNumberFormat("#,##0");
+    dashboard.getRange("E:E").setNumberFormat("#,##0");
+  } catch (e) {}
+}
+
+function jsonOutput(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
