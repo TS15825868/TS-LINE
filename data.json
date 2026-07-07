@@ -32,8 +32,7 @@
         ],
         "gift": "",
         "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
-        "price": 2800,
-        "priceNote": "依目前單品建議售價試算"
+        "priceNote": "以LINE OA最新價格與活動由客服確認"
       },
       {
         "name": "日常便利組",
@@ -47,8 +46,7 @@
         ],
         "gift": "",
         "desc": "適合想固定節奏，也想增加外出或忙碌時的便利性。",
-        "price": 3800,
-        "priceNote": "依目前單品建議售價試算"
+        "priceNote": "以LINE OA最新價格與活動由客服確認"
       },
       {
         "name": "餐桌搭配組",
@@ -62,8 +60,7 @@
         ],
         "gift": "",
         "desc": "適合想從料理與熱飲一起安排的人。",
-        "price": 3600,
-        "priceNote": "依目前單品建議售價試算"
+        "priceNote": "以LINE OA最新價格與活動由客服確認"
       },
       {
         "name": "完整體驗組",
@@ -79,8 +76,7 @@
         ],
         "gift": "",
         "desc": "適合想一次了解不同型態，依生活情境安排的人。",
-        "price": 6400,
-        "priceNote": "依目前單品建議售價試算"
+        "priceNote": "以LINE OA最新價格與活動由客服確認"
       },
       {
         "name": "傳統燉煮組",
@@ -96,8 +92,7 @@
         ],
         "gift": "",
         "desc": "適合想了解一斤裝大份量與鹿茸粉搭配安排的人。",
-        "price": 14000,
-        "priceNote": "依目前單品建議售價試算"
+        "priceNote": "以LINE OA最新價格與活動由客服確認"
       }
     ]
   },
@@ -131,25 +126,9 @@
       ],
       "size": "100g",
       "spec": "100g",
-      "price": 1800,
+      "price": 1500,
       "unit": "罐",
-      "offers": [
-        {
-          "qty": 2,
-          "total": 3800,
-          "label": "2罐優惠"
-        },
-        {
-          "qty": 3,
-          "total": 5400,
-          "label": "3罐優惠"
-        },
-        {
-          "qty": 6,
-          "total": 10200,
-          "label": "6罐優惠"
-        }
-      ],
+      "offers": [],
       "description": "適合希望建立固定補養節奏的人。可直接食用，也可搭配熱飲或料理使用。",
       "ingredients": [
         "鹿角萃取物",
@@ -169,7 +148,9 @@
       "detailImages": [
         "images/dm-final/01_龜鹿膏_100g_DM.jpg"
       ],
-      "priceText": "$1800 / 罐"
+      "priceText": "$1800 / 罐",
+      "originalPrice": 1800,
+      "priceLabel": "售價1,800元，優惠價1,500元"
     },
     {
       "id": "guilu-drink-30",
@@ -190,17 +171,7 @@
         {
           "qty": 12,
           "total": 500,
-          "label": "12瓶優惠"
-        },
-        {
-          "qty": 24,
-          "total": 900,
-          "label": "24瓶優惠"
-        },
-        {
-          "qty": 48,
-          "total": 1700,
-          "label": "48瓶優惠"
+          "label": "買10送2（12瓶）"
         }
       ],
       "description": "同一款龜鹿飲的30cc玻璃瓶包裝，適合體驗、外出與隨身攜帶。",
@@ -222,7 +193,8 @@
       "detailImages": [
         "images/dm-final/02_龜鹿飲30cc_DM.jpg"
       ],
-      "priceText": "$50 / 瓶"
+      "priceText": "$50 / 瓶",
+      "priceLabel": "售價50元，買10送2"
     },
     {
       "id": "guilu-drink-180",
@@ -240,19 +212,9 @@
       "unit": "包",
       "offers": [
         {
-          "qty": 6,
-          "total": 1000,
-          "label": "6包優惠"
-        },
-        {
           "qty": 12,
-          "total": 1800,
-          "label": "12包優惠"
-        },
-        {
-          "qty": 24,
-          "total": 3300,
-          "label": "24包優惠"
+          "total": 2000,
+          "label": "買10送2（12包）"
         }
       ],
       "description": "同一款龜鹿飲的180cc鋁袋包裝，適合家庭分享或回購。",
@@ -274,7 +236,8 @@
       "detailImages": [
         "images/dm-final/03_龜鹿飲180cc_DM.jpg"
       ],
-      "priceText": "$200 / 包"
+      "priceText": "$200 / 包",
+      "priceLabel": "售價200元，買10送2"
     },
     {
       "id": "guilu-tangkuai",
@@ -291,23 +254,7 @@
       "spec": "75g（8入）",
       "price": 1600,
       "unit": "盒",
-      "offers": [
-        {
-          "qty": 2,
-          "total": 3800,
-          "label": "2盒優惠"
-        },
-        {
-          "qty": 3,
-          "total": 5400,
-          "label": "3盒優惠"
-        },
-        {
-          "qty": 6,
-          "total": 10200,
-          "label": "6盒優惠"
-        }
-      ],
+      "offers": [],
       "description": "龜鹿湯塊與龜鹿膠使用相同原料與製程，內容物相同，差異在包裝與規格。龜鹿湯塊為75g精品小包裝。",
       "ingredients": [
         "鹿角萃取物",
@@ -323,7 +270,8 @@
       "detailImages": [
         "images/dm-final/05_龜鹿湯塊75g_DM.jpg"
       ],
-      "priceText": "$1600 / 盒"
+      "priceText": "$1600 / 盒",
+      "priceLabel": "售價1,600元"
     },
     {
       "id": "guilu-jiao",
@@ -339,25 +287,9 @@
       ],
       "size": "600g（一斤裝／32塊，每塊約18.75g）",
       "spec": "一斤裝",
-      "price": 12000,
+      "price": 9600,
       "unit": "盒",
-      "offers": [
-        {
-          "qty": 2,
-          "total": 28000,
-          "label": "2盒優惠"
-        },
-        {
-          "qty": 3,
-          "total": 39000,
-          "label": "3盒優惠"
-        },
-        {
-          "qty": 5,
-          "total": 62500,
-          "label": "5盒優惠"
-        }
-      ],
+      "offers": [],
       "description": "龜鹿膠與龜鹿湯塊內容物相同，差異在規格與包裝。龜鹿膠為600g一斤裝，適合固定使用者、家庭使用與通路合作。",
       "ingredients": [
         "鹿角萃取物",
@@ -373,7 +305,9 @@
       "detailImages": [
         "images/dm-final/06_龜鹿膠600g_DM.jpg"
       ],
-      "priceText": "$12000 / 盒"
+      "priceText": "$12000 / 盒",
+      "originalPrice": 12000,
+      "priceLabel": "售價12,000元，優惠價9,600元"
     },
     {
       "id": "luerong-fen",
@@ -389,23 +323,7 @@
       "spec": "75g",
       "price": 2000,
       "unit": "罐",
-      "offers": [
-        {
-          "qty": 2,
-          "total": 3800,
-          "label": "2罐優惠"
-        },
-        {
-          "qty": 3,
-          "total": 5400,
-          "label": "3罐優惠"
-        },
-        {
-          "qty": 6,
-          "total": 10200,
-          "label": "6罐優惠"
-        }
-      ],
+      "offers": [],
       "description": "單方鹿茸粉，適合會自己安排熱飲、牛奶、豆漿或調飲的人。",
       "ingredients": [
         "鹿茸"
@@ -419,7 +337,8 @@
       "detailImages": [
         "images/dm-final/04_鹿茸粉75g_DM.jpg"
       ],
-      "priceText": "$2000 / 罐"
+      "priceText": "$2000 / 罐",
+      "priceLabel": "售價2,000元"
     }
   ],
   "recipes": [
@@ -817,7 +736,7 @@
     "founderTitle": "創始人的選擇",
     "founder": "創始人選擇不誇張承諾、不強迫推銷，而是先理解生活方式，再一起整理適合的飲食方向。仙加味更在意日常、穩定與陪伴，讓補養不再是壓力，而是可以長久執行的節奏。",
     "craftTitle": "四代鹿角工序",
-    "craft": "鹿角與龜鹿工序重視時間、火候與細節。仙加味用食品與日常飲食的角度整理產品資訊，不以療效宣稱溝通，而是讓使用方式、搭配方式與生活節奏更清楚。",
+    "craft": "鹿角與龜鹿工序重視時間、火候與細節。仙加味用食品與日常飲食的角度整理產品資訊，不以誇張說法溝通，而是讓使用方式、搭配方式與生活節奏更清楚。",
     "timeline": [
       {
         "title": "1978 延續至今",
@@ -890,9 +809,9 @@
         "龜鹿飲30cc ×12"
       ],
       "desc": "適合第一次了解仙加味龜鹿系列，先從日常節奏與方便飲用開始。",
-      "price": 2400,
+      "price": 2000,
       "unit": "組",
-      "priceNote": "依目前單品建議售價試算"
+      "priceNote": "龜鹿膏優惠價1罐＋龜鹿飲30cc買10送2試算"
     },
     {
       "id": "soup",
@@ -904,7 +823,7 @@
       "desc": "適合喜歡料理、燉湯與熱飲搭配的人。",
       "price": 3600,
       "unit": "組",
-      "priceNote": "依目前單品建議售價試算"
+      "priceNote": "龜鹿湯塊1盒＋鹿茸粉1罐試算"
     },
     {
       "id": "full",
@@ -916,9 +835,9 @@
         "鹿茸粉 ×1"
       ],
       "desc": "一次了解仙加味龜鹿系列不同型態，適合第一次完整比較。",
-      "price": 6000,
+      "price": 5600,
       "unit": "組",
-      "priceNote": "依目前單品建議售價試算"
+      "priceNote": "龜鹿膏優惠價1罐＋龜鹿飲30cc買10送2＋龜鹿湯塊1盒＋鹿茸粉1罐試算"
     },
     {
       "id": "pro",
@@ -928,9 +847,9 @@
         "龜鹿湯塊 ×1"
       ],
       "desc": "適合熟悉龜鹿產品、固定使用者與通路合作洽詢。",
-      "price": 13600,
+      "price": 11200,
       "unit": "組",
-      "priceNote": "依目前單品建議售價試算"
+      "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
     }
   ],
   "version": "v255_latest_lineoa_combo_dm"

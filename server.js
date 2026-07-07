@@ -2,7 +2,7 @@
 
 /**
  * 仙加味 LINE OA Bot
- * Version: v255_latest_lineoa_combo_dm
+ * Version: v280_lineoa_checked_price_update
  *
  * 修正重點：
  * 1. 官網帶入「我要詢問【龜鹿飲 30cc】」會先被產品 intent 接住。
@@ -18,13 +18,15 @@ const fs = require("fs");
 const path = require("path");
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
-const CRM_URL =
-  process.env.CRM_URL ||
-  "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+const CRM_URL = process.env.CRM_URL || "";
+
+if (!config.channelAccessToken || !config.channelSecret) {
+  console.warn("LINE credentials are not set. Please configure CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in environment variables.");
+}
 
 const app = express();
 const client = new line.Client(config);
@@ -511,11 +513,22 @@ function qtyMenuFlex(product, mode = "add") {
 }
 
 function productPriceText(p) {
+  const original = Number(p.originalPrice || 0);
+  const current = Number(p.price || 0);
+  const unit = p.unit || "件";
+
+  let priceLine = "";
+  if (original && original > current) {
+    priceLine = `售價：${money(original)} / ${unit}\n優惠價：${money(current)} / ${unit}`;
+  } else {
+    priceLine = `單品：${money(current)} / ${unit}`;
+  }
+
   const offers = (p.offers || []).length
-    ? "\n\n優惠方案：\n" + p.offers.map((o) => `・${o.label} ${money(o.total)}`).join("\n")
+    ? "\n\n活動方案：\n" + p.offers.map((o) => `・${o.label} ${money(o.total)}`).join("\n")
     : "";
 
-  return `規格：${p.spec || p.size || ""}\n單品：${money(p.price)} / ${p.unit || "件"}${offers}`;
+  return `規格：${p.spec || p.size || ""}\n${priceLine}${offers}`;
 }
 
 function productUsageText(p) {
@@ -1186,11 +1199,11 @@ async function handlePostback(event) {
   return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v255 latest running"));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v280 checked running"));
 app.get("/healthz", (req, res) => {
   res.json({
     ok: true,
-    version: "v253",
+    version: "v280",
     time: new Date().toISOString(),
   });
 });
