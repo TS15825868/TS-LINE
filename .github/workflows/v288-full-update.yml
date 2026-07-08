@@ -1,0 +1,119 @@
+name: LINE OA v288 full launch update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - RUN_V288_FULL_UPDATE
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v288 LINE OA launch update
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          notice = '目前全系列已開放詢問與下單；產品盒裝到貨後，將依訂單順序確認並安排出貨。'
+          data_path = Path('data.json')
+          data = json.loads(data_path.read_text(encoding='utf-8'))
+          data['version'] = 'v288'
+          data['launchStatus'] = {
+              'orderOpen': True,
+              'statusLabel': '全系列已開放詢問與下單',
+              'shippingNotice': '產品盒裝到貨後，將依訂單順序確認並安排出貨。',
+              'customerReply': notice
+          }
+          for key, value in list(data.get('shippingNotes', {}).items()):
+              if '盒裝到貨後' not in value:
+                  data['shippingNotes'][key] = value.rstrip('。') + '。產品盒裝到貨後，將依訂單順序確認並安排出貨。'
+          for product in data.get('products', []):
+              product['orderStatus'] = '開放下單'
+              product['shippingNotice'] = '盒裝到貨後依訂單順序確認並安排出貨。'
+              if notice not in product.get('description', ''):
+                  product['description'] = product.get('description', '').rstrip('。') + '。' + notice
+          data_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          server_path = Path('server.js')
+          text = server_path.read_text(encoding='utf-8')
+          text = text.replace('v287', 'v288')
+          if 'const ORDER_NOTICE =' not in text:
+              m = re.search(r'const CRM_URL\s*=.*?;\n', text)
+              if m:
+                  pos = m.end()
+                  text = text[:pos] + '\nconst ORDER_NOTICE = "目前全系列已開放詢問與下單；產品盒裝到貨後，將依訂單順序確認並安排出貨。";\n' + text[pos:]
+
+          text = text.replace(
+              'text: p.description || "",',
+              'text: `${p.description || ""}\\n\\n${ORDER_NOTICE}`,'
+          )
+          text = text.replace(
+              'return `規格：${p.spec || p.size || ""}\\n${priceLine}${offers}`;',
+              'return `規格：${p.spec || p.size || ""}\\n${priceLine}${offers}\\n\\n${ORDER_NOTICE}`;'
+          )
+          text = text.replace(
+              '實際配送、活動與付款方式會由客服再協助確認。',
+              '實際配送、活動與付款方式會由客服再協助確認。\\n\\n${ORDER_NOTICE}'
+          )
+
+          if 'function launchStatusReply(text)' not in text:
+              marker = 'function referenceKnowledgeReply(text) {'
+              fn = '''function launchStatusReply(text) {
+  const raw = String(text || "").trim();
+  if (!/到貨|現貨|上架|可以買|能買|開放下單|何時出貨|出貨時間|盒子|盒裝/.test(raw)) return null;
+  return textMsg(
+    `${ORDER_NOTICE}\n\n可先選擇產品與數量完成訂購安排；實際出貨時間、配送方式與優惠由客服再協助確認。`,
+    [
+      { label: "看產品", data: pb("products") },
+      { label: "價格方案", data: pb("price_menu") },
+      { label: "購物車", data: pb("cart") },
+      { label: "人工客服", text: "我要人工客服" },
+    ]
+  );
+}
+
+'''
+              if marker in text:
+                  text = text.replace(marker, fn + marker)
+
+          safe_marker = 'function safeHealthKnowledgeReply(text) {\n  const raw = String(text || "").trim();'
+          if safe_marker in text and 'const launchReply = launchStatusReply(raw);' not in text:
+              text = text.replace(
+                  safe_marker,
+                  safe_marker + '\n  const launchReply = launchStatusReply(raw);\n  if (launchReply) return launchReply;'
+              )
+
+          text = text.replace(
+              '您好，歡迎來到仙加味。',
+              '您好，歡迎來到仙加味。\\n\\n目前全系列已開放詢問與下單；產品盒裝到貨後，將依訂單順序確認並安排出貨。'
+          )
+          server_path.write_text(text, encoding='utf-8')
+
+          Path('LINEOA_v288全系列上架更新說明.md').write_text('''# 仙加味 LINE OA v288 全系列上架更新
+
+- 更新日期：2026-07-08
+- 六項產品全部開放詢問、選擇數量與下單
+- 產品卡、價格方案、購物車與配送說明同步加入出貨提醒
+- 新增「到貨／現貨／上架／何時出貨／盒裝」自動回覆
+- 出貨說明：盒裝到貨後依訂單順序確認並安排出貨
+- 價格、優惠、購物車、結帳、付款、配送與 CRM 保留
+''', encoding='utf-8')
+          PY
+
+          node --check server.js
+          python3 -m json.tool data.json >/dev/null
+          rm -f RUN_V288_FULL_UPDATE .github/workflows/v288-full-update.yml
+          git config user.name "xianjiawei-update-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "LINE OA 全系列同步開放下單（v288）"
+          git push
