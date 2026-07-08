@@ -1,0 +1,18 @@
+{
+  "version": "v287",
+  "status": "PASS",
+  "server_js_syntax": "PASS (node --check)",
+  "data_json": "PASS",
+  "package_json": "PASS",
+  "price_json": "PASS",
+  "code_gs_changed": false,
+  "code_gs_note": "沿用 v231_stable，內容未修改",
+  "features": [
+    "食補用途方向快速選擇",
+    "產品回覆加入用途方向",
+    "功效問題改為用途＋專業提醒",
+    "古籍食補文化與藥典品質資料",
+    "價格與購物車流程保留",
+    "網站六個產品頁同步"
+  ]
+}

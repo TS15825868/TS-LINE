@@ -2,16 +2,16 @@
 
 /**
  * 仙加味 LINE OA Bot
- * Version: v286_lineoa_web_sync_reference_qa
+ * Version: v287_food_nourishment_usage_direction
  *
  * 修正重點：
  * 1. 官網帶入「我要詢問【龜鹿飲 30cc】」會先被產品 intent 接住。
  * 2. 「看產品DM」按鈕會回 DM 頁連結，不會重複跳一般選擇題。
  * 3. 移除重複 function，避免後面覆蓋前面。
- * 4. 版本、健康檢查與部署提示統一為 v286。
+ * 4. 版本、健康檢查與部署提示統一為 v287。
  * 5. 保留購物車、階梯優惠、結帳、CRM 寫入、健康檢查。
- * 6. 同步網站 v286 的正向日常補養問答。
- * 7. 新增《本草綱目》、《臺灣中藥典》、《中華藥典》安全引用回覆。
+ * 6. 同步網站 v287 的傳統食補用途方向問答。
+ * 7. 保留《本草綱目》、《臺灣中藥典》、《中華藥典》名稱、食補文化與品質資料回覆。
  * 8. 修正產品圖、DM 圖與六個獨立產品頁網址。
  */
 
@@ -134,7 +134,7 @@ function mainQuick() {
     { label: "看產品", data: pb("products") },
     { label: "看套餐優惠", data: pb("combo") },
     { label: "價格方案", data: pb("price_menu") },
-    { label: "推薦商品", data: pb("recommend_menu") },
+    { label: "用途方向", data: pb("recommend_menu") },
     { label: "購物車", data: pb("cart") },
     { label: "成分資料", text: "成分資料" },
     { label: "聯絡客服", text: "聯絡客服" },
@@ -258,7 +258,7 @@ function referenceKnowledgeReply(text) {
   }
 
   if (/本草綱目|古籍|典籍/.test(raw)) {
-    let detail = "《本草綱目》可用來理解原料的古代名稱、部位、來源、採集與本草文化。仙加味只引用可核對的文化與名稱資料，不把古籍主治直接改寫成產品功效。";
+    let detail = "《本草綱目》可用來理解原料的古代名稱、部位、來源、採集與傳統食補文化。仙加味只引用可核對的文化與名稱資料，不把古籍主治直接改寫成產品功效。";
 
     if (/枸杞|枸杞子/.test(raw)) {
       detail = "《本草綱目》整理枸杞不同部位與採集季節，其中有『春采葉、夏采花、秋采子、冬采根』的記載。仙加味產品標示使用『枸杞』，查閱正式資料時常以『枸杞子』核對。";
@@ -277,12 +277,12 @@ function referenceKnowledgeReply(text) {
     }
 
     return textMsg(
-      `${detail}\n\n以上屬古籍文化與名稱整理，不代表仙加味產品的醫療功效。`,
+      `${detail}\n\n以上屬古籍名稱與傳統食補文化整理；產品用途仍以現行成分標示與一般使用方式為準。`,
       quick
     );
   }
 
-  let detail = "仙加味會把成分分成三層閱讀：古籍看歷史名稱與文化；藥典看正式品名與品質規格；產品資訊則以實際包裝標示為準。";
+  let detail = "仙加味會把成分分成三層閱讀：古籍看歷史名稱與食補文化；藥典看正式品名與品質規格；產品資訊則以實際包裝標示為準。";
   if (/鹿角萃取物|鹿角/.test(raw)) detail += "\n\n鹿角萃取物：對照查詢詞為『鹿角』，但萃取原料與原藥材不能直接視為同一規格。";
   if (/龜板萃取物|龜板|龜甲/.test(raw)) detail += "\n\n龜板萃取物：典籍與藥典可能使用『龜甲／龜板』，引用時要和現代萃取原料分開說明。";
   if (/枸杞|枸杞子/.test(raw)) detail += "\n\n枸杞：產品常用簡稱『枸杞』，正式資料常以『枸杞子』查閱。";
@@ -302,7 +302,7 @@ function safeHealthKnowledgeReply(text) {
 
   if (/取代藥物|代替藥物|不用看醫生|取代醫療/.test(raw)) {
     return textMsg(
-      "仙加味產品是日常飲食與補養安排，不能取代藥物、診斷、治療或醫療追蹤。若正在治療或服藥，請先依醫師指示；產品的規格、成分與一般使用方式，我們可以再幫您整理。",
+      "仙加味產品以日常食補、產品用途方向與一般使用方式為主。疾病、症狀、診斷、治療與用藥請依醫師指示；產品的成分、規格與怎麼使用，我們可以繼續幫您整理。",
       mainQuick()
     );
   }
@@ -316,7 +316,7 @@ function safeHealthKnowledgeReply(text) {
 
   if (/空腹|飯前|飯後|最佳時間|什麼時間|何時吃/.test(raw)) {
     return textMsg(
-      "不一定要空腹。日常補養的重點，是選擇自己容易持續、飲用起來舒服的時間。\n\n龜鹿膏可安排在早上或下午，取適量加入約100～300mL熱水化開，調至適合溫度後飲用；腸胃較敏感者可改在餐後。",
+      "不一定要空腹。食補日常的重點，是選擇自己容易持續、飲用起來舒服的時間。\n\n龜鹿膏可安排在早上或下午，取適量加入約100～300mL熱水化開，調至適合溫度後飲用；腸胃較敏感者可改在餐後。",
       [
         { label: "龜鹿膏怎麼用", text: "龜鹿膏怎麼用" },
         { label: "看其他產品", data: pb("products") },
@@ -327,7 +327,7 @@ function safeHealthKnowledgeReply(text) {
 
   if (/骨質疏鬆|骨鬆|骨密度|骨質流失/.test(raw)) {
     return textMsg(
-      "平常想把龜鹿放進日常補養，可以依生活方式選擇膏、飲、湯塊或膠等型態；重點是找到容易持續的安排。\n\n如果已確診骨質疏鬆、正在治療、服藥或需要判斷骨密度狀況，仍應由醫師評估，龜鹿產品不能取代檢查與治療。",
+      "平常想了解龜鹿食補，可以先依用途方向選擇固定取用、即飲、沖泡燉湯或大規格等型態；重點是找到容易使用的安排。\n\n如果已確診骨質疏鬆、正在治療、服藥或需要判斷骨密度狀況，仍應由醫師評估，龜鹿產品不能取代檢查與治療。",
       [
         { label: "怎麼選產品", text: "不知道怎麼選" },
         { label: "看產品特色", text: "龜鹿產品有什麼特色" },
@@ -336,9 +336,16 @@ function safeHealthKnowledgeReply(text) {
     );
   }
 
-  if (/功效|效果|好處|特色|日常補養|改善|治療|預防|虛弱|疲勞|貧血|掉髮|白髮|腰酸|腰痠|背痛|記憶力|耳鳴|性功能|壯陽|補腎/.test(raw)) {
+  if (/功效|效果|好處|特色|日常補養|食補|用途|用途方向|改善|治療|預防|虛弱|疲勞|貧血|掉髮|白髮|腰酸|腰痠|背痛|記憶力|耳鳴|性功能|壯陽|補腎/.test(raw)) {
     return textMsg(
-      "龜鹿在傳統飲食文化中，常被放在日常補養的脈絡中。不少客人是在作息忙碌、長期勞累，或想建立固定補養節奏時來了解。\n\n仙加味將龜鹿整理成不同型態：\n・固定安排：龜鹿膏\n・方便即飲：龜鹿飲\n・沖泡或燉湯：龜鹿湯塊\n・大規格家庭安排：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n每個人的體質與狀況不同，我們不直接替疾病或症狀做療效判斷；若有持續不適、慢性病或正在服藥，建議再請醫師、中醫師或藥師評估。",
+      `龜鹿在傳統食補文化中，常以熱飲、沖泡、燉湯或固定取用等方式安排。仙加味先幫您整理產品的用途方向：
+・固定日常食補：龜鹿膏
+・輕巧／完整容量即飲食補：龜鹿飲
+・沖泡與燉湯食補：龜鹿湯塊
+・傳統大規格食補：龜鹿膠
+・自行搭配食補：鹿茸粉
+
+這裡說的用途，是產品怎麼放進日常飲食與生活；若問題涉及疾病、症狀、孕哺或用藥，則請醫師、中醫師或藥師評估。`,
       [
         { label: "怎麼選產品", text: "不知道怎麼選" },
         { label: "看產品", data: pb("products") },
@@ -367,22 +374,22 @@ function productNameToId(productName) {
 function productQuickReplyText(productName) {
   const info = {
     龜鹿膏:
-      "龜鹿膏｜100g／罐\n適合想把龜鹿安排成固定日常的人。\n可直接取用，也可取適量加入約100～300mL熱水化開，調至適合溫度後飲用。建議安排在早上或下午。\n\n想了解成分、完整用法或怎麼買，我可以繼續幫您整理。",
+      "龜鹿膏｜100g／罐\n用途方向：固定日常食補。\n可直接取用，也可取1～2小匙加入約100～300mL熱水化開，調至適合溫度後飲用；可依習慣安排在早上或下午。\n\n想了解成分、完整用法或怎麼買，我可以繼續幫您整理。",
     龜鹿飲30cc:
-      "龜鹿飲30cc｜30cc玻璃瓶\n小瓶即飲，適合體驗、外出與工作空檔。\n開瓶即可飲用，也可依個人習慣溫熱後飲用。\n\n想看成分、優惠或完整介紹，我可以繼續幫您整理。",
+      "龜鹿飲30cc｜30cc玻璃瓶\n用途方向：輕巧即飲食補。\n適合第一次了解、外出攜帶與工作空檔；開瓶即可飲用，也可溫熱後飲用。\n\n想看成分、優惠或完整介紹，我可以繼續幫您整理。",
     龜鹿飲180cc:
-      "龜鹿飲180cc｜180cc鋁袋\n容量較完整，適合想一次安排一份龜鹿飲的人。\n開封即可飲用，也可依個人習慣溫熱後飲用。\n\n想了解30cc和180cc怎麼選，我可以幫您比較。",
+      "龜鹿飲180cc｜180cc鋁袋\n用途方向：完整容量即飲食補。\n適合想一次飲用較完整容量或居家方便安排的人；開封即可飲用，也可溫熱後飲用。\n\n想了解30cc和180cc怎麼選，我可以幫您比較。",
     龜鹿飲:
-      "龜鹿飲有30cc玻璃瓶與180cc鋁袋兩種規格。\n\n30cc：小瓶即飲，適合體驗、外出與工作空檔。\n180cc：容量較完整，適合想一次安排一份的人。\n\n兩種規格成分相同，主要差異是容量與包裝。",
+      "龜鹿飲屬方便即飲食補，有30cc玻璃瓶與180cc鋁袋兩種規格。\n\n30cc：輕巧體驗、外出與工作空檔。\n180cc：較完整容量、居家方便安排。\n\n兩種規格成分方向相同，主要差異是容量與包裝。",
     鹿茸粉:
-      "鹿茸粉｜75g／罐\n單方鹿茸粉，粉狀型態方便自行搭配。\n可取適量加入溫開水、牛奶、豆漿或其他飲品中攪拌均勻，建議由少量開始。\n\n想了解成分資料或怎麼買，我可以繼續幫您整理。",
+      "鹿茸粉｜75g／罐\n用途方向：自行搭配食補。\n可取適量加入溫開水、牛奶、豆漿或其他飲品中攪拌均勻，建議由少量開始。\n\n想了解成分資料或怎麼買，我可以繼續幫您整理。",
     龜鹿湯塊:
-      "龜鹿湯塊｜75g／盒，8塊裝，每塊約9.375g\n適合熱水沖泡、保溫壺悶泡，也可加入雞湯或排骨湯。\n每塊可加入約300～500mL熱水沖泡。\n\n想了解沖泡、燉湯或與龜鹿膠的差別，我可以繼續幫您整理。",
+      "龜鹿湯塊｜75g／盒，8塊裝，每塊約9.375g\n用途方向：沖泡與燉湯食補。\n取1塊加入約300～500mL熱水，可用保溫壺悶泡，也可加入雞湯或排骨湯。\n\n想了解與龜鹿膠的差別，我可以繼續幫您整理。",
     龜鹿膠:
-      "龜鹿膠｜600g／盒（1斤），32塊裝，每塊約18.75g\n與龜鹿湯塊同為龜鹿基底，差異主要在規格、份量與使用安排。\n可取適量加入約300～500mL熱水化開，也可加入雞湯或排骨湯燉煮。\n\n想了解龜鹿膠和湯塊差別，我可以幫您比較。",
+      "龜鹿膠｜600g／盒（1斤），32塊裝，每塊約18.75g\n用途方向：傳統大規格食補。\n適合固定備用或家庭安排，可用約300～500mL熱水化開，也可加入雞湯或排骨湯燉煮。\n\n想了解龜鹿膠和湯塊差別，我可以幫您比較。",
   };
 
-  return info[productName] || "我有接收到您的產品詢問，我先幫您整理產品資訊。";
+  return info[productName] || "我有接收到您的產品詢問，我先幫您整理產品用途與使用方式。";
 }
 
 function productPageUrl(productName) {
@@ -622,7 +629,7 @@ function cartFlex(state) {
     return flexCard("購物車", "目前購物車是空的。", [
       { label: "看產品", data: pb("products") },
       { label: "價格方案", data: pb("price_menu") },
-      { label: "推薦商品", data: pb("recommend_menu") },
+      { label: "用途方向", data: pb("recommend_menu") },
     ]);
   }
 
@@ -1004,32 +1011,32 @@ function usageMenuFlex() {
 }
 
 function recommendFlex() {
-  return flexCard("仙加味｜推薦商品", "依平常使用習慣選擇，先從最容易持續的方式開始。", [
-    { label: "固定補養", data: pb("recommend", { recommend: "固定補養" }) },
-    { label: "方便飲用", data: pb("recommend", { recommend: "方便飲用" }) },
-    { label: "料理燉湯", data: pb("recommend", { recommend: "料理燉湯" }) },
-    { label: "固定使用", data: pb("recommend", { recommend: "固定使用" }) },
-    { label: "自行搭配", data: pb("recommend", { recommend: "自行搭配" }) },
+  return flexCard("仙加味｜食補用途方向", "先選平常最容易使用的方式，再看產品與規格。", [
+    { label: "固定日常", data: pb("recommend", { recommend: "固定日常食補" }) },
+    { label: "方便即飲", data: pb("recommend", { recommend: "方便即飲食補" }) },
+    { label: "沖泡燉湯", data: pb("recommend", { recommend: "沖泡與燉湯食補" }) },
+    { label: "大規格食補", data: pb("recommend", { recommend: "傳統大規格食補" }) },
+    { label: "自行搭配", data: pb("recommend", { recommend: "自行搭配食補" }) },
   ]);
 }
 
 function recommendationText(msg) {
-  if (/固定補養/.test(msg)) {
-    return ["guilu-gao", "推薦：龜鹿膏\n\n適合希望建立固定補養節奏的人。可直接食用，也可加入熱飲或料理使用。"];
+  if (/固定補養|固定日常食補/.test(msg)) {
+    return ["guilu-gao", "推薦：龜鹿膏｜固定日常食補\n\n可直接取用，也可加入約100～300mL熱水化開，適合早上或下午固定安排。"];
   }
-  if (/方便飲用/.test(msg)) {
-    return ["guilu-drink-30", "推薦：龜鹿飲\n\n開封即可飲用，適合外出、上班與日常安排。可依需求選擇30cc玻璃瓶或180cc鋁袋。"];
+  if (/方便飲用|方便即飲食補|輕巧即飲食補|完整容量即飲食補/.test(msg)) {
+    return ["guilu-drink-30", "推薦：龜鹿飲｜方便即飲食補\n\n30cc適合輕巧攜帶；180cc適合較完整容量與居家安排。"];
   }
-  if (/料理燉湯/.test(msg)) {
-    return ["guilu-tangkuai", "推薦：龜鹿湯塊\n\n適合燉雞湯、排骨湯與日常料理。75g精品小包裝，方便安排。"];
+  if (/料理燉湯|沖泡與燉湯食補/.test(msg)) {
+    return ["guilu-tangkuai", "推薦：龜鹿湯塊｜沖泡與燉湯食補\n\n可用熱水、保溫壺，或加入雞湯、排骨湯等家常料理。"];
   }
-  if (/固定使用/.test(msg)) {
-    return ["guilu-jiao", "推薦：龜鹿膠\n\n600g一斤裝，適合家庭使用、固定安排與通路合作。"];
+  if (/固定使用|傳統大規格食補/.test(msg)) {
+    return ["guilu-jiao", "推薦：龜鹿膠｜傳統大規格食補\n\n600g一斤裝，適合固定備用、家庭安排與通路合作。"];
   }
-  if (/自行搭配/.test(msg)) {
-    return ["luerong-fen", "推薦：鹿茸粉\n\n可搭配熱飲、牛奶與豆漿使用，適合習慣自己調整的人。"];
+  if (/自行搭配|自行搭配食補/.test(msg)) {
+    return ["luerong-fen", "推薦：鹿茸粉｜自行搭配食補\n\n可搭配溫開水、牛奶、豆漿或其他飲品，適合習慣自己調整的人。"];
   }
-  return ["guilu-gao", "可以先從生活方式選擇：固定補養、方便飲用、料理燉湯、固定使用或自行搭配。"];
+  return ["guilu-gao", "可以先從食補用途方向選擇：固定取用、方便即飲、沖泡燉湯、傳統大規格或自行搭配。"];
 }
 
 function recommendResultFlex(keyword) {
@@ -1054,10 +1061,10 @@ function afterActionButtons(productId) {
 
 function choiceHubFlex() {
   return flexCard(
-    "仙加味｜怎麼選龜鹿",
-    "如果不知道從哪一項開始，可以先依照平常使用習慣選擇。\n\n請點選最接近您的情況：",
+    "仙加味｜怎麼選龜鹿食補",
+    "如果不知道從哪一項開始，可以先依照想要的用途方向選擇。\n\n請點選最接近您的情況：",
     [
-      { label: "固定補養", text: "固定補養" },
+      { label: "固定日常", text: "固定日常食補" },
       { label: "方便飲用", text: "方便飲用" },
       { label: "料理燉湯", text: "料理燉湯" },
       { label: "大包裝固定使用", text: "大包裝固定使用" },
@@ -1080,7 +1087,7 @@ function productFitFlex(productId) {
   const map = {
     "guilu-gao": {
       title: "龜鹿膏｜適合我嗎？",
-      desc: "龜鹿膏比較適合：\n\n✓ 想建立固定補養節奏\n✓ 習慣熱飲安排\n✓ 希望搭配料理使用\n\n請問您比較接近哪種情況？",
+      desc: "龜鹿膏比較適合：\n\n✓ 想安排固定日常食補\n✓ 習慣熱飲安排\n✓ 希望搭配料理使用\n\n請問您比較接近哪種情況？",
       buttons: [
         { label: "固定安排", text: "固定安排" },
         { label: "熱飲使用", text: "熱飲使用" },
@@ -1147,7 +1154,7 @@ function productFitFlex(productId) {
 function recommendationFlexV125(kind) {
   let productId = "guilu-gao";
   let title = "推薦｜龜鹿膏";
-  let desc = "適合希望把補養安排進日常節奏的人。\n\n可直接食用，也可搭配熱飲與料理。";
+  let desc = "用途方向：固定日常食補。\n\n可直接取用，也可加入約100～300mL熱水化開。";
 
   if (/方便|外出|第一次|偶爾|飲用/.test(kind)) {
     productId = "guilu-drink-30";
@@ -1166,7 +1173,7 @@ function recommendationFlexV125(kind) {
     title = "推薦｜鹿茸粉";
     desc = "可加入熱水、牛奶或豆漿。\n\n適合習慣自行調整的人。";
   } else if (/不知道|第一次|全部|比較/.test(kind)) {
-    return flexCard("龜鹿系列快速比較", "龜鹿膏 → 固定補養\n龜鹿飲30cc → 方便即飲\n龜鹿飲180cc → 居家容量\n龜鹿湯塊 → 料理燉湯\n龜鹿膠 → 一斤裝固定使用者\n鹿茸粉 → 可搭配熱飲與料理", [
+    return flexCard("龜鹿系列快速比較", "龜鹿膏 → 固定日常食補\n龜鹿飲30cc → 輕巧即飲食補\n龜鹿飲180cc → 完整容量即飲食補\n龜鹿湯塊 → 沖泡與燉湯食補\n龜鹿膠 → 傳統大規格食補\n鹿茸粉 → 自行搭配食補", [
       { label: "查看產品總覽", data: pb("products") },
       { label: "查看套餐搭配", data: pb("combo") },
       { label: "查看價格方案", data: pb("price_menu") },
@@ -1346,11 +1353,11 @@ async function handlePostback(event) {
   return reply(event.replyToken, smartFallbackFlex());
 }
 
-app.get("/", (req, res) => res.send("仙加味 LINE Bot v286 website sync + reference QA running"));
+app.get("/", (req, res) => res.send("仙加味 LINE Bot v287 food nourishment usage direction running"));
 app.get("/healthz", (req, res) => {
   res.json({
     ok: true,
-    version: "v286",
+    version: "v287",
     time: new Date().toISOString(),
   });
 });
@@ -1412,11 +1419,11 @@ async function handleEvent(event) {
     return reply(event.replyToken, choiceHubFlex());
   }
 
-  if (/固定補養/.test(msg)) return reply(event.replyToken, recommendationFlexV125("固定補養"));
-  if (/方便飲用/.test(msg)) return reply(event.replyToken, recommendationFlexV125("方便飲用"));
-  if (/料理燉湯/.test(msg)) return reply(event.replyToken, recommendationFlexV125("料理燉湯"));
-  if (/大包裝固定使用|固定使用|長期使用/.test(msg)) return reply(event.replyToken, recommendationFlexV125("大包裝固定使用"));
-  if (/自行搭配熱飲|自行搭配|熱飲搭配/.test(msg)) return reply(event.replyToken, recommendationFlexV125("自行搭配熱飲"));
+  if (/固定補養|固定日常食補/.test(msg)) return reply(event.replyToken, recommendationFlexV125("固定日常食補"));
+  if (/方便飲用|方便即飲食補/.test(msg)) return reply(event.replyToken, recommendationFlexV125("方便即飲食補"));
+  if (/料理燉湯|沖泡與燉湯食補/.test(msg)) return reply(event.replyToken, recommendationFlexV125("沖泡與燉湯食補"));
+  if (/大包裝固定使用|固定使用|長期使用|傳統大規格食補/.test(msg)) return reply(event.replyToken, recommendationFlexV125("傳統大規格食補"));
+  if (/自行搭配熱飲|自行搭配|熱飲搭配|自行搭配食補/.test(msg)) return reply(event.replyToken, recommendationFlexV125("自行搭配食補"));
 
   if (state.customQty && /^\d+$/.test(msg)) {
     const product = getProduct(state.customQty.productId);
@@ -1716,4 +1723,4 @@ async function continueCheckout(event, state, msg) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE Bot v286 running on ${port}`));
+app.listen(port, () => console.log(`仙加味 LINE Bot v287 running on ${port}`));
