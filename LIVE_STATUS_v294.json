@@ -1,0 +1,15 @@
+{
+  "version": "v294",
+  "updatedAt": "2026-07-08",
+  "status": "published-to-main",
+  "websiteAssets": "https://ts15825868.github.io/xianjiawei/images/",
+  "productCardAspectRatio": "4:5",
+  "productCardMode": "contain",
+  "productImages": "products-v3",
+  "productDMs": "dm-v3",
+  "ingredients": {
+    "龜鹿湯塊": ["鹿角萃取物", "龜板萃取物"],
+    "龜鹿膠": ["鹿角萃取物", "龜板萃取物"]
+  },
+  "credentials": "environment-variables-only"
+}
