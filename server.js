@@ -2,7 +2,7 @@
 
 /**
  * 仙加味 LINE OA Bot v294
- * 全系列開放詢問與下單；產品盒裝到貨後依訂單順序安排出貨。
+ * 全系列開放詢問與下單；實際庫存與出貨時間由客服確認。
  * 憑證僅從部署環境變數讀取，不寫入公開程式碼。
  */
 
@@ -17,8 +17,8 @@ const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 const app = express();
