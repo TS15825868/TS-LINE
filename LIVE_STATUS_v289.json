@@ -1,0 +1,26 @@
+{
+  "version": "v289",
+  "updatedAt": "2026-07-08",
+  "lineOaStatus": "ready",
+  "orderStatus": "open",
+  "shippingNotice": "產品盒裝到貨後，將依訂單順序確認並安排出貨。",
+  "runtimeFeatures": [
+    "六項產品規格",
+    "售價與優惠方案",
+    "產品卡與使用方式",
+    "購物車與數量選擇",
+    "姓名、電話、付款、配送、地址結帳流程",
+    "到貨與出貨詢問自動回覆",
+    "人工客服轉接"
+  ],
+  "products": [
+    "龜鹿膏 100g",
+    "龜鹿飲 30cc玻璃瓶",
+    "龜鹿飲 180cc鋁袋",
+    "龜鹿湯塊 75g／盒（8塊）",
+    "龜鹿膠 600g／盒（1斤）",
+    "鹿茸粉 75g"
+  ],
+  "websiteVersion": "v289",
+  "codeGsChanged": false
+}
