@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v288
+ * 仙加味 LINE OA Bot v294
  * 全系列開放詢問與下單；產品盒裝到貨後依訂單順序安排出貨。
  * 憑證僅從部署環境變數讀取，不寫入公開程式碼。
  */
@@ -11,8 +11,8 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v288";
-const ORDER_NOTICE = "目前全系列已開放詢問與下單；產品盒裝到貨後，將依訂單順序確認並安排出貨。";
+const VERSION = "v294";
+const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 
@@ -36,7 +36,7 @@ function loadData() {
     spec: p.spec || p.size || "",
     offers: p.offers || [],
     orderStatus: "開放下單",
-    shippingNotice: "盒裝到貨後依訂單順序確認並安排出貨。",
+    shippingNotice: "實際庫存與出貨時間由客服確認。",
   }));
   return data;
 }
@@ -151,7 +151,7 @@ function productBubble(p) {
   return {
     type: "bubble",
     size: "mega",
-    hero: { type: "image", url: absoluteUrl(p.image || "images/logo.png"), size: "full", aspectRatio: "1:1", aspectMode: "cover" },
+    hero: { type: "image", url: absoluteUrl(p.image || "images/logo.png"), size: "full", aspectRatio: "4:5", aspectMode: "contain", backgroundColor: "#F7F2E8" },
     body: {
       type: "box",
       layout: "vertical",
