@@ -1,0 +1,182 @@
+{
+  "version": "v286",
+  "updatedAt": "2026-07-08",
+  "codeGsChanged": false,
+  "features": [
+    "網站 v286 六個產品頁同步",
+    "產品圖與 DM 路徑修正",
+    "正向日常補養 QA",
+    "本草綱目安全引用回覆",
+    "臺灣中藥典與中華藥典回覆",
+    "七項成分名稱對照",
+    "購物車／價格／結帳／CRM 保留"
+  ],
+  "files": [
+    ".env.example",
+    "Code.gs",
+    "LINEOA_價格表_最新版.json",
+    "LINEOA_古籍藥典與正向QA_v286.md",
+    "LINEOA_正式回覆文案_v286.md",
+    "README.md",
+    "data.json",
+    "package.json",
+    "server.js"
+  ],
+  "tests": {
+    "serverJsSyntax": "passed (node --check)",
+    "dataJson": "passed",
+    "priceJson": "passed",
+    "codeGsUnchanged": true,
+    "allProductPagesExist": true,
+    "allProductAssetsExist": true,
+    "versionEndpointUpdated": true,
+    "referenceReplyInstalled": true,
+    "positiveHealthReplyInstalled": true,
+    "oldV284RuntimeTextRemaining": false,
+    "productPurchaseQuickReplyUsesPostback": true,
+    "productFeatureQuestionHandled": true,
+    "paymentsSynced": true
+  },
+  "productPageChecks": [
+    {
+      "product": "guilu-gao",
+      "page": "product-guilu-gao.html",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-30",
+      "page": "product-guilu-drink-30cc.html",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-180",
+      "page": "product-guilu-drink-180cc.html",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-tangkuai",
+      "page": "product-guilu-tangkuai.html",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-jiao",
+      "page": "product-guilu-jiao.html",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "luerong-fen",
+      "page": "product-luerong-fen.html",
+      "existsInWebsiteV286": true
+    }
+  ],
+  "productAssetChecks": [
+    {
+      "product": "guilu-gao",
+      "field": "image",
+      "path": "images/products-v2/guilu-gao.jpeg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-gao",
+      "field": "dmImage",
+      "path": "images/dm-final/01_guilu-gao-100g-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-gao",
+      "field": "detailImages",
+      "path": "images/dm-final/01_guilu-gao-100g-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-30",
+      "field": "image",
+      "path": "images/products-v2/guilu-drink-30.jpeg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-30",
+      "field": "dmImage",
+      "path": "images/dm-final/02_guilu-drink-30cc-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-30",
+      "field": "detailImages",
+      "path": "images/dm-final/02_guilu-drink-30cc-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-180",
+      "field": "image",
+      "path": "images/dm-final/03_guilu-drink-180cc-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-180",
+      "field": "dmImage",
+      "path": "images/dm-final/03_guilu-drink-180cc-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-drink-180",
+      "field": "detailImages",
+      "path": "images/dm-final/03_guilu-drink-180cc-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-tangkuai",
+      "field": "image",
+      "path": "images/products-v2/guilu-tangkuai.jpeg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-tangkuai",
+      "field": "dmImage",
+      "path": "images/dm-final/05_guilu-tangkuai-75g-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-tangkuai",
+      "field": "detailImages",
+      "path": "images/dm-final/05_guilu-tangkuai-75g-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-jiao",
+      "field": "image",
+      "path": "images/products-v2/guilu-jiao.jpeg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-jiao",
+      "field": "dmImage",
+      "path": "images/dm-final/06_guilu-jiao-600g-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "guilu-jiao",
+      "field": "detailImages",
+      "path": "images/dm-final/06_guilu-jiao-600g-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "luerong-fen",
+      "field": "image",
+      "path": "images/products-v2/luerong-fen.jpeg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "luerong-fen",
+      "field": "dmImage",
+      "path": "images/dm-final/04_luerong-fen-75g-dm.jpg",
+      "existsInWebsiteV286": true
+    },
+    {
+      "product": "luerong-fen",
+      "field": "detailImages",
+      "path": "images/dm-final/04_luerong-fen-75g-dm.jpg",
+      "existsInWebsiteV286": true
+    }
+  ]
+}

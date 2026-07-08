@@ -3,6 +3,7 @@
   "lineUrl": "https://lin.ee/sHZW7NkR",
   "lineId": "@762jybnm",
   "payments": [
+    "現金付款",
     "匯款",
     "貨到付款"
   ],
@@ -129,7 +130,7 @@
       "price": 1500,
       "unit": "罐",
       "offers": [],
-      "description": "適合希望建立固定補養節奏的人。可直接食用，也可搭配熱飲或料理使用。",
+      "description": "100g小罐設計，適合想把龜鹿安排成固定日常的人。可直接取用，也可用熱水化開，從早上或下午的固定時段開始。",
       "ingredients": [
         "鹿角萃取物",
         "龜板萃取物",
@@ -139,18 +140,21 @@
         "粉光蔘"
       ],
       "usage": [
-        "【燉煮】雞腿、雞塊或排骨可先汆燙去除雜質與多餘油脂。依個人需求加入適量龜鹿膏燉煮。可依個人口味搭配枸杞、紅棗等食材一同燉煮後食用。",
-        "【熱飲】依個人需求取適量龜鹿膏加入約100～300毫升熱水中攪拌均勻後飲用。可依個人口味搭配枸杞、紅棗等食材一同使用。"
+        "每日可依個人習慣安排1～2次。",
+        "每次取1～2小匙，可直接食用。",
+        "或加入約100～300mL熱水化開，調至適合溫度後飲用。",
+        "建議安排於早上或下午，避免接近睡前。"
       ],
       "image": "images/products-v2/guilu-gao.jpeg",
-      "dmImage": "images/dm-final/01_龜鹿膏_100g_DM.jpg",
+      "dmImage": "images/dm-final/01_guilu-gao-100g-dm.jpg",
       "gallery": [],
       "detailImages": [
-        "images/dm-final/01_龜鹿膏_100g_DM.jpg"
+        "images/dm-final/01_guilu-gao-100g-dm.jpg"
       ],
       "priceText": "$1800 / 罐",
       "originalPrice": 1800,
-      "priceLabel": "售價1,800元，優惠價1,500元"
+      "priceLabel": "售價1,800元，優惠價1,500元",
+      "page": "product-guilu-gao.html"
     },
     {
       "id": "guilu-drink-30",
@@ -174,7 +178,7 @@
           "label": "買10送2（12瓶）"
         }
       ],
-      "description": "同一款龜鹿飲的30cc玻璃瓶包裝，適合體驗、外出與隨身攜帶。",
+      "description": "即飲型龜鹿飲的30cc裸罐小玻璃瓶，適合體驗、外出與工作空檔。",
       "ingredients": [
         "水",
         "鹿角萃取物",
@@ -185,16 +189,19 @@
         "粉光蔘"
       ],
       "usage": [
-        "開封即可飲用，建議溫熱後飲用；建議早上或白天飲用，避免冰飲。"
+        "開瓶即可飲用。",
+        "可依個人習慣溫熱後飲用。",
+        "開瓶後請儘速飲用完畢。"
       ],
       "image": "images/products-v2/guilu-drink-30.jpeg",
-      "dmImage": "images/dm-final/02_龜鹿飲30cc_DM.jpg",
+      "dmImage": "images/dm-final/02_guilu-drink-30cc-dm.jpg",
       "gallery": [],
       "detailImages": [
-        "images/dm-final/02_龜鹿飲30cc_DM.jpg"
+        "images/dm-final/02_guilu-drink-30cc-dm.jpg"
       ],
       "priceText": "$50 / 瓶",
-      "priceLabel": "售價50元，買10送2"
+      "priceLabel": "售價50元，買10送2",
+      "page": "product-guilu-drink-30cc.html"
     },
     {
       "id": "guilu-drink-180",
@@ -217,7 +224,7 @@
           "label": "買10送2（12包）"
         }
       ],
-      "description": "同一款龜鹿飲的180cc鋁袋包裝，適合家庭分享或回購。",
+      "description": "即飲型龜鹿飲的180cc鋁袋，容量較完整，適合想一次安排一份龜鹿飲的人。",
       "ingredients": [
         "水",
         "鹿角萃取物",
@@ -228,16 +235,19 @@
         "粉光蔘"
       ],
       "usage": [
-        "開封即可飲用，建議溫熱後飲用；建議早上或白天飲用，避免冰飲。"
+        "開封即可飲用。",
+        "可依個人習慣溫熱後飲用。",
+        "開封後請儘速飲用完畢。"
       ],
-      "image": "images/products-v2/guilu-drink-180.jpeg",
-      "dmImage": "images/dm-final/03_龜鹿飲180cc_DM.jpg",
+      "image": "images/dm-final/03_guilu-drink-180cc-dm.jpg",
+      "dmImage": "images/dm-final/03_guilu-drink-180cc-dm.jpg",
       "gallery": [],
       "detailImages": [
-        "images/dm-final/03_龜鹿飲180cc_DM.jpg"
+        "images/dm-final/03_guilu-drink-180cc-dm.jpg"
       ],
       "priceText": "$200 / 包",
-      "priceLabel": "售價200元，買10送2"
+      "priceLabel": "售價200元，買10送2",
+      "page": "product-guilu-drink-180cc.html"
     },
     {
       "id": "guilu-tangkuai",
@@ -255,23 +265,25 @@
       "price": 1600,
       "unit": "盒",
       "offers": [],
-      "description": "龜鹿湯塊與龜鹿膠使用相同原料與製程，內容物相同，差異在包裝與規格。龜鹿湯塊為75g精品小包裝。",
+      "description": "75g盒裝、8塊小包裝設計，每塊約9.375g。與龜鹿膠同為龜鹿基底，差異主要在規格、份量與使用安排。",
       "ingredients": [
         "鹿角萃取物",
         "龜板萃取物"
       ],
       "usage": [
-        "【燉煮】雞腿、雞塊或排骨可先汆燙去除雜質與多餘油脂。依個人需求加入適量龜鹿湯塊，再搭配枸杞、紅棗等食材，以小火燉煮至完全融化後即可食用。可依個人口味酌量加入少許鹽或米酒調味。",
-        "【熱飲】取1塊龜鹿湯塊加入約300～500毫升熱水中。可依個人口味搭配枸杞、紅棗等食材一同沖泡。亦可於前一晚沖泡，隔日溫熱後飲用。"
+        "取1塊加入約300～500mL熱水沖泡。",
+        "可放入保溫壺悶泡。",
+        "也可加入雞湯、排骨湯等湯品燉煮。"
       ],
       "image": "images/products-v2/guilu-tangkuai.jpeg",
-      "dmImage": "images/dm-final/05_龜鹿湯塊75g_DM.jpg",
+      "dmImage": "images/dm-final/05_guilu-tangkuai-75g-dm.jpg",
       "gallery": [],
       "detailImages": [
-        "images/dm-final/05_龜鹿湯塊75g_DM.jpg"
+        "images/dm-final/05_guilu-tangkuai-75g-dm.jpg"
       ],
       "priceText": "$1600 / 盒",
-      "priceLabel": "售價1,600元"
+      "priceLabel": "售價1,600元",
+      "page": "product-guilu-tangkuai.html"
     },
     {
       "id": "guilu-jiao",
@@ -290,24 +302,25 @@
       "price": 9600,
       "unit": "盒",
       "offers": [],
-      "description": "龜鹿膠與龜鹿湯塊內容物相同，差異在規格與包裝。龜鹿膠為600g一斤裝，適合固定使用者、家庭使用與通路合作。",
+      "description": "600g一斤裝、32塊，每塊約18.75g。與龜鹿湯塊同為龜鹿基底，適合熟悉龜鹿系列、想用大規格的人。",
       "ingredients": [
         "鹿角萃取物",
         "龜板萃取物"
       ],
       "usage": [
-        "【燉煮】雞腿、雞塊或排骨可先汆燙去除雜質與多餘油脂。依個人需求加入適量龜鹿膠，再搭配枸杞、紅棗等食材，以小火燉煮至完全融化後即可食用。可依個人口味酌量加入少許鹽或米酒調味。",
-        "【熱飲】取1塊龜鹿膠加入約300～500毫升熱水中。可依個人口味搭配枸杞、紅棗等食材一同沖泡。亦可於前一晚沖泡，隔日溫熱後飲用。"
+        "取適量加入約300～500mL熱水化開，待溫度適合後飲用。",
+        "也可加入雞湯、排骨湯等湯品燉煮。"
       ],
       "image": "images/products-v2/guilu-jiao.jpeg",
-      "dmImage": "images/dm-final/06_龜鹿膠600g_DM.jpg",
+      "dmImage": "images/dm-final/06_guilu-jiao-600g-dm.jpg",
       "gallery": [],
       "detailImages": [
-        "images/dm-final/06_龜鹿膠600g_DM.jpg"
+        "images/dm-final/06_guilu-jiao-600g-dm.jpg"
       ],
       "priceText": "$12000 / 盒",
       "originalPrice": 12000,
-      "priceLabel": "售價12,000元，優惠價9,600元"
+      "priceLabel": "售價12,000元，優惠價9,600元",
+      "page": "product-guilu-jiao.html"
     },
     {
       "id": "luerong-fen",
@@ -324,21 +337,24 @@
       "price": 2000,
       "unit": "罐",
       "offers": [],
-      "description": "單方鹿茸粉，適合會自己安排熱飲、牛奶、豆漿或調飲的人。",
+      "description": "單方鹿茸粉，粉狀型態方便自行調整，適合搭配溫開水、牛奶、豆漿或其他飲品。",
       "ingredients": [
         "鹿茸"
       ],
       "usage": [
-        "可加入溫水、熱飲、牛奶或豆漿。建議由少量開始，依個人日常安排調整。避免冰飲，避免接近睡前。"
+        "依個人習慣取適量鹿茸粉。",
+        "加入溫開水、牛奶、豆漿或其他飲品中攪拌均勻後飲用。",
+        "建議由少量開始，逐步找到自己的日常方式。"
       ],
       "image": "images/products-v2/luerong-fen.jpeg",
-      "dmImage": "images/dm-final/04_鹿茸粉75g_DM.jpg",
+      "dmImage": "images/dm-final/04_luerong-fen-75g-dm.jpg",
       "gallery": [],
       "detailImages": [
-        "images/dm-final/04_鹿茸粉75g_DM.jpg"
+        "images/dm-final/04_luerong-fen-75g-dm.jpg"
       ],
       "priceText": "$2000 / 罐",
-      "priceLabel": "售價2,000元"
+      "priceLabel": "售價2,000元",
+      "page": "product-luerong-fen.html"
     }
   ],
   "recipes": [
@@ -592,19 +608,19 @@
     },
     {
       "q": "龜鹿產品可以改善疲勞、貧血、掉髮、腰痠、性功能或骨質疏鬆嗎？",
-      "a": "龜鹿在傳統飲食文化中，常被放在日常補養的脈絡中。每個人的飲食、作息與體質不同，實際感受也會不同；仙加味可先協助您從產品型態與使用方式選擇。若有持續不適、慢性病或正在服藥，再請醫師、中醫師或藥師評估。"
+      "a": "這些內容涉及疾病、症狀或醫療效能，仙加味不以食品宣稱治療、改善或預防效果。若有相關健康狀況，建議先詢問醫師、中醫師或藥師。"
     },
     {
-      "q": "一定要空腹使用嗎？",
-      "a": "不一定要空腹。日常補養的重點，是能穩定安排、飲用起來舒服。龜鹿膏可安排在早上或下午；腸胃較敏感者可改在餐後。"
+      "q": "空腹吃吸收最好嗎？",
+      "a": "不把「空腹效果最好」當成所有人的固定規則。可依產品標示與個人飲食習慣安排；龜鹿膏建議放在早上或下午，腸胃較敏感者可改在餐後。"
     },
     {
-      "q": "平常沒有特別不適，也可以安排龜鹿產品嗎？",
-      "a": "可以依自己的飲食習慣與生活節奏安排。仙加味有膏、飲、湯塊與膠等不同型態，方便固定使用、即飲、沖泡或燉湯。若已確診骨質疏鬆、正在治療或服藥，仍請依醫師建議。"
+      "q": "沒有骨質疏鬆也需要吃來預防嗎？",
+      "a": "龜鹿產品不是用來預防骨質疏鬆，也不能取代骨密度檢查與醫療建議。骨骼保養可從均衡飲食、足夠蛋白質與鈣、維生素D、規律負重運動及定期評估開始。"
     },
     {
-      "q": "龜鹿產品有什麼特色？適合怎麼安排？",
-      "a": "仙加味龜鹿系列的重點，是把傳統龜鹿補養做成更容易融入日常的形式：固定安排可看龜鹿膏、方便即飲可看龜鹿飲、沖泡或燉湯可看龜鹿湯塊、大規格可看龜鹿膠、自行搭配熱飲可看鹿茸粉。"
+      "q": "龜鹿產品有什麼功效？",
+      "a": "仙加味不以食品宣稱醫療功效。我們會依使用方式協助選擇：固定安排看龜鹿膏、方便即飲看龜鹿飲、沖泡或燉湯看龜鹿湯塊、家庭大規格看龜鹿膠、自行搭配熱飲看鹿茸粉。"
     },
     {
       "q": "哪些情況要先問醫師？",
@@ -780,7 +796,7 @@
       }
     ]
   },
-  "welcomeText": "您好，歡迎來到仙加味🙂",
+  "welcomeText": "您好，歡迎來到仙加味。",
   "heritage": {
     "since": "1978",
     "brandFounded": "2008",
@@ -876,6 +892,28 @@
       "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
     }
   ],
-  "version": "285.0",
-  "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。"
+  "version": "v286",
+  "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。",
+  "updatedAt": "2026-07-08",
+  "referenceKnowledge": {
+    "updatedAt": "2026-07-08",
+    "sourcesPage": "https://ts15825868.github.io/xianjiawei/sources.html",
+    "baikePage": "https://ts15825868.github.io/xianjiawei/hanfang-baike.html",
+    "principles": [
+      "《本草綱目》只用於名稱、來源、採集、炮製與本草文化整理。",
+      "《臺灣中藥典》用於中藥材、飲片與製劑的正式品名、基原與品質規格閱讀。",
+      "《中華藥典》用於藥品品質標準與檢驗方法的技術規範閱讀。",
+      "不以古籍或藥典文字作為仙加味產品療效證明。",
+      "萃取物、原藥材、飲片與成品分開說明。"
+    ],
+    "nameMap": {
+      "鹿角萃取物": "鹿角",
+      "龜板萃取物": "龜甲／龜板",
+      "枸杞": "枸杞子",
+      "紅棗": "大棗",
+      "黃耆": "黃耆／黃芪",
+      "粉光蔘": "西洋參",
+      "鹿茸": "鹿茸"
+    }
+  }
 }
