@@ -1,6 +1,6 @@
 {
-  "name": "xianjiawei-lineoa-v298-5",
-  "version": "2.10.1",
+  "name": "xianjiawei-lineoa-v298-6",
+  "version": "2.10.2",
   "main": "start-v298-5.js",
   "engines": {
     "node": "22.x"
@@ -12,5 +12,5 @@
     "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
   },
-  "description": "仙加味 LINE OA v298.5｜同步龜鹿飲180cc產品圖、DM與2008品牌註冊故事"
+  "description": "仙加味 LINE OA v298.6｜修正龜鹿飲180cc產品圖與DM顯示"
 }
