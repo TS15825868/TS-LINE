@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v294
+ * 仙加味 LINE OA Bot v295.1
  * 全系列開放詢問與下單；實際庫存與出貨時間由客服確認。
  * 憑證僅從部署環境變數讀取，不寫入公開程式碼。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v294";
+const VERSION = "v295.1";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";

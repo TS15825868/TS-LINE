@@ -145,11 +145,11 @@
         "或加入約100～300mL熱水化開，調至適合溫度後飲用。",
         "建議安排於早上或下午，避免接近睡前。"
       ],
-      "image": "images/products-v3/guilu-gao.jpg",
-      "dmImage": "images/dm-v3/guilu-gao.jpg",
+      "image": "images/products-v3/guilu-gao.jpg?v=295.1",
+      "dmImage": "images/dm-v3/guilu-gao.jpg?v=295.1",
       "gallery": [],
       "detailImages": [
-        "images/dm-v3/guilu-gao.jpg"
+        "images/dm-v3/guilu-gao.jpg?v=295.1"
       ],
       "priceText": "$1800 / 罐",
       "originalPrice": 1800,
@@ -195,11 +195,11 @@
         "可依個人習慣溫熱後飲用。",
         "開瓶後請儘速飲用完畢。"
       ],
-      "image": "images/products-v3/guilu-drink-30.jpg",
-      "dmImage": "images/dm-v3/guilu-drink-30.jpg",
+      "image": "images/products-v3/guilu-drink-30.jpg?v=295.1",
+      "dmImage": "images/dm-v3/guilu-drink-30.jpg?v=295.1",
       "gallery": [],
       "detailImages": [
-        "images/dm-v3/guilu-drink-30.jpg"
+        "images/dm-v3/guilu-drink-30.jpg?v=295.1"
       ],
       "priceText": "$50 / 瓶",
       "priceLabel": "售價50元，買10送2",
@@ -243,11 +243,11 @@
         "可依個人習慣溫熱後飲用。",
         "開封後請儘速飲用完畢。"
       ],
-      "image": "images/products-v3/guilu-drink-180.jpg",
-      "dmImage": "images/dm-v3/guilu-drink-180.jpg",
+      "image": "images/products-v3/guilu-drink-180.jpg?v=295.1",
+      "dmImage": "images/dm-v3/guilu-drink-180.jpg?v=295.1",
       "gallery": [],
       "detailImages": [
-        "images/dm-v3/guilu-drink-180.jpg"
+        "images/dm-v3/guilu-drink-180.jpg?v=295.1"
       ],
       "priceText": "$200 / 包",
       "priceLabel": "售價200元，買10送2",
@@ -281,11 +281,11 @@
         "可放入保溫壺悶泡。",
         "也可加入雞湯、排骨湯等湯品燉煮。"
       ],
-      "image": "images/products-v3/guilu-tangkuai.jpg",
-      "dmImage": "images/dm-v3/guilu-tangkuai.jpg",
+      "image": "images/products-v3/guilu-tangkuai.jpg?v=295.1",
+      "dmImage": "images/dm-v3/guilu-tangkuai.jpg?v=295.1",
       "gallery": [],
       "detailImages": [
-        "images/dm-v3/guilu-tangkuai.jpg"
+        "images/dm-v3/guilu-tangkuai.jpg?v=295.1"
       ],
       "priceText": "$1600 / 盒",
       "priceLabel": "售價1,600元",
@@ -319,11 +319,11 @@
         "取適量加入約300～500mL熱水化開，待溫度適合後飲用。",
         "也可加入雞湯、排骨湯等湯品燉煮。"
       ],
-      "image": "images/products-v3/guilu-jiao.jpg",
-      "dmImage": "images/dm-v3/guilu-jiao.jpg",
+      "image": "images/products-v3/guilu-jiao.jpg?v=295.1",
+      "dmImage": "images/dm-v3/guilu-jiao.jpg?v=295.1",
       "gallery": [],
       "detailImages": [
-        "images/dm-v3/guilu-jiao.jpg"
+        "images/dm-v3/guilu-jiao.jpg?v=295.1"
       ],
       "priceText": "$12000 / 盒",
       "originalPrice": 12000,
@@ -356,11 +356,11 @@
         "加入溫開水、牛奶、豆漿或其他飲品中攪拌均勻後飲用。",
         "建議由少量開始，逐步找到自己的日常方式。"
       ],
-      "image": "images/products-v3/luerong-fen.jpg",
-      "dmImage": "images/dm-v3/luerong-fen.jpg",
+      "image": "images/products-v3/luerong-fen.jpg?v=295.1",
+      "dmImage": "images/dm-v3/luerong-fen.jpg?v=295.1",
       "gallery": [],
       "detailImages": [
-        "images/dm-v3/luerong-fen.jpg"
+        "images/dm-v3/luerong-fen.jpg?v=295.1"
       ],
       "priceText": "$2000 / 罐",
       "priceLabel": "售價2,000元",
@@ -816,7 +816,7 @@
       "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
     }
   ],
-  "version": "294.0",
+  "version": "295.1",
   "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。",
   "updatedAt": "2026-07-08",
   "referenceKnowledge": {
