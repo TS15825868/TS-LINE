@@ -49,40 +49,42 @@ let server = read("server.js");
 server = server.replace(/仙加味 LINE OA Bot v300\.3/g, "仙加味 LINE OA Bot v300.4");
 server = server.replace('const VERSION = "v300.3";', 'const VERSION = "v300.4";');
 
-const qtyMenu = `function qtyMenu(product) {
-  const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
-    ? product.quantityOptions.slice(0, 4)
-    : [1, 2, 3, 5];
-
-  const buttons = options.map((qty) => {
-    const exactOffer = product.offers.find((offer) => Number(offer.qty) === Number(qty));
-    const result = calcItem(product, Number(qty));
-    return {
-      label: exactOffer
-        ? \`${"${exactOffer.label.replace(/（.*?）/g, \"\")}｜${money(result.total)}"}\`.slice(0, 20)
-        : \`${"${qty}${product.unit || \"件\"}｜${money(result.total)}"}\`.slice(0, 20),
-      text: \`加入購物車｜${"${product.id}｜${qty}"}\`,
-    };
-  });
-
-  const promotionLines = [];
-  if (product.originalPrice && product.originalPrice > product.price) {
-    promotionLines.push(\`單${"${product.unit || \"件\"}"}原價 ${"${money(product.originalPrice)}"}，目前優惠價 ${"${money(product.price)}"}\`);
-  }
-  for (const offer of product.offers) {
-    promotionLines.push(\`${"${offer.label}：${money(offer.total)}"}\`);
-  }
-  if (!promotionLines.length) promotionLines.push("目前無額外數量折扣，依所選數量計算。\");
-
-  buttons.push({ label: "返回產品", text: "看產品" });
-  return flexCard(
-    \`${"${product.displayName}｜選擇數量"}\`,
-    \`${"${ORDER_NOTICE}\\n\\n活動與優惠：\\n${promotionLines.map((line) => `・${line}`).join(\"\\n\")}\\n\\n請選擇要加入購物車的數量。"}\`,
-    buttons
-  );
-}
-
-function calcItem`;
+const qtyMenu = [
+  'function qtyMenu(product) {',
+  '  const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length',
+  '    ? product.quantityOptions.slice(0, 4)',
+  '    : [1, 2, 3, 5];',
+  '',
+  '  const buttons = options.map((qty) => {',
+  '    const exactOffer = product.offers.find((offer) => Number(offer.qty) === Number(qty));',
+  '    const result = calcItem(product, Number(qty));',
+  '    return {',
+  '      label: exactOffer',
+  '        ? `${exactOffer.label.replace(/（.*?）/g, "")}｜${money(result.total)}`.slice(0, 20)',
+  '        : `${qty}${product.unit || "件"}｜${money(result.total)}`.slice(0, 20),',
+  '      text: `加入購物車｜${product.id}｜${qty}`,',
+  '    };',
+  '  });',
+  '',
+  '  const promotionLines = [];',
+  '  if (product.originalPrice && product.originalPrice > product.price) {',
+  '    promotionLines.push(`單${product.unit || "件"}原價 ${money(product.originalPrice)}，目前優惠價 ${money(product.price)}`);',
+  '  }',
+  '  for (const offer of product.offers) {',
+  '    promotionLines.push(`${offer.label}：${money(offer.total)}`);',
+  '  }',
+  '  if (!promotionLines.length) promotionLines.push("目前無額外數量折扣，依所選數量計算。");',
+  '',
+  '  buttons.push({ label: "返回產品", text: "看產品" });',
+  '  return flexCard(',
+  '    `${product.displayName}｜選擇數量`,',
+  '    `${ORDER_NOTICE}\\n\\n活動與優惠：\\n${promotionLines.map((line) => `・${line}`).join("\\n")}\\n\\n請選擇要加入購物車的數量。`,',
+  '    buttons',
+  '  );',
+  '}',
+  '',
+  'function calcItem',
+].join("\n");
 server = replaceBlock(server, /function qtyMenu\(product\) \{[\s\S]*?\n\}\n\nfunction calcItem/, qtyMenu, "數量選單");
 write("server.js", server);
 
@@ -93,13 +95,14 @@ if (!sync.includes('"quantityOptions"')) {
 write("tools/sync_website_catalog.js", sync);
 
 for (const name of ["test.js", "security.test.js", "function.test.js"]) {
-  let value = read(name).replace(/v300\.3/g, "v300.4");
+  const value = read(name).replace(/v300\.3/g, "v300.4");
   write(name, value);
 }
 
 let functionTest = read("function.test.js");
-functionTest += `
-const expectedSales = {
+if (!functionTest.includes("PASS quantity options and promotions v300.4")) {
+  functionTest += `
+const expectedSalesV3004 = {
   "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5] },
   "guilu-drink-30": { price: 50, offerQty: 12, offerTotal: 500, options: [1, 3, 5, 12] },
   "guilu-drink-180": { price: 200, offerQty: 12, offerTotal: 2000, options: [1, 3, 5, 12] },
@@ -108,7 +111,7 @@ const expectedSales = {
   "luerong-fen": { price: 2000, options: [1, 2, 3, 5] },
 };
 for (const product of DATA.products) {
-  const expected = expectedSales[product.id];
+  const expected = expectedSalesV3004[product.id];
   assert.deepStrictEqual(product.quantityOptions, expected.options);
   assert.strictEqual(product.price, expected.price);
   if (expected.originalPrice) assert.strictEqual(product.originalPrice, expected.originalPrice);
@@ -121,6 +124,7 @@ for (const product of DATA.products) {
 }
 console.log("PASS quantity options and promotions v300.4");
 `;
+}
 write("function.test.js", functionTest);
 
 const pkg = JSON.parse(read("package.json"));
