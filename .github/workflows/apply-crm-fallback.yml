@@ -1,0 +1,92 @@
+name: Apply CRM fallback URL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - CRM_FALLBACK_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply CRM fallback and update documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          crm_url = "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec"
+
+          server = Path("server.js")
+          text = server.read_text(encoding="utf-8")
+          old = 'const CRM_URL = process.env.CRM_URL || "";'
+          new = f'const CRM_URL = process.env.CRM_URL || "{crm_url}";'
+          if old not in text and new not in text:
+              raise SystemExit("找不到 CRM_URL 設定位置")
+          server.write_text(text.replace(old, new), encoding="utf-8")
+
+          security = Path("security.test.js")
+          text = security.read_text(encoding="utf-8")
+          text = text.replace(
+              'assert.ok(!source.includes("script.google.com/macros/s/"));',
+              f'assert.ok(source.includes(\'const CRM_URL = process.env.CRM_URL || "{crm_url}";\'));'
+          )
+          security.write_text(text, encoding="utf-8")
+
+          readme = Path("README.md")
+          text = readme.read_text(encoding="utf-8")
+          text = text.replace(
+              '- `CRM_URL`\n',
+              '- `CRM_URL`（已內建目前的 Google Apps Script 網址；需要更換時再用環境變數覆蓋）\n'
+          )
+          readme.write_text(text, encoding="utf-8")
+
+          deployment = Path("SECURITY_DEPLOYMENT.md")
+          text = deployment.read_text(encoding="utf-8")
+          text = text.replace(
+              '- `CRM_URL`\n',
+              '- `CRM_URL`（目前已有預設網址，可不填；需要更換時再設定）\n'
+          )
+          text = text.replace(
+              '程式庫不保存任何實際憑證或 CRM 網址。',
+              '程式庫不保存 LINE 憑證；CRM 使用目前指定的 Google Apps Script 預設網址，仍可由環境變數覆蓋。'
+          )
+          deployment.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Install and test
+        run: |
+          npm ci
+          npm run check:catalog
+          npm test
+          node --check server.js
+          node --check security.test.js
+
+      - name: Remove one-time files and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f CRM_FALLBACK_TRIGGER.txt
+          rm -f .github/workflows/apply-crm-fallback.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v300.1: add CRM fallback URL and keep LINE credentials external"
+          git push origin main
