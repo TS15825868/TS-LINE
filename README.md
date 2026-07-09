@@ -1,37 +1,48 @@
-# 仙加味 LINE OA v288｜全系列開放詢問與下單
+# 仙加味 LINE OA v300.1
 
-## 本版主軸
-- 六項產品全部開放詢問、選擇數量與下單。
-- 產品盒裝到貨後，依訂單順序確認並安排出貨。
-- 保留產品卡、價格、優惠、購物車、結帳、付款、配送與 CRM。
-- 官網產品頁、產品 DM 與 LINE OA 互相導流。
-- 以產品成分、規格、食補用途方向與一般使用方式為主，不直接做疾病療效宣稱。
+## 正式功能
+
+- 六項產品選單與產品詳情
+- 價格、優惠與數量選擇
+- 購物車、結帳、付款與配送
+- 搭配方案與使用方式
+- 官網產品頁與產品 DM 導流
+- CRM 訂單寫入
+- 敏感健康問題轉介合作中醫師
+- 官網共用產品目錄同步檢查
 
 ## 主要檔案
-- `server.js`：LINE Bot v288 正式主程式。
-- `data.json`：產品、價格、用途方向、FAQ、套餐與品牌資料。
-- `Code.gs`：既有 CRM／Google Apps Script，未修改。
-- `.env.example`：部署環境變數名稱範例，不包含真實憑證。
 
-## 部署環境變數
+- `server.js`：LINE OA 正式主程式
+- `data.json`：價格、優惠、套餐與 LINE 專用資料
+- `tools/sync_website_catalog.js`：同步官網公開產品資料
+- `test.js`、`catalog.test.js`、`security.test.js`：功能與安全測試
+- `.env.example`：部署環境變數範例，不含真實憑證
+- `SECURITY_DEPLOYMENT.md`：正式部署檢查方式
+
+## 請自行設定的環境變數
+
 - `CHANNEL_ACCESS_TOKEN`
 - `CHANNEL_SECRET`
-- `CRM_URL`（有使用 CRM 時設定）
-- `PORT`（通常由部署平台自動提供）
+- `CRM_URL`
 
-## 部署檢查
-部署後開啟 `/healthz`，應顯示：
+其他選用設定：
+
+- `CRM_TIMEOUT_MS=8000`
+- `STATE_TTL_MS=86400000`
+- `STATE_CLEANUP_INTERVAL_MS=3600000`
+- `MAX_STATE_ENTRIES=10000`
+- `PORT=3000`
+
+程式庫不保存實際憑證。設定完成後請重新部署，並開啟 `/healthz` 確認：
 
 ```json
 {
   "ok": true,
-  "version": "v288",
-  "orderOpen": true,
-  "credentialsConfigured": true
+  "version": "v300.1",
+  "credentialsConfigured": true,
+  "crmConfigured": true
 }
 ```
 
-若 `credentialsConfigured` 為 `false`，請在部署平台補上 LINE 憑證環境變數後重新部署。
-
-## 安全提醒
-LINE 憑證不得寫入公開 GitHub 程式碼。若舊版憑證曾公開，應至 LINE Developers 重新發行 Channel access token，並同步更新部署平台環境變數。
+最後到 LINE 實際測試：看產品、直接下單、搭配組合、購物車與結帳。
