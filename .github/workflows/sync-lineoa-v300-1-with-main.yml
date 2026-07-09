@@ -1,0 +1,54 @@
+name: Sync LINE OA v300.1 branch with main
+
+on:
+  push:
+    branches:
+      - security-hardening-v300-1
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: security-hardening-v300-1
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Merge latest main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit -X ours origin/main
+
+      - name: Install and test
+        run: |
+          npm ci
+          npm run check:catalog
+          npm test
+          node --check server.js
+          node --check test.js
+          node --check catalog.test.js
+          node --check security.test.js
+          grep -F 'return reply(event.replyToken, productMenuReply());' server.js >/dev/null
+          grep -F 'return reply(event.replyToken, comboMenuReply());' server.js >/dev/null
+
+      - name: Push synchronized branch
+        run: |
+          set -euo pipefail
+          if git diff --quiet origin/security-hardening-v300-1..HEAD; then
+            echo "Branch already synchronized."
+          else
+            git push origin HEAD:security-hardening-v300-1
+          fi
