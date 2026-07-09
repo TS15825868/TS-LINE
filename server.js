@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.5
+ * 仙加味 LINE OA Bot v300.6
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.5";
+const VERSION = "v300.6";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -435,49 +435,109 @@ function comboReply() {
   );
 }
 
+function getCombo(index) {
+  return (DATA.offers?.comboOffers || [])[Number(index)] || null;
+}
+
+function comboUnitPrice(combo) {
+  if (!combo) return 0;
+  return (combo.products || []).reduce((sum, component) => {
+    const product = getProduct(component.productId);
+    if (!product) return sum;
+    return sum + calcItem(product, Number(component.qty || 0)).total;
+  }, 0);
+}
+
+function comboPromotionLines(combo) {
+  const lines = [];
+  for (const component of combo?.products || []) {
+    const product = getProduct(component.productId);
+    if (!product) continue;
+    const qty = Number(component.qty || 0);
+    const exactOffer = product.offers.find((offer) => Number(offer.qty) === qty);
+    if (exactOffer) {
+      lines.push(`${product.displayName}：${exactOffer.label} ${money(exactOffer.total)}`);
+    } else if (product.originalPrice && product.originalPrice > product.price) {
+      lines.push(`${product.displayName}：已套用優惠價 ${money(product.price)}`);
+    }
+  }
+  return lines;
+}
+
+function comboQtyMenu(index) {
+  const combo = getCombo(index);
+  if (!combo) return comboMenuReply();
+  const unitPrice = comboUnitPrice(combo);
+  const quantities = Array.isArray(combo.quantityOptions) && combo.quantityOptions.length
+    ? combo.quantityOptions.slice(0, 4)
+    : [1, 2, 3, 5];
+  const promotionLines = comboPromotionLines(combo);
+  const description = [
+    ...(combo.items || []).map((item) => `・${item}`),
+    "",
+    `每組售價：${money(unitPrice)}`,
+    `可選組數：${quantities.join("、")}組`,
+    ...(promotionLines.length ? ["", "已套用活動／優惠：", ...promotionLines.map((line) => `・${line}`)] : []),
+    "",
+    ORDER_NOTICE,
+  ].join("\n");
+  const buttons = quantities.map((qty) => ({
+    label: `${qty}組｜${money(unitPrice * qty)}`.slice(0, 20),
+    text: `加入組合｜${index}｜${qty}`,
+  }));
+  buttons.push({ label: "其他搭配方案", text: "搭配組合" });
+  return flexCard(`${combo.name}｜選擇組數`, description, buttons);
+}
+
+function addComboCart(state, combo, index, qty) {
+  const id = `combo-${index}`;
+  const existing = state.cart.find((item) => item.id === id);
+  if (existing) existing.qty += qty;
+  else state.cart.push({ id, name: combo.name, qty, unit: combo.unit || "組", comboIndex: Number(index) });
+  const item = state.cart.find((cartItem) => cartItem.id === id);
+  const unitPrice = comboUnitPrice(combo);
+  item.total = unitPrice * item.qty;
+  item.label = `每組 ${money(unitPrice)} × ${item.qty}`;
+}
+
 function comboMenuReply() {
   const combos = DATA.offers?.comboOffers || [];
   if (!combos.length) {
-    return flexCard("搭配方案", "目前搭配方案由客服依需求協助整理。", [
+    return flexCard("搭配組合", "目前搭配組合由客服依需求協助整理。", [
       { label: "看產品", text: "看產品" },
       { label: "人工客服", text: "我要人工客服" },
     ]);
   }
-
   return {
     type: "flex",
-    altText: "仙加味搭配方案",
+    altText: "仙加味搭配組合",
     contents: {
       type: "carousel",
-      contents: combos.slice(0, 10).map((combo, index) =>
-        flexCard(
-          combo.name,
-          (combo.items || []).map((item) => "・" + item).join("\n") +
-            "\n\n" + (combo.desc || "") +
-            "\n\n" + (combo.priceNote || "實際價格、庫存與活動由客服確認。"),
-          [
-            { label: "查看方案", text: "搭配方案｜" + index },
-            { label: "查看產品", text: "看產品" },
-            { label: "人工客服", text: "我要人工客服" },
-          ]
-        ).contents
-      ),
+      contents: combos.slice(0, 10).map((combo, index) => {
+        const unitPrice = comboUnitPrice(combo);
+        const quantities = combo.quantityOptions || [1, 2, 3, 5];
+        const promotions = comboPromotionLines(combo);
+        const description = [
+          ...(combo.items || []).map((item) => `・${item}`),
+          "",
+          combo.desc || "",
+          "",
+          `每組售價：${money(unitPrice)}`,
+          `可選組數：${quantities.join("、")}組`,
+          ...(promotions.length ? ["", "活動／優惠已套用：", ...promotions.map((line) => `・${line}`)] : []),
+        ].join("\n");
+        return flexCard(combo.name, description, [
+          { label: "選擇組數", text: `搭配組數｜${index}` },
+          { label: "看全部產品", text: "看產品" },
+          { label: "人工客服", text: "我要人工客服" },
+        ]).contents;
+      }),
     },
   };
 }
 
 function comboDetailReply(index) {
-  const combo = (DATA.offers?.comboOffers || [])[Number(index)];
-  if (!combo) return comboMenuReply();
-  return flexCard(
-    combo.name,
-    (combo.items || []).map((item) => "・" + item).join("\n") + "\n\n" + (combo.desc || "") + "\n\n" + (combo.priceNote || "價格與活動由客服確認"),
-    [
-      { label: "看全部產品", text: "看產品" },
-      { label: "其他搭配方案", text: "搭配組合" },
-      { label: "人工客服", text: "我要人工客服" },
-    ]
-  );
+  return comboQtyMenu(index);
 }
 
 function usageChooserReply() {
@@ -784,8 +844,8 @@ async function handleMessage(event) {
     return reply(event.replyToken, product ? { type: "flex", altText: product.displayName, contents: productBubble(product) } : productMenuReply());
   }
 
-  const comboDetailMatch = text.match(/^搭配方案｜(\d+)$/);
-  if (comboDetailMatch) return reply(event.replyToken, comboDetailReply(comboDetailMatch[1]));
+  const comboDetailMatch = text.match(/^(?:搭配方案|搭配組數)｜(\d+)$/);
+  if (comboDetailMatch) return reply(event.replyToken, comboQtyMenu(comboDetailMatch[1]));
 
   if (state.checkout) return continueCheckout(event, state, text);
 
@@ -793,6 +853,15 @@ async function handleMessage(event) {
   if (qtyMatch) {
     const product = getProduct(qtyMatch[1]);
     return reply(event.replyToken, product ? qtyMenu(product) : textMsg("找不到這項產品，請重新選擇。", mainQuick()));
+  }
+
+  const addComboMatch = text.match(/^加入組合｜(\d+)｜(\d+)$/);
+  if (addComboMatch) {
+    const combo = getCombo(addComboMatch[1]);
+    const qty = Number(addComboMatch[2]);
+    if (!combo || qty <= 0) return reply(event.replyToken, textMsg("加入搭配組合失敗，請重新選擇。", mainQuick()));
+    addComboCart(state, combo, addComboMatch[1], qty);
+    return reply(event.replyToken, cartFlex(state));
   }
 
   const addMatch = text.match(/^加入購物車｜([^｜]+)｜(\d+)$/);
@@ -958,6 +1027,11 @@ module.exports = {
   comboReply,
   comboMenuReply,
   comboDetailReply,
+  comboQtyMenu,
+  comboUnitPrice,
+  comboPromotionLines,
+  addComboCart,
+  getCombo,
   usageChooserReply,
   usageReply,
   doctorReferralReply,

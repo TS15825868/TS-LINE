@@ -33,7 +33,24 @@
         ],
         "gift": "",
         "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
-        "priceNote": "以LINE OA最新價格與活動由客服確認"
+        "id": "daily-rhythm",
+        "products": [
+          {
+            "productId": "guilu-gao",
+            "qty": 1
+          },
+          {
+            "productId": "guilu-drink-180",
+            "qty": 5
+          }
+        ],
+        "unit": "組",
+        "quantityOptions": [
+          1,
+          2,
+          3,
+          5
+        ]
       },
       {
         "name": "日常便利組",
@@ -43,11 +60,28 @@
         ],
         "items": [
           "龜鹿膏 1 罐",
-          "龜鹿飲180cc 10 包"
+          "龜鹿飲180cc 12 包（買10送2）"
         ],
         "gift": "",
         "desc": "適合想固定節奏，也想增加外出或忙碌時的便利性。",
-        "priceNote": "以LINE OA最新價格與活動由客服確認"
+        "id": "daily-convenience",
+        "products": [
+          {
+            "productId": "guilu-gao",
+            "qty": 1
+          },
+          {
+            "productId": "guilu-drink-180",
+            "qty": 12
+          }
+        ],
+        "unit": "組",
+        "quantityOptions": [
+          1,
+          2,
+          3,
+          5
+        ]
       },
       {
         "name": "餐桌搭配組",
@@ -56,12 +90,29 @@
           "餐桌組"
         ],
         "items": [
-          "龜鹿湯塊 75g 1 盒",
-          "鹿茸粉 1 罐"
+          "龜鹿湯塊75g 1 盒",
+          "鹿茸粉75g 1 罐"
         ],
         "gift": "",
         "desc": "適合想從料理與熱飲一起安排的人。",
-        "priceNote": "以LINE OA最新價格與活動由客服確認"
+        "id": "table-pairing",
+        "products": [
+          {
+            "productId": "guilu-tangkuai",
+            "qty": 1
+          },
+          {
+            "productId": "luerong-fen",
+            "qty": 1
+          }
+        ],
+        "unit": "組",
+        "quantityOptions": [
+          1,
+          2,
+          3,
+          5
+        ]
       },
       {
         "name": "完整體驗組",
@@ -72,12 +123,37 @@
         "items": [
           "龜鹿膏 1 罐",
           "龜鹿飲180cc 5 包",
-          "龜鹿湯塊 75g 1 盒",
-          "鹿茸粉 1 罐"
+          "龜鹿湯塊75g 1 盒",
+          "鹿茸粉75g 1 罐"
         ],
         "gift": "",
         "desc": "適合想一次了解不同型態，依生活情境安排的人。",
-        "priceNote": "以LINE OA最新價格與活動由客服確認"
+        "id": "full-experience",
+        "products": [
+          {
+            "productId": "guilu-gao",
+            "qty": 1
+          },
+          {
+            "productId": "guilu-drink-180",
+            "qty": 5
+          },
+          {
+            "productId": "guilu-tangkuai",
+            "qty": 1
+          },
+          {
+            "productId": "luerong-fen",
+            "qty": 1
+          }
+        ],
+        "unit": "組",
+        "quantityOptions": [
+          1,
+          2,
+          3,
+          5
+        ]
       },
       {
         "name": "傳統燉煮組",
@@ -88,12 +164,29 @@
           "傳統組"
         ],
         "items": [
-          "龜鹿膠一斤裝 1 盒",
-          "鹿茸粉 1 罐"
+          "龜鹿膠600g（一斤裝）1 盒",
+          "鹿茸粉75g 1 罐"
         ],
         "gift": "",
         "desc": "適合想了解一斤裝大份量與鹿茸粉搭配安排的人。",
-        "priceNote": "以LINE OA最新價格與活動由客服確認"
+        "id": "traditional-stew",
+        "products": [
+          {
+            "productId": "guilu-jiao",
+            "qty": 1
+          },
+          {
+            "productId": "luerong-fen",
+            "qty": 1
+          }
+        ],
+        "unit": "組",
+        "quantityOptions": [
+          1,
+          2,
+          3,
+          5
+        ]
       }
     ]
   },

@@ -46,9 +46,10 @@ for (const product of data.products) {
 const combos = data.offers?.comboOffers || [];
 const comboItems = combos.flatMap((combo) => combo.items || []);
 assert.ok(comboItems.includes("龜鹿飲180cc 5 包"));
-assert.ok(comboItems.includes("龜鹿飲180cc 10 包"));
+assert.ok(comboItems.includes("龜鹿飲180cc 12 包（買10送2）"));
 assert.ok(!comboItems.includes("龜鹿飲 5 包"));
 assert.ok(!comboItems.includes("龜鹿飲 10 包"));
+assert.ok(!comboItems.includes("龜鹿飲180cc 10 包"));
 
 const drink180 = data.products.find((product) => product.id === "guilu-drink-180");
 assert.strictEqual(drink180.page, "product-guilu-drink-180cc.html");

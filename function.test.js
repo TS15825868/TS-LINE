@@ -5,7 +5,7 @@ const {
   DATA, VERSION, productMenuReply, priceCarousel, recommendReply,
   comboMenuReply, comboDetailReply, usageChooserReply, usageReply,
   doctorReferralReply, huangdiNeijingReply, brandStoryReply,
-  qtyMenu, cartFlex, detectWebsiteIntent,
+  qtyMenu, cartFlex, detectWebsiteIntent, comboQtyMenu, comboUnitPrice, comboPromotionLines, addComboCart, getCombo,
 } = require("./server");
 
 function validateMessage(message) {
@@ -31,7 +31,7 @@ function validateMessage(message) {
   walk(message);
 }
 
-assert.strictEqual(VERSION, "v300.5");
+assert.strictEqual(VERSION, "v300.6");
 const messages = [
   productMenuReply(), priceCarousel(), recommendReply(), comboMenuReply(), comboDetailReply(0),
   usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(), brandStoryReply(),
@@ -51,7 +51,7 @@ const source = fs.readFileSync("server.js", "utf8");
 for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
   assert.ok(source.includes(command), "missing command: " + command);
 }
-console.log("PASS full LINE function matrix v300.5");
+console.log("PASS full LINE function matrix v300.6");
 
 const expectedSalesV3004 = {
   "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5] },
@@ -89,4 +89,26 @@ const websiteIntentCases = [
 for (const [message, expected] of websiteIntentCases) {
   assert.strictEqual(detectWebsiteIntent(message), expected, message);
 }
-console.log("PASS website legacy message routing v300.5");
+console.log("PASS website legacy message routing v300.6");
+
+
+const expectedComboPrices = [2500, 3500, 3600, 6100, 11600];
+for (let index = 0; index < expectedComboPrices.length; index += 1) {
+  const combo = getCombo(index);
+  assert.ok(combo, "missing combo " + index);
+  assert.strictEqual(comboUnitPrice(combo), expectedComboPrices[index], combo.name + " unit price");
+  assert.deepStrictEqual(combo.quantityOptions, [1, 2, 3, 5], combo.name + " quantity options");
+  const menu = comboQtyMenu(index);
+  const buttons = menu.contents.footer.contents;
+  assert.strictEqual(buttons.length, 5, combo.name + " button count");
+  for (const qty of [1, 2, 3, 5]) {
+    assert.ok(buttons.some((button) => button.action?.text === `加入組合｜${index}｜${qty}`), combo.name + " missing " + qty + " sets");
+  }
+}
+const comboState = { cart: [], checkout: null };
+addComboCart(comboState, getCombo(2), 2, 3);
+assert.strictEqual(comboState.cart.length, 1);
+assert.strictEqual(comboState.cart[0].qty, 3);
+assert.strictEqual(comboState.cart[0].total, 10800);
+assert.ok(comboPromotionLines(getCombo(1)).some((line) => line.includes("買10送2")));
+console.log("PASS combo prices, quantities, promotions and cart v300.6");
