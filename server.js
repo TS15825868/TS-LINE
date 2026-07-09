@@ -1,9 +1,9 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.2
+ * 仙加味 LINE OA Bot v300.3
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
- * LINE 憑證與 CRM URL 僅從部署環境變數讀取。
+ * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
 
 const line = require("@line/bot-sdk");
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.2";
+const VERSION = "v300.3";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -219,20 +219,12 @@ function productBubble(product) {
   return {
     type: "bubble",
     size: "mega",
-    hero: {
-      type: "image",
-      url: absoluteUrl(product.image || "images/logo.png"),
-      size: "full",
-      aspectRatio: "4:5",
-      aspectMode: "contain",
-      backgroundColor: "#F7F2E8",
-    },
     body: {
       type: "box",
       layout: "vertical",
       spacing: "md",
       contents: [
-        { type: "text", text: product.displayName, weight: "bold", size: "xl", wrap: true },
+        { type: "text", text: product.displayName, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
         {
           type: "text",
           text: `規格：${product.spec}\n${product.purpose ? `用途方向：${product.purpose}\n` : ""}${priceLine}${offers}`,
@@ -791,7 +783,7 @@ async function handleMessage(event) {
     return reply(event.replyToken, cartFlex(state));
   }
 
-  if (/^(看產品|查看產品|直接下單|我要下單|立即下單|開始下單|我要買)$/.test(text)) {
+  if (/^(看產品|查看產品|看商品|產品|直接下單|直接購買|我要下單|立即下單|開始下單|我要買)$/.test(text)) {
     return reply(event.replyToken, productMenuReply());
   }
 
@@ -934,4 +926,6 @@ module.exports = {
   validateData,
   sanitizeUserText,
   cleanupExpiredStates,
+  qtyMenu,
+  cartFlex,
 };
