@@ -29,6 +29,7 @@ jobs:
           set -euo pipefail
           node tools/apply_security_hardening_v300_1.js
           node tools/fix_combo_compat_v300_1.js
+          node tools/fix_product_menu_handler_v300_1.js
           git checkout -- .github/workflows/verify-line-and-website-catalog.yml
           npm install --package-lock-only --ignore-scripts
 
@@ -49,6 +50,8 @@ jobs:
           node --check test.js
           node --check catalog.test.js
           node --check security.test.js
+          grep -F 'return reply(event.replyToken, productMenuReply());' server.js >/dev/null
+          grep -F 'return reply(event.replyToken, comboMenuReply());' server.js >/dev/null
           node server.js >/tmp/lineoa-security.log 2>&1 &
           PID=$!
           trap 'kill $PID' EXIT
