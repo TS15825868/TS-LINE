@@ -15,56 +15,16 @@ function replaceBlock(source, pattern, replacement, label) {
 const data = JSON.parse(read("data.json"));
 const combos = data.offers?.comboOffers || [];
 const definitions = [
-  {
-    id: "daily-rhythm",
-    products: [
-      { productId: "guilu-gao", qty: 1 },
-      { productId: "guilu-drink-180", qty: 5 },
-    ],
-    items: ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包"],
-  },
-  {
-    id: "daily-convenience",
-    products: [
-      { productId: "guilu-gao", qty: 1 },
-      { productId: "guilu-drink-180", qty: 12 },
-    ],
-    items: ["龜鹿膏 1 罐", "龜鹿飲180cc 12 包（買10送2）"],
-  },
-  {
-    id: "table-pairing",
-    products: [
-      { productId: "guilu-tangkuai", qty: 1 },
-      { productId: "luerong-fen", qty: 1 },
-    ],
-    items: ["龜鹿湯塊75g 1 盒", "鹿茸粉75g 1 罐"],
-  },
-  {
-    id: "full-experience",
-    products: [
-      { productId: "guilu-gao", qty: 1 },
-      { productId: "guilu-drink-180", qty: 5 },
-      { productId: "guilu-tangkuai", qty: 1 },
-      { productId: "luerong-fen", qty: 1 },
-    ],
-    items: ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包", "龜鹿湯塊75g 1 盒", "鹿茸粉75g 1 罐"],
-  },
-  {
-    id: "traditional-stew",
-    products: [
-      { productId: "guilu-jiao", qty: 1 },
-      { productId: "luerong-fen", qty: 1 },
-    ],
-    items: ["龜鹿膠600g（一斤裝）1 盒", "鹿茸粉75g 1 罐"],
-  },
+  { id: "daily-rhythm", products: [{ productId: "guilu-gao", qty: 1 }, { productId: "guilu-drink-180", qty: 5 }], items: ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包"] },
+  { id: "daily-convenience", products: [{ productId: "guilu-gao", qty: 1 }, { productId: "guilu-drink-180", qty: 12 }], items: ["龜鹿膏 1 罐", "龜鹿飲180cc 12 包（買10送2）"] },
+  { id: "table-pairing", products: [{ productId: "guilu-tangkuai", qty: 1 }, { productId: "luerong-fen", qty: 1 }], items: ["龜鹿湯塊75g 1 盒", "鹿茸粉75g 1 罐"] },
+  { id: "full-experience", products: [{ productId: "guilu-gao", qty: 1 }, { productId: "guilu-drink-180", qty: 5 }, { productId: "guilu-tangkuai", qty: 1 }, { productId: "luerong-fen", qty: 1 }], items: ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包", "龜鹿湯塊75g 1 盒", "鹿茸粉75g 1 罐"] },
+  { id: "traditional-stew", products: [{ productId: "guilu-jiao", qty: 1 }, { productId: "luerong-fen", qty: 1 }], items: ["龜鹿膠600g（一斤裝）1 盒", "鹿茸粉75g 1 罐"] },
 ];
 
 if (combos.length !== definitions.length) throw new Error("搭配組合數量與預期不一致");
 combos.forEach((combo, index) => {
-  Object.assign(combo, definitions[index], {
-    unit: "組",
-    quantityOptions: [1, 2, 3, 5],
-  });
+  Object.assign(combo, definitions[index], { unit: "組", quantityOptions: [1, 2, 3, 5] });
   delete combo.priceNote;
 });
 write("data.json", JSON.stringify(data, null, 2) + "\n");
@@ -132,7 +92,6 @@ function addComboCart(state, combo, index, qty) {
   const existing = state.cart.find((item) => item.id === id);
   if (existing) existing.qty += qty;
   else state.cart.push({ id, name: combo.name, qty, unit: combo.unit || "組", comboIndex: Number(index) });
-
   const item = state.cart.find((cartItem) => cartItem.id === id);
   const unitPrice = comboUnitPrice(combo);
   item.total = unitPrice * item.qty;
@@ -140,12 +99,7 @@ function addComboCart(state, combo, index, qty) {
 }
 
 function comboMenuReply()`;
-server = replaceBlock(
-  server,
-  /function comboMenuReply\(\)/,
-  helpers,
-  "搭配組合輔助函式"
-);
+server = replaceBlock(server, /function comboMenuReply\(\)/, helpers, "搭配組合輔助函式");
 
 const comboMenu = `function comboMenuReply() {
   const combos = DATA.offers?.comboOffers || [];
@@ -155,7 +109,6 @@ const comboMenu = `function comboMenuReply() {
       { label: "人工客服", text: "我要人工客服" },
     ]);
   }
-
   return {
     type: "flex",
     altText: "仙加味搭配組合",
@@ -187,12 +140,7 @@ const comboMenu = `function comboMenuReply() {
 function comboDetailReply(index) {
   return comboQtyMenu(index);
 }`;
-server = replaceBlock(
-  server,
-  /function comboMenuReply\(\) \{[\s\S]*?\n\}\n\nfunction comboDetailReply\(index\) \{[\s\S]*?\n\}/,
-  comboMenu,
-  "搭配組合卡片"
-);
+server = replaceBlock(server, /function comboMenuReply\(\) \{[\s\S]*?\n\}\n\nfunction comboDetailReply\(index\) \{[\s\S]*?\n\}/, comboMenu, "搭配組合卡片");
 
 server = server.replace(
   "  const comboDetailMatch = text.match(/^搭配方案｜(\\d+)$/);\n  if (comboDetailMatch) return reply(event.replyToken, comboDetailReply(comboDetailMatch[1]));",
@@ -209,23 +157,16 @@ const addComboHandler = `  const addComboMatch = text.match(/^加入組合｜(\\
   }
 
   const addMatch = text.match(/^加入購物車｜([^｜]+)｜(\\d+)$/);`;
-server = replaceBlock(
-  server,
-  /  const addMatch = text\.match\(\/\^加入購物車｜\(\[\^｜\]\+\)｜\(\\d\+\)\$\/\);/,
-  addComboHandler,
-  "加入搭配組合訊息"
-);
+server = replaceBlock(server, /  const addMatch = text\.match\(\/\^加入購物車｜\(\[\^｜\]\+\)｜\(\\d\+\)\$\/\);/, addComboHandler, "加入搭配組合訊息");
 
 server = server.replace(
   "  comboDetailReply,\n  usageChooserReply,",
   "  comboDetailReply,\n  comboQtyMenu,\n  comboUnitPrice,\n  comboPromotionLines,\n  addComboCart,\n  getCombo,\n  usageChooserReply,"
 );
-
 write("server.js", server);
 
 for (const fileName of ["test.js", "security.test.js", "function.test.js"]) {
-  let value = read(fileName);
-  value = value.replace(/v300\.5/g, "v300.6");
+  let value = read(fileName).replace(/v300\.5/g, "v300.6");
   write(fileName, value);
 }
 
@@ -259,12 +200,16 @@ console.log("PASS combo prices, quantities, promotions and cart v300.6");
 `;
 write("function.test.js", functionTest);
 
+let catalogTest = read("catalog.test.js");
+catalogTest = catalogTest.replace('assert.ok(comboItems.includes("龜鹿飲180cc 10 包"));', 'assert.ok(comboItems.includes("龜鹿飲180cc 12 包（買10送2）"));');
+catalogTest = catalogTest.replace('assert.ok(!comboItems.includes("龜鹿飲 10 包"));', 'assert.ok(!comboItems.includes("龜鹿飲 10 包"));\nassert.ok(!comboItems.includes("龜鹿飲180cc 10 包"));');
+write("catalog.test.js", catalogTest);
+
 const pkg = JSON.parse(read("package.json"));
 pkg.version = "3.0.6";
 write("package.json", JSON.stringify(pkg, null, 2) + "\n");
 
-let workflow = read(".github/workflows/verify-line-and-website-catalog.yml");
-workflow = workflow.replace(/v300\.5/g, "v300.6");
+let workflow = read(".github/workflows/verify-line-and-website-catalog.yml").replace(/v300\.5/g, "v300.6");
 write(".github/workflows/verify-line-and-website-catalog.yml", workflow);
 
 let readme = read("README.md");
