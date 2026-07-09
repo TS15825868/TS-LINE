@@ -1,1 +1,1 @@
-Stage the LINE OA consolidation and smoke-test trigger.
+Run LINE OA consolidation, cleanup, unit tests and HTTP smoke tests.
