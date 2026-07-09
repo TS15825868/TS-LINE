@@ -1,0 +1,49 @@
+name: Apply website router PR v300.5
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'website-intent-router-v300-5'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply website message router
+        run: |
+          node tools/apply_website_intent_router_v300_5.js
+          npm install --package-lock-only --ignore-scripts
+      - name: Verify
+        run: |
+          npm ci
+          npm run check:catalog
+          npm test
+          node --check server.js
+          node --check test.js
+          node --check catalog.test.js
+          node --check security.test.js
+          node --check function.test.js
+          grep -F 'const VERSION = "v300.5";' server.js >/dev/null
+          grep -F 'detectWebsiteIntent' server.js >/dev/null
+      - name: Commit result
+        run: |
+          rm -f WEBSITE_INTENT_ROUTER_TRIGGER.txt
+          rm -f tools/apply_website_intent_router_v300_5.js
+          rm -f .github/workflows/apply-website-intent-router-v300-5.yml
+          rm -f .github/workflows/apply-website-router-pr-v300-5.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v300.5: route website LINE messages into correct card flows"
+          git push origin HEAD:${{ github.head_ref }}
