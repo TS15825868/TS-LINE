@@ -1,0 +1,81 @@
+name: Verify LINE OA and website catalog
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply website catalog integration on this PR
+        if: github.event_name == 'pull_request' && github.head_ref == 'website-catalog-integration-v300'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/bump_line_v300.js
+          npm run sync:catalog
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Commit synchronized files
+        if: github.event_name == 'pull_request' && github.head_ref == 'website-catalog-integration-v300'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No synchronized changes."
+          else
+            git commit -m "v300: synchronize LINE OA with website product catalog"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify catalog is synchronized
+        run: npm run check:catalog
+
+      - name: Unit tests
+        run: npm test
+
+      - name: JavaScript syntax
+        run: |
+          node --check server.js
+          node --check test.js
+          node --check catalog.test.js
+          node --check tools/sync_website_catalog.js
+
+      - name: HTTP smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node server.js >/tmp/lineoa.log 2>&1 &
+          PID=$!
+          trap 'kill $PID' EXIT
+          sleep 2
+          curl --fail --silent --show-error http://127.0.0.1:3000/ | grep '"ok":true' >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"version":"v300.0"' >/dev/null
+          STATUS=$(curl --silent --output /tmp/webhook.json --write-out '%{http_code}' \
+            -X POST -H 'content-type: application/json' -d '{"events":[]}' \
+            http://127.0.0.1:3000/webhook)
+          test "$STATUS" = "503"
