@@ -228,7 +228,7 @@
           "label": "買10送2（12包）"
         }
       ],
-      "description": "180cc鋁袋，把龜鹿膏的成分方向整理成較完整容量的即飲型態。用途方向以居家或日常即飲食補為主，開封即可飲用，也可溫熱後飲用。",
+      "description": "180cc鋁袋包裝，把龜鹿膏的成分方向整理成較大容量的即飲型態。開封即可飲用，也可隔水加熱，或倒入杯中後加熱飲用。",
       "ingredients": [
         "水",
         "鹿角萃取物",
@@ -239,21 +239,22 @@
         "粉光蔘"
       ],
       "usage": [
-        "開封即可飲用。",
-        "可依個人習慣溫熱後飲用。",
+        "打開即可飲用。",
+        "可隔水加熱後飲用。",
+        "亦可倒入杯中後加熱飲用。",
         "開封後請儘速飲用完畢。"
       ],
-      "image": "images/products-v3/guilu-drink-180.jpg?v=295.1",
-      "dmImage": "images/dm-v3/guilu-drink-180.jpg?v=295.1",
+      "image": "images/products-v3/guilu-drink-180.webp?v=298.5",
+      "dmImage": "images/dm-v3/guilu-drink-180.webp?v=298.5",
       "gallery": [],
       "detailImages": [
-        "images/dm-v3/guilu-drink-180.jpg?v=295.1"
+        "images/dm-v3/guilu-drink-180.webp?v=298.5"
       ],
       "priceText": "$200 / 包",
       "priceLabel": "售價200元，買10送2",
       "page": "product-guilu-drink-180cc.html",
-      "purpose": "完整容量即飲食補",
-      "purposeDirection": "適合希望一次飲用較完整容量、減少沖泡準備，或在家中方便安排的人。"
+      "purpose": "較大容量即飲食補",
+      "purposeDirection": "適合偏好較大容量即飲、居家安排或溫熱後飲用的人。"
     },
     {
       "id": "guilu-tangkuai",
@@ -822,7 +823,7 @@
       "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
     }
   ],
-  "version": "298.4",
+  "version": "298.5",
   "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。",
   "updatedAt": "2026-07-08",
   "referenceKnowledge": {
