@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.0
+ * 仙加味 LINE OA Bot v300.1
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證與 CRM URL 僅從部署環境變數讀取。
  */
@@ -11,10 +11,14 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.0";
+const VERSION = "v300.1";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "";
+const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
+const STATE_TTL_MS = Number(process.env.STATE_TTL_MS || 24 * 60 * 60 * 1000);
+const STATE_CLEANUP_INTERVAL_MS = Number(process.env.STATE_CLEANUP_INTERVAL_MS || 60 * 60 * 1000);
+const MAX_STATE_ENTRIES = Number(process.env.MAX_STATE_ENTRIES || 10000);
 
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
@@ -26,19 +30,37 @@ const client = config.channelAccessToken && config.channelSecret ? new line.Clie
 const states = new Map();
 const DATA = loadData();
 
+function validateData(data) {
+  if (!data || typeof data !== "object") throw new Error("data.json 必須是 JSON 物件");
+  if (!Array.isArray(data.products) || !data.products.length) throw new Error("data.json 缺少 products");
+  for (const product of data.products) {
+    for (const field of ["id", "name", "price", "unit", "image", "usage", "ingredients"]) {
+      if (product[field] === undefined || product[field] === null || product[field] === "") {
+        throw new Error((product.id || "unknown") + " 缺少 " + field);
+      }
+    }
+  }
+  return data;
+}
+
 function loadData() {
   const file = path.join(__dirname, "data.json");
-  const data = JSON.parse(fs.readFileSync(file, "utf8"));
-  data.siteUrl = data.siteUrl || SITE_URL;
-  data.products = (data.products || []).map((product) => ({
-    ...product,
-    displayName: product.displayName || product.name,
-    spec: product.spec || product.size || "",
-    offers: product.offers || [],
-    orderStatus: "開放下單",
-    shippingNotice: "實際庫存與出貨時間由客服確認。",
-  }));
-  return data;
+  try {
+    const data = validateData(JSON.parse(fs.readFileSync(file, "utf8")));
+    data.siteUrl = data.siteUrl || SITE_URL;
+    data.products = data.products.map((product) => ({
+      ...product,
+      displayName: product.displayName || product.name,
+      spec: product.spec || product.size || "",
+      offers: product.offers || [],
+      orderStatus: "開放下單",
+      shippingNotice: "實際庫存與出貨時間由客服確認。",
+    }));
+    return data;
+  } catch (error) {
+    console.error("data.json 載入失敗：" + error.message);
+    throw error;
+  }
 }
 
 function money(value) {
@@ -54,9 +76,36 @@ function getProduct(id) {
   return DATA.products.find((product) => product.id === id) || null;
 }
 
+function cleanupExpiredStates(now = Date.now()) {
+  for (const [userId, state] of states) {
+    if (now - Number(state.lastActivity || 0) > STATE_TTL_MS) states.delete(userId);
+  }
+}
+
 function getState(userId) {
-  if (!states.has(userId)) states.set(userId, { cart: [], checkout: null });
-  return states.get(userId);
+  const now = Date.now();
+  cleanupExpiredStates(now);
+  if (!states.has(userId)) {
+    if (states.size >= MAX_STATE_ENTRIES) {
+      const oldest = [...states.entries()].sort((a, b) => (a[1].lastActivity || 0) - (b[1].lastActivity || 0))[0];
+      if (oldest) states.delete(oldest[0]);
+    }
+    states.set(userId, { cart: [], checkout: null, lastActivity: now });
+  }
+  const state = states.get(userId);
+  state.lastActivity = now;
+  return state;
+}
+
+const cleanupTimer = setInterval(cleanupExpiredStates, STATE_CLEANUP_INTERVAL_MS);
+cleanupTimer.unref?.();
+
+function sanitizeUserText(value, maxLength = 500) {
+  return String(value || "")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
 }
 
 function pb(action, params = {}) {
@@ -228,6 +277,16 @@ function productCarousel() {
   };
 }
 
+function productMenuReply() {
+  const lines = DATA.products.map((product, index) =>
+    (index + 1) + ". " + product.displayName + "｜" + product.spec + "｜" + (product.purpose || "日常食補")
+  );
+  return textMsg(
+    "請選擇想了解或下單的產品：\n\n" + lines.join("\n") + "\n\n點選下方產品後，可查看規格、價格、使用方式並選擇數量。",
+    DATA.products.map((product) => ({ label: product.displayName.slice(0, 20), text: "產品詳情｜" + product.id }))
+  );
+}
+
 function priceCarousel() {
   return {
     type: "flex",
@@ -338,8 +397,34 @@ function comboReply() {
     "搭配組合｜依日常使用方式選擇",
     "搭配組合以產品型態、使用方式與生活情境為主：\n\n・固定日常安排：龜鹿膏\n・方便即飲：龜鹿飲30cc或180cc\n・沖泡與料理：龜鹿湯塊\n・家庭長期使用：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。",
     [
-      { label: "查看搭配組合", uri: absoluteUrl("combo.html") },
+      { label: "查看搭配組合", text: "搭配組合" },
       { label: "查看產品", text: "看產品" },
+      { label: "人工客服", text: "我要人工客服" },
+    ]
+  );
+}
+
+function comboMenuReply() {
+  const combos = DATA.offers?.comboOffers || [];
+  if (!combos.length) return textMsg("目前搭配方案由客服依需求協助整理。", mainQuick());
+  const lines = combos.map((combo, index) =>
+    (index + 1) + ". " + combo.name + "\n" + (combo.items || []).map((item) => "・" + item).join("\n") + "\n" + (combo.desc || "")
+  );
+  return textMsg(
+    "請選擇想查看的搭配方案：\n\n" + lines.join("\n\n") + "\n\n實際價格、庫存與活動由客服確認。",
+    combos.slice(0, 10).map((combo, index) => ({ label: combo.name.slice(0, 20), text: "搭配方案｜" + index }))
+  );
+}
+
+function comboDetailReply(index) {
+  const combo = (DATA.offers?.comboOffers || [])[Number(index)];
+  if (!combo) return comboMenuReply();
+  return flexCard(
+    combo.name,
+    (combo.items || []).map((item) => "・" + item).join("\n") + "\n\n" + (combo.desc || "") + "\n\n" + (combo.priceNote || "價格與活動由客服確認"),
+    [
+      { label: "看全部產品", text: "看產品" },
+      { label: "其他搭配方案", text: "搭配組合" },
       { label: "人工客服", text: "我要人工客服" },
     ]
   );
@@ -448,18 +533,24 @@ function orderSummary(state) {
 
 async function saveCRM(payload) {
   if (!CRM_URL) return { ok: false, error: "CRM_URL is not configured" };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CRM_TIMEOUT_MS);
   try {
     const response = await fetch(CRM_URL, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) return { ok: false, error: `CRM HTTP ${response.status}`, ...result };
+    if (!response.ok) return { ok: false, error: "CRM HTTP " + response.status, ...result };
     return typeof result.ok === "boolean" ? result : { ok: true, ...result };
   } catch (error) {
-    console.error("CRM 寫入失敗：", error.message);
-    return { ok: false, error: error.message || "CRM request failed" };
+    const message = error.name === "AbortError" ? "CRM timeout after " + CRM_TIMEOUT_MS + "ms" : error.message;
+    console.error("CRM 寫入失敗：" + message);
+    return { ok: false, error: message || "CRM request failed" };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -472,7 +563,9 @@ async function continueCheckout(event, state, text) {
   }
 
   if (checkout.step === "name") {
-    checkout.name = text;
+    const name = sanitizeUserText(text, 40);
+    if (!name) return reply(event.replyToken, textMsg("請輸入收件人姓名。"));
+    checkout.name = name;
     checkout.step = "phone";
     return reply(event.replyToken, flexCard("第二步｜收件電話", "請直接回覆收件人電話。", [{ label: "取消", text: "取消" }]));
   }
@@ -537,7 +630,9 @@ async function continueCheckout(event, state, text) {
   }
 
   if (checkout.step === "address") {
-    checkout.address = text;
+    const address = sanitizeUserText(text, 160);
+    if (address.length < 2) return reply(event.replyToken, textMsg("請輸入完整地址或 7-11 門市資料。"));
+    checkout.address = address;
     checkout.step = "confirm";
     return reply(event.replyToken, orderSummary(state));
   }
@@ -590,7 +685,7 @@ async function handleLegacyPostback(event) {
   const state = getState(event.source.userId || "anonymous");
   const data = parsePB(event.postback?.data || "");
 
-  if (data.action === "products") return reply(event.replyToken, productCarousel());
+  if (data.action === "products") return reply(event.replyToken, productMenuReply());
   if (data.action === "prices") return reply(event.replyToken, priceCarousel());
   if (data.action === "recommend") return reply(event.replyToken, recommendReply());
   if (data.action === "cart") return reply(event.replyToken, cartFlex(state));
@@ -616,8 +711,17 @@ async function handleMessage(event) {
     return reply(event.replyToken, textMsg("目前請使用文字訊息詢問。", mainQuick()));
   }
 
-  const text = String(event.message.text || "").trim();
+  const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+
+  const productDetailMatch = text.match(/^產品詳情｜([^｜]+)$/);
+  if (productDetailMatch) {
+    const product = getProduct(productDetailMatch[1]);
+    return reply(event.replyToken, product ? { type: "flex", altText: product.displayName, contents: productBubble(product) } : productMenuReply());
+  }
+
+  const comboDetailMatch = text.match(/^搭配方案｜(\d+)$/);
+  if (comboDetailMatch) return reply(event.replyToken, comboDetailReply(comboDetailMatch[1]));
 
   if (state.checkout) return continueCheckout(event, state, text);
 
@@ -648,7 +752,7 @@ async function handleMessage(event) {
   }
 
   if (/^(看產品|查看產品|直接下單|我要下單|立即下單|開始下單|我要買)$/.test(text)) {
-    return reply(event.replyToken, productCarousel());
+    return reply(event.replyToken, productMenuReply());
   }
 
   if (/^(價格方案|價格|售價|價錢|多少錢|優惠)$/.test(text)) {
@@ -664,7 +768,7 @@ async function handleMessage(event) {
   }
 
   if (/搭配組合|食補搭配|產品搭配|組合怎麼搭|搭配方式/.test(text)) {
-    return reply(event.replyToken, comboReply());
+    return reply(event.replyToken, comboMenuReply());
   }
 
   if (/^(怎麼使用|使用方式|食用方式|產品怎麼用)$/.test(text)) {
@@ -739,6 +843,8 @@ app.get("/healthz", (_req, res) => {
     version: VERSION,
     orderOpen: true,
     credentialsConfigured: Boolean(config.channelAccessToken && config.channelSecret),
+    crmConfigured: Boolean(CRM_URL),
+    activeStates: states.size,
   });
 });
 
@@ -773,13 +879,19 @@ module.exports = {
   addCart,
   cartTotal,
   productCarousel,
+  productMenuReply,
   priceCarousel,
   recommendReply,
   comboReply,
+  comboMenuReply,
+  comboDetailReply,
   usageChooserReply,
   usageReply,
   doctorReferralReply,
   huangdiNeijingReply,
   brandStoryReply,
   isSensitiveHealthQuestion,
+  validateData,
+  sanitizeUserText,
+  cleanupExpiredStates,
 };
