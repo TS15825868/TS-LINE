@@ -1,6 +1,6 @@
 {
-  "name": "xianjiawei-lineoa-v298-9",
-  "version": "2.10.4",
+  "name": "xianjiawei-lineoa-v298-10",
+  "version": "2.10.5",
   "main": "start-v298-5.js",
   "engines": {
     "node": "22.x"
@@ -12,5 +12,5 @@
     "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
   },
-  "description": "仙加味 LINE OA v298.9｜敏感健康問題統一轉介章無忌中醫師"
+  "description": "仙加味 LINE OA v298.10｜修正搭配組合、怎麼使用與直接下單指令"
 }
