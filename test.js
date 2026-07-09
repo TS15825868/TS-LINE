@@ -10,9 +10,12 @@ const {
   addCart,
   cartTotal,
   productCarousel,
+  productMenuReply,
   priceCarousel,
   recommendReply,
   comboReply,
+  comboMenuReply,
+  comboDetailReply,
   usageChooserReply,
   usageReply,
   doctorReferralReply,
@@ -21,7 +24,7 @@ const {
   isSensitiveHealthQuestion,
 } = require("./server");
 
-assert.strictEqual(VERSION, "v300.0");
+assert.strictEqual(VERSION, "v300.1");
 assert.deepStrictEqual(
   DATA.products.map((product) => product.id),
   ["guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]
@@ -82,3 +85,7 @@ assert.strictEqual(isSensitiveHealthQuestion("龜鹿膏怎麼使用"), false);
 assert.strictEqual(isSensitiveHealthQuestion("搭配組合"), false);
 
 console.log(`PASS LINE OA ${VERSION}: products, prices, cart, cards, usage, classics and referral`);
+
+assert.strictEqual(productMenuReply().quickReply.items.length, 6);
+assert.ok(comboMenuReply().text.includes("日常節奏組"));
+assert.ok(comboDetailReply(0).contents.body.contents[0].text.includes("日常節奏組"));
