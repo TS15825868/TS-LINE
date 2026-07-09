@@ -28,6 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           node tools/apply_security_hardening_v300_1.js
+          node tools/fix_combo_compat_v300_1.js
           npm install --package-lock-only --ignore-scripts
 
       - name: Install dependencies
