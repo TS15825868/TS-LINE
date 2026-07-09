@@ -27,7 +27,6 @@ jobs:
           server_path = Path('server.js')
           text = server_path.read_text(encoding='utf-8')
 
-          # 版本與憑證：公開程式只讀取部署環境變數
           text = re.sub(r'仙加味 LINE OA Bot v[^\n*]+', '仙加味 LINE OA Bot v298.2', text)
           text = re.sub(r'const VERSION = "[^"]+";', 'const VERSION = "v298.2";', text)
           text = re.sub(r'channelAccessToken:\s*process\.env\.CHANNEL_ACCESS_TOKEN\s*\|\|\s*"[^"]*",', 'channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",', text)
@@ -97,3 +96,5 @@ function brandStoryReply() {
           git add -A
           git commit -m "v298.2: sync verified brand story to LINE OA"
           git push origin main
+
+# manual trigger marker
