@@ -31,7 +31,7 @@ function validateMessage(message) {
   walk(message);
 }
 
-assert.strictEqual(VERSION, "v300.3");
+assert.strictEqual(VERSION, "v300.4");
 const messages = [
   productMenuReply(), priceCarousel(), recommendReply(), comboMenuReply(), comboDetailReply(0),
   usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(), brandStoryReply(),
@@ -51,4 +51,26 @@ const source = fs.readFileSync("server.js", "utf8");
 for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
   assert.ok(source.includes(command), "missing command: " + command);
 }
-console.log("PASS full LINE function matrix v300.3");
+console.log("PASS full LINE function matrix v300.4");
+
+const expectedSalesV3004 = {
+  "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5] },
+  "guilu-drink-30": { price: 50, offerQty: 12, offerTotal: 500, options: [1, 3, 5, 12] },
+  "guilu-drink-180": { price: 200, offerQty: 12, offerTotal: 2000, options: [1, 3, 5, 12] },
+  "guilu-tangkuai": { price: 1600, options: [1, 2, 3, 5] },
+  "guilu-jiao": { price: 9600, originalPrice: 12000, options: [1, 2, 3, 5] },
+  "luerong-fen": { price: 2000, options: [1, 2, 3, 5] },
+};
+for (const product of DATA.products) {
+  const expected = expectedSalesV3004[product.id];
+  assert.deepStrictEqual(product.quantityOptions, expected.options);
+  assert.strictEqual(product.price, expected.price);
+  if (expected.originalPrice) assert.strictEqual(product.originalPrice, expected.originalPrice);
+  if (expected.offerQty) {
+    assert.ok(product.offers.some((offer) => offer.qty === expected.offerQty && offer.total === expected.offerTotal));
+  }
+  const menu = qtyMenu(product);
+  assert.strictEqual(menu.contents.footer.contents.length, 5);
+  validateMessage(menu);
+}
+console.log("PASS quantity options and promotions v300.4");

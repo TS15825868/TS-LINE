@@ -159,6 +159,12 @@
       "originalPrice": 1800,
       "unit": "罐",
       "offers": [],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
       "priceText": "$1800 / 罐",
       "priceLabel": "售價1,800元，優惠價1,500元"
     },
@@ -209,6 +215,12 @@
           "total": 500,
           "label": "買10送2（12瓶）"
         }
+      ],
+      "quantityOptions": [
+        1,
+        3,
+        5,
+        12
       ],
       "priceText": "$50 / 瓶",
       "priceLabel": "售價50元，買10送2"
@@ -261,6 +273,12 @@
           "label": "買10送2（12包）"
         }
       ],
+      "quantityOptions": [
+        1,
+        3,
+        5,
+        12
+      ],
       "priceText": "$200 / 包",
       "priceLabel": "售價200元，買10送2"
     },
@@ -302,6 +320,12 @@
       "price": 1600,
       "unit": "盒",
       "offers": [],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
       "priceText": "$1600 / 盒",
       "priceLabel": "售價1,600元"
     },
@@ -344,6 +368,12 @@
       "originalPrice": 12000,
       "unit": "盒",
       "offers": [],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
       "priceText": "$12000 / 盒",
       "priceLabel": "售價12,000元，優惠價9,600元"
     },
@@ -382,6 +412,12 @@
       "price": 2000,
       "unit": "罐",
       "offers": [],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
       "priceText": "$2000 / 罐",
       "priceLabel": "售價2,000元"
     }
