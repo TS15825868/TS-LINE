@@ -5,7 +5,7 @@ const path = require("path");
 
 const dataPath = path.join(__dirname, "data.json");
 const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
-data.version = "298.9";
+data.version = "298.10";
 data.classics = data.classics || {};
 data.classics.huangdiNeijing = {
   title: "《黃帝內經》的生活養生觀點",
@@ -21,9 +21,9 @@ data.medicalReferral = {
 
 const product = (data.products || []).find((item) => item.id === "guilu-drink-180");
 if (product) {
-  product.image = "images/products-v3/guilu-drink-180.jpg?v=298.9";
-  product.dmImage = "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=298.9";
-  product.detailImages = ["images/dm-final/03_guilu-drink-180cc-dm.jpg?v=298.9"];
+  product.image = "images/products-v3/guilu-drink-180.jpg?v=298.10";
+  product.dmImage = "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=298.10";
+  product.detailImages = ["images/dm-final/03_guilu-drink-180cc-dm.jpg?v=298.10"];
   product.description = "180cc鋁袋包裝，把龜鹿膏的成分方向整理成較大容量的即飲型態。開封即可飲用，也可隔水加熱，或倒入杯中後加熱飲用。";
   product.usage = [
     "打開即可飲用。",
@@ -38,12 +38,12 @@ if (product) {
 fs.writeFileSync(dataPath, JSON.stringify(data, null, 2) + "\n", "utf8");
 
 const serverPath = path.join(__dirname, "server.js");
-const runtimePath = path.join(__dirname, ".server-v298-9-runtime.js");
+const runtimePath = path.join(__dirname, ".server-v298-10-runtime.js");
 let serverSource = fs.readFileSync(serverPath, "utf8");
 
 serverSource = serverSource
-  .replace(/仙加味 LINE OA Bot v[^\n*]+/, "仙加味 LINE OA Bot v298.9")
-  .replace(/const VERSION = "[^"]+";/, 'const VERSION = "v298.9";')
+  .replace(/仙加味 LINE OA Bot v[^\n*]+/, "仙加味 LINE OA Bot v298.10")
+  .replace(/const VERSION = "[^"]+";/, 'const VERSION = "v298.10";')
   .replace(/const CRM_URL = process\.env\.CRM_URL \|\| "[^"]*";/, 'const CRM_URL = process.env.CRM_URL || "";')
   .replace(/channelAccessToken:\s*process\.env\.CHANNEL_ACCESS_TOKEN\s*\|\|\s*"[^"]*",/, 'channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",')
   .replace(/channelSecret:\s*process\.env\.CHANNEL_SECRET\s*\|\|\s*"[^"]*",/, 'channelSecret: process.env.CHANNEL_SECRET || "",');
@@ -76,6 +76,36 @@ function doctorReferralReply() {
 }
 `;
 
+const comboFunction = `
+function comboReply() {
+  return flexCard(
+    "搭配組合｜依日常使用方式選擇",
+    "搭配組合以產品型態、使用方式與生活情境為主：\\n\\n・固定日常安排：龜鹿膏\\n・方便即飲：龜鹿飲30cc或180cc\\n・沖泡與料理：龜鹿湯塊\\n・家庭長期使用：龜鹿膠\\n・自行搭配飲品：鹿茸粉\\n\\n若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。",
+    [
+      { label: "查看搭配組合", uri: absoluteUrl("combo.html") },
+      { label: "查看產品", data: pb("products") },
+      { label: "人工客服", text: "我要人工客服" },
+    ]
+  );
+}
+`;
+
+const usageFunction = `
+function usageChooserReply() {
+  return textMsg(
+    "請選擇想查看的產品使用方式：",
+    [
+      { label: "龜鹿膏", text: "龜鹿膏怎麼使用" },
+      { label: "龜鹿飲30cc", text: "龜鹿飲30cc怎麼使用" },
+      { label: "龜鹿飲180cc", text: "龜鹿飲180cc怎麼使用" },
+      { label: "龜鹿湯塊", text: "龜鹿湯塊怎麼使用" },
+      { label: "龜鹿膠", text: "龜鹿膠怎麼使用" },
+      { label: "鹿茸粉", text: "鹿茸粉怎麼使用" },
+    ]
+  );
+}
+`;
+
 if (!serverSource.includes("function huangdiNeijingReply()")) {
   serverSource = serverSource.replace("\nfunction detectProduct(text) {", `${neijingFunction}\nfunction detectProduct(text) {`);
 }
@@ -84,8 +114,17 @@ if (!serverSource.includes("function doctorReferralReply()")) {
   serverSource = serverSource.replace("\nfunction detectProduct(text) {", `${doctorReferralFunction}\nfunction detectProduct(text) {`);
 }
 
+if (!serverSource.includes("function comboReply()")) {
+  serverSource = serverSource.replace("\nfunction detectProduct(text) {", `${comboFunction}\nfunction detectProduct(text) {`);
+}
+
+if (!serverSource.includes("function usageChooserReply()")) {
+  serverSource = serverSource.replace("\nfunction detectProduct(text) {", `${usageFunction}\nfunction detectProduct(text) {`);
+}
+
 const neijingRoute = '  if (/黃帝內經|內經|食飲有節|飲食有節|起居有常|四時調養|順應四時/.test(text)) return reply(event.replyToken, huangdiNeijingReply());\n';
 const doctorRoute = '  if (/功效|效果|有效|有沒有用|多久有效|改善|治療|預防|疾病|症狀|不舒服|疼痛|腰痠|腰酸|膝蓋|關節|睡眠|失眠|血糖|血壓|膽固醇|免疫|明目|補血|補氣|壯陽|腎虛|肝腎|眼睛|服藥|用藥|藥物|孕婦|懷孕|哺乳|兒童|小孩|慢性病|過敏|手術|化療|洗腎|適不適合吃|適不適合食用|能不能吃|可以吃嗎|我能吃嗎|體質|燥熱|上火|副作用|禁忌/.test(text)) return reply(event.replyToken, doctorReferralReply());\n';
+const commandRoutes = '  if (/^(直接下單|我要下單|立即下單|開始下單)$/.test(text)) return reply(event.replyToken, productCarousel());\n  if (/搭配組合|食補搭配|產品搭配|組合怎麼搭|搭配方式/.test(text)) return reply(event.replyToken, comboReply());\n  if (/^(怎麼使用|使用方式|食用方式|產品怎麼用)$/.test(text)) return reply(event.replyToken, usageChooserReply());\n';
 
 if (!serverSource.includes("huangdiNeijingReply());")) {
   const brandRoute = '  if (/品牌故事|四代|鹿角伯|家族傳承|曾祖父|祖父|第三代|第四代/.test(text)) return reply(event.replyToken, brandStoryReply());\n';
@@ -95,6 +134,11 @@ if (!serverSource.includes("huangdiNeijingReply());")) {
 const recommendRoute = '  if (/不知道|怎麼選|推薦|適合哪個/.test(text)) return reply(event.replyToken, recommendReply());\n';
 if (!serverSource.includes("doctorReferralReply());")) {
   serverSource = serverSource.replace(recommendRoute, doctorRoute + recommendRoute);
+}
+
+const productRoute = '  if (/看產品|直接下單|我要買/.test(text)) return reply(event.replyToken, productCarousel());\n';
+if (!serverSource.includes("usageChooserReply());")) {
+  serverSource = serverSource.replace(productRoute, commandRoutes + productRoute);
 }
 
 serverSource = serverSource.replace(
