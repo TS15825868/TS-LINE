@@ -48,7 +48,7 @@ jobs:
           trap 'kill $PID' EXIT
           sleep 2
           curl --fail --silent --show-error http://127.0.0.1:3000/ | grep '"ok":true' >/dev/null
-          curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"version":"v300.1"' >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"version":"v300.2"' >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"credentialsConfigured":false' >/dev/null
           STATUS=$(curl --silent --output /tmp/webhook.json --write-out '%{http_code}' \
             -X POST -H 'content-type: application/json' -d '{"events":[]}' \
