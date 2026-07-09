@@ -823,7 +823,7 @@
       "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
     }
   ],
-  "version": "298.5",
+  "version": "299.1",
   "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。",
   "updatedAt": "2026-07-08",
   "referenceKnowledge": {
@@ -845,6 +845,19 @@
       "黃耆": "黃耆／黃芪",
       "粉光蔘": "西洋參",
       "鹿茸": "鹿茸"
+    }
+  },
+  "orderNotice": "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。",
+  "medicalReferral": {
+    "doctor": "章無忌中醫師",
+    "lineId": "@changwuchi",
+    "url": "https://lin.ee/1MK4NR9"
+  },
+  "classics": {
+    "huangdiNeijing": {
+      "title": "《黃帝內經》｜日常生活觀點",
+      "usage": "仙加味引用《黃帝內經》時，著重古代對飲食有節、起居有常與順應四時的生活觀點。",
+      "sourceUrl": "https://ts15825868.github.io/xianjiawei/sources.html"
     }
   }
 }

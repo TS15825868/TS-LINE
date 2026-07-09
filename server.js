@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v299.0
+ * 仙加味 LINE OA Bot v299.1
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證與 CRM URL 僅從部署環境變數讀取。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v299.0";
+const VERSION = "v299.1";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "";
@@ -369,11 +369,22 @@ function usageReply(product) {
 }
 
 function doctorReferralReply() {
+  const referral = DATA.medicalReferral || {};
+  const doctor = referral.doctor || "章無忌中醫師";
+  const lineId = referral.lineId || "@changwuchi";
+  const url = referral.url || "https://lin.ee/1MK4NR9";
   return flexCard(
     "個人狀況｜轉介中醫師諮詢",
-    "這部分會因每個人的身體狀況不同，為了讓您得到更準確的說明與建議，建議先由合作的中醫師了解您的情況🙂\n\n✔ 專人一對一說明\n✔ 可詢問適不適合食用\n✔ 可詢問個人狀況與疑問\n\nLINE ID：@changwuchi\n章無忌中醫師",
+    `這部分會因每個人的身體狀況不同，為了讓您得到更準確的說明與建議，建議先由合作的中醫師了解您的情況🙂
+
+✔ 專人一對一說明
+✔ 可詢問適不適合食用
+✔ 可詢問個人狀況與疑問
+
+LINE ID：${lineId}
+${doctor}`,
     [
-      { label: "前往中醫師諮詢", uri: "https://lin.ee/1MK4NR9" },
+      { label: "前往中醫師諮詢", uri: url },
       { label: "查看產品資訊", text: "看產品" },
       { label: "人工客服", text: "我要人工客服" },
     ]
@@ -381,11 +392,14 @@ function doctorReferralReply() {
 }
 
 function huangdiNeijingReply() {
+  const classic = DATA.classics?.huangdiNeijing || {};
   return flexCard(
-    "《黃帝內經》｜日常生活觀點",
-    "仙加味引用《黃帝內經》時，著重古代對飲食有節、起居有常與順應四時的生活觀點。\n\n這一層用來理解日常補養的節奏；《本草綱目》用於理解成分名稱與本草文化，現代藥典則用於理解正式品名與品質規格。產品資訊仍以實際成分、規格、保存與使用方式為準。",
+    classic.title || "《黃帝內經》｜日常生活觀點",
+    `${classic.usage || "仙加味以生活文化方式整理《黃帝內經》的飲食、作息與四時觀點。"}
+
+這一層用來理解日常補養的節奏；《本草綱目》用於理解成分名稱與本草文化，現代藥典則用於理解正式品名與品質規格。產品資訊仍以實際成分、規格、保存與使用方式為準。`,
     [
-      { label: "查看資料來源", uri: absoluteUrl("sources.html") },
+      { label: "查看資料來源", uri: classic.sourceUrl || absoluteUrl("sources.html") },
       { label: "查看漢方百科", uri: absoluteUrl("hanfang-baike.html") },
       { label: "詢問日常安排", text: "幫我推薦" },
     ]
@@ -433,17 +447,19 @@ function orderSummary(state) {
 }
 
 async function saveCRM(payload) {
-  if (!CRM_URL) return {};
+  if (!CRM_URL) return { ok: false, error: "CRM_URL is not configured" };
   try {
     const response = await fetch(CRM_URL, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
     });
-    return await response.json().catch(() => ({}));
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) return { ok: false, error: `CRM HTTP ${response.status}`, ...result };
+    return typeof result.ok === "boolean" ? result : { ok: true, ...result };
   } catch (error) {
     console.error("CRM 寫入失敗：", error.message);
-    return {};
+    return { ok: false, error: error.message || "CRM request failed" };
   }
 }
 
@@ -462,7 +478,11 @@ async function continueCheckout(event, state, text) {
   }
 
   if (checkout.step === "phone") {
-    checkout.phone = text;
+    const phone = text.replace(/[^0-9]/g, "");
+    if (!/^(09\d{8}|0\d{8,10})$/.test(phone)) {
+      return reply(event.replyToken, textMsg("電話格式不完整，請輸入台灣手機或市內電話，例如 0912345678。", [{ label: "取消", text: "取消" }]));
+    }
+    checkout.phone = phone;
     checkout.step = "payment";
     return reply(event.replyToken, textMsg("請選擇付款方式。", [
       { label: "現金付款", text: "現金付款" },
@@ -534,6 +554,20 @@ async function continueCheckout(event, state, text) {
     };
 
     const result = await saveCRM(payload);
+    if (!result.ok) {
+      return reply(
+        event.replyToken,
+        flexCard(
+          "訂單暫未送出",
+          "訂單資料已保留，但系統目前無法寫入訂單。請稍後再按確認送出，或選擇人工客服協助。",
+          [
+            { label: "再次送出", text: "確認送出" },
+            { label: "人工客服", text: "我要人工客服" },
+            { label: "取消", text: "取消" },
+          ]
+        )
+      );
+    }
     const orderId = result.orderId || result.order_id || "";
     state.cart = [];
     state.checkout = null;
@@ -725,4 +759,27 @@ if (config.channelAccessToken && config.channelSecret) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`仙加味 LINE OA ${VERSION} running on ${port}`));
+if (require.main === module) {
+  app.listen(port, () => console.log(`仙加味 LINE OA ${VERSION} running on ${port}`));
+}
+
+module.exports = {
+  app,
+  DATA,
+  VERSION,
+  getProduct,
+  detectProduct,
+  calcItem,
+  addCart,
+  cartTotal,
+  productCarousel,
+  priceCarousel,
+  recommendReply,
+  comboReply,
+  usageChooserReply,
+  usageReply,
+  doctorReferralReply,
+  huangdiNeijingReply,
+  brandStoryReply,
+  isSensitiveHealthQuestion,
+};
