@@ -1,4 +1,4 @@
-name: v298.2 brand story sync
+name: v298.3 brand story sync
 
 on:
   push:
@@ -23,12 +23,11 @@ jobs:
           from pathlib import Path
           import json, re
 
-          VERSION = 'v298.2'
           server_path = Path('server.js')
           text = server_path.read_text(encoding='utf-8')
 
-          text = re.sub(r'仙加味 LINE OA Bot v[^\n*]+', '仙加味 LINE OA Bot v298.2', text)
-          text = re.sub(r'const VERSION = "[^"]+";', 'const VERSION = "v298.2";', text)
+          text = re.sub(r'仙加味 LINE OA Bot v[^\n*]+', '仙加味 LINE OA Bot v298.3', text)
+          text = re.sub(r'const VERSION = "[^"]+";', 'const VERSION = "v298.3";', text)
           text = re.sub(r'channelAccessToken:\s*process\.env\.CHANNEL_ACCESS_TOKEN\s*\|\|\s*"[^"]*",', 'channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",', text)
           text = re.sub(r'channelSecret:\s*process\.env\.CHANNEL_SECRET\s*\|\|\s*"[^"]*",', 'channelSecret: process.env.CHANNEL_SECRET || "",', text)
 
@@ -37,7 +36,7 @@ jobs:
 function brandStoryReply() {
   return flexCard(
     "仙加味｜四代傳承",
-    "仙加味的故事從台北萬華開始。\n\n第一代曾祖父從行口與山產買賣起步。\n\n祖父『鹿角伯』為民國28年次，國小畢業後，十幾歲便跟著曾祖父在老店學習山產原料、鹿角處理，以及龜鹿相關代工與加工。\n\n父親出生於1964年，長期在祖父身邊協助原料處理、鹿角工序、代工加工與日常營運；約2000年前後鹿角伯辭世後，第三代正式承接。\n\n重要歷程：\n・1974年開始獨立經營\n・1976年正式成立獨立事業\n・1978年完成公司化經營\n\n第四代以仙加味為品牌，將家族累積的原料、工序與使用經驗，整理成更清楚的產品資訊與日常使用方式。",
+    "仙加味的故事從台北萬華開始。\n\n第一代曾祖父從行口與山產買賣起步。\n\n祖父『鹿角伯』為民國28年次，國小畢業後，十幾歲便跟著曾祖父在老店學習山產原料，以及鹿角、鹿茸、鹿鞭等鹿類原料與產品的處理、代工與加工，包含生鮮原料與乾品。\n\n父親出生於1964年，長期在祖父身邊協助相關鹿類原料與產品的生鮮、乾品處理、代工加工與日常營運；約2000年前後鹿角伯辭世後，第三代正式承接。\n\n重要歷程：\n・1974年開始獨立經營\n・1976年正式成立獨立事業\n・1978年完成公司化經營\n\n第四代以仙加味為品牌，將家族累積的原料、工序與使用經驗，整理成更清楚的產品資訊與日常使用方式。",
     [
       { label: "查看完整品牌故事", uri: absoluteUrl("brand.html") },
       { label: "查看產品系列", data: pb("products") },
@@ -47,7 +46,9 @@ function brandStoryReply() {
 }
 '''
 
-          if 'function brandStoryReply()' not in text:
+          if 'function brandStoryReply()' in text:
+            text = re.sub(r'\nfunction brandStoryReply\(\) \{.*?\n\}\n', brand_function, text, count=1, flags=re.S)
+          else:
             insert_at = text.find('\nfunction detectProduct(')
             if insert_at == -1:
               raise SystemExit('找不到 detectProduct 插入位置')
@@ -64,14 +65,15 @@ function brandStoryReply() {
 
           data_path = Path('data.json')
           data = json.loads(data_path.read_text(encoding='utf-8'))
-          data['version'] = '298.2'
+          data['version'] = '298.3'
           data['brandStory'] = {
             'title': '仙加味四代傳承',
             'privacyNote': '對外不顯示公司名稱與家庭分家原因',
+            'processingScope': '鹿角、鹿茸、鹿鞭等鹿類原料與產品，包含生鮮原料與乾品的處理、代工與加工',
             'timeline': [
               {'period': '第一代', 'text': '曾祖父從萬華行口與山產買賣起步。'},
-              {'period': '民國28年次', 'text': '祖父鹿角伯出生；十幾歲、國小畢業後跟著曾祖父在老店學習代工加工。'},
-              {'period': '1964年', 'text': '第三代出生，日後長期協助祖父處理原料、鹿角工序、代工加工與日常營運。'},
+              {'period': '民國28年次', 'text': '祖父鹿角伯出生；十幾歲、國小畢業後跟著曾祖父在老店學習鹿類原料與產品的生鮮、乾品處理及代工加工。'},
+              {'period': '1964年', 'text': '第三代出生，日後長期協助祖父處理鹿角、鹿茸、鹿鞭等鹿類原料與產品的生鮮、乾品加工及日常營運。'},
               {'period': '1974年', 'text': '開始獨立經營，持續專注代工與加工。'},
               {'period': '1976年', 'text': '正式成立獨立事業。'},
               {'period': '1978年', 'text': '完成公司化經營。'},
@@ -83,9 +85,9 @@ function brandStoryReply() {
 
           package_path = Path('package.json')
           package = json.loads(package_path.read_text(encoding='utf-8'))
-          package['name'] = 'xianjiawei-lineoa-v298-2'
-          package['version'] = '2.9.8'
-          package['description'] = '仙加味 LINE OA v298.2｜同步四代傳承品牌故事與安全憑證設定'
+          package['name'] = 'xianjiawei-lineoa-v298-3'
+          package['version'] = '2.9.9'
+          package['description'] = '仙加味 LINE OA v298.3｜同步鹿類生鮮與乾品加工歷史及四代傳承'
           package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
       - name: Remove workflow and commit
@@ -94,7 +96,5 @@ function brandStoryReply() {
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "v298.2: sync verified brand story to LINE OA"
+          git commit -m "v298.3: sync deer processing history to LINE OA"
           git push origin main
-
-# manual trigger marker
