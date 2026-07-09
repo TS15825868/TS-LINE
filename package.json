@@ -1,17 +1,19 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "2.11.1",
+  "version": "3.0.0",
   "main": "server.js",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js"
+    "test": "node test.js && node catalog.test.js",
+    "sync:catalog": "node tools/sync_website_catalog.js --write",
+    "check:catalog": "node tools/sync_website_catalog.js --check"
   },
   "dependencies": {
     "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
   },
-  "description": "仙加味 LINE OA｜產品、購物車、結帳、品牌故事、使用方式與敏感問題轉介"
+  "description": "仙加味 LINE OA｜共用官網產品目錄、價格、購物車、結帳、品牌故事、使用方式與敏感問題轉介"
 }
