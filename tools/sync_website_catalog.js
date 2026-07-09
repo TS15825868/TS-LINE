@@ -37,6 +37,7 @@ const SALES_FIELDS = [
   "originalPrice",
   "unit",
   "offers",
+  "quantityOptions",
   "priceText",
   "priceLabel",
 ];
