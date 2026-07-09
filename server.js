@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.1
+ * 仙加味 LINE OA Bot v300.2
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證與 CRM URL 僅從部署環境變數讀取。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.1";
+const VERSION = "v300.2";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -21,8 +21,8 @@ const STATE_CLEANUP_INTERVAL_MS = Number(process.env.STATE_CLEANUP_INTERVAL_MS |
 const MAX_STATE_ENTRIES = Number(process.env.MAX_STATE_ENTRIES || 10000);
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 const app = express();
@@ -278,13 +278,7 @@ function productCarousel() {
 }
 
 function productMenuReply() {
-  const lines = DATA.products.map((product, index) =>
-    (index + 1) + ". " + product.displayName + "｜" + product.spec + "｜" + (product.purpose || "日常食補")
-  );
-  return textMsg(
-    "請選擇想了解或下單的產品：\n\n" + lines.join("\n") + "\n\n點選下方產品後，可查看規格、價格、使用方式並選擇數量。",
-    DATA.products.map((product) => ({ label: product.displayName.slice(0, 20), text: "產品詳情｜" + product.id }))
-  );
+  return productCarousel();
 }
 
 function priceCarousel() {
@@ -382,14 +376,41 @@ function cartFlex(state) {
 }
 
 function recommendReply() {
-  return textMsg(
-    `可依平常使用方式比較：\n\n・固定日常食補：龜鹿膏\n・輕巧即飲：龜鹿飲30cc\n・較大容量即飲：龜鹿飲180cc\n・沖泡與燉湯：龜鹿湯塊\n・家庭大規格：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n若涉及個人體質、疾病、用藥或是否適合食用，會轉介合作中醫師協助判斷。\n\n${ORDER_NOTICE}`,
-    [
-      { label: "看產品", text: "看產品" },
-      { label: "搭配組合", text: "搭配組合" },
-      { label: "怎麼使用", text: "怎麼使用" },
-    ]
-  );
+  const cards = [
+    flexCard(
+      "固定日常安排",
+      "想建立固定日常食補，可從龜鹿膏開始；需要外出或忙碌時方便飲用，可選龜鹿飲30cc或180cc。",
+      [
+        { label: "看龜鹿膏", text: "產品詳情｜guilu-gao" },
+        { label: "看30cc", text: "產品詳情｜guilu-drink-30" },
+        { label: "看180cc", text: "產品詳情｜guilu-drink-180" },
+      ]
+    ).contents,
+    flexCard(
+      "沖泡、燉湯與家庭使用",
+      "想搭配熱水、料理或家庭較大規格使用，可比較龜鹿湯塊與龜鹿膠。",
+      [
+        { label: "看龜鹿湯塊", text: "產品詳情｜guilu-tangkuai" },
+        { label: "看龜鹿膠", text: "產品詳情｜guilu-jiao" },
+        { label: "看搭配方案", text: "搭配組合" },
+      ]
+    ).contents,
+    flexCard(
+      "自行搭配飲品",
+      "喜歡依自己的飲食習慣加入溫水、牛奶、豆漿或其他飲品，可查看鹿茸粉。個人體質、疾病與用藥問題會轉介中醫師協助判斷。",
+      [
+        { label: "看鹿茸粉", text: "產品詳情｜luerong-fen" },
+        { label: "怎麼使用", text: "怎麼使用" },
+        { label: "人工客服", text: "我要人工客服" },
+      ]
+    ).contents,
+  ];
+
+  return {
+    type: "flex",
+    altText: "仙加味怎麼選",
+    contents: { type: "carousel", contents: cards },
+  };
 }
 
 function comboReply() {
@@ -406,14 +427,33 @@ function comboReply() {
 
 function comboMenuReply() {
   const combos = DATA.offers?.comboOffers || [];
-  if (!combos.length) return textMsg("目前搭配方案由客服依需求協助整理。", mainQuick());
-  const lines = combos.map((combo, index) =>
-    (index + 1) + ". " + combo.name + "\n" + (combo.items || []).map((item) => "・" + item).join("\n") + "\n" + (combo.desc || "")
-  );
-  return textMsg(
-    "請選擇想查看的搭配方案：\n\n" + lines.join("\n\n") + "\n\n實際價格、庫存與活動由客服確認。",
-    combos.slice(0, 10).map((combo, index) => ({ label: combo.name.slice(0, 20), text: "搭配方案｜" + index }))
-  );
+  if (!combos.length) {
+    return flexCard("搭配方案", "目前搭配方案由客服依需求協助整理。", [
+      { label: "看產品", text: "看產品" },
+      { label: "人工客服", text: "我要人工客服" },
+    ]);
+  }
+
+  return {
+    type: "flex",
+    altText: "仙加味搭配方案",
+    contents: {
+      type: "carousel",
+      contents: combos.slice(0, 10).map((combo, index) =>
+        flexCard(
+          combo.name,
+          (combo.items || []).map((item) => "・" + item).join("\n") +
+            "\n\n" + (combo.desc || "") +
+            "\n\n" + (combo.priceNote || "實際價格、庫存與活動由客服確認。"),
+          [
+            { label: "查看方案", text: "搭配方案｜" + index },
+            { label: "查看產品", text: "看產品" },
+            { label: "人工客服", text: "我要人工客服" },
+          ]
+        ).contents
+      ),
+    },
+  };
 }
 
 function comboDetailReply(index) {
@@ -431,14 +471,14 @@ function comboDetailReply(index) {
 }
 
 function usageChooserReply() {
-  return textMsg("請選擇想查看的產品使用方式：", [
-    { label: "龜鹿膏", text: "龜鹿膏怎麼使用" },
-    { label: "龜鹿飲30cc", text: "龜鹿飲30cc怎麼使用" },
-    { label: "龜鹿飲180cc", text: "龜鹿飲180cc怎麼使用" },
-    { label: "龜鹿湯塊", text: "龜鹿湯塊怎麼使用" },
-    { label: "龜鹿膠", text: "龜鹿膠怎麼使用" },
-    { label: "鹿茸粉", text: "鹿茸粉怎麼使用" },
-  ]);
+  return {
+    type: "flex",
+    altText: "仙加味產品使用方式",
+    contents: {
+      type: "carousel",
+      contents: DATA.products.map((product) => usageReply(product).contents),
+    },
+  };
 }
 
 function usageReply(product) {

@@ -1,6 +1,0 @@
-{
-  "version": "v295.1",
-  "productImages": "website images/products-v3 with ?v=295.1",
-  "detailDMImages": "website images/dm-v3 with ?v=295.1",
-  "deployment": "package version bumped to trigger auto deploy"
-}
