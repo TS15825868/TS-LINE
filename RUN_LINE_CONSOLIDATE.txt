@@ -1,1 +1,1 @@
-Run LINE OA consolidation, unit tests and HTTP smoke tests on this branch.
+Run LINE OA consolidation with the corrected Node setup and tests.
