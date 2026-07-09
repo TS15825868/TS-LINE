@@ -1,13 +1,13 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "main": "server.js",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js && node catalog.test.js && node security.test.js",
+    "test": "node test.js && node catalog.test.js && node security.test.js && node function.test.js",
     "sync:catalog": "node tools/sync_website_catalog.js --write",
     "check:catalog": "node tools/sync_website_catalog.js --check"
   },
