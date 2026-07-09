@@ -56,11 +56,6 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/ | grep '"version":"v300.2"' >/dev/null
           curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
 
-      - name: Remove one-time updater
-        run: |
-          rm -f tools/apply_card_ui_v300_2.js
-          rm -f .github/workflows/apply-card-ui-v300-2.yml
-
       - name: Commit tested result
         run: |
           set -euo pipefail
@@ -71,5 +66,6 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "v300.2: restore LINE card buttons and clean obsolete files"
+            git pull --rebase origin ${{ github.head_ref }}
             git push origin HEAD:${{ github.head_ref }}
           fi
