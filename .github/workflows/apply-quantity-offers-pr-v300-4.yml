@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   apply-and-verify:
-    if: github.head_ref == 'lineoa-quantity-offers-v300-4-final'
+    if: github.head_ref == 'lineoa-quantity-offers-v300-4-final2'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,5 +79,5 @@ jobs:
           git add server.js data.json test.js security.test.js function.test.js package.json package-lock.json README.md tools/sync_website_catalog.js .github/workflows/verify-line-and-website-catalog.yml
           git commit -m "v300.4: add quantity choices and verify promotions"
           git fetch origin main
-          git rebase origin/main
-          git push --force-with-lease origin HEAD:${{ github.head_ref }}
+          git merge origin/main --no-edit -X ours
+          git push --force origin HEAD:${{ github.head_ref }}
