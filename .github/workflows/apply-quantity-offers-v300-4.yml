@@ -1,0 +1,70 @@
+name: Apply quantity and offers v300.4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - QUANTITY_OFFERS_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply quantity and offer update
+        run: |
+          set -euo pipefail
+          node --check tools/apply_quantity_offers_v300_4.js
+          node tools/apply_quantity_offers_v300_4.js
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Install and verify all functions
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run check:catalog
+          npm test
+          node --check server.js
+          node --check test.js
+          node --check catalog.test.js
+          node --check security.test.js
+          node --check function.test.js
+          node --check tools/sync_website_catalog.js
+          grep -F 'const VERSION = "v300.4";' server.js >/dev/null
+          grep -F 'quantityOptions' data.json >/dev/null
+          grep -F '買10送2（12瓶）' data.json >/dev/null
+          grep -F '買10送2（12包）' data.json >/dev/null
+
+      - name: HTTP smoke test
+        run: |
+          set -euo pipefail
+          node server.js >/tmp/lineoa-v300-4.log 2>&1 &
+          PID=$!
+          trap 'kill $PID' EXIT
+          sleep 2
+          curl --fail --silent http://127.0.0.1:3000/ | grep '"version":"v300.4"' >/dev/null
+          curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
+
+      - name: Commit verified update
+        run: |
+          set -euo pipefail
+          rm -f QUANTITY_OFFERS_TRIGGER.txt
+          rm -f tools/apply_quantity_offers_v300_4.js
+          rm -f .github/workflows/apply-quantity-offers-v300-4.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v300.4: add quantity choices and verify promotions"
+          git push origin main
