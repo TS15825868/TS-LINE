@@ -39,9 +39,12 @@ jobs:
           test "$(curl -s -o /tmp/webhook.json -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{"events":[]}' http://127.0.0.1:3100/webhook)" = "503"
       - name: Commit tested files to PR branch
         run: |
+          rm -rf node_modules
+          rm -f .server-runtime.js .server-*-runtime.js
           rm -f tools/consolidate_line.py RUN_LINE_CONSOLIDATE.txt CONSOLIDATE_LINE_V299_1.txt
           rm -f .github/workflows/consolidate-v299-1.yml .github/workflows/pr-consolidate-v299-1.yml
           find .github/workflows -type f \( -name 'v*.yml' -o -name 'v*.yaml' \) -delete 2>/dev/null || true
+          printf 'node_modules/\n.server-runtime.js\n.server-*-runtime.js\n' > .gitignore
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
