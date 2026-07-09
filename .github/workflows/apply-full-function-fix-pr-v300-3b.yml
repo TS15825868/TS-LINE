@@ -52,6 +52,7 @@ jobs:
       - name: Commit verified result
         run: |
           rm -f FULL_FUNCTION_FIX_TRIGGER.txt PR_FIX_PREP.txt PR_FIX_TRIGGER.txt
+          git checkout -- .github/workflows/verify-line-and-website-catalog.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add server.js test.js security.test.js function.test.js package.json package-lock.json README.md
