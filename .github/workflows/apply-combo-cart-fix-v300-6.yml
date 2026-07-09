@@ -20,6 +20,25 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Prepare updater
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('tools/apply_combo_cart_fix_v300_6.js')
+          text = path.read_text(encoding='utf-8')
+
+          def escape_interpolation(match):
+              block = match.group(0)
+              block = re.sub(r'(?<!\\)\$\{', r'\\${', block)
+              return block
+
+          text = re.sub(r'const helpers = `.*?`;\nserver = replaceBlock', escape_interpolation, text, count=1, flags=re.S)
+          text = re.sub(r'const comboMenu = `.*?`;\nserver = replaceBlock', escape_interpolation, text, count=1, flags=re.S)
+          path.write_text(text, encoding='utf-8')
+          PY
+          node --check tools/apply_combo_cart_fix_v300_6.js
       - name: Apply combo cart update
         run: |
           node tools/apply_combo_cart_fix_v300_6.js
