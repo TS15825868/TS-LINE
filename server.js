@@ -752,7 +752,7 @@ async function handleMessage(event) {
   }
 
   if (/^(看產品|查看產品|直接下單|我要下單|立即下單|開始下單|我要買)$/.test(text)) {
-    return reply(event.replyToken, productCarousel());
+    return reply(event.replyToken, productMenuReply());
   }
 
   if (/^(價格方案|價格|售價|價錢|多少錢|優惠)$/.test(text)) {
