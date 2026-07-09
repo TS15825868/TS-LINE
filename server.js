@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.4
+ * 仙加味 LINE OA Bot v300.5
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.4";
+const VERSION = "v300.5";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -756,6 +756,20 @@ function isSensitiveHealthQuestion(text) {
   return /功效|效果|有效|有沒有用|多久有效|改善|治療|預防|疾病|症狀|不舒服|疼痛|腰痠|腰酸|膝蓋|關節|睡眠|失眠|血糖|血壓|膽固醇|免疫|明目|補血|補氣|壯陽|腎虛|肝腎|眼睛|服藥|用藥|藥物|孕婦|懷孕|哺乳|兒童|小孩|慢性病|過敏|手術|化療|洗腎|適不適合吃|適不適合食用|能不能吃|可以吃嗎|我能吃嗎|體質|燥熱|上火|副作用|禁忌/.test(text);
 }
 
+function detectWebsiteIntent(text) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+
+  if (/我看了產品整理|幫我比較產品|產品差異|規格比較|想請你幫我比較|哪一種比較適合|適合我的|我目前是/.test(value)) return "recommend";
+  if (/官網套餐|套餐搭配|搭配組合|搭配方式|料理搭配|熱飲.*燉湯|燉湯.*調飲/.test(value)) return "combo";
+  if (/官網怎麼使用|產品使用方式|想了解.*使用方式|怎麼使用頁/.test(value)) return "usage";
+  if (/價格|售價|價錢|多少錢|活動方案|優惠/.test(value)) return "price";
+  if (/官網品牌|品牌頁|萬華門市|想了解仙加味|四代傳承/.test(value)) return "brand";
+  if (/官網FAQ|FAQ頁|幾個問題想詢問|官網聯絡|聯絡頁|配送|付款|通路合作|診所|中藥店/.test(value)) return "human";
+  if (/官網產品頁|網站看到產品|產品資訊|想了解產品/.test(value)) return "products";
+  return "";
+}
+
 async function handleMessage(event) {
   if (event.message.type !== "text") {
     return reply(event.replyToken, textMsg("目前請使用文字訊息詢問。", mainQuick()));
@@ -828,6 +842,15 @@ async function handleMessage(event) {
   if (/^(幫我推薦|怎麼選|不知道怎麼選)$/.test(text)) {
     return reply(event.replyToken, recommendReply());
   }
+
+  const websiteIntent = detectWebsiteIntent(text);
+  if (websiteIntent === "recommend") return reply(event.replyToken, recommendReply());
+  if (websiteIntent === "combo") return reply(event.replyToken, comboMenuReply());
+  if (websiteIntent === "usage") return reply(event.replyToken, usageChooserReply());
+  if (websiteIntent === "price") return reply(event.replyToken, priceCarousel());
+  if (websiteIntent === "brand") return reply(event.replyToken, brandStoryReply());
+  if (websiteIntent === "human") return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。", mainQuick()));
+  if (websiteIntent === "products") return reply(event.replyToken, productMenuReply());
 
   if (/黃帝內經|內經|食飲有節|飲食有節|起居有常|四時調養|順應四時/.test(text)) {
     return reply(event.replyToken, huangdiNeijingReply());
@@ -946,4 +969,5 @@ module.exports = {
   cleanupExpiredStates,
   qtyMenu,
   cartFlex,
+  detectWebsiteIntent,
 };

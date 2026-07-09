@@ -5,7 +5,7 @@ const {
   DATA, VERSION, productMenuReply, priceCarousel, recommendReply,
   comboMenuReply, comboDetailReply, usageChooserReply, usageReply,
   doctorReferralReply, huangdiNeijingReply, brandStoryReply,
-  qtyMenu, cartFlex,
+  qtyMenu, cartFlex, detectWebsiteIntent,
 } = require("./server");
 
 function validateMessage(message) {
@@ -31,7 +31,7 @@ function validateMessage(message) {
   walk(message);
 }
 
-assert.strictEqual(VERSION, "v300.4");
+assert.strictEqual(VERSION, "v300.5");
 const messages = [
   productMenuReply(), priceCarousel(), recommendReply(), comboMenuReply(), comboDetailReply(0),
   usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(), brandStoryReply(),
@@ -51,7 +51,7 @@ const source = fs.readFileSync("server.js", "utf8");
 for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
   assert.ok(source.includes(command), "missing command: " + command);
 }
-console.log("PASS full LINE function matrix v300.4");
+console.log("PASS full LINE function matrix v300.5");
 
 const expectedSalesV3004 = {
   "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5] },
@@ -74,3 +74,19 @@ for (const product of DATA.products) {
   validateMessage(menu);
 }
 console.log("PASS quantity options and promotions v300.4");
+
+
+const websiteIntentCases = [
+  ["我看了產品整理，想請你幫我比較產品。", "recommend"],
+  ["我想依使用方式與規格比較仙加味產品。", "recommend"],
+  ["我從官網套餐頁進來，想了解套餐搭配。", "combo"],
+  ["我從官網怎麼使用頁面進來，想了解產品使用方式。", "usage"],
+  ["我想了解價格與活動方案。", "price"],
+  ["我從官網品牌頁進來，想了解仙加味。", "brand"],
+  ["我從官網FAQ頁面進來，有幾個問題想詢問。", "human"],
+  ["我從官網產品頁進來，想了解產品。", "products"],
+];
+for (const [message, expected] of websiteIntentCases) {
+  assert.strictEqual(detectWebsiteIntent(message), expected, message);
+}
+console.log("PASS website legacy message routing v300.5");
