@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   apply-and-verify:
-    if: github.head_ref == 'lineoa-quantity-offers-v300-4-sync'
+    if: github.head_ref == 'lineoa-quantity-offers-v300-4-final'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +71,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/ | grep '"version":"v300.4"' >/dev/null
           curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
 
-      - name: Push tested runtime update to main
+      - name: Commit tested runtime update to branch
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -80,4 +80,4 @@ jobs:
           git commit -m "v300.4: add quantity choices and verify promotions"
           git fetch origin main
           git rebase origin/main
-          git push origin HEAD:main
+          git push --force-with-lease origin HEAD:${{ github.head_ref }}
