@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.3
+ * 仙加味 LINE OA Bot v300.4
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.3";
+const VERSION = "v300.4";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -296,18 +296,36 @@ function priceCarousel() {
 }
 
 function qtyMenu(product) {
-  const buttons = [
-    {
-      label: `1${product.unit || "件"}｜${money(product.price)}`.slice(0, 20),
-      text: `加入購物車｜${product.id}｜1`,
-    },
-    ...product.offers.map((offer) => ({
-      label: `${offer.label}｜${money(offer.total)}`.slice(0, 20),
-      text: `加入購物車｜${product.id}｜${offer.qty}`,
-    })),
-    { label: "返回產品", text: "看產品" },
-  ];
-  return flexCard(`${product.displayName}｜選擇數量`, `${ORDER_NOTICE}\n\n請選擇要加入購物車的數量。`, buttons);
+  const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
+    ? product.quantityOptions.slice(0, 4)
+    : [1, 2, 3, 5];
+
+  const buttons = options.map((qty) => {
+    const exactOffer = product.offers.find((offer) => Number(offer.qty) === Number(qty));
+    const result = calcItem(product, Number(qty));
+    return {
+      label: exactOffer
+        ? `${exactOffer.label.replace(/（.*?）/g, "")}｜${money(result.total)}`.slice(0, 20)
+        : `${qty}${product.unit || "件"}｜${money(result.total)}`.slice(0, 20),
+      text: `加入購物車｜${product.id}｜${qty}`,
+    };
+  });
+
+  const promotionLines = [];
+  if (product.originalPrice && product.originalPrice > product.price) {
+    promotionLines.push(`單${product.unit || "件"}原價 ${money(product.originalPrice)}，目前優惠價 ${money(product.price)}`);
+  }
+  for (const offer of product.offers) {
+    promotionLines.push(`${offer.label}：${money(offer.total)}`);
+  }
+  if (!promotionLines.length) promotionLines.push("目前無額外數量折扣，依所選數量計算。");
+
+  buttons.push({ label: "返回產品", text: "看產品" });
+  return flexCard(
+    `${product.displayName}｜選擇數量`,
+    `${ORDER_NOTICE}\n\n活動與優惠：\n${promotionLines.map((line) => `・${line}`).join("\n")}\n\n請選擇要加入購物車的數量。`,
+    buttons
+  );
 }
 
 function calcItem(product, qty) {
