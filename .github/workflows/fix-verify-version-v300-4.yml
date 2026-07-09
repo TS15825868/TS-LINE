@@ -1,0 +1,41 @@
+name: Fix verify version v300.4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - FIX_VERIFY_VERSION_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fix verify version
+        run: node tools/fix_verify_version_v300_4.js
+      - name: Verify
+        run: |
+          npm ci
+          npm run check:catalog
+          npm test
+          node --check server.js
+          grep -F '"version":"v300.4"' .github/workflows/verify-line-and-website-catalog.yml >/dev/null
+      - name: Commit
+        run: |
+          rm -f FIX_VERIFY_VERSION_TRIGGER.txt
+          rm -f tools/fix_verify_version_v300_4.js
+          rm -f .github/workflows/fix-verify-version-v300-4.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v300.4: align verification version"
+          git push origin main
