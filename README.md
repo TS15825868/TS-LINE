@@ -24,7 +24,7 @@
 
 - `CHANNEL_ACCESS_TOKEN`
 - `CHANNEL_SECRET`
-- `CRM_URL`
+- `CRM_URL`（已內建目前的 Google Apps Script 網址；需要更換時再用環境變數覆蓋）
 
 其他選用設定：
 

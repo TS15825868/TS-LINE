@@ -4,9 +4,9 @@
 
 - `CHANNEL_ACCESS_TOKEN`
 - `CHANNEL_SECRET`
-- `CRM_URL`
+- `CRM_URL`（已內建目前的 Google Apps Script 網址；需要更換時再設定）
 
-程式庫不保存任何實際憑證或 CRM 網址。
+程式庫不保存 LINE 憑證；CRM 使用目前指定的 Google Apps Script 預設網址，仍可由環境變數覆蓋。
 
 ## 設定完成後
 
