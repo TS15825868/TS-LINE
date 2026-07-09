@@ -1,6 +1,6 @@
 {
-  "name": "xianjiawei-lineoa-v298-3",
-  "version": "2.9.9",
+  "name": "xianjiawei-lineoa-v298-4",
+  "version": "2.10.0",
   "main": "server.js",
   "engines": {
     "node": "22.x"
@@ -12,5 +12,5 @@
     "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
   },
-  "description": "仙加味 LINE OA v298.3｜同步鹿類生鮮與乾品加工歷史及四代傳承"
+  "description": "仙加味 LINE OA v298.4｜同步2008年品牌註冊與四代傳承"
 }

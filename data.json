@@ -717,8 +717,14 @@
       {
         "title": "回到日常",
         "desc": "以料理、熱飲、固定節奏與 LINE 一對一整理，讓選擇變得更清楚。"
+      },
+      {
+        "period": "2008年",
+        "text": "「仙加味」品牌完成註冊，成為面向消費者的正式品牌名稱。"
       }
-    ]
+    ],
+    "brandRegisteredYear": 2008,
+    "brandRegistrationText": "2008年「仙加味」品牌完成註冊，成為面向消費者的正式品牌名稱。"
   },
   "welcomeText": "您好，歡迎來到仙加味。想認識龜鹿食補、產品用途方向、怎麼選或怎麼使用，都可以直接詢問。",
   "heritage": {
@@ -816,7 +822,7 @@
       "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
     }
   ],
-  "version": "295.1",
+  "version": "298.4",
   "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。",
   "updatedAt": "2026-07-08",
   "referenceKnowledge": {

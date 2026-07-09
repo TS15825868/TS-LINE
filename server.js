@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v298.3
+ * 仙加味 LINE OA Bot v298.4
  * 產品、價格、購物車、結帳、品牌故事與客服分流。
  * LINE 憑證僅從部署環境變數讀取。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v298.3";
+const VERSION = "v298.4";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -276,7 +276,7 @@ function recommendReply() {
 function brandStoryReply() {
   return flexCard(
     "仙加味｜四代傳承",
-    "仙加味的故事從台北萬華開始。\n\n第一代曾祖父從行口與山產買賣起步。\n\n祖父『鹿角伯』為民國28年次，國小畢業後，十幾歲便跟著曾祖父在老店學習山產原料，以及鹿角、鹿茸、鹿鞭等鹿類原料與產品的處理、代工與加工，包含生鮮原料與乾品。\n\n父親出生於1964年，長期在祖父身邊協助相關鹿類原料與產品的生鮮、乾品處理、代工加工與日常營運；約2000年前後鹿角伯辭世後，第三代正式承接。\n\n重要歷程：\n・1974年開始獨立經營\n・1976年正式成立獨立事業\n・1978年完成公司化經營\n\n第四代以仙加味為品牌，將家族累積的原料、工序與使用經驗，整理成更清楚的產品資訊與日常使用方式。",
+    "仙加味的故事從台北萬華開始。\n\n第一代曾祖父從行口與山產買賣起步。\n\n祖父『鹿角伯』為民國28年次，國小畢業後，十幾歲便跟著曾祖父在老店學習山產原料，以及鹿角、鹿茸、鹿鞭等鹿類原料與產品的處理、代工與加工，包含生鮮原料與乾品。\n\n父親出生於1964年，長期在祖父身邊協助相關鹿類原料與產品的生鮮、乾品處理、代工加工與日常營運；約2000年前後鹿角伯辭世後，第三代正式承接。\n\n重要歷程：\n・1974年開始獨立經營\n・1976年正式成立獨立事業\n・1978年完成公司化經營\n\n2008年，『仙加味』品牌完成註冊，成為面向消費者的正式品牌名稱。第四代延續這個品牌，將家族累積的原料、工序與使用經驗，整理成更清楚的產品資訊與日常使用方式。",
     [
       { label: "查看完整品牌故事", uri: absoluteUrl("brand.html") },
       { label: "查看產品系列", data: pb("products") },
