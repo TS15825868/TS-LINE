@@ -1,0 +1,66 @@
+name: Apply LINE OA security hardening v300.1
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.head_ref == 'security-hardening-v300-1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply security hardening
+        run: |
+          set -euo pipefail
+          node tools/apply_security_hardening_v300_1.js
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify catalog
+        run: npm run check:catalog
+
+      - name: Run tests
+        run: npm test
+
+      - name: Syntax and HTTP smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check server.js
+          node --check test.js
+          node --check catalog.test.js
+          node --check security.test.js
+          node server.js >/tmp/lineoa-security.log 2>&1 &
+          PID=$!
+          trap 'kill $PID' EXIT
+          sleep 2
+          curl --fail --silent --show-error http://127.0.0.1:3000/ | grep '"version":"v300.1"' >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"credentialsConfigured":false' >/dev/null
+          STATUS=$(curl --silent --output /tmp/webhook.json --write-out '%{http_code}' -X POST -H 'content-type: application/json' -d '{"events":[]}' http://127.0.0.1:3000/webhook)
+          test "$STATUS" = "503"
+
+      - name: Commit tested security update
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v300.1: remove embedded credentials and harden LINE OA"
+          git push origin HEAD:${{ github.head_ref }}
