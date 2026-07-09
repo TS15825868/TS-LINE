@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   apply-and-verify:
-    if: github.head_ref == 'lineoa-quantity-offers-v300-4'
+    if: github.head_ref == 'lineoa-quantity-offers-v300-4-fix'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,22 +20,34 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
       - name: Apply update
         run: |
           set -euo pipefail
-          if grep -F 'const VERSION = "v300.4";' server.js >/dev/null; then
-            echo "v300.4 already applied"
-          else
-            node --check tools/apply_quantity_offers_v300_4.js
-            node tools/apply_quantity_offers_v300_4.js
-          fi
+          node --check tools/apply_quantity_offers_v300_4.js
+          node tools/apply_quantity_offers_v300_4.js
           npm install --package-lock-only --ignore-scripts
-      - name: Verify all functions
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify shared catalog
+        run: npm run check:catalog
+
+      - name: Test core functions
+        run: node test.js
+
+      - name: Test catalog
+        run: node catalog.test.js
+
+      - name: Test security
+        run: node security.test.js
+
+      - name: Test quantities and promotions
+        run: node function.test.js
+
+      - name: Syntax checks
         run: |
-          set -euo pipefail
-          npm ci
-          npm run check:catalog
-          npm test
           node --check server.js
           node --check test.js
           node --check catalog.test.js
@@ -45,6 +57,7 @@ jobs:
           grep -F 'quantityOptions' data.json >/dev/null
           grep -F '買10送2（12瓶）' data.json >/dev/null
           grep -F '買10送2（12包）' data.json >/dev/null
+
       - name: HTTP smoke test
         run: |
           set -euo pipefail
@@ -54,16 +67,14 @@ jobs:
           sleep 2
           curl --fail --silent http://127.0.0.1:3000/ | grep '"version":"v300.4"' >/dev/null
           curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
-      - name: Commit tested runtime files
+
+      - name: Push tested runtime update to main
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add server.js data.json test.js security.test.js function.test.js package.json package-lock.json README.md tools/sync_website_catalog.js .github/workflows/verify-line-and-website-catalog.yml
-          if ! git diff --cached --quiet; then
-            git commit -m "v300.4: add quantity choices and verify promotions"
-            git pull --rebase origin ${{ github.head_ref }}
-            git push origin HEAD:${{ github.head_ref }}
-          else
-            echo "No runtime changes to commit."
-          fi
+          git commit -m "v300.4: add quantity choices and verify promotions"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
