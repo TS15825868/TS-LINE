@@ -1,0 +1,75 @@
+name: Apply LINE OA card UI v300.2
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'lineoa-cards-v300-2'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply card interface and cleanup
+        run: |
+          set -euo pipefail
+          node tools/apply_card_ui_v300_2.js
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Install and verify
+        run: |
+          npm ci
+          npm run check:catalog
+          npm test
+          node --check server.js
+          node --check test.js
+          node --check security.test.js
+          grep -F 'return productCarousel();' server.js >/dev/null
+          grep -F 'altText: "仙加味搭配方案"' server.js >/dev/null
+          grep -F 'altText: "仙加味產品使用方式"' server.js >/dev/null
+          grep -F 'altText: "仙加味怎麼選"' server.js >/dev/null
+          grep -F 'channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || ""' server.js >/dev/null
+          grep -F 'channelSecret: process.env.CHANNEL_SECRET || ""' server.js >/dev/null
+
+      - name: HTTP smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node server.js >/tmp/lineoa-v300-2.log 2>&1 &
+          PID=$!
+          trap 'kill $PID' EXIT
+          sleep 2
+          curl --fail --silent http://127.0.0.1:3000/ | grep '"version":"v300.2"' >/dev/null
+          curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
+
+      - name: Remove one-time updater
+        run: |
+          rm -f tools/apply_card_ui_v300_2.js
+          rm -f .github/workflows/apply-card-ui-v300-2.yml
+
+      - name: Commit tested result
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "v300.2: restore LINE card buttons and clean obsolete files"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
