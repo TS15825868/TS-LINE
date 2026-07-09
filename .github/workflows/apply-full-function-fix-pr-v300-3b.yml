@@ -22,7 +22,11 @@ jobs:
           cache: npm
       - name: Apply update
         run: |
-          node tools/apply_full_function_fix_v300_3b.js
+          if grep -F 'const VERSION = "v300.3";' server.js >/dev/null; then
+            echo "v300.3 already applied"
+          else
+            node tools/apply_full_function_fix_v300_3b.js
+          fi
           npm install --package-lock-only --ignore-scripts
       - name: Install and verify
         run: |
@@ -48,15 +52,14 @@ jobs:
       - name: Commit verified result
         run: |
           rm -f FULL_FUNCTION_FIX_TRIGGER.txt PR_FIX_PREP.txt PR_FIX_TRIGGER.txt
-          rm -f tools/apply_full_function_fix_v300_3.js tools/apply_full_function_fix_v300_3b.js
-          rm -f .github/workflows/apply-full-function-fix-v300-3.yml
-          rm -f .github/workflows/apply-full-function-fix-pr-v300-3.yml
-          rm -f .github/workflows/apply-full-function-fix-pr-v300-3b.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add server.js test.js security.test.js function.test.js package.json package-lock.json README.md
+          git add -u FULL_FUNCTION_FIX_TRIGGER.txt PR_FIX_PREP.txt PR_FIX_TRIGGER.txt 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "v300.3: fix product and direct-order cards, verify all LINE functions"
             git pull --rebase origin ${{ github.head_ref }}
             git push origin HEAD:${{ github.head_ref }}
+          else
+            echo "No runtime changes to commit."
           fi
