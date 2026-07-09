@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   apply-and-verify:
-    if: github.head_ref == 'lineoa-quantity-offers-v300-4-fix'
+    if: github.head_ref == 'lineoa-quantity-offers-v300-4-sync'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +30,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Normalize with shared website catalog
+        run: npm run sync:catalog
 
       - name: Verify shared catalog
         run: npm run check:catalog
