@@ -1,9 +1,9 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v295.1
- * 全系列開放詢問與下單；實際庫存與出貨時間由客服確認。
- * 憑證僅從部署環境變數讀取，不寫入公開程式碼。
+ * 仙加味 LINE OA Bot v298.3
+ * 產品、價格、購物車、結帳、品牌故事與客服分流。
+ * LINE 憑證僅從部署環境變數讀取。
  */
 
 const line = require("@line/bot-sdk");
@@ -11,20 +11,20 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v295.1";
+const VERSION = "v298.3";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
-const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
+const CRM_URL = process.env.CRM_URL || "";
 
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "IKjy0y2zfPOhMCp7xiJ4R4z7UkkvzoQgj7A6OH1AJjdMYpDnEzaicgz2HWy4pVz1KMSsUHzhoHoXZVztRQwibp3Q8UPfN+Dp4pBfT2k3Mzu5bBtdO1P78Cpffq+75liFPLL3ftcHMzvzr+WOgm6AEgdB04t89/1O/w1cDnyilFU=",
-  channelSecret: process.env.CHANNEL_SECRET || "7c3c4740afa5a281d54afb9f8ffc1e96",
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelSecret: process.env.CHANNEL_SECRET || "",
 };
 
 const app = express();
 const states = new Map();
 const DATA = loadData();
-const client = config.channelAccessToken ? new line.Client(config) : null;
+const client = config.channelAccessToken && config.channelSecret ? new line.Client(config) : null;
 
 function loadData() {
   const file = path.join(__dirname, "data.json");
@@ -96,6 +96,7 @@ function mainQuick() {
     { label: "看產品", data: pb("products") },
     { label: "價格方案", data: pb("prices") },
     { label: "怎麼選", data: pb("recommend") },
+    { label: "品牌故事", text: "品牌故事" },
     { label: "購物車", data: pb("cart") },
     { label: "人工客服", text: "我要人工客服" },
   ];
@@ -151,7 +152,14 @@ function productBubble(p) {
   return {
     type: "bubble",
     size: "mega",
-    hero: { type: "image", url: absoluteUrl(p.image || "images/logo.png"), size: "full", aspectRatio: "4:5", aspectMode: "contain", backgroundColor: "#F7F2E8" },
+    hero: {
+      type: "image",
+      url: absoluteUrl(p.image || "images/logo.png"),
+      size: "full",
+      aspectRatio: "4:5",
+      aspectMode: "contain",
+      backgroundColor: "#F7F2E8",
+    },
     body: {
       type: "box",
       layout: "vertical",
@@ -186,8 +194,12 @@ function priceCarousel() {
     contents: {
       type: "carousel",
       contents: DATA.products.map((p) => {
-        const original = p.originalPrice && p.originalPrice > p.price ? `售價：${money(p.originalPrice)}\n優惠價：${money(p.price)}` : `售價：${money(p.price)}`;
-        const offers = p.offers.length ? `\n\n活動：\n${p.offers.map((o) => `・${o.label} ${money(o.total)}`).join("\n")}` : "";
+        const original = p.originalPrice && p.originalPrice > p.price
+          ? `售價：${money(p.originalPrice)}\n優惠價：${money(p.price)}`
+          : `售價：${money(p.price)}`;
+        const offers = p.offers.length
+          ? `\n\n活動：\n${p.offers.map((o) => `・${o.label} ${money(o.total)}`).join("\n")}`
+          : "";
         return flexCard(p.displayName, `規格：${p.spec}\n${original}${offers}\n\n${ORDER_NOTICE}`, [
           { label: "選擇數量", data: pb("qty", { productId: p.id }) },
           { label: "看產品", data: pb("products") },
@@ -256,8 +268,20 @@ function cartFlex(state) {
 
 function recommendReply() {
   return textMsg(
-    `先依平常想怎麼使用來選：\n\n・固定日常食補：龜鹿膏\n・輕巧／完整容量即飲：龜鹿飲\n・沖泡與燉湯：龜鹿湯塊\n・傳統大規格：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n${ORDER_NOTICE}`,
+    `可依平常使用方式比較：\n\n・固定日常食補：龜鹿膏\n・輕巧或較大容量即飲：龜鹿飲\n・沖泡與燉湯：龜鹿湯塊\n・家庭大規格：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n${ORDER_NOTICE}`,
     mainQuick()
+  );
+}
+
+function brandStoryReply() {
+  return flexCard(
+    "仙加味｜四代傳承",
+    "仙加味的故事從台北萬華開始。\n\n第一代曾祖父從行口與山產買賣起步。\n\n祖父『鹿角伯』為民國28年次，國小畢業後，十幾歲便跟著曾祖父在老店學習山產原料，以及鹿角、鹿茸、鹿鞭等鹿類原料與產品的處理、代工與加工，包含生鮮原料與乾品。\n\n父親出生於1964年，長期在祖父身邊協助相關鹿類原料與產品的生鮮、乾品處理、代工加工與日常營運；約2000年前後鹿角伯辭世後，第三代正式承接。\n\n重要歷程：\n・1974年開始獨立經營\n・1976年正式成立獨立事業\n・1978年完成公司化經營\n\n第四代以仙加味為品牌，將家族累積的原料、工序與使用經驗，整理成更清楚的產品資訊與日常使用方式。",
+    [
+      { label: "查看完整品牌故事", uri: absoluteUrl("brand.html") },
+      { label: "查看產品系列", data: pb("products") },
+      { label: "人工客服", text: "我要人工客服" },
+    ]
   );
 }
 
@@ -408,9 +432,10 @@ async function handleMessage(event) {
   if (/購物車|購買清單/.test(text)) return reply(event.replyToken, cartFlex(state));
   if (/結帳/.test(text)) return reply(event.replyToken, state.cart.length ? startCheckout(state) : cartFlex(state));
   if (/不知道|怎麼選|推薦|適合哪個/.test(text)) return reply(event.replyToken, recommendReply());
+  if (/品牌故事|四代|鹿角伯|家族傳承|曾祖父|祖父|第三代|第四代/.test(text)) return reply(event.replyToken, brandStoryReply());
   if (/人工|客服|聯絡/.test(text)) return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。", mainQuick()));
   if (/功效|效果|改善|治療|預防|疾病|服藥|孕婦|懷孕|哺乳|兒童|小孩|慢性病/.test(text)) {
-    return reply(event.replyToken, textMsg("仙加味以產品成分、規格、食補用途方向與一般使用方式為主，不替疾病或症狀做療效判斷。若有疾病、持續不適、孕哺、兒童或正在服藥，建議先詢問醫師、中醫師或藥師。", mainQuick()));
+    return reply(event.replyToken, textMsg("仙加味提供產品成分、規格與一般使用方式。若有疾病、持續不適、孕哺、兒童、正在服藥或其他特殊狀況，請先詢問醫師、中醫師或藥師。", mainQuick()));
   }
 
   const p = detectProduct(text);
@@ -423,11 +448,11 @@ async function handleMessage(event) {
     return reply(event.replyToken, { type: "flex", altText: p.displayName, contents: productBubble(p) });
   }
 
-  return reply(event.replyToken, textMsg(`您好，歡迎來到仙加味。\n\n${ORDER_NOTICE}\n\n您可以直接輸入產品名稱、價格、怎麼選、購物車或人工客服。`, mainQuick()));
+  return reply(event.replyToken, textMsg(`您好，歡迎來到仙加味。\n\n${ORDER_NOTICE}\n\n您可以直接輸入產品名稱、價格、怎麼選、品牌故事、購物車或人工客服。`, mainQuick()));
 }
 
 async function handleEvent(event) {
-  if (event.type === "follow") return reply(event.replyToken, textMsg(`您好，歡迎來到仙加味。\n\n${ORDER_NOTICE}\n\n可以先告訴我們想了解的產品，或選擇平常偏好的使用方式。`, mainQuick()));
+  if (event.type === "follow") return reply(event.replyToken, textMsg(`您好，歡迎來到仙加味。\n\n${ORDER_NOTICE}\n\n可以先查看產品、品牌故事，或告訴我們偏好的使用方式。`, mainQuick()));
   if (event.type === "postback") return handlePostback(event);
   if (event.type === "message") return handleMessage(event);
   return Promise.resolve();
