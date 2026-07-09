@@ -57,6 +57,21 @@ jobs:
           STATUS=$(curl --silent --output /tmp/webhook.json --write-out '%{http_code}' -X POST -H 'content-type: application/json' -d '{"events":[]}' http://127.0.0.1:3000/webhook)
           test "$STATUS" = "503"
 
+      - name: Upload tested files
+        uses: actions/upload-artifact@v4
+        with:
+          name: lineoa-v300-1-tested-files
+          path: |
+            server.js
+            test.js
+            catalog.test.js
+            security.test.js
+            package.json
+            package-lock.json
+            .env.example
+            SECURITY_DEPLOYMENT.md
+          retention-days: 3
+
       - name: Commit tested update
         run: |
           set -euo pipefail
@@ -67,5 +82,6 @@ jobs:
             echo "No generated changes."
           else
             git commit -m "v300.1: apply LINE OA security and UX improvements"
+            git pull --rebase origin ${{ github.head_ref }}
             git push origin HEAD:${{ github.head_ref }}
           fi
