@@ -70,7 +70,7 @@ jobs:
           git checkout -- .github/workflows/verify-line-and-website-catalog.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add server.js data.json test.js security.test.js function.test.js package.json package-lock.json README.md
+          git add server.js data.json test.js catalog.test.js security.test.js function.test.js package.json package-lock.json README.md
           git commit -m "v300.6: add combo prices, set quantities and cart support"
           git pull --rebase origin ${{ github.head_ref }}
           git push origin HEAD:${{ github.head_ref }}
