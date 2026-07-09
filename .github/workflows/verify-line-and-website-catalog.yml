@@ -49,5 +49,5 @@ jobs:
           trap 'kill $PID' EXIT
           sleep 2
           curl --fail --silent --show-error http://127.0.0.1:3000/ | grep '"ok":true' >/dev/null
-          curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"version":"v300.4"' >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"version":"v300.5"' >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
