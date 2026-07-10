@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.6
+ * 仙加味 LINE OA Bot v300.7
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.6";
+const VERSION = "v300.7";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -215,10 +215,22 @@ function productBubble(product) {
   const offers = product.offers.length
     ? `\n${product.offers.map((offer) => `${offer.label}：${money(offer.total)}`).join("\n")}`
     : "";
+  const productUrl = absoluteUrl(product.page || "products.html");
+  const productImage = absoluteUrl(product.image || "images/logo.png");
+  const dmUrl = absoluteUrl(product.dmImage || product.image || "images/logo.png");
 
   return {
     type: "bubble",
     size: "mega",
+    hero: {
+      type: "image",
+      url: productImage,
+      size: "full",
+      aspectRatio: "1:1",
+      aspectMode: "contain",
+      backgroundColor: "#F7F4ED",
+      action: { type: "uri", uri: productUrl },
+    },
     body: {
       type: "box",
       layout: "vertical",
@@ -249,7 +261,12 @@ function productBubble(product) {
         {
           type: "button",
           style: "secondary",
-          action: { type: "uri", label: "完整介紹", uri: absoluteUrl(product.page || "products.html") },
+          action: { type: "uri", label: "完整介紹", uri: productUrl },
+        },
+        {
+          type: "button",
+          style: "secondary",
+          action: { type: "uri", label: "看產品DM", uri: dmUrl },
         },
         {
           type: "button",
@@ -288,6 +305,7 @@ function priceCarousel() {
           : "";
         return flexCard(product.displayName, `規格：${product.spec}\n${original}${offers}\n\n${ORDER_NOTICE}`, [
           { label: "選擇數量", text: `選擇數量｜${product.id}` },
+          { label: "看產品DM", uri: absoluteUrl(product.dmImage || product.image || "images/logo.png") },
           { label: "看產品", text: "看產品" },
         ]).contents;
       }),

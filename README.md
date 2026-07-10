@@ -1,4 +1,4 @@
-# 仙加味 LINE OA v300.6
+# 仙加味 LINE OA v300.7
 
 ## 正式功能
 
@@ -39,7 +39,7 @@
 ```json
 {
   "ok": true,
-  "version": "v300.6",
+  "version": "v300.7",
   "credentialsConfigured": true,
   "crmConfigured": true
 }
@@ -69,3 +69,7 @@
 ## v300.6 搭配組合購物車
 
 搭配組合顯示每組售價、可選1／2／3／5組、已套用的單品活動與優惠，並可直接加入購物車及結帳。
+
+## v300.7 最新產品圖與DM
+
+產品卡恢復使用官網 products-v3 最新實品圖，並加入 dm-final 最終DM按鈕；使用方式卡與價格卡也使用相同DM來源。

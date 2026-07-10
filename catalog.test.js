@@ -15,7 +15,7 @@ const expectedIds = [
 ];
 
 assert.strictEqual(data.version, "300.0");
-assert.strictEqual(data.catalogVersion, "300.0");
+assert.strictEqual(data.catalogVersion, "300.4");
 assert.strictEqual(data.catalogSource.repository, "TS15825868/xianjiawei");
 assert.strictEqual(data.lineId, "@762jybnm");
 assert.deepStrictEqual(data.products.map((product) => product.id), expectedIds);
