@@ -1,0 +1,211 @@
+name: Finalize LINE OA v312
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - FINALIZE_LINEOA_V312.txt
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Consolidate LINE OA v312
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, shutil
+
+          root = Path('.')
+          server_path = root / 'server.js'
+          text = server_path.read_text(encoding='utf-8')
+          text = text.replace('仙加味 LINE OA Bot v311.0', '仙加味 LINE OA Bot v312.0')
+          text = text.replace('const VERSION = "v311.0";', 'const VERSION = "v312.0";')
+          text = text.replace('?v=311.0', '?v=312.0')
+
+          if 'function faqReply()' not in text:
+              faq = '''function faqReply() {
+            return {
+              type: "flex",
+              altText: "仙加味常見問題",
+              contents: mascotBubble(
+                "常見問題｜小老闆幫你整理",
+                "可先查看產品規格、價格方案、使用方式、配送付款與門市資訊。若仍有問題，直接留言即可由人工協助。",
+                [
+                  { label: "產品與價格", text: "價格方案" },
+                  { label: "怎麼使用", text: "怎麼使用" },
+                  { label: "配送與付款", text: "配送付款" },
+                  { label: "人工客服", text: "我要人工客服" },
+                ],
+                "faq"
+              ),
+            };
+          }
+
+          '''
+              text = text.replace('function detectProduct(text) {', faq + 'function detectProduct(text) {', 1)
+
+          text = text.replace(
+              'if (/官網FAQ|FAQ頁|幾個問題想詢問|官網聯絡|聯絡頁|配送|付款|通路合作|診所|中藥店/.test(value)) return "human";',
+              'if (/官網FAQ|FAQ頁|常見問題|幾個問題想詢問/.test(value)) return "faq";\n  if (/官網聯絡|聯絡頁|通路合作|診所|中藥店/.test(value)) return "human";'
+          )
+          text = text.replace(
+              'if (websiteIntent === "brand") return reply(event.replyToken, brandStoryReply());',
+              'if (websiteIntent === "brand") return reply(event.replyToken, brandStoryReply());\n  if (websiteIntent === "faq") return reply(event.replyToken, faqReply());'
+          )
+
+          marker = '''  if (/^(幫我推薦|怎麼選|不知道怎麼選)$/.test(text)) {
+            return reply(event.replyToken, recommendReply());
+          }
+          '''
+          if '配送與付款｜小老闆幫你整理' not in text:
+              extra = '''
+          if (/^(常見問題|FAQ|問題整理)$/.test(text)) {
+            return reply(event.replyToken, faqReply());
+          }
+
+          if (/配送付款|配送方式|付款方式|怎麼付款|怎麼配送/.test(text)) {
+            return reply(
+              event.replyToken,
+              {
+                type: "flex",
+                altText: "仙加味配送與付款",
+                contents: mascotBubble(
+                  "配送與付款｜小老闆幫你整理",
+                  `付款方式：${(DATA.payments || ["現金付款", "匯款", "貨到付款"]).join("、")}\n\n配送方式：${(DATA.shipping || ["宅配", "7-11賣貨便", "門市自取", "雙北親送"]).join("、")}\n\n實際費用、到貨時間與可用方式由客服依訂單確認。`,
+                  [
+                    { label: "查看購物車", text: "查看購買清單" },
+                    { label: "直接下單", text: "直接下單" },
+                    { label: "人工客服", text: "我要人工客服" },
+                  ],
+                  "service"
+                ),
+              }
+            );
+          }
+          '''
+              text = text.replace(marker, marker + extra, 1)
+
+          text = text.replace(
+              'if (websiteIntent === "human") return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。\\n\\n門市地址：台北市萬華區西昌街52號。\\n營業時間：週一至週六 09:30–18:30。\\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));',
+              'if (websiteIntent === "human") return reply(event.replyToken, { type: "flex", altText: "仙加味人工客服", contents: mascotBubble("人工客服｜請直接留言", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "查看購物車", text: "查看購買清單" }], "service") });'
+          )
+          text = text.replace(
+              'return reply(event.replyToken, textMsg("門市地址：台北市萬華區西昌街52號。\\n營業時間：週一至週六 09:30–18:30。\\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));',
+              'return reply(event.replyToken, { type: "flex", altText: "仙加味門市資訊", contents: mascotBubble("門市資訊｜小老闆為你服務", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }], "service") });',
+              1
+          )
+          text = text.replace(
+              'return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。\\n\\n門市地址：台北市萬華區西昌街52號。\\n營業時間：週一至週六 09:30–18:30。\\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));',
+              'return reply(event.replyToken, { type: "flex", altText: "仙加味人工客服", contents: mascotBubble("人工客服｜請直接留言", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "查看購物車", text: "查看購買清單" }], "service") });',
+              1
+          )
+          text = text.replace('  brandStoryReply,\n', '  brandStoryReply,\n  faqReply,\n')
+          server_path.write_text(text, encoding='utf-8')
+
+          for name in ['test.js', 'function.test.js', 'security.test.js', 'catalog.test.js']:
+              path = root / name
+              value = path.read_text(encoding='utf-8').replace('v311.0', 'v312.0')
+              if name == 'function.test.js':
+                  value = value.replace(
+                      '  doctorReferralReply, huangdiNeijingReply, brandStoryReply,',
+                      '  doctorReferralReply, huangdiNeijingReply, brandStoryReply, faqReply,'
+                  )
+                  value = value.replace(
+                      'validateBubble(comboDetailReply(0));\nvalidateBubble(brandStoryReply());',
+                      'validateMessage(comboDetailReply(0));\nvalidateBubble(brandStoryReply());\nvalidateMessage(faqReply());'
+                  )
+                  value = value.replace(
+                      '["我從官網FAQ頁面進來，有幾個問題想詢問。", "human"]',
+                      '["我從官網FAQ頁面進來，有幾個問題想詢問。", "faq"]'
+                  )
+              path.write_text(value, encoding='utf-8')
+
+          package_path = root / 'package.json'
+          package = json.loads(package_path.read_text(encoding='utf-8'))
+          package['version'] = '3.1.2'
+          package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          (root / 'README.md').write_text('''# 仙加味 LINE OA v312.0
+
+正式版採單一 `server.js` 主程式與單一 `data.json` 資料中心。
+
+## 功能
+
+- 看產品、價格方案、幫我推薦、搭配組合、怎麼使用
+- 購物車、數量選擇、直接下單與結帳
+- 仙加味小老闆 Flex 導覽卡：welcome、products、recommend、combo、usage、faq、service、brand
+- 常見問題、配送付款、門市資訊與人工客服
+- 健康敏感問題轉介合作中醫師
+- CRM 訂單寫入
+
+## 環境變數
+
+- `CHANNEL_ACCESS_TOKEN`
+- `CHANNEL_SECRET`
+- `CRM_URL`（可省略，程式已有既有預設網址）
+
+憑證只存放於部署平台環境變數，不寫入 GitHub。
+''', encoding='utf-8')
+
+          keep = {
+              '.env.example', '.gitignore', 'Code.gs', 'MASCOT_CHARACTER_SPEC.md',
+              'README.md', 'RICH_MENU_SETUP.md', 'SECURITY_DEPLOYMENT.md',
+              'catalog.test.js', 'data.json', 'function.test.js', 'package-lock.json',
+              'package.json', 'rich-menu-actions.json', 'security.test.js', 'server.js', 'test.js'
+          }
+          for path in root.iterdir():
+              if path.is_file() and path.name not in keep and path.name != 'FINALIZE_LINEOA_V312.txt':
+                  path.unlink()
+
+          tools = root / 'tools'
+          if tools.exists():
+              for path in tools.iterdir():
+                  if path.name != 'sync_website_catalog.js':
+                      if path.is_file(): path.unlink()
+                      else: shutil.rmtree(path)
+
+          workflows = root / '.github' / 'workflows'
+          if workflows.exists():
+              for path in workflows.iterdir():
+                  if path.name not in {'verify-line-and-website-catalog.yml', 'finalize-lineoa-v312.yml'}:
+                      path.unlink()
+          PY
+
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Verify LINE OA
+        run: |
+          npm ci
+          node --check server.js
+          npm test
+          node server.js >/tmp/lineoa-v312.log 2>&1 &
+          PID=$!
+          trap 'kill $PID' EXIT
+          sleep 3
+          curl --fail --silent http://127.0.0.1:3000/ | grep 'v312.0' >/dev/null
+          curl --fail --silent http://127.0.0.1:3000/healthz | grep '"ok":true' >/dev/null
+
+      - name: Commit production result
+        run: |
+          rm -f FINALIZE_LINEOA_V312.txt
+          rm -f .github/workflows/finalize-lineoa-v312.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'LINE OA v312：完成小老闆卡片、FAQ、資料整合與舊檔清理'
+          git push origin main
