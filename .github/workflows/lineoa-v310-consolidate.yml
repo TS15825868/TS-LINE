@@ -28,7 +28,9 @@ jobs:
           cache: npm
 
       - name: Consolidate LINE OA
-        run: python tools/lineoa_v310_consolidate.py
+        run: |
+          python tools/lineoa_v310_consolidate.py
+          python tools/lineoa_v310_testfix.py
 
       - name: Install dependencies
         run: npm ci
@@ -58,6 +60,7 @@ jobs:
         run: |
           rm -f LINEOA_V310_TRIGGER.txt
           rm -f tools/lineoa_v310_consolidate.py
+          rm -f tools/lineoa_v310_testfix.py
           rm -f .github/workflows/lineoa-v310-consolidate.yml
 
       - name: Commit validated result
