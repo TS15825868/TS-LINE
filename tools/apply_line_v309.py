@@ -55,6 +55,24 @@ data["store"] = {
 data["lineAssetsVersion"] = "309.0"
 data["updatedAt"] = "2026-07-11"
 
+# Keep the restored 180cc aluminium pouch in the combinations that were designed for the full-size drink.
+for combo in (data.get("offers") or {}).get("comboOffers", []):
+    name = combo.get("name", "")
+    if name == "日常節奏組":
+        combo["items"] = ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包"]
+        combo["products"] = [{"productId": "guilu-gao", "qty": 1}, {"productId": "guilu-drink-180", "qty": 5}]
+    elif name == "日常便利組":
+        combo["items"] = ["龜鹿膏 1 罐", "龜鹿飲180cc 12 包（買10送2）"]
+        combo["products"] = [{"productId": "guilu-gao", "qty": 1}, {"productId": "guilu-drink-180", "qty": 12}]
+    elif name == "完整體驗組":
+        combo["items"] = ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包", "龜鹿湯塊75g 1 盒", "鹿茸粉75g 1 罐"]
+        combo["products"] = [
+            {"productId": "guilu-gao", "qty": 1},
+            {"productId": "guilu-drink-180", "qty": 5},
+            {"productId": "guilu-tangkuai", "qty": 1},
+            {"productId": "luerong-fen", "qty": 1},
+        ]
+
 # Correct a legacy typo without changing the rest of the catalog.
 legacy = data.get("xianjiaweiFinalV80") or {}
 legacy_products = legacy.get("products") or []
