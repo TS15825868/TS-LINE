@@ -738,6 +738,24 @@ function brandStoryReply() {
   );
 }
 
+function faqReply() {
+  return {
+    type: "flex",
+    altText: "仙加味常見問題",
+    contents: mascotBubble(
+      "常見問題｜小老闆幫你整理",
+      "可先查看產品規格、價格方案、使用方式、配送付款與門市資訊。若仍有問題，直接留言即可由人工協助。",
+      [
+        { label: "產品與價格", text: "價格方案" },
+        { label: "怎麼使用", text: "怎麼使用" },
+        { label: "配送與付款", text: "配送付款" },
+        { label: "人工客服", text: "我要人工客服" },
+      ],
+      "faq"
+    ),
+  };
+}
+
 function detectProduct(text) {
   const raw = String(text || "").replace(/[【】\[\]（）()「」『』\s]/g, "");
   if (/龜鹿飲.*180|180cc|鋁袋/.test(raw)) return getProduct("guilu-drink-180");
@@ -950,7 +968,8 @@ function detectWebsiteIntent(text) {
   if (/官網怎麼使用|產品使用方式|想了解.*使用方式|怎麼使用頁/.test(value)) return "usage";
   if (/價格|售價|價錢|多少錢|活動方案|優惠/.test(value)) return "price";
   if (/官網品牌|品牌頁|萬華門市|想了解仙加味|四代傳承/.test(value)) return "brand";
-  if (/官網FAQ|FAQ頁|幾個問題想詢問|官網聯絡|聯絡頁|配送|付款|通路合作|診所|中藥店/.test(value)) return "human";
+  if (/官網FAQ|FAQ頁|常見問題|幾個問題想詢問/.test(value)) return "faq";
+  if (/官網聯絡|聯絡頁|通路合作|診所|中藥店/.test(value)) return "human";
   if (/官網產品頁|網站看到產品|產品資訊|想了解產品/.test(value)) return "products";
   return "";
 }
@@ -1037,13 +1056,35 @@ async function handleMessage(event) {
     return reply(event.replyToken, recommendReply());
   }
 
+  if (/^(常見問題|FAQ|問題整理)$/.test(text)) {
+    return reply(event.replyToken, faqReply());
+  }
+
+  if (/配送付款|配送方式|付款方式|怎麼付款|怎麼配送/.test(text)) {
+    return reply(event.replyToken, {
+      type: "flex",
+      altText: "仙加味配送與付款",
+      contents: mascotBubble(
+        "配送與付款｜小老闆幫你整理",
+        `付款方式：${(DATA.payments || ["現金付款", "匯款", "貨到付款"]).join("、")}\n\n配送方式：${(DATA.shipping || ["宅配", "7-11賣貨便", "門市自取", "雙北親送"]).join("、")}\n\n實際費用、到貨時間與可用方式由客服依訂單確認。`,
+        [
+          { label: "查看購物車", text: "查看購買清單" },
+          { label: "直接下單", text: "直接下單" },
+          { label: "人工客服", text: "我要人工客服" },
+        ],
+        "service"
+      ),
+    });
+  }
+
   const websiteIntent = detectWebsiteIntent(text);
   if (websiteIntent === "recommend") return reply(event.replyToken, recommendReply());
   if (websiteIntent === "combo") return reply(event.replyToken, comboMenuReply());
   if (websiteIntent === "usage") return reply(event.replyToken, usageChooserReply());
   if (websiteIntent === "price") return reply(event.replyToken, priceCarousel());
   if (websiteIntent === "brand") return reply(event.replyToken, brandStoryReply());
-  if (websiteIntent === "human") return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。\n\n門市地址：台北市萬華區西昌街52號。\n營業時間：週一至週六 09:30–18:30。\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));
+  if (websiteIntent === "faq") return reply(event.replyToken, faqReply());
+  if (websiteIntent === "human") return reply(event.replyToken, { type: "flex", altText: "仙加味人工客服", contents: mascotBubble("人工客服｜請直接留言", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "查看購物車", text: "查看購買清單" }], "service") });
   if (websiteIntent === "products") return reply(event.replyToken, productMenuReply());
 
   if (/黃帝內經|內經|食飲有節|飲食有節|起居有常|四時調養|順應四時/.test(text)) {
@@ -1059,11 +1100,11 @@ async function handleMessage(event) {
   }
 
   if (/營業時間|門市時間|幾點營業|幾點關門|假日預約|預約門市/.test(text)) {
-    return reply(event.replyToken, textMsg("門市地址：台北市萬華區西昌街52號。\n營業時間：週一至週六 09:30–18:30。\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));
+    return reply(event.replyToken, { type: "flex", altText: "仙加味門市資訊", contents: mascotBubble("門市資訊｜小老闆為你服務", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }], "service") });
   }
 
   if (/人工|客服|聯絡/.test(text)) {
-    return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。\n\n門市地址：台北市萬華區西昌街52號。\n營業時間：週一至週六 09:30–18:30。\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));
+    return reply(event.replyToken, { type: "flex", altText: "仙加味人工客服", contents: mascotBubble("人工客服｜請直接留言", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "查看購物車", text: "查看購買清單" }], "service") });
   }
 
   if (/到貨|現貨|上架|可以買|能買|開放下單|何時出貨|出貨時間|盒子|盒裝/.test(text)) {
@@ -1168,6 +1209,7 @@ module.exports = {
   doctorReferralReply,
   huangdiNeijingReply,
   brandStoryReply,
+  faqReply,
   isSensitiveHealthQuestion,
   validateData,
   sanitizeUserText,

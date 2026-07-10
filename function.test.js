@@ -4,7 +4,7 @@ const fs = require("fs");
 const {
   DATA, VERSION, productMenuReply, priceCarousel, recommendReply, mascotWelcomeReply,
   comboMenuReply, comboDetailReply, usageChooserReply, usageReply,
-  doctorReferralReply, huangdiNeijingReply, brandStoryReply,
+  doctorReferralReply, huangdiNeijingReply, brandStoryReply, faqReply,
   qtyMenu, cartFlex, detectWebsiteIntent, comboQtyMenu, comboUnitPrice, comboPromotionLines, addComboCart, getCombo,
 } = require("./server");
 
@@ -50,8 +50,9 @@ for (const product of DATA.products) {
   messages.push(qtyMenu(product));
 }
 messages.forEach(validateMessage);
-validateBubble(comboDetailReply(0));
+validateMessage(comboDetailReply(0));
 validateBubble(brandStoryReply());
+validateMessage(faqReply());
 
 assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);
 assert.ok(productMenuReply().contents.contents.every((bubble) => Boolean(bubble.hero)));
@@ -93,7 +94,7 @@ const websiteIntentCases = [
   ["我從官網怎麼使用頁面進來，想了解產品使用方式。", "usage"],
   ["我想了解價格與活動方案。", "price"],
   ["我從官網品牌頁進來，想了解仙加味。", "brand"],
-  ["我從官網FAQ頁面進來，有幾個問題想詢問。", "human"],
+  ["我從官網FAQ頁面進來，有幾個問題想詢問。", "faq"],
   ["我從官網產品頁進來，想了解產品。", "products"],
 ];
 for (const [message, expected] of websiteIntentCases) {
