@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 server_path = ROOT / "server.js"
@@ -10,12 +9,9 @@ package_path = ROOT / "package.json"
 setup_path = ROOT / "RICH_MENU_SETUP.md"
 
 server = server_path.read_text(encoding="utf-8")
-
-# 統一正式版本與圖片快取。
 server = server.replace('const VERSION = "v311.0";', 'const VERSION = "v312.0";')
 server = server.replace('?v=311.0', '?v=312.0')
 
-# 購物車空白卡加入小老闆導覽。
 server = server.replace(
 '''    return flexCard("購物車", `目前購物車是空的。\n\n${ORDER_NOTICE}`, [
       { label: "看產品", text: "看產品" },
@@ -37,7 +33,6 @@ server = server.replace(
     };'''
 )
 
-# 有商品的購物車改為客服情境小老闆卡。
 server = server.replace(
 '''  return flexCard("購物車", `${lines}\n\n合計：${money(cartTotal(state.cart))}\n\n${ORDER_NOTICE}`, [
     { label: "直接結帳", text: "開始結帳" },
@@ -60,7 +55,6 @@ server = server.replace(
   };'''
 )
 
-# 結帳開始與訂單確認加入客服小老闆。
 server = server.replace(
 '''  return flexCard("第一步｜收件姓名", "請直接回覆收件人姓名。", [{ label: "取消", text: "取消" }]);''',
 '''  return {
@@ -74,6 +68,7 @@ server = server.replace(
     ),
   };'''
 )
+
 server = server.replace(
 '''  return flexCard(
     "確認訂單",
@@ -96,12 +91,6 @@ server = server.replace(
       "service"
     ),
   };'''
-)
-
-# FAQ 與客服關鍵字卡片使用指定情境圖（若原本只有一般卡片）。
-server = server.replace(
-'''return reply(event.replyToken, flexCard("人工客服", storeServiceText(), [''',
-'''return reply(event.replyToken, { type: "flex", altText: "仙加味人工客服", contents: mascotBubble("人工客服｜小老闆為您服務", storeServiceText(), ['''
 )
 
 server_path.write_text(server, encoding="utf-8")
