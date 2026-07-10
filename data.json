@@ -29,7 +29,7 @@
         ],
         "items": [
           "龜鹿膏 1 罐",
-          "龜鹿飲30cc 5 包"
+          "龜鹿飲30cc 5 瓶"
         ],
         "gift": "",
         "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
@@ -38,6 +38,10 @@
           {
             "productId": "guilu-gao",
             "qty": 1
+          },
+          {
+            "productId": "guilu-drink-30",
+            "qty": 5
           }
         ],
         "unit": "組",
@@ -56,7 +60,7 @@
         ],
         "items": [
           "龜鹿膏 1 罐",
-          "龜鹿飲30cc 12 包（買10送2）"
+          "龜鹿飲30cc 12 瓶（買10送2）"
         ],
         "gift": "",
         "desc": "適合想固定節奏，也想增加外出或忙碌時的便利性。",
@@ -65,6 +69,10 @@
           {
             "productId": "guilu-gao",
             "qty": 1
+          },
+          {
+            "productId": "guilu-drink-30",
+            "qty": 12
           }
         ],
         "unit": "組",
@@ -114,7 +122,7 @@
         ],
         "items": [
           "龜鹿膏 1 罐",
-          "龜鹿飲30cc 5 包",
+          "龜鹿飲30cc 5 瓶",
           "龜鹿湯塊75g 1 盒",
           "鹿茸粉75g 1 罐"
         ],
@@ -125,6 +133,10 @@
           {
             "productId": "guilu-gao",
             "qty": 1
+          },
+          {
+            "productId": "guilu-drink-30",
+            "qty": 5
           },
           {
             "productId": "guilu-tangkuai",

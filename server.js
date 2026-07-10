@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v302.0
+ * 仙加味 LINE OA Bot v303.0
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,9 +11,9 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v302.0";
+const VERSION = "v303.0";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
-const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
+const ORDER_NOTICE = "全系列可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
 const STATE_TTL_MS = Number(process.env.STATE_TTL_MS || 24 * 60 * 60 * 1000);
@@ -227,8 +227,8 @@ function productBubble(product) {
       url: productImage,
       size: "full",
       aspectRatio: "1:1",
-      aspectMode: "contain",
-      backgroundColor: "#F7F4ED",
+      aspectMode: "cover",
+      backgroundColor: "#EFE4D2",
       action: { type: "uri", uri: productUrl },
     },
     body: {
@@ -419,11 +419,11 @@ function cartFlex(state) {
 }
 
 const MASCOT_PATHS = {
-  welcome: "images/brand/xianjiawei-scene-welcome.jpg?v=302.0",
-  products: "images/brand/xianjiawei-scene-products.jpg?v=302.0",
-  guide: "images/brand/xianjiawei-scene-guide.jpg?v=302.0",
-  service: "images/brand/xianjiawei-scene-service.jpg?v=302.0",
-  usage: "images/brand/xianjiawei-scene-usage.jpg?v=302.0",
+  welcome: "images/brand/xianjiawei-scene-welcome.jpg?v=303.0",
+  products: "images/brand/xianjiawei-scene-products.jpg?v=303.0",
+  guide: "images/brand/xianjiawei-scene-guide.jpg?v=303.0",
+  service: "images/brand/xianjiawei-scene-service.jpg?v=303.0",
+  usage: "images/brand/xianjiawei-scene-usage.jpg?v=303.0",
 };
 
 function mascotPoseForTitle(title = "") {
@@ -442,8 +442,8 @@ function mascotBubble(title, description, buttons, pose = "") {
     url: absoluteUrl(imagePath),
     size: "full",
     aspectRatio: "4:5",
-    aspectMode: "contain",
-    backgroundColor: "#F7F4ED",
+    aspectMode: "cover",
+    backgroundColor: "#EFE4D2",
     action: { type: "uri", uri: absoluteUrl("brand.html") },
   };
   return bubble;
@@ -452,7 +452,7 @@ function mascotBubble(title, description, buttons, pose = "") {
 function mascotWelcomeReply() {
   return {
     type: "flex",
-    altText: "仙加味小老闆歡迎您",
+    altText: "歡迎來到仙加味",
     contents: mascotBubble(
       "歡迎來到仙加味",
       `您好，歡迎來到仙加味。\n\n我可以帶您查看產品、比較怎麼選、了解搭配組合與使用方式。\n\n${ORDER_NOTICE}`,
@@ -511,7 +511,7 @@ function recommendReply() {
 }
 
 function comboReply() {
-  return flexCard(
+  return mascotBubble(
     "搭配組合｜依日常使用方式選擇",
     "搭配組合以產品型態、使用方式與生活情境為主：\n\n・固定日常安排：龜鹿膏\n・方便即飲：龜鹿飲30cc\n・沖泡與料理：龜鹿湯塊\n・家庭長期使用：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。",
     [
