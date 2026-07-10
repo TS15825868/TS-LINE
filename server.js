@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.8
+ * 仙加味 LINE OA Bot v302.0
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v301.0";
+const VERSION = "v302.0";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -293,7 +293,7 @@ function productCarousel() {
             { label: "搭配組合", text: "搭配組合" },
             { label: "人工客服", text: "我要人工客服" },
           ],
-          "tray"
+          "products"
         ),
         ...DATA.products.map(productBubble),
       ],
@@ -419,22 +419,24 @@ function cartFlex(state) {
 }
 
 const MASCOT_PATHS = {
-  wave: "images/brand/xianjiawei-mascot-wave.jpg?v=301.0",
-  tray: "images/brand/xianjiawei-mascot-tray.jpg?v=301.0",
-  full: "images/brand/xianjiawei-mascot-full.jpg?v=301.0",
-  thumbs: "images/brand/xianjiawei-mascot-thumbs.jpg?v=301.0",
+  welcome: "images/brand/xianjiawei-scene-welcome.jpg?v=302.0",
+  products: "images/brand/xianjiawei-scene-products.jpg?v=302.0",
+  guide: "images/brand/xianjiawei-scene-guide.jpg?v=302.0",
+  service: "images/brand/xianjiawei-scene-service.jpg?v=302.0",
+  usage: "images/brand/xianjiawei-scene-usage.jpg?v=302.0",
 };
 
 function mascotPoseForTitle(title = "") {
-  if (/搭配|產品|介紹|料理/.test(title)) return "tray";
-  if (/推薦|幫你選|怎麼選|常見問題|確認/.test(title)) return "thumbs";
-  if (/品牌|故事|傳承|使用|資料|漢方|百科/.test(title)) return "full";
-  return "wave";
+  if (/搭配|產品|介紹|料理|價格/.test(title)) return "products";
+  if (/推薦|幫你選|怎麼選|資料|漢方|百科|傳承|故事/.test(title)) return "guide";
+  if (/使用|沖泡|燉湯/.test(title)) return "usage";
+  if (/客服|常見問題|確認|訂單|購物車/.test(title)) return "service";
+  return "welcome";
 }
 
 function mascotBubble(title, description, buttons, pose = "") {
   const bubble = flexCard(title, description, buttons).contents;
-  const imagePath = MASCOT_PATHS[pose || mascotPoseForTitle(title)] || MASCOT_PATHS.wave;
+  const imagePath = MASCOT_PATHS[pose || mascotPoseForTitle(title)] || MASCOT_PATHS.welcome;
   bubble.hero = {
     type: "image",
     url: absoluteUrl(imagePath),
@@ -452,7 +454,7 @@ function mascotWelcomeReply() {
     type: "flex",
     altText: "仙加味小老闆歡迎您",
     contents: mascotBubble(
-      "仙加味小老闆｜歡迎您",
+      "歡迎來到仙加味",
       `您好，歡迎來到仙加味。\n\n我可以帶您查看產品、比較怎麼選、了解搭配組合與使用方式。\n\n${ORDER_NOTICE}`,
       [
         { label: "看產品", text: "看產品" },
@@ -465,7 +467,7 @@ function mascotWelcomeReply() {
 function recommendReply() {
   const cards = [
     mascotBubble(
-      "仙加味小老闆幫你選",
+      "依日常使用方式幫你選",
       "先依固定安排、方便即飲、沖泡燉湯、家庭規格或自行搭配飲品來比較。產品規格與價格仍以正式產品卡為準。",
       [
         { label: "看產品", text: "看產品" },
@@ -475,11 +477,10 @@ function recommendReply() {
     ),
     flexCard(
       "固定日常安排",
-      "想建立固定日常食補，可從龜鹿膏開始；需要外出或忙碌時方便飲用，可選龜鹿飲30cc或180cc。",
+      "想建立固定日常安排可從龜鹿膏開始；需要外出或忙碌時方便飲用，可查看龜鹿飲30cc。",
       [
         { label: "看龜鹿膏", text: "產品詳情｜guilu-gao" },
         { label: "看30cc", text: "產品詳情｜guilu-drink-30" },
-        { label: "看180cc", text: "產品詳情｜guilu-drink-180" },
       ]
     ).contents,
     flexCard(
@@ -512,7 +513,7 @@ function recommendReply() {
 function comboReply() {
   return flexCard(
     "搭配組合｜依日常使用方式選擇",
-    "搭配組合以產品型態、使用方式與生活情境為主：\n\n・固定日常安排：龜鹿膏\n・方便即飲：龜鹿飲30cc或180cc\n・沖泡與料理：龜鹿湯塊\n・家庭長期使用：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。",
+    "搭配組合以產品型態、使用方式與生活情境為主：\n\n・固定日常安排：龜鹿膏\n・方便即飲：龜鹿飲30cc\n・沖泡與料理：龜鹿湯塊\n・家庭長期使用：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。",
     [
       { label: "查看搭配組合", text: "搭配組合" },
       { label: "查看產品", text: "看產品" },
@@ -601,7 +602,7 @@ function comboMenuReply() {
       type: "carousel",
       contents: [
         mascotBubble(
-          "小老闆搭配導覽",
+          "日常搭配導覽",
           "依日常節奏查看搭配組合。每組價格、可選組數、活動與加入購物車功能都保留在各方案卡中。",
           [
             { label: "看產品", text: "看產品" },
@@ -645,7 +646,7 @@ function usageChooserReply() {
       type: "carousel",
       contents: [
         mascotBubble(
-          "小老闆使用方式導覽",
+          "產品使用方式導覽",
           "先選擇想了解的產品，再查看正式使用方式、成分、完整介紹與產品DM。",
           [
             { label: "看產品", text: "看產品" },
@@ -723,7 +724,6 @@ function brandStoryReply() {
 
 function detectProduct(text) {
   const raw = String(text || "").replace(/[【】\[\]（）()「」『』\s]/g, "");
-  if (/龜鹿飲.*180|180cc|鋁袋/.test(raw)) return getProduct("guilu-drink-180");
   if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");
   if (/龜鹿膏/.test(raw)) return getProduct("guilu-gao");
   if (/龜鹿湯塊|湯塊/.test(raw)) return getProduct("guilu-tangkuai");
