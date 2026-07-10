@@ -1,0 +1,102 @@
+name: LINE OA v312 main clean
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - LINEOA_V312_MAIN_CLEAN.txt
+
+permissions:
+  contents: write
+
+jobs:
+  clean-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Clean obsolete files and update v312
+        run: |
+          rm -f server-core.js V311_TEST_OUTPUT.txt V311_TEST_STATUS.txt LINEOA_V312_MAIN_CLEAN.txt
+          find . -maxdepth 1 -type f \( -name '*TRIGGER*.txt' -o -name 'RUN_*.txt' -o -name 'V*_TEST_*.txt' -o -name 'LINE_MASCOT_*.txt' -o -name 'QUANTITY_*.txt' -o -name 'COMBO_CART_*.txt' -o -name 'RESTORE_*.txt' -o -name 'EXPORT_*.txt' -o -name 'FIX_*.txt' -o -name 'CRM_FALLBACK_*.txt' \) -delete
+          rm -f LINEOA_價格表_最新版.json 產品建議售價_最新版.md
+          if [ -d tools ]; then
+            find tools -type f ! -name 'sync_website_catalog.js' -delete
+            find tools -type d -empty -delete
+          fi
+          if [ -d .github/workflows ]; then
+            find .github/workflows -type f \
+              ! -name 'verify-line-and-website-catalog.yml' \
+              ! -name 'lineoa-v312-main-clean.yml' \
+              -delete
+          fi
+          node - <<'NODE'
+          const fs = require('fs');
+          let server = fs.readFileSync('server.js', 'utf8');
+          server = server.replace(/仙加味 LINE OA Bot v[0-9.]+/, '仙加味 LINE OA Bot v312.0');
+          server = server.replace(/const VERSION = "v[0-9.]+";/, 'const VERSION = "v312.0";');
+          server = server.replace(/\?v=311\.0/g, '?v=312.0');
+          fs.writeFileSync('server.js', server);
+
+          for (const file of ['test.js', 'function.test.js', 'security.test.js']) {
+            if (!fs.existsSync(file)) continue;
+            let text = fs.readFileSync(file, 'utf8').replace(/v311\.0/g, 'v312.0');
+            fs.writeFileSync(file, text);
+          }
+
+          if (fs.existsSync('function.test.js')) {
+            let text = fs.readFileSync('function.test.js', 'utf8');
+            text = text.replace(
+              'function validateBubble(bubble) {\n  assert.ok(bubble && bubble.type === "bubble");\n  assert.ok(bubble.body && bubble.body.type === "box");\n  const wrapped = { type: "flex", altText: "測試卡片", contents: bubble };\n  validateMessage(wrapped);\n}',
+              'function validateBubble(value) {\n  const bubble = value?.type === "flex" ? value.contents : value;\n  assert.ok(bubble && bubble.type === "bubble");\n  assert.ok(bubble.body && bubble.body.type === "box");\n  const wrapped = value?.type === "flex" ? value : { type: "flex", altText: "測試卡片", contents: bubble };\n  validateMessage(wrapped);\n}'
+            );
+            fs.writeFileSync('function.test.js', text);
+          }
+
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.version = '3.1.2';
+          pkg.main = 'server.js';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          lock.version = '3.1.2';
+          if (lock.packages && lock.packages['']) lock.packages[''].version = '3.1.2';
+          fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+          NODE
+
+      - name: Install and test
+        run: |
+          npm ci
+          node --check server.js
+          npm test
+          node - <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+          const server = fs.readFileSync('server.js', 'utf8');
+          if (fs.existsSync('server-core.js')) throw new Error('server-core.js still exists');
+          if (!server.includes('const VERSION = "v312.0";')) throw new Error('wrong version');
+          if (!Array.isArray(data.products) || data.products.length !== 6) throw new Error('product data invalid');
+          for (const pose of ['welcome','products','recommend','combo','usage','faq','service','brand']) {
+            if (!server.includes(`${pose}: "images/line-mascot/`)) throw new Error('missing mascot pose: ' + pose);
+          }
+          if (!server.includes('aspectMode: "contain"')) throw new Error('contain missing');
+          console.log('PASS LINE OA v312 final clean');
+          NODE
+
+      - name: Commit clean result
+        run: |
+          rm -f .github/workflows/lineoa-v312-main-clean.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'LINE OA v312：完成小老闆卡片、修正測試並清除舊檔'
+          git push origin main
