@@ -1,7 +1,7 @@
 name: LINE OA v309 stabilize
 
 on:
-  push:
+  pull_request:
     branches: [main]
     paths:
       - LINEOA_V309_TRIGGER.txt
@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -47,10 +47,10 @@ jobs:
           rm -f tools/lineoa_v309_stabilize.py
           rm -f .github/workflows/lineoa-v309-stabilize.yml
 
-      - name: Commit stable LINE OA
+      - name: Commit stable LINE OA to PR branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "LINE OA v309：整合資料、修正小老闆圖片與完整功能驗證" || exit 0
-          git push origin main
+          git push origin HEAD:${{ github.head_ref }}
