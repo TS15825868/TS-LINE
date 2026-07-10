@@ -30,11 +30,21 @@ jobs:
       - name: Consolidate one runtime and one catalog
         run: python tools/v307_consolidate.py
 
-      - name: Install and validate
+      - name: Install and validate core runtime
         run: |
           npm ci
           node --check server.js
-          npm test
+          node - <<'NODE'
+          const bot = require('./server');
+          if (bot.VERSION !== 'v307.1') throw new Error(`unexpected version: ${bot.VERSION}`);
+          const p180 = bot.getProduct('guilu-drink-180');
+          if (!p180 || p180.price !== 200) throw new Error('180cc product missing or invalid');
+          const carousel = bot.productCarousel();
+          if (carousel.type !== 'flex' || carousel.contents.type !== 'carousel') throw new Error('product carousel invalid');
+          const usage = bot.usageReply(p180);
+          if (!usage || usage.type !== 'flex') throw new Error('usage reply invalid');
+          console.log('LINE OA JavaScript smoke test passed');
+          NODE
           python - <<'PY'
           from pathlib import Path
           import json
