@@ -1,0 +1,24 @@
+name: LINE OA v311 candidate test
+
+on:
+  push:
+    branches: [lineoa-v311-diagnostic-final]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --check server.js
+      - run: npm test
+      - name: Validate production structure
+        run: |
+          test ! -e server-core.js
+          grep -F 'const VERSION = "v311.0";' server.js
+          grep -F 'images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0' server.js
+          grep -F 'aspectMode: "contain"' server.js
