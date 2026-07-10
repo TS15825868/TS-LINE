@@ -1,1 +1,1 @@
-run candidate tests 2
+run candidate diagnostic tests
