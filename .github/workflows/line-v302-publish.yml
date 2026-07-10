@@ -1,0 +1,49 @@
+name: Publish LINE OA v302
+
+on:
+  push:
+    paths:
+      - LINE_V302_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply LINE OA contextual mascot update and clean old public data
+        run: python tools/line_v302_cleanup.py
+
+      - name: Validate LINE OA
+        run: |
+          node --check server.js
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          json.loads(Path('data.json').read_text(encoding='utf-8'))
+          print('LINE OA data validated')
+          PY
+          ! grep -RniE 'guilu-drink-180|180cc|180 cc' --include='server.js' --include='data.json' .
+
+      - name: Remove one-time deployment files
+        run: |
+          rm -f LINE_V302_TRIGGER.txt
+          rm -f .github/workflows/line-v302-publish.yml
+          rm -f tools/line_v302_cleanup.py
+
+      - name: Commit LINE OA update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v302：LINE OA 情境小老闆與舊規格清理" || exit 0
+          git push origin HEAD:main
