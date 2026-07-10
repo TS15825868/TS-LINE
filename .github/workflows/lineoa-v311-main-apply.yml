@@ -30,6 +30,40 @@ jobs:
       - name: Finalize LINE OA production
         run: python tools/lineoa_v311_finalize.py
 
+      - name: Fix standalone brand story Flex message
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          server_path = Path('server.js')
+          source = server_path.read_text(encoding='utf-8')
+          old = 'function brandStoryReply() {\n  return mascotBubble('
+          if old not in source:
+              raise SystemExit('brandStoryReply anchor missing')
+          source = source.replace(old, 'function brandStoryBubble() {\n  return mascotBubble(', 1)
+          anchor = '\nfunction detectProduct(text) {'
+          wrapper = '''
+function brandStoryReply() {
+  return {
+    type: "flex",
+    altText: "仙加味品牌故事",
+    contents: brandStoryBubble(),
+  };
+}
+'''
+          if anchor not in source:
+              raise SystemExit('detectProduct anchor missing')
+          source = source.replace(anchor, wrapper + anchor, 1)
+          server_path.write_text(source, encoding='utf-8')
+
+          test_path = Path('test.js')
+          test = test_path.read_text(encoding='utf-8')
+          test = test.replace(
+              'brandStoryReply().body.contents[1].text',
+              'brandStoryReply().contents.body.contents[1].text'
+          )
+          test_path.write_text(test, encoding='utf-8')
+          PY
+
       - name: Install dependencies
         run: npm ci
 
