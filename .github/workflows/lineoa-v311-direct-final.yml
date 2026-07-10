@@ -1,0 +1,75 @@
+name: LINE OA v311 direct final
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - LINEOA_V311_DIRECT_TRIGGER.txt
+
+concurrency:
+  group: lineoa-v311-production
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build single production runtime
+        run: |
+          python tools/lineoa_v311_finalize.py
+          python tools/fix_brand_flex_v311.py
+
+      - name: Install and validate everything
+        run: |
+          npm ci
+          node --check server.js
+          npm test
+          python -c "from pathlib import Path; import json; s=Path('server.js').read_text(encoding='utf-8'); d=json.loads(Path('data.json').read_text(encoding='utf-8')); assert not Path('server-core.js').exists(); assert 'const VERSION = \"v311.0\";' in s; assert 'runtimeModule._compile' not in s; assert 'aspectMode: \"contain\"' in s; assert 'images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0' in s; assert [p['id'] for p in d['products']] == ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen']; assert d['store']['hours'] == '週一至週六 09:30–18:30'; assert d['store']['holidayNote'] == '假日如未外出，可提前透過官方 LINE 預約。'; assert any('龜鹿飲180cc 5 包' in item for c in d['offers']['comboOffers'] for item in c['items']); print('LINE OA v311 production validation passed')"
+          for file in welcome products recommend combo usage faq service brand; do
+            curl --fail --silent --show-error --location --output /dev/null "https://ts15825868.github.io/xianjiawei/images/line-mascot/xianjiawei-mascot-line-$file.jpg"
+          done
+          curl --fail --silent --show-error --location --output /dev/null "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg"
+
+      - name: Remove all one-time files
+        run: |
+          rm -f LINEOA_V311_DIRECT_TRIGGER.txt LINEOA_V311_TRIGGER.txt LINEOA_V311_MAIN_TRIGGER.txt LINE_V309_TRIGGER.txt
+          rm -f tools/lineoa_v311_finalize.py tools/fix_brand_flex_v311.py tools/lineoa_v310_consolidate.py tools/apply_line_v309.py
+          rm -f .github/workflows/lineoa-v311-finalize.yml
+          rm -f .github/workflows/lineoa-v311-main-apply.yml
+          rm -f .github/workflows/lineoa-v311-direct-final.yml
+          rm -f .github/workflows/lineoa-v310-consolidate.yml
+          rm -f .github/workflows/lineoa-v309-stabilize.yml
+          rm -f .github/workflows/line-v309-consolidate.yml
+          rm -f V309_TEST_OUTPUT.txt V309_TEST_STATUS.txt V311_TEST_OUTPUT.txt V311_TEST_STATUS.txt
+          rm -f LINEOA_V309_TRIGGER.txt LINEOA_V310_TRIGGER.txt
+
+      - name: Commit and push verified production
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "LINE OA v311：正式上線、小老闆更新與全功能驗證"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git rebase -X theirs origin/main && git push origin HEAD:main && exit 0
+            git rebase --abort || true
+            sleep $((attempt * 3))
+          done
+          exit 1
