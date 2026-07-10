@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v300.7
+ * 仙加味 LINE OA Bot v300.8
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.7";
+const VERSION = "v300.8";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -403,8 +403,48 @@ function cartFlex(state) {
   ]);
 }
 
+const MASCOT_PATH = "images/brand/xianjiawei-mascot.jpg?v=300.5";
+
+function mascotBubble(title, description, buttons) {
+  const bubble = flexCard(title, description, buttons).contents;
+  bubble.hero = {
+    type: "image",
+    url: absoluteUrl(MASCOT_PATH),
+    size: "full",
+    aspectRatio: "4:5",
+    aspectMode: "contain",
+    backgroundColor: "#F7F4ED",
+    action: { type: "uri", uri: absoluteUrl("brand.html") },
+  };
+  return bubble;
+}
+
+function mascotWelcomeReply() {
+  return {
+    type: "flex",
+    altText: "仙加味小老闆歡迎您",
+    contents: mascotBubble(
+      "仙加味小老闆｜歡迎您",
+      `您好，歡迎來到仙加味。\n\n我可以帶您查看產品、比較怎麼選、了解搭配組合與使用方式。\n\n${ORDER_NOTICE}`,
+      [
+        { label: "看產品", text: "看產品" },
+        { label: "幫我推薦", text: "幫我推薦" },
+        { label: "人工客服", text: "我要人工客服" },
+      ]
+    ),
+  };
+}
 function recommendReply() {
   const cards = [
+    mascotBubble(
+      "仙加味小老闆幫你選",
+      "先依固定安排、方便即飲、沖泡燉湯、家庭規格或自行搭配飲品來比較。產品規格與價格仍以正式產品卡為準。",
+      [
+        { label: "看產品", text: "看產品" },
+        { label: "搭配組合", text: "搭配組合" },
+        { label: "人工客服", text: "我要人工客服" },
+      ]
+    ),
     flexCard(
       "固定日常安排",
       "想建立固定日常食補，可從龜鹿膏開始；需要外出或忙碌時方便飲用，可選龜鹿飲30cc或180cc。",
@@ -531,7 +571,17 @@ function comboMenuReply() {
     altText: "仙加味搭配組合",
     contents: {
       type: "carousel",
-      contents: combos.slice(0, 10).map((combo, index) => {
+      contents: [
+        mascotBubble(
+          "小老闆搭配導覽",
+          "依日常節奏查看搭配組合。每組價格、可選組數、活動與加入購物車功能都保留在各方案卡中。",
+          [
+            { label: "看產品", text: "看產品" },
+            { label: "怎麼使用", text: "怎麼使用" },
+            { label: "人工客服", text: "我要人工客服" },
+          ]
+        ),
+        ...combos.slice(0, 9).map((combo, index) => {
         const unitPrice = comboUnitPrice(combo);
         const quantities = combo.quantityOptions || [1, 2, 3, 5];
         const promotions = comboPromotionLines(combo);
@@ -550,6 +600,7 @@ function comboMenuReply() {
           { label: "人工客服", text: "我要人工客服" },
         ]).contents;
       }),
+      ],
     },
   };
 }
@@ -564,7 +615,18 @@ function usageChooserReply() {
     altText: "仙加味產品使用方式",
     contents: {
       type: "carousel",
-      contents: DATA.products.map((product) => usageReply(product).contents),
+      contents: [
+        mascotBubble(
+          "小老闆使用方式導覽",
+          "先選擇想了解的產品，再查看正式使用方式、成分、完整介紹與產品DM。",
+          [
+            { label: "看產品", text: "看產品" },
+            { label: "幫我推薦", text: "幫我推薦" },
+            { label: "人工客服", text: "我要人工客服" },
+          ]
+        ),
+        ...DATA.products.map((product) => usageReply(product).contents),
+      ],
     },
   };
 }
@@ -985,7 +1047,7 @@ async function handleEvent(event) {
   if (event.type === "follow") {
     return reply(
       event.replyToken,
-      textMsg(`您好，歡迎來到仙加味。\n\n${ORDER_NOTICE}\n\n可以先查看產品、品牌故事，或告訴我們偏好的使用方式。`, mainQuick())
+      mascotWelcomeReply()
     );
   }
   if (event.type === "postback") return handleLegacyPostback(event);
@@ -1042,6 +1104,8 @@ module.exports = {
   productMenuReply,
   priceCarousel,
   recommendReply,
+  mascotWelcomeReply,
+  mascotBubble,
   comboReply,
   comboMenuReply,
   comboDetailReply,

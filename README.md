@@ -1,4 +1,4 @@
-# 仙加味 LINE OA v300.7
+# 仙加味 LINE OA v300.8
 
 ## 正式功能
 
@@ -39,7 +39,7 @@
 ```json
 {
   "ok": true,
-  "version": "v300.7",
+  "version": "v300.8",
   "credentialsConfigured": true,
   "crmConfigured": true
 }
@@ -73,3 +73,7 @@
 ## v300.7 最新產品圖與DM
 
 產品卡恢復使用官網 products-v3 最新實品圖，並加入 dm-final 最終DM按鈕；使用方式卡與價格卡也使用相同DM來源。
+
+## v300.8 仙加味小老闆
+
+歡迎、幫我推薦、搭配組合與使用方式總覽加入小老闆品牌導覽卡；產品規格、價格、數量、購物車與結帳流程維持原功能。
