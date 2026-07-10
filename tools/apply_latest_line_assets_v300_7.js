@@ -113,6 +113,13 @@ for (const fileName of ["test.js", "security.test.js", "function.test.js"]) {
   write(fileName, value);
 }
 
+let catalogTest = read("catalog.test.js");
+catalogTest = catalogTest.replace(
+  'assert.strictEqual(data.catalogVersion, "300.0");',
+  'assert.strictEqual(data.catalogVersion, "300.4");'
+);
+write("catalog.test.js", catalogTest);
+
 let functionTest = read("function.test.js");
 functionTest = functionTest.replace(
   "assert.ok(productMenuReply().contents.contents.every((bubble) => !bubble.hero));",
