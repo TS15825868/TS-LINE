@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v306.0";
+const VERSION = "v309.0";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -419,19 +419,24 @@ function cartFlex(state) {
 }
 
 const MASCOT_PATHS = {
-  welcome: "images/brand/xianjiawei-scene-welcome.jpg?v=306.0",
-  products: "images/brand/xianjiawei-scene-products.jpg?v=306.0",
-  guide: "images/brand/xianjiawei-scene-guide.jpg?v=306.0",
-  service: "images/brand/xianjiawei-scene-service.jpg?v=306.0",
-  usage: "images/brand/xianjiawei-scene-usage.jpg?v=306.0",
+  welcome: "images/brand/xianjiawei-scene-welcome.jpg?v=307.1",
+  products: "images/brand/xianjiawei-scene-products.jpg?v=307.1",
+  recommend: "images/brand/xianjiawei-scene-guide.jpg?v=307.1",
+  combo: "images/brand/xianjiawei-scene-products.jpg?v=307.1",
+  usage: "images/brand/xianjiawei-scene-usage.jpg?v=307.1",
+  faq: "images/brand/xianjiawei-scene-service.jpg?v=307.1",
+  service: "images/brand/xianjiawei-scene-service.jpg?v=307.1",
+  brand: "images/brand/xianjiawei-scene-guide.jpg?v=307.1",
 };
 
 function mascotPoseForTitle(title = "") {
   if (/客服|聯絡|確認|訂單|結帳/.test(title)) return "service";
-  if (/常見問題|FAQ/.test(title)) return "service";
+  if (/常見問題|FAQ/.test(title)) return "faq";
   if (/使用|沖泡|燉湯|料理/.test(title)) return "usage";
-  if (/推薦|幫你選|怎麼選|資料|漢方|百科|傳承|故事/.test(title)) return "guide";
-  if (/搭配|產品|介紹|價格|購物車/.test(title)) return "products";
+  if (/搭配|組合/.test(title)) return "combo";
+  if (/推薦|幫你選|怎麼選/.test(title)) return "recommend";
+  if (/傳承|故事|品牌|漢方|百科|資料/.test(title)) return "brand";
+  if (/產品|介紹|價格|購物車/.test(title)) return "products";
   return "welcome";
 }
 
@@ -726,6 +731,7 @@ function brandStoryReply() {
 
 function detectProduct(text) {
   const raw = String(text || "").replace(/[【】\[\]（）()「」『』\s]/g, "");
+  if (/龜鹿飲.*180|180cc|鋁袋/.test(raw)) return getProduct("guilu-drink-180");
   if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");
   if (/龜鹿膏/.test(raw)) return getProduct("guilu-gao");
   if (/龜鹿湯塊|湯塊/.test(raw)) return getProduct("guilu-tangkuai");
@@ -1028,7 +1034,7 @@ async function handleMessage(event) {
   if (websiteIntent === "usage") return reply(event.replyToken, usageChooserReply());
   if (websiteIntent === "price") return reply(event.replyToken, priceCarousel());
   if (websiteIntent === "brand") return reply(event.replyToken, brandStoryReply());
-  if (websiteIntent === "human") return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。", mainQuick()));
+  if (websiteIntent === "human") return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。\n\n門市地址：台北市萬華區西昌街52號。\n營業時間：週一至週六 09:30–18:30。\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));
   if (websiteIntent === "products") return reply(event.replyToken, productMenuReply());
 
   if (/黃帝內經|內經|食飲有節|飲食有節|起居有常|四時調養|順應四時/.test(text)) {
@@ -1043,8 +1049,12 @@ async function handleMessage(event) {
     return reply(event.replyToken, doctorReferralReply());
   }
 
+  if (/營業時間|門市時間|幾點營業|幾點關門|假日預約|預約門市/.test(text)) {
+    return reply(event.replyToken, textMsg("門市地址：台北市萬華區西昌街52號。\n營業時間：週一至週六 09:30–18:30。\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));
+  }
+
   if (/人工|客服|聯絡/.test(text)) {
-    return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。", mainQuick()));
+    return reply(event.replyToken, textMsg("請直接留下想詢問的內容，我們會由人工協助回覆。\n\n門市地址：台北市萬華區西昌街52號。\n營業時間：週一至週六 09:30–18:30。\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));
   }
 
   if (/到貨|現貨|上架|可以買|能買|開放下單|何時出貨|出貨時間|盒子|盒裝/.test(text)) {
