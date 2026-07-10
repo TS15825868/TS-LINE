@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v303.0
+ * 仙加味 LINE OA Bot v306.0
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v303.0";
+const VERSION = "v306.0";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -419,18 +419,19 @@ function cartFlex(state) {
 }
 
 const MASCOT_PATHS = {
-  welcome: "images/brand/xianjiawei-scene-welcome.jpg?v=303.0",
-  products: "images/brand/xianjiawei-scene-products.jpg?v=303.0",
-  guide: "images/brand/xianjiawei-scene-guide.jpg?v=303.0",
-  service: "images/brand/xianjiawei-scene-service.jpg?v=303.0",
-  usage: "images/brand/xianjiawei-scene-usage.jpg?v=303.0",
+  welcome: "images/brand/xianjiawei-scene-welcome.jpg?v=306.0",
+  products: "images/brand/xianjiawei-scene-products.jpg?v=306.0",
+  guide: "images/brand/xianjiawei-scene-guide.jpg?v=306.0",
+  service: "images/brand/xianjiawei-scene-service.jpg?v=306.0",
+  usage: "images/brand/xianjiawei-scene-usage.jpg?v=306.0",
 };
 
 function mascotPoseForTitle(title = "") {
-  if (/搭配|產品|介紹|料理|價格/.test(title)) return "products";
+  if (/客服|聯絡|確認|訂單|結帳/.test(title)) return "service";
+  if (/常見問題|FAQ/.test(title)) return "service";
+  if (/使用|沖泡|燉湯|料理/.test(title)) return "usage";
   if (/推薦|幫你選|怎麼選|資料|漢方|百科|傳承|故事/.test(title)) return "guide";
-  if (/使用|沖泡|燉湯/.test(title)) return "usage";
-  if (/客服|常見問題|確認|訂單|購物車/.test(title)) return "service";
+  if (/搭配|產品|介紹|價格|購物車/.test(title)) return "products";
   return "welcome";
 }
 
@@ -441,8 +442,8 @@ function mascotBubble(title, description, buttons, pose = "") {
     type: "image",
     url: absoluteUrl(imagePath),
     size: "full",
-    aspectRatio: "4:5",
-    aspectMode: "cover",
+    aspectRatio: "4:3",
+    aspectMode: "contain",
     backgroundColor: "#EFE4D2",
     action: { type: "uri", uri: absoluteUrl("brand.html") },
   };
@@ -477,10 +478,11 @@ function recommendReply() {
     ),
     flexCard(
       "固定日常安排",
-      "想建立固定日常安排可從龜鹿膏開始；需要外出或忙碌時方便飲用，可查看龜鹿飲30cc。",
+      "想建立固定日常安排可從龜鹿膏開始；需要輕巧攜帶可看龜鹿飲30cc，偏好較完整即飲份量可看龜鹿飲180cc鋁袋。",
       [
         { label: "看龜鹿膏", text: "產品詳情｜guilu-gao" },
         { label: "看30cc", text: "產品詳情｜guilu-drink-30" },
+        { label: "看180cc", text: "產品詳情｜guilu-drink-180" },
       ]
     ).contents,
     flexCard(
