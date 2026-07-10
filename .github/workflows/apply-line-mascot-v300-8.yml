@@ -34,8 +34,22 @@ jobs:
         run: npm ci
       - name: Verify catalog
         run: npm run check:catalog
-      - name: Run function tests
-        run: npm test
+      - name: Run function tests and capture log
+        run: |
+          set +e
+          npm test > FUNCTION_TEST_LOG.txt 2>&1
+          echo $? > FUNCTION_TEST_STATUS.txt
+          exit 0
+      - name: Upload function test diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: line-mascot-function-test
+          path: |
+            FUNCTION_TEST_LOG.txt
+            FUNCTION_TEST_STATUS.txt
+      - name: Fail on function test error
+        run: test "$(cat FUNCTION_TEST_STATUS.txt)" = "0"
       - name: Verify JavaScript syntax
         run: |
           node --check server.js
@@ -59,6 +73,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
       - name: Commit verified update
         run: |
+          rm -f FUNCTION_TEST_LOG.txt FUNCTION_TEST_STATUS.txt
           rm -f LINE_MASCOT_APPLY.txt LINE_MASCOT_PR_TRIGGER*.txt
           rm -f tools/apply_mascot_line_v300_8.js
           rm -f .github/workflows/apply-line-mascot-v300-8.yml
