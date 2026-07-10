@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v311.0
+ * 仙加味 LINE OA Bot v312.0
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v311.0";
+const VERSION = "v312.0";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -428,14 +428,14 @@ function cartFlex(state) {
 }
 
 const MASCOT_PATHS = {
-  welcome: "images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0",
-  products: "images/line-mascot/xianjiawei-mascot-line-products.jpg?v=311.0",
-  recommend: "images/line-mascot/xianjiawei-mascot-line-recommend.jpg?v=311.0",
-  combo: "images/line-mascot/xianjiawei-mascot-line-combo.jpg?v=311.0",
-  usage: "images/line-mascot/xianjiawei-mascot-line-usage.jpg?v=311.0",
-  faq: "images/line-mascot/xianjiawei-mascot-line-faq.jpg?v=311.0",
-  service: "images/line-mascot/xianjiawei-mascot-line-service.jpg?v=311.0",
-  brand: "images/line-mascot/xianjiawei-mascot-line-brand.jpg?v=311.0",
+  welcome: "images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=312.0",
+  products: "images/line-mascot/xianjiawei-mascot-line-products.jpg?v=312.0",
+  recommend: "images/line-mascot/xianjiawei-mascot-line-recommend.jpg?v=312.0",
+  combo: "images/line-mascot/xianjiawei-mascot-line-combo.jpg?v=312.0",
+  usage: "images/line-mascot/xianjiawei-mascot-line-usage.jpg?v=312.0",
+  faq: "images/line-mascot/xianjiawei-mascot-line-faq.jpg?v=312.0",
+  service: "images/line-mascot/xianjiawei-mascot-line-service.jpg?v=312.0",
+  brand: "images/line-mascot/xianjiawei-mascot-line-brand.jpg?v=312.0",
 };
 
 function mascotPoseForTitle(title = "") {
