@@ -25,6 +25,7 @@ REPLACEMENTS = {
 def replace_text(text: str) -> str:
     for old, new in REPLACEMENTS.items():
         text = text.replace(old, new)
+    text = re.sub(r"(?i)180\s*cc", "30cc", text)
     return text
 
 
