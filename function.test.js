@@ -40,7 +40,7 @@ function validateBubble(bubble) {
 assert.strictEqual(VERSION, "v311.0");
 const messages = [
   productMenuReply(), priceCarousel(), mascotWelcomeReply(), recommendReply(), comboMenuReply(),
-  usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(),
+  usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(), brandStoryReply(),
   cartFlex({ cart: [], checkout: null }),
 ];
 for (const product of DATA.products) {
@@ -49,7 +49,6 @@ for (const product of DATA.products) {
 }
 messages.forEach(validateMessage);
 validateBubble(comboDetailReply(0));
-validateBubble(brandStoryReply());
 
 assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);
 assert.ok(productMenuReply().contents.contents.every((bubble) => Boolean(bubble.hero)));
