@@ -1,0 +1,48 @@
+name: Apply LINE OA mascot v306
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - LINE_MASCOT_V306_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply LINE OA mascot configuration
+        run: python tools/apply_line_mascot_v306.py
+      - name: Validate
+        run: |
+          node --check server-core.js
+          node --check server.js
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          json.loads(Path('rich-menu-actions.json').read_text(encoding='utf-8'))
+          core=Path('server-core.js').read_text(encoding='utf-8')
+          assert 'v=306.0' in core
+          assert 'aspectMode: "contain"' in core
+          assert '週一至週六 09:30–18:30' in Path('server.js').read_text(encoding='utf-8')
+          print('LINE OA mascot v306 validated')
+          PY
+      - name: Commit generated update
+        run: |
+          rm -f LINE_MASCOT_V306_TRIGGER.txt
+          rm -f tools/apply_line_mascot_v306.py
+          rm -f .github/workflows/line-mascot-v306.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "LINE OA v306：更新仙加味小老闆與 Rich Menu 設定" || exit 0
+          git push origin HEAD:${{ github.head_ref }}
