@@ -2,8 +2,8 @@
 const assert = require("assert");
 const fs = require("fs");
 const { validateData, sanitizeUserText, cleanupExpiredStates, VERSION } = require("./server");
-const source = fs.readFileSync("server-core.js", "utf8");
-assert.strictEqual(VERSION, "v309.0");
+const source = fs.readFileSync("server.js", "utf8");
+assert.strictEqual(VERSION, "v311.0");
 assert.ok(source.includes('const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";'));
 assert.ok(!/channelAccessToken:\s*process\.env\.CHANNEL_ACCESS_TOKEN\s*\|\|\s*["\'][A-Za-z0-9+/=]{40,}/.test(source));
 assert.ok(!/channelSecret:\s*process\.env\.CHANNEL_SECRET\s*\|\|\s*["\'][a-f0-9]{32}/i.test(source));

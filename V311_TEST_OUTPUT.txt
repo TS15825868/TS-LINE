@@ -1,0 +1,17 @@
+
+> xianjiawei-lineoa@3.1.1 test
+> node test.js && node catalog.test.js && node security.test.js && node function.test.js
+
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS LINE OA v311.0: products, prices, cart, cards, usage, classics and referral
+PASS LINE OA catalog 300.5: website fields, sales fields, assets and combo wording
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS security and UX v309.0
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS full LINE function matrix v309.0
+PASS quantity options and promotions v300.4
+PASS website legacy message routing v309.0
+PASS combo prices, quantities, promotions and cart v309.0
+PASS LINE product images and final DM buttons v309.0
+PASS LINE OA mascot cards v309.0
+LINE OA v311 production validation passed

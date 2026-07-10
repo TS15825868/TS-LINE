@@ -29,7 +29,7 @@
         ],
         "items": [
           "龜鹿膏 1 罐",
-          "龜鹿飲30cc 5 瓶"
+          "龜鹿飲180cc 5 包"
         ],
         "gift": "",
         "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
@@ -40,7 +40,7 @@
             "qty": 1
           },
           {
-            "productId": "guilu-drink-30",
+            "productId": "guilu-drink-180",
             "qty": 5
           }
         ],
@@ -60,7 +60,7 @@
         ],
         "items": [
           "龜鹿膏 1 罐",
-          "龜鹿飲30cc 12 瓶（買10送2）"
+          "龜鹿飲180cc 12 包（買10送2）"
         ],
         "gift": "",
         "desc": "適合想固定節奏，也想增加外出或忙碌時的便利性。",
@@ -71,7 +71,7 @@
             "qty": 1
           },
           {
-            "productId": "guilu-drink-30",
+            "productId": "guilu-drink-180",
             "qty": 12
           }
         ],
@@ -122,7 +122,7 @@
         ],
         "items": [
           "龜鹿膏 1 罐",
-          "龜鹿飲30cc 5 瓶",
+          "龜鹿飲180cc 5 包",
           "龜鹿湯塊75g 1 盒",
           "鹿茸粉75g 1 罐"
         ],
@@ -135,7 +135,7 @@
             "qty": 1
           },
           {
-            "productId": "guilu-drink-30",
+            "productId": "guilu-drink-180",
             "qty": 5
           },
           {
@@ -324,8 +324,8 @@
       "name": "龜鹿飲180cc鋁袋",
       "displayName": "龜鹿飲180cc鋁袋",
       "size": "180cc／包（鋁袋）",
-      "image": "images/products-v3/guilu-drink-180.jpg?v=305.0",
-      "dmImage": "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=305.0",
+      "image": "images/products-v3/guilu-drink-180.jpg?v=307.1",
+      "dmImage": "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=307.1",
       "description": "180cc鋁袋包裝，把龜鹿膏的成分方向整理成方便即飲的液態型態。適合居家、工作空檔或偏好一次安排較完整份量的人。",
       "ingredients": [
         "水",
@@ -906,7 +906,7 @@
     "products": [
       "龜鹿膏100g",
       "龜鹿飲30cc玻璃瓶",
-      "龜鹿飲30cc鋁袋",
+      "龜鹿飲180cc鋁袋",
       "龜鹿湯塊75g",
       "龜鹿膠一斤裝",
       "鹿茸粉75g"
@@ -1016,5 +1016,6 @@
     "file": "data.json",
     "role": "官網與 LINE OA 共用公開產品資料來源"
   },
-  "catalogSyncedAt": "2026-07-10"
+  "catalogSyncedAt": "2026-07-10",
+  "lineAssetsVersion": "311.0"
 }

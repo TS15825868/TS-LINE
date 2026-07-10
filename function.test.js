@@ -31,7 +31,7 @@ function validateMessage(message) {
   walk(message);
 }
 
-assert.strictEqual(VERSION, "v309.0");
+assert.strictEqual(VERSION, "v311.0");
 const messages = [
   productMenuReply(), priceCarousel(), mascotWelcomeReply(), recommendReply(), comboMenuReply(), comboDetailReply(0),
   usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(), brandStoryReply(),
@@ -47,7 +47,7 @@ assert.ok(productMenuReply().contents.contents.every((bubble) => Boolean(bubble.
 assert.strictEqual(recommendReply().contents.contents.length, 4);
 assert.strictEqual(comboMenuReply().contents.contents.length, DATA.offers.comboOffers.length + 1);
 assert.strictEqual(usageChooserReply().contents.contents.length, DATA.products.length + 1);
-const source = fs.readFileSync("server-core.js", "utf8");
+const source = fs.readFileSync("server.js", "utf8");
 for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
   assert.ok(source.includes(command), "missing command: " + command);
 }
@@ -131,6 +131,6 @@ console.log("PASS LINE product images and final DM buttons v309.0");
 for (const message of [mascotWelcomeReply(), recommendReply(), comboMenuReply(), usageChooserReply()]) {
   const bubble = message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;
   assert.ok(bubble.hero, "小老闆卡缺少圖片");
-  assert.ok(bubble.hero.url.includes("/images/brand/xianjiawei-scene-"));
+  assert.ok(bubble.hero.url.includes("/images/line-mascot/xianjiawei-mascot-line-"));
 }
 console.log("PASS LINE OA mascot cards v309.0");
