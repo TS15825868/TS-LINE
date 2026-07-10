@@ -20,8 +20,8 @@ const product180 = {
   name: "龜鹿飲180cc鋁袋",
   displayName: "龜鹿飲180cc鋁袋",
   size: "180cc／包（鋁袋）",
-  image: "images/products-v3/guilu-drink-180.jpg?v=305.0",
-  dmImage: "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=305.0",
+  image: "images/products-v3/guilu-drink-180.jpg?v=306.0",
+  dmImage: "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=306.0",
   description: "180cc鋁袋包裝，把龜鹿膏的成分方向整理成方便即飲的液態型態。適合居家、工作空檔或偏好一次安排較完整份量的人。",
   ingredients: ["水", "鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
   usage: ["撕開包裝即可飲用", "可依個人習慣溫熱後飲用", "開封後請儘速飲用完畢"],
@@ -62,8 +62,8 @@ let source = originalReadFileSync(corePath, "utf8");
 source = source
   .replace("仙加味 LINE OA Bot v303.0", "仙加味 LINE OA Bot v306.0")
   .replace('const VERSION = "v303.0";', 'const VERSION = "v306.0";')
-  .replace(/xianjiawei-scene-([a-z]+)\.jpg\?v=306\.0/g, "xianjiawei-scene-$1.jpg?v=305.0")
-  .replace('aspectRatio: "4:3",\n    aspectMode: "contain",', 'aspectRatio: "4:3",\n    aspectMode: "contain",')
+  .replace(/xianjiawei-scene-([a-z]+)\.jpg\?v=303\.0/g, "xianjiawei-scene-$1.jpg?v=306.0")
+  .replace('aspectRatio: "4:5",\n    aspectMode: "cover",', 'aspectRatio: "4:3",\n    aspectMode: "contain",')
   .replace(
     '  if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");',
     '  if (/龜鹿飲.*180|180cc|鋁袋/.test(raw)) return getProduct("guilu-drink-180");\n  if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");'
