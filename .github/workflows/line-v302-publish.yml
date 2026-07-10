@@ -1,9 +1,11 @@
 name: Publish LINE OA v302
 
 on:
-  push:
+  pull_request:
+    branches:
+      - main
     paths:
-      - LINE_V302_TRIGGER.txt
+      - LINE_V302_PR_TRIGGER.txt
 
 permissions:
   contents: write
@@ -14,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -34,16 +37,14 @@ jobs:
           PY
           ! grep -RniE 'guilu-drink-180|180cc|180 cc' --include='server.js' --include='data.json' .
 
-      - name: Remove one-time deployment files
+      - name: Remove trigger files
         run: |
-          rm -f LINE_V302_TRIGGER.txt
-          rm -f .github/workflows/line-v302-publish.yml
-          rm -f tools/line_v302_cleanup.py
+          rm -f LINE_V302_TRIGGER.txt LINE_V302_PR_TRIGGER.txt
 
-      - name: Commit LINE OA update
+      - name: Commit LINE OA update to PR branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "v302：LINE OA 情境小老闆與舊規格清理" || exit 0
-          git push origin HEAD:main
+          git push origin HEAD:${{ github.head_ref }}
