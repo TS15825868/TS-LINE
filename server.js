@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v300.8";
+const VERSION = "v301.0";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -282,7 +282,22 @@ function productCarousel() {
   return {
     type: "flex",
     altText: "仙加味產品",
-    contents: { type: "carousel", contents: DATA.products.map(productBubble) },
+    contents: {
+      type: "carousel",
+      contents: [
+        mascotBubble(
+          "小老闆介紹產品",
+          "先看產品型態與日常使用方式，再進入各產品卡查看規格、價格、使用方式與購買按鈕。",
+          [
+            { label: "幫我推薦", text: "幫我推薦" },
+            { label: "搭配組合", text: "搭配組合" },
+            { label: "人工客服", text: "我要人工客服" },
+          ],
+          "tray"
+        ),
+        ...DATA.products.map(productBubble),
+      ],
+    },
   };
 }
 
@@ -403,13 +418,26 @@ function cartFlex(state) {
   ]);
 }
 
-const MASCOT_PATH = "images/brand/xianjiawei-mascot.jpg?v=300.5";
+const MASCOT_PATHS = {
+  wave: "images/brand/xianjiawei-mascot-wave.jpg?v=301.0",
+  tray: "images/brand/xianjiawei-mascot-tray.jpg?v=301.0",
+  full: "images/brand/xianjiawei-mascot-full.jpg?v=301.0",
+  thumbs: "images/brand/xianjiawei-mascot-thumbs.jpg?v=301.0",
+};
 
-function mascotBubble(title, description, buttons) {
+function mascotPoseForTitle(title = "") {
+  if (/搭配|產品|介紹|料理/.test(title)) return "tray";
+  if (/推薦|幫你選|怎麼選|常見問題|確認/.test(title)) return "thumbs";
+  if (/品牌|故事|傳承|使用|資料|漢方|百科/.test(title)) return "full";
+  return "wave";
+}
+
+function mascotBubble(title, description, buttons, pose = "") {
   const bubble = flexCard(title, description, buttons).contents;
+  const imagePath = MASCOT_PATHS[pose || mascotPoseForTitle(title)] || MASCOT_PATHS.wave;
   bubble.hero = {
     type: "image",
-    url: absoluteUrl(MASCOT_PATH),
+    url: absoluteUrl(imagePath),
     size: "full",
     aspectRatio: "4:5",
     aspectMode: "contain",
@@ -682,7 +710,7 @@ function huangdiNeijingReply() {
 }
 
 function brandStoryReply() {
-  return flexCard(
+  return mascotBubble(
     "仙加味｜四代傳承",
     "仙加味的故事從台北萬華開始。\n\n第一代曾祖父從行口與山產買賣起步。祖父『鹿角伯』自十幾歲起學習山產原料，以及鹿角、鹿茸、鹿鞭等鹿類原料與產品的生鮮、乾品處理與加工。父親長期協助並於約2000年前後正式承接第三代工作。\n\n重要歷程：\n・1974年開始獨立經營\n・1976年正式成立獨立事業\n・1978年完成公司化經營\n・2008年『仙加味』品牌完成註冊\n\n第四代將家族經驗整理成更清楚的產品資訊與日常使用方式。",
     [
