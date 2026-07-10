@@ -1,1 +1,1 @@
-apply LINE OA v311 final production run
+apply LINE OA v311 diagnostic production run
