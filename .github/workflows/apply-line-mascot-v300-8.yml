@@ -30,16 +30,21 @@ jobs:
           node --check tools/apply_mascot_line_v300_8.js
           node tools/apply_mascot_line_v300_8.js
           npm install --package-lock-only --ignore-scripts
-      - name: Verify all functions
+      - name: Install updated dependencies
+        run: npm ci
+      - name: Verify catalog
+        run: npm run check:catalog
+      - name: Run function tests
+        run: npm test
+      - name: Verify JavaScript syntax
         run: |
-          npm ci
-          npm run check:catalog
-          npm test
           node --check server.js
           node --check test.js
           node --check catalog.test.js
           node --check security.test.js
           node --check function.test.js
+      - name: Verify mascot source and public image
+        run: |
           grep -F 'const VERSION = "v300.8";' server.js >/dev/null
           grep -F 'function mascotWelcomeReply()' server.js >/dev/null
           grep -F 'xianjiawei-mascot.jpg?v=300.5' server.js >/dev/null
@@ -54,7 +59,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
       - name: Commit verified update
         run: |
-          rm -f LINE_MASCOT_APPLY.txt LINE_MASCOT_PR_TRIGGER.txt LINE_MASCOT_PR_TRIGGER_2.txt
+          rm -f LINE_MASCOT_APPLY.txt LINE_MASCOT_PR_TRIGGER*.txt
           rm -f tools/apply_mascot_line_v300_8.js
           rm -f .github/workflows/apply-line-mascot-v300-8.yml
           git config user.name 'github-actions[bot]'
