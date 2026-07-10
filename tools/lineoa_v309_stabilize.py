@@ -108,6 +108,34 @@ pkg = json.loads(package_path.read_text(encoding="utf-8"))
 pkg["version"] = "3.0.9"
 package_path.write_text(json.dumps(pkg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+# 4. 同步正式測試，避免舊版本號與舊卡片數量造成假失敗
+test_path = ROOT / "test.js"
+test = test_path.read_text(encoding="utf-8")
+test = test.replace('assert.strictEqual(VERSION, "v300.8");', 'assert.strictEqual(VERSION, "v309.0");')
+test = test.replace('assert.strictEqual(productCards.contents.contents.length, 6);', 'assert.strictEqual(productCards.contents.contents.length, DATA.products.length + 1);')
+test = test.replace('assert.strictEqual(productMenuReply().contents.contents.length, 6);', 'assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);')
+test_path.write_text(test, encoding="utf-8")
+
+security_path = ROOT / "security.test.js"
+security = security_path.read_text(encoding="utf-8")
+security = security.replace('assert.strictEqual(VERSION, "v300.8");', 'assert.strictEqual(VERSION, "v309.0");')
+security = security.replace('fs.readFileSync("server.js", "utf8")', 'fs.readFileSync("server-core.js", "utf8")')
+security = security.replace('PASS security and UX v300.8', 'PASS security and UX v309.0')
+security_path.write_text(security, encoding="utf-8")
+
+function_path = ROOT / "function.test.js"
+function_test = function_path.read_text(encoding="utf-8")
+function_test = function_test.replace('assert.strictEqual(VERSION, "v300.8");', 'assert.strictEqual(VERSION, "v309.0");')
+function_test = function_test.replace('assert.strictEqual(productMenuReply().contents.contents.length, 6);', 'assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);')
+function_test = function_test.replace('fs.readFileSync("server.js", "utf8")', 'fs.readFileSync("server-core.js", "utf8")')
+function_test = function_test.replace('assert.ok(bubble.hero.url.includes("/images/brand/xianjiawei-mascot.jpg?v=300.5"));', 'assert.ok(bubble.hero.url.includes("/images/brand/xianjiawei-scene-"));')
+function_test = function_test.replace('PASS full LINE function matrix v300.8', 'PASS full LINE function matrix v309.0')
+function_test = function_test.replace('PASS website legacy message routing v300.8', 'PASS website legacy message routing v309.0')
+function_test = function_test.replace('PASS combo prices, quantities, promotions and cart v300.8', 'PASS combo prices, quantities, promotions and cart v309.0')
+function_test = function_test.replace('PASS LINE product images and final DM buttons v300.8', 'PASS LINE product images and final DM buttons v309.0')
+function_test = function_test.replace('PASS LINE OA mascot cards v300.8', 'PASS LINE OA mascot cards v309.0')
+function_path.write_text(function_test, encoding="utf-8")
+
 # 必要檢查
 assert any(p.get("id") == "guilu-drink-180" for p in data["products"])
 assert 'aspectMode: "contain"' in core
