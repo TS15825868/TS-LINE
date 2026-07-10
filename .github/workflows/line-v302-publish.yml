@@ -24,7 +24,19 @@ jobs:
           python-version: '3.12'
 
       - name: Apply LINE OA contextual mascot update and clean old public data
-        run: python tools/line_v302_cleanup.py
+        run: |
+          set +e
+          python tools/line_v302_cleanup.py > LINE_V302_RUN.log 2>&1
+          status=$?
+          cat LINE_V302_RUN.log
+          if [ $status -ne 0 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add LINE_V302_RUN.log
+            git commit -m "記錄 LINE OA v302 執行錯誤" || true
+            git push origin HEAD:${{ github.head_ref }} || true
+            exit $status
+          fi
 
       - name: Validate LINE OA
         run: |
@@ -37,9 +49,9 @@ jobs:
           PY
           ! grep -RniE 'guilu-drink-180|180cc|180 cc' --include='server.js' --include='data.json' .
 
-      - name: Remove trigger files
+      - name: Remove trigger and debug files
         run: |
-          rm -f LINE_V302_TRIGGER.txt LINE_V302_PR_TRIGGER.txt
+          rm -f LINE_V302_TRIGGER.txt LINE_V302_PR_TRIGGER.txt LINE_V302_RUN.log
 
       - name: Commit LINE OA update to PR branch
         run: |
