@@ -1,0 +1,85 @@
+name: LINE OA v311 finalize
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - LINEOA_V311_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Finalize LINE OA
+        run: python tools/lineoa_v311_finalize.py
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate LINE OA
+        run: |
+          node --check server.js
+          npm test
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          server = Path('server.js').read_text(encoding='utf-8')
+          data = json.loads(Path('data.json').read_text(encoding='utf-8'))
+          assert not Path('server-core.js').exists()
+          assert 'const VERSION = "v311.0";' in server
+          assert 'runtimeModule._compile' not in server
+          assert 'aspectMode: "contain"' in server
+          assert 'images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0' in server
+          assert [p['id'] for p in data['products']] == [
+              'guilu-gao', 'guilu-drink-30', 'guilu-drink-180',
+              'guilu-tangkuai', 'guilu-jiao', 'luerong-fen'
+          ]
+          assert data['store']['hours'] == '週一至週六 09:30–18:30'
+          print('LINE OA v311 validation passed')
+          PY
+
+      - name: Verify published mascot and Rich Menu assets
+        run: |
+          for file in \
+            xianjiawei-mascot-line-welcome.jpg \
+            xianjiawei-mascot-line-products.jpg \
+            xianjiawei-mascot-line-recommend.jpg \
+            xianjiawei-mascot-line-combo.jpg \
+            xianjiawei-mascot-line-usage.jpg \
+            xianjiawei-mascot-line-faq.jpg \
+            xianjiawei-mascot-line-service.jpg \
+            xianjiawei-mascot-line-brand.jpg; do
+            curl --fail --silent --show-error --location --output /dev/null "https://ts15825868.github.io/xianjiawei/images/line-mascot/$file"
+          done
+          curl --fail --silent --show-error --location --output /dev/null "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg"
+
+      - name: Remove one-time finalizer
+        run: |
+          rm -f LINEOA_V311_TRIGGER.txt
+          rm -f tools/lineoa_v311_finalize.py
+          rm -f .github/workflows/lineoa-v311-finalize.yml
+
+      - name: Commit validated production files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "LINE OA v311：單一主程式、小老闆正式圖與完整功能驗證" || exit 0
+          git push origin main
