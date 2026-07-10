@@ -114,6 +114,10 @@ for (const fileName of ["test.js", "security.test.js", "function.test.js"]) {
 }
 
 let functionTest = read("function.test.js");
+functionTest = functionTest.replace(
+  "assert.ok(productMenuReply().contents.contents.every((bubble) => !bubble.hero));",
+  "assert.ok(productMenuReply().contents.contents.every((bubble) => Boolean(bubble.hero)));"
+);
 functionTest += `
 
 for (const product of DATA.products) {
