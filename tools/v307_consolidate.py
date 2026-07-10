@@ -4,6 +4,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = "v307.1"
+PACKAGE_VERSION = "3.0.10"
 
 PRODUCT_180 = {
   "id": "guilu-drink-180",
@@ -58,8 +59,6 @@ def consolidate_server():
     text = re.sub(r"仙加味 LINE OA(?: Bot)? v[0-9.]+", "仙加味 LINE OA Bot v307.1", text, count=1)
     text = re.sub(r'const VERSION = "v[0-9.]+";', 'const VERSION = "v307.1";', text, count=1)
     text = re.sub(r"\?v=(?:303|305|306|307)\.[0-9]+", "?v=307.1", text)
-
-    # 小老闆卡片保持完整、不裁切，直接使用網站的高畫質情境圖。
     text = re.sub(r'aspectMode: "cover"(?=,\n\s*backgroundColor: "#EFE4D2")', 'aspectMode: "contain"', text)
 
     detect_30 = '  if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");'
@@ -72,9 +71,10 @@ def consolidate_server():
         if anchor in text:
             text = text.replace(anchor, anchor + '\n        { label: "看180cc", text: "產品詳情｜guilu-drink-180" },', 1)
 
-    old_recommend = "想建立固定日常安排可從龜鹿膏開始；需要外出或忙碌時方便飲用，可查看龜鹿飲30cc。"
-    new_recommend = "想建立固定日常安排可從龜鹿膏開始；需要輕巧攜帶可看龜鹿飲30cc，偏好較完整即飲份量可看龜鹿飲180cc鋁袋。"
-    text = text.replace(old_recommend, new_recommend)
+    text = text.replace(
+        "想建立固定日常安排可從龜鹿膏開始；需要外出或忙碌時方便飲用，可查看龜鹿飲30cc。",
+        "想建立固定日常安排可從龜鹿膏開始；需要輕巧攜帶可看龜鹿飲30cc，偏好較完整即飲份量可看龜鹿飲180cc鋁袋。"
+    )
 
     business_block = '''  if (/營業時間|門市時間|幾點營業|幾點關門|假日預約|預約門市/.test(text)) {
     return reply(event.replyToken, textMsg("門市地址：台北市萬華區西昌街52號。\\n營業時間：週一至週六 09:30–18:30。\\n假日如未外出，可提前透過官方 LINE 預約。", mainQuick()));
@@ -99,18 +99,26 @@ def consolidate_server():
 def update_tests_and_package():
     package_path = ROOT / "package.json"
     package = json.loads(package_path.read_text(encoding="utf-8"))
-    package["version"] = "3.0.10"
+    package["version"] = PACKAGE_VERSION
     package["main"] = "server.js"
     package.setdefault("scripts", {})["start"] = "node server.js"
     package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    lock_path = ROOT / "package-lock.json"
+    if lock_path.exists():
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        lock["version"] = PACKAGE_VERSION
+        if "" in lock.get("packages", {}):
+            lock["packages"][""]["version"] = PACKAGE_VERSION
+        lock_path.write_text(json.dumps(lock, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     test_path = ROOT / "test.js"
     if test_path.exists():
         text = test_path.read_text(encoding="utf-8")
         text = re.sub(r'assert\.strictEqual\(VERSION, "v[0-9.]+"\);', 'assert.strictEqual(VERSION, "v307.1");', text)
-        text = text.replace('assert.strictEqual(productCards.contents.contents.length, 6);', 'assert.strictEqual(productCards.contents.contents.length, DATA.products.length + 1);')
-        text = text.replace('assert.strictEqual(priceCarousel().contents.contents.length, 6);', 'assert.strictEqual(priceCarousel().contents.contents.length, DATA.products.length);')
-        text = text.replace('assert.strictEqual(productMenuReply().contents.contents.length, 6);', 'assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);')
+        text = re.sub(r'assert\.strictEqual\(productCards\.contents\.contents\.length, \d+\);', 'assert.strictEqual(productCards.contents.contents.length, DATA.products.length + 1);', text)
+        text = re.sub(r'assert\.strictEqual\(priceCarousel\(\)\.contents\.contents\.length, \d+\);', 'assert.strictEqual(priceCarousel().contents.contents.length, DATA.products.length);', text)
+        text = re.sub(r'assert\.strictEqual\(productMenuReply\(\)\.contents\.contents\.length, \d+\);', 'assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);', text)
         test_path.write_text(text, encoding="utf-8")
 
 
@@ -131,14 +139,7 @@ def update_rich_menu_docs():
 
 
 def clean_stale_files():
-    stale = [
-        "LINE_V306_TRIGGER.txt",
-        "LINE_MASCOT_TRIGGER.txt",
-        "V305_PR_NOTE.txt",
-        "V307_LINE_TRIGGER.txt",
-        "V307_LINE_PR_TRIGGER_2.txt",
-    ]
-    for item in stale:
+    for item in ["LINE_V306_TRIGGER.txt", "LINE_MASCOT_TRIGGER.txt", "V305_PR_NOTE.txt", "V307_LINE_TRIGGER.txt", "V307_LINE_PR_TRIGGER_2.txt"]:
         path = ROOT / item
         if path.exists():
             path.unlink()
