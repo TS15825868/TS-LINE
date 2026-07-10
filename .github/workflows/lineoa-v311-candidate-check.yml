@@ -1,8 +1,10 @@
 name: LINE OA v311 candidate check
 
 on:
-  push:
-    branches: [lineoa-v311-diagnostic-final]
+  pull_request:
+    branches: [main]
+    paths:
+      - CANDIDATE_TEST_TRIGGER.txt
 
 jobs:
   test:
