@@ -31,10 +31,16 @@ function validateMessage(message) {
   walk(message);
 }
 
+function validateBubble(bubble) {
+  assert.ok(bubble && bubble.type === "bubble");
+  assert.ok(bubble.body && bubble.body.type === "box");
+  validateMessage({ type: "flex", altText: "測試卡片", contents: bubble });
+}
+
 assert.strictEqual(VERSION, "v311.0");
 const messages = [
-  productMenuReply(), priceCarousel(), mascotWelcomeReply(), recommendReply(), comboMenuReply(), comboDetailReply(0),
-  usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(), brandStoryReply(),
+  productMenuReply(), priceCarousel(), mascotWelcomeReply(), recommendReply(), comboMenuReply(),
+  usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(),
   cartFlex({ cart: [], checkout: null }),
 ];
 for (const product of DATA.products) {
@@ -42,6 +48,9 @@ for (const product of DATA.products) {
   messages.push(qtyMenu(product));
 }
 messages.forEach(validateMessage);
+validateBubble(comboDetailReply(0));
+validateBubble(brandStoryReply());
+
 assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);
 assert.ok(productMenuReply().contents.contents.every((bubble) => Boolean(bubble.hero)));
 assert.strictEqual(recommendReply().contents.contents.length, 4);
@@ -51,9 +60,9 @@ const source = fs.readFileSync("server.js", "utf8");
 for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
   assert.ok(source.includes(command), "missing command: " + command);
 }
-console.log("PASS full LINE function matrix v309.0");
+console.log("PASS full LINE function matrix v311.0");
 
-const expectedSalesV3004 = {
+const expectedSales = {
   "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5] },
   "guilu-drink-30": { price: 50, offerQty: 12, offerTotal: 500, options: [1, 3, 5, 12] },
   "guilu-drink-180": { price: 200, offerQty: 12, offerTotal: 2000, options: [1, 3, 5, 12] },
@@ -62,7 +71,7 @@ const expectedSalesV3004 = {
   "luerong-fen": { price: 2000, options: [1, 2, 3, 5] },
 };
 for (const product of DATA.products) {
-  const expected = expectedSalesV3004[product.id];
+  const expected = expectedSales[product.id];
   assert.deepStrictEqual(product.quantityOptions, expected.options);
   assert.strictEqual(product.price, expected.price);
   if (expected.originalPrice) assert.strictEqual(product.originalPrice, expected.originalPrice);
@@ -73,8 +82,7 @@ for (const product of DATA.products) {
   assert.strictEqual(menu.contents.footer.contents.length, 5);
   validateMessage(menu);
 }
-console.log("PASS quantity options and promotions v300.4");
-
+console.log("PASS quantity options and promotions v311.0");
 
 const websiteIntentCases = [
   ["我看了產品整理，想請你幫我比較產品。", "recommend"],
@@ -89,8 +97,7 @@ const websiteIntentCases = [
 for (const [message, expected] of websiteIntentCases) {
   assert.strictEqual(detectWebsiteIntent(message), expected, message);
 }
-console.log("PASS website legacy message routing v309.0");
-
+console.log("PASS website message routing v311.0");
 
 const expectedComboPrices = [2500, 3500, 3600, 6100, 11600];
 for (let index = 0; index < expectedComboPrices.length; index += 1) {
@@ -111,8 +118,7 @@ assert.strictEqual(comboState.cart.length, 1);
 assert.strictEqual(comboState.cart[0].qty, 3);
 assert.strictEqual(comboState.cart[0].total, 10800);
 assert.ok(comboPromotionLines(getCombo(1)).some((line) => line.includes("買10送2")));
-console.log("PASS combo prices, quantities, promotions and cart v309.0");
-
+console.log("PASS combo prices, quantities, promotions and cart v311.0");
 
 for (const product of DATA.products) {
   const menu = productMenuReply();
@@ -126,11 +132,12 @@ for (const product of DATA.products) {
   assert.ok(dmButton, product.id + " missing DM button");
   assert.ok(dmButton.action.uri.includes("/images/dm-final/"), product.id + " wrong DM URL: " + dmButton.action.uri);
 }
-console.log("PASS LINE product images and final DM buttons v309.0");
+console.log("PASS LINE product images and final DM buttons v311.0");
 
 for (const message of [mascotWelcomeReply(), recommendReply(), comboMenuReply(), usageChooserReply()]) {
   const bubble = message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;
   assert.ok(bubble.hero, "小老闆卡缺少圖片");
   assert.ok(bubble.hero.url.includes("/images/line-mascot/xianjiawei-mascot-line-"));
+  assert.strictEqual(bubble.hero.aspectMode, "contain");
 }
-console.log("PASS LINE OA mascot cards v309.0");
+console.log("PASS LINE OA mascot cards v311.0");
