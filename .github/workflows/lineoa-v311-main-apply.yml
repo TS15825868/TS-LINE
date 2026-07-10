@@ -5,7 +5,8 @@ on:
     branches: [main]
     paths:
       - LINEOA_V311_MAIN_TRIGGER.txt
-\ npermissions:
+
+permissions:
   contents: write
 
 jobs:
