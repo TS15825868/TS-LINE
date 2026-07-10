@@ -50,6 +50,37 @@ data["store"] = {
     "holidayNote": "假日如未外出，可提前透過官方 LINE 預約。"
 }
 data["lineAssetsVersion"] = "311.0"
+
+# 恢復180cc鋁袋後，原本以完整份量龜鹿飲設計的組合也統一指向180cc。
+for combo in data.get("offers", {}).get("comboOffers", []):
+    name = combo.get("name", "")
+    if name == "日常節奏組":
+        combo["items"] = ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包"]
+        combo["products"] = [
+            {"productId": "guilu-gao", "qty": 1},
+            {"productId": "guilu-drink-180", "qty": 5}
+        ]
+    elif name == "日常便利組":
+        combo["items"] = ["龜鹿膏 1 罐", "龜鹿飲180cc 12 包（買10送2）"]
+        combo["products"] = [
+            {"productId": "guilu-gao", "qty": 1},
+            {"productId": "guilu-drink-180", "qty": 12}
+        ]
+    elif name == "完整體驗組":
+        combo["items"] = ["龜鹿膏 1 罐", "龜鹿飲180cc 5 包", "龜鹿湯塊75g 1 盒", "鹿茸粉75g 1 罐"]
+        combo["products"] = [
+            {"productId": "guilu-gao", "qty": 1},
+            {"productId": "guilu-drink-180", "qty": 5},
+            {"productId": "guilu-tangkuai", "qty": 1},
+            {"productId": "luerong-fen", "qty": 1}
+        ]
+
+legacy = data.get("xianjiaweiFinalV80", {})
+legacy["products"] = [
+    "龜鹿飲180cc鋁袋" if item == "龜鹿飲30cc鋁袋" else item
+    for item in legacy.get("products", [])
+]
+data["xianjiaweiFinalV80"] = legacy
 DATA.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 # 將完整核心直接寫成唯一 server.js，移除 runtime wrapper 與 server-core.js。
@@ -170,4 +201,5 @@ assert 'images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0' in source
 assert 'aspectMode: "contain"' in source
 assert [p["id"] for p in data["products"]] == ["guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]
 assert data["store"]["hours"] == "週一至週六 09:30–18:30"
+assert any("龜鹿飲180cc 5 包" in item for c in data.get("offers", {}).get("comboOffers", []) for item in c.get("items", []))
 print("LINE OA v311 finalized")
