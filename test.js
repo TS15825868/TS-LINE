@@ -88,6 +88,6 @@ console.log(`PASS LINE OA ${VERSION}: products, prices, cart, cards, usage, clas
 
 assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);
 assert.strictEqual(comboMenuReply().contents.contents.length, DATA.offers.comboOffers.length + 1);
-assert.ok(comboMenuReply().contents.contents[0].body.contents[0].text.includes("小老闆搭配導覽"));
+assert.ok(comboMenuReply().contents.contents[0].body.contents[0].text.includes("日常搭配導覽"));
 assert.ok(comboMenuReply().contents.contents[1].body.contents[0].text.includes("日常節奏組"));
 assert.ok(comboDetailReply(0).contents.body.contents[0].text.includes("日常節奏組"));
