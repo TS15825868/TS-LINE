@@ -31,15 +31,9 @@ function validateMessage(message) {
   walk(message);
 }
 
-function validateBubble(bubble) {
-  assert.ok(bubble && bubble.type === "bubble");
-  assert.ok(bubble.body && bubble.body.type === "box");
-  validateMessage({ type: "flex", altText: "測試卡片", contents: bubble });
-}
-
 assert.strictEqual(VERSION, "v311.0");
 const messages = [
-  productMenuReply(), priceCarousel(), mascotWelcomeReply(), recommendReply(), comboMenuReply(),
+  productMenuReply(), priceCarousel(), mascotWelcomeReply(), recommendReply(), comboMenuReply(), comboDetailReply(0),
   usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(), brandStoryReply(),
   cartFlex({ cart: [], checkout: null }),
 ];
@@ -48,7 +42,6 @@ for (const product of DATA.products) {
   messages.push(qtyMenu(product));
 }
 messages.forEach(validateMessage);
-validateBubble(comboDetailReply(0));
 
 assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);
 assert.ok(productMenuReply().contents.contents.every((bubble) => Boolean(bubble.hero)));
