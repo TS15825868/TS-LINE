@@ -24,7 +24,7 @@ const {
   isSensitiveHealthQuestion,
 } = require("./server");
 
-assert.strictEqual(VERSION, "v309.0");
+assert.strictEqual(VERSION, "v311.0");
 assert.deepStrictEqual(
   DATA.products.map((product) => product.id),
   ["guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]
@@ -61,7 +61,7 @@ const productCards = productCarousel();
 assert.strictEqual(productCards.type, "flex");
 assert.strictEqual(productCards.contents.type, "carousel");
 assert.strictEqual(productCards.contents.contents.length, DATA.products.length + 1);
-assert.strictEqual(priceCarousel().contents.contents.length, 6);
+assert.strictEqual(priceCarousel().contents.contents.length, DATA.products.length);
 
 for (const card of productCards.contents.contents) {
   for (const button of card.footer.contents) {
@@ -77,7 +77,7 @@ assert.ok(usageReply(drink30).contents.body.contents[1].text.includes("開瓶即
 assert.ok(doctorReferralReply().contents.body.contents[1].text.includes("@changwuchi"));
 assert.strictEqual(doctorReferralReply().contents.footer.contents[0].action.uri, "https://lin.ee/1MK4NR9");
 assert.ok(huangdiNeijingReply().contents.body.contents[0].text.includes("黃帝內經"));
-assert.ok(brandStoryReply().body.contents[1].text.includes("2008年"));
+assert.ok(brandStoryReply().contents.body.contents[1].text.includes("2008年"));
 
 assert.strictEqual(isSensitiveHealthQuestion("我有高血壓可以吃嗎"), true);
 assert.strictEqual(isSensitiveHealthQuestion("枸杞可以明目嗎"), true);
