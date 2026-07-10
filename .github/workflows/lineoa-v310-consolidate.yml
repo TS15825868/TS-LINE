@@ -1,0 +1,69 @@
+name: LINE OA v310 consolidate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - LINEOA_V310_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Consolidate LINE OA
+        run: python tools/lineoa_v310_consolidate.py
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate syntax and functions
+        run: |
+          node --check server.js
+          npm test
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          server = Path('server.js').read_text(encoding='utf-8')
+          data = json.loads(Path('data.json').read_text(encoding='utf-8'))
+          assert not Path('server-core.js').exists()
+          assert 'runtime wrapper' not in server
+          assert 'const VERSION = "v310.0";' in server
+          assert 'aspectMode: "contain"' in server
+          assert [p['id'] for p in data['products']] == [
+              'guilu-gao', 'guilu-drink-30', 'guilu-drink-180',
+              'guilu-tangkuai', 'guilu-jiao', 'luerong-fen'
+          ]
+          assert data['store']['hours'] == '週一至週六 09:30–18:30'
+          print('LINE OA v310 validation passed')
+          PY
+
+      - name: Remove one-time files
+        run: |
+          rm -f LINEOA_V310_TRIGGER.txt
+          rm -f tools/lineoa_v310_consolidate.py
+          rm -f .github/workflows/lineoa-v310-consolidate.yml
+
+      - name: Commit validated result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "LINE OA v310：整合單一主程式並完成完整驗證" || exit 0
+          git push origin HEAD:${{ github.head_ref }}
