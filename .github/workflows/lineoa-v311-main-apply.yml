@@ -30,16 +30,15 @@ jobs:
       - name: Finalize LINE OA production
         run: python tools/lineoa_v311_finalize.py
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Capture tests and validation
+      - name: Install and run full tests
         run: |
-          set +e
-          {
-            node --check server.js
-            npm test
-            python - <<'PY'
+          npm ci
+          node --check server.js
+          npm test
+
+      - name: Verify final structure and public images
+        run: |
+          python - <<'PY'
           from pathlib import Path
           import json
           server = Path('server.js').read_text(encoding='utf-8')
@@ -51,18 +50,32 @@ jobs:
           assert 'images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0' in server
           assert [p['id'] for p in data['products']] == ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen']
           assert data['store']['hours'] == '週一至週六 09:30–18:30'
+          assert data['store']['holidayNote'] == '假日如未外出，可提前透過官方 LINE 預約。'
+          assert any('龜鹿飲180cc 5 包' in item for c in data['offers']['comboOffers'] for item in c['items'])
           print('LINE OA v311 production validation passed')
           PY
-          } > V311_TEST_OUTPUT.txt 2>&1
-          status=$?
-          echo "$status" > V311_TEST_STATUS.txt
-          cat V311_TEST_OUTPUT.txt
-          exit 0
+          for file in welcome products recommend combo usage faq service brand; do
+            curl --fail --silent --show-error --location --output /dev/null "https://ts15825868.github.io/xianjiawei/images/line-mascot/xianjiawei-mascot-line-$file.jpg"
+          done
+          curl --fail --silent --show-error --location --output /dev/null "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg"
 
-      - name: Commit diagnostic production candidate
+      - name: Remove temporary files
+        run: |
+          rm -f LINEOA_V311_TRIGGER.txt LINEOA_V311_MAIN_TRIGGER.txt LINE_V309_TRIGGER.txt
+          rm -f tools/lineoa_v311_finalize.py tools/lineoa_v310_consolidate.py tools/apply_line_v309.py
+          rm -f .github/workflows/lineoa-v311-finalize.yml
+          rm -f .github/workflows/lineoa-v311-main-apply.yml
+          rm -f .github/workflows/lineoa-v310-consolidate.yml
+          rm -f .github/workflows/lineoa-v309-stabilize.yml
+          rm -f .github/workflows/line-v309-consolidate.yml
+          rm -f V309_TEST_OUTPUT.txt V309_TEST_STATUS.txt V311_TEST_OUTPUT.txt V311_TEST_STATUS.txt
+          rm -f LINEOA_V309_TRIGGER.txt LINEOA_V310_TRIGGER.txt
+
+      - name: Publish validated production branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B lineoa-v311-production-final
           git add -A
-          git commit -m "LINE OA v311：套用正式候選版並保存測試結果" || exit 0
-          git push origin main
+          git commit -m "LINE OA v311：單一主程式、小老闆正式圖與完整功能驗證"
+          git push --force origin HEAD:lineoa-v311-production-final
