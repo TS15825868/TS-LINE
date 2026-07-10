@@ -28,41 +28,9 @@ jobs:
           cache: npm
 
       - name: Finalize LINE OA production
-        run: python tools/lineoa_v311_finalize.py
-
-      - name: Fix standalone brand story Flex message
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          server_path = Path('server.js')
-          source = server_path.read_text(encoding='utf-8')
-          old = 'function brandStoryReply() {\n  return mascotBubble('
-          if old not in source:
-              raise SystemExit('brandStoryReply anchor missing')
-          source = source.replace(old, 'function brandStoryBubble() {\n  return mascotBubble(', 1)
-          anchor = '\nfunction detectProduct(text) {'
-          wrapper = '''
-function brandStoryReply() {
-  return {
-    type: "flex",
-    altText: "仙加味品牌故事",
-    contents: brandStoryBubble(),
-  };
-}
-'''
-          if anchor not in source:
-              raise SystemExit('detectProduct anchor missing')
-          source = source.replace(anchor, wrapper + anchor, 1)
-          server_path.write_text(source, encoding='utf-8')
-
-          test_path = Path('test.js')
-          test = test_path.read_text(encoding='utf-8')
-          test = test.replace(
-              'brandStoryReply().body.contents[1].text',
-              'brandStoryReply().contents.body.contents[1].text'
-          )
-          test_path.write_text(test, encoding='utf-8')
-          PY
+          python tools/lineoa_v311_finalize.py
+          python tools/fix_brand_flex_v311.py
 
       - name: Install dependencies
         run: npm ci
@@ -73,22 +41,7 @@ function brandStoryReply() {
           {
             node --check server.js
             npm test
-            python - <<'PY'
-          from pathlib import Path
-          import json
-          server = Path('server.js').read_text(encoding='utf-8')
-          data = json.loads(Path('data.json').read_text(encoding='utf-8'))
-          assert not Path('server-core.js').exists()
-          assert 'const VERSION = "v311.0";' in server
-          assert 'runtimeModule._compile' not in server
-          assert 'aspectMode: "contain"' in server
-          assert 'images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0' in server
-          assert [p['id'] for p in data['products']] == ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen']
-          assert data['store']['hours'] == '週一至週六 09:30–18:30'
-          assert data['store']['holidayNote'] == '假日如未外出，可提前透過官方 LINE 預約。'
-          assert any('龜鹿飲180cc 5 包' in item for c in data['offers']['comboOffers'] for item in c['items'])
-          print('LINE OA v311 production validation passed')
-          PY
+            python -c "from pathlib import Path; import json; s=Path('server.js').read_text(encoding='utf-8'); d=json.loads(Path('data.json').read_text(encoding='utf-8')); assert not Path('server-core.js').exists(); assert 'const VERSION = \"v311.0\";' in s; assert 'runtimeModule._compile' not in s; assert 'aspectMode: \"contain\"' in s; assert 'images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=311.0' in s; assert [p['id'] for p in d['products']] == ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen']; assert d['store']['hours'] == '週一至週六 09:30–18:30'; assert d['store']['holidayNote'] == '假日如未外出，可提前透過官方 LINE 預約。'; assert any('龜鹿飲180cc 5 包' in item for c in d['offers']['comboOffers'] for item in c['items']); print('LINE OA v311 production validation passed')"
             for file in welcome products recommend combo usage faq service brand; do
               curl --fail --silent --show-error --location --output /dev/null "https://ts15825868.github.io/xianjiawei/images/line-mascot/xianjiawei-mascot-line-$file.jpg"
             done
