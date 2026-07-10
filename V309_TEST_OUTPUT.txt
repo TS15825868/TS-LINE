@@ -3,18 +3,29 @@
 > node test.js && node catalog.test.js && node security.test.js && node function.test.js
 
 LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
-/home/runner/work/TS-LINE/TS-LINE/test.js:80
-assert.ok(brandStoryReply().contents.body.contents[1].text.includes("2008年"));
-                                    ^
+PASS LINE OA v309.0: products, prices, cart, cards, usage, classics and referral
+node:internal/assert/utils:77
+    throw err;
+    ^
 
-TypeError: Cannot read properties of undefined (reading 'body')
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/test.js:80:37)
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(comboMenuReply().contents.contents[0].body.contents[0].text.includes("小老闆搭配導覽"))
+
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/test.js:91:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
     at Function._load (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
 
 Node.js v22.23.1
