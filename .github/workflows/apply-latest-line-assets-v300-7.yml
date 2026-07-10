@@ -1,0 +1,101 @@
+name: Apply LINE OA latest product images v300.7
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    if: startsWith(github.head_ref, 'line-assets-v300-7')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync latest website catalog
+        run: npm run sync:catalog
+
+      - name: Apply LINE product image and DM update
+        run: |
+          node --check tools/apply_latest_line_assets_v300_7.js
+          node tools/apply_latest_line_assets_v300_7.js
+          npm install --package-lock-only --ignore-scripts
+
+      - name: Verify catalog and all LINE functions
+        run: |
+          npm ci
+          npm run check:catalog
+          npm test
+          node --check server.js
+          node --check test.js
+          node --check catalog.test.js
+          node --check security.test.js
+          node --check function.test.js
+          grep -F 'const VERSION = "v300.7";' server.js >/dev/null
+          grep -F 'label: "看產品DM"' server.js >/dev/null
+          grep -F 'aspectMode: "contain"' server.js >/dev/null
+          grep -F 'images/dm-final/01_guilu-gao-100g-dm.jpg?v=300.4' data.json >/dev/null
+          grep -F 'images/dm-final/02_guilu-drink-30cc-dm.jpg?v=300.4' data.json >/dev/null
+          grep -F 'images/dm-final/03_guilu-drink-180cc-dm.jpg?v=300.4' data.json >/dev/null
+          grep -F 'images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=300.4' data.json >/dev/null
+          grep -F 'images/dm-final/06_guilu-jiao-600g-dm.jpg?v=300.4' data.json >/dev/null
+          grep -F 'images/dm-final/04_luerong-fen-75g-dm.jpg?v=300.4' data.json >/dev/null
+
+      - name: Verify public product image and DM URLs
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+          for (const product of data.products) {
+            for (const field of ['image', 'dmImage']) {
+              const url = new URL(product[field], data.siteUrl).href;
+              console.log(url);
+            }
+          }
+          NODE
+          node - <<'NODE' > /tmp/asset-urls.txt
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+          for (const product of data.products) {
+            console.log(new URL(product.image, data.siteUrl).href);
+            console.log(new URL(product.dmImage, data.siteUrl).href);
+          }
+          NODE
+          while IFS= read -r url; do
+            curl --fail --location --silent --show-error --output /dev/null "$url"
+          done < /tmp/asset-urls.txt
+
+      - name: HTTP smoke test
+        run: |
+          node server.js >/tmp/lineoa-v300-7.log 2>&1 &
+          PID=$!
+          trap 'kill $PID' EXIT
+          sleep 2
+          curl --fail --silent http://127.0.0.1:3000/ | grep '"version":"v300.7"' >/dev/null
+          curl --fail --silent http://127.0.0.1:3000/healthz | grep '"crmConfigured":true' >/dev/null
+
+      - name: Commit verified update
+        run: |
+          rm -f LINE_ASSETS_TRIGGER*.txt
+          rm -f tools/apply_latest_line_assets_v300_7.js
+          rm -f .github/workflows/apply-latest-line-assets-v300-7.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server.js data.json test.js catalog.test.js security.test.js function.test.js package.json package-lock.json README.md .github/workflows/verify-line-and-website-catalog.yml
+          git add -u
+          git commit -m 'v300.7: restore latest product images and final DM buttons'
+          git push origin HEAD:${{ github.head_ref }}
