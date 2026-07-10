@@ -3,7 +3,7 @@ import json
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "v307.0"
+VERSION = "v307.1"
 
 PRODUCT_180 = {
   "id": "guilu-drink-180",
@@ -11,8 +11,8 @@ PRODUCT_180 = {
   "name": "龜鹿飲180cc鋁袋",
   "displayName": "龜鹿飲180cc鋁袋",
   "size": "180cc／包（鋁袋）",
-  "image": "images/products-v3/guilu-drink-180.jpg?v=307.0",
-  "dmImage": "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=307.0",
+  "image": "images/products-v3/guilu-drink-180.jpg?v=307.1",
+  "dmImage": "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=307.1",
   "description": "180cc鋁袋包裝，把龜鹿膏的成分方向整理成方便即飲的液態型態。適合居家、工作空檔或偏好一次安排較完整份量的人。",
   "ingredients": ["水", "鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
   "usage": ["撕開包裝即可飲用", "可依個人習慣溫熱後飲用", "開封後請儘速飲用完畢"],
@@ -55,11 +55,11 @@ def consolidate_server():
     source_path = core_path if core_path.exists() else ROOT / "server.js"
     text = source_path.read_text(encoding="utf-8")
 
-    text = re.sub(r"仙加味 LINE OA Bot v[0-9.]+", "仙加味 LINE OA Bot v307.0", text, count=1)
-    text = re.sub(r'const VERSION = "v[0-9.]+";', 'const VERSION = "v307.0";', text, count=1)
-    text = re.sub(r"\?v=(?:303|305|306)\.0", "?v=307.0", text)
+    text = re.sub(r"仙加味 LINE OA(?: Bot)? v[0-9.]+", "仙加味 LINE OA Bot v307.1", text, count=1)
+    text = re.sub(r'const VERSION = "v[0-9.]+";', 'const VERSION = "v307.1";', text, count=1)
+    text = re.sub(r"\?v=(?:303|305|306|307)\.[0-9]+", "?v=307.1", text)
 
-    # Always keep mascot cards uncropped and sourced from the high-resolution website assets.
+    # 小老闆卡片保持完整、不裁切，直接使用網站的高畫質情境圖。
     text = re.sub(r'aspectMode: "cover"(?=,\n\s*backgroundColor: "#EFE4D2")', 'aspectMode: "contain"', text)
 
     detect_30 = '  if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");'
@@ -99,7 +99,7 @@ def consolidate_server():
 def update_tests_and_package():
     package_path = ROOT / "package.json"
     package = json.loads(package_path.read_text(encoding="utf-8"))
-    package["version"] = "3.0.9"
+    package["version"] = "3.0.10"
     package["main"] = "server.js"
     package.setdefault("scripts", {})["start"] = "node server.js"
     package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -107,7 +107,7 @@ def update_tests_and_package():
     test_path = ROOT / "test.js"
     if test_path.exists():
         text = test_path.read_text(encoding="utf-8")
-        text = re.sub(r'assert\.strictEqual\(VERSION, "v[0-9.]+"\);', 'assert.strictEqual(VERSION, "v307.0");', text)
+        text = re.sub(r'assert\.strictEqual\(VERSION, "v[0-9.]+"\);', 'assert.strictEqual(VERSION, "v307.1");', text)
         text = text.replace('assert.strictEqual(productCards.contents.contents.length, 6);', 'assert.strictEqual(productCards.contents.contents.length, DATA.products.length + 1);')
         text = text.replace('assert.strictEqual(priceCarousel().contents.contents.length, 6);', 'assert.strictEqual(priceCarousel().contents.contents.length, DATA.products.length);')
         text = text.replace('assert.strictEqual(productMenuReply().contents.contents.length, 6);', 'assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);')
@@ -118,14 +118,15 @@ def update_rich_menu_docs():
     actions_path = ROOT / "rich-menu-actions.json"
     if actions_path.exists():
         actions = json.loads(actions_path.read_text(encoding="utf-8"))
-        actions["name"] = "仙加味服務 v307"
+        actions["name"] = "仙加味服務 v307.1"
         actions_path.write_text(json.dumps(actions, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     setup_path = ROOT / "RICH_MENU_SETUP.md"
     if setup_path.exists():
         text = setup_path.read_text(encoding="utf-8")
-        text = text.replace("xianjiawei-rich-menu-2500x1686.jpg", "xianjiawei-rich-menu-2500x1686-v307.jpg")
-        text = text.replace("## 注意", "## 圖片字級\n\n新版採大型主標文字，不再放細小標題列，手機顯示更清楚。\n\n## 注意")
+        text = re.sub(r"xianjiawei-rich-menu-2500x1686(?:-v307)?\.jpg", "xianjiawei-rich-menu-2500x1686-v307.jpg", text)
+        if "新版採大型主標文字" not in text:
+            text = text.replace("## 注意", "## 圖片字級\n\n新版採大型主標文字，手機顯示更清楚。\n\n## 注意")
         setup_path.write_text(text, encoding="utf-8")
 
 
@@ -134,6 +135,8 @@ def clean_stale_files():
         "LINE_V306_TRIGGER.txt",
         "LINE_MASCOT_TRIGGER.txt",
         "V305_PR_NOTE.txt",
+        "V307_LINE_TRIGGER.txt",
+        "V307_LINE_PR_TRIGGER_2.txt",
     ]
     for item in stale:
         path = ROOT / item
@@ -147,13 +150,12 @@ update_tests_and_package()
 update_rich_menu_docs()
 clean_stale_files()
 
-# Final guarantees: one runtime JS, one native product catalog, no wrapper patching.
 server = (ROOT / "server.js").read_text(encoding="utf-8")
 data = json.loads((ROOT / "data.json").read_text(encoding="utf-8"))
 assert not (ROOT / "server-core.js").exists()
 assert "runtime wrapper" not in server
-assert 'const VERSION = "v307.0";' in server
+assert 'const VERSION = "v307.1";' in server
 assert any(p.get("id") == "guilu-drink-180" for p in data["products"])
 assert data["store"]["hours"] == "週一至週六 09:30–18:30"
 assert 'aspectMode: "contain"' in server
-print("LINE OA v307 consolidated")
+print("LINE OA v307.1 consolidated")
