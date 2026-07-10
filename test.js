@@ -71,7 +71,7 @@ for (const card of productCards.contents.contents) {
 }
 
 assert.strictEqual(recommendReply().contents.contents.length, 4);
-assert.ok(comboReply().contents.body.contents[1].text.includes("搭配組合"));
+assert.ok(comboReply().body.contents[1].text.includes("搭配組合"));
 assert.strictEqual(usageChooserReply().contents.contents.length, DATA.products.length + 1);
 assert.ok(usageReply(drink30).contents.body.contents[1].text.includes("開瓶即可飲用"));
 assert.ok(doctorReferralReply().contents.body.contents[1].text.includes("@changwuchi"));
