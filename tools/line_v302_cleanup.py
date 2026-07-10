@@ -16,7 +16,9 @@ REPLACEMENTS = {
     "30cc、180cc": "30cc",
     "30cc／180cc": "30cc",
     "龜鹿飲180cc": "龜鹿飲30cc",
+    "龜鹿飲 180cc": "龜鹿飲30cc",
     "180cc鋁袋": "30cc玻璃瓶",
+    "180 cc鋁袋": "30cc玻璃瓶",
 }
 
 
@@ -84,21 +86,31 @@ function mascotPoseForTitle(title = "") {
   if (/使用|沖泡|燉湯/.test(title)) return "usage";
   if (/客服|常見問題|確認|訂單|購物車/.test(title)) return "service";
   return "welcome";
-}'''
-    pattern = re.compile(r"const MASCOT_PATHS = \{.*?\n\}\n\nfunction mascotPoseForTitle\(title = \"\"\) \{.*?\n\}", re.S)
-    text, count = pattern.subn(block, text, count=1)
-    if count != 1:
+}
+'''
+    start = text.find("const MASCOT_PATHS = {")
+    end = text.find("function mascotBubble", start)
+    if start < 0 or end < 0:
         raise SystemExit("找不到 LINE 小老闆情境設定")
+    text = text[:start] + block + "\n" + text[end:]
 
     text = text.replace("MASCOT_PATHS.wave", "MASCOT_PATHS.welcome")
     text = text.replace('          "tray"\n', '          "products"\n')
-    text = re.sub(r'\s*if \(/龜鹿飲\.\*180\|180cc\|鋁袋/\.test\(raw\)\) return getProduct\("guilu-drink-180"\);', '', text)
-    text = replace_text(text)
-    text = text.replace("固定日常食補，可從龜鹿膏開始；需要外出或忙碌時方便飲用，可選龜鹿飲30cc。", "固定日常安排可從龜鹿膏開始；需要外出或忙碌時方便飲用，可查看龜鹿飲30cc。")
-    text = text.replace('{ label: "看180cc", text: "產品詳情｜guilu-drink-180" },\n', '')
-    text = text.replace("guilu-drink-180", "guilu-drink-30")
 
-    # 客人看得到的角色卡只保留產品、使用、品牌與服務資訊，不顯示內部角色規格。
+    kept_lines = []
+    for line in text.splitlines():
+        low = line.lower()
+        if "guilu-drink-180" in low or "看180cc" in low:
+            continue
+        if "龜鹿飲.*180" in line or "180cc|鋁袋" in line:
+            continue
+        kept_lines.append(replace_text(line))
+    text = "\n".join(kept_lines) + "\n"
+
+    text = text.replace(
+        "固定日常食補，可從龜鹿膏開始；需要外出或忙碌時方便飲用，可選龜鹿飲30cc。",
+        "固定日常安排可從龜鹿膏開始；需要外出或忙碌時方便飲用，可查看龜鹿飲30cc。"
+    )
     text = text.replace("仙加味小老闆｜歡迎您", "歡迎來到仙加味")
     text = text.replace("仙加味小老闆幫你選", "依日常使用方式幫你選")
     text = text.replace("小老闆搭配導覽", "日常搭配導覽")
