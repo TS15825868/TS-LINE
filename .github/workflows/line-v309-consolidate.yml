@@ -1,0 +1,86 @@
+name: LINE OA v309 consolidate and validate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - LINE_V309_TRIGGER.txt
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Consolidate runtime and data
+        run: python tools/apply_line_v309.py
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax and JSON validation
+        run: |
+          node --check server.js
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('data.json').read_text(encoding='utf-8'))
+          ids = [item['id'] for item in data['products']]
+          assert ids == ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen'], ids
+          assert data['store']['hours'] == '週一至週六 09:30–18:30'
+          assert data['store']['holidayNote'] == '假日如未外出，可提前透過官方 LINE 預約。'
+          assert not Path('server-core.js').exists()
+          print('runtime and data validation passed')
+          PY
+
+      - name: Full LINE OA test suite
+        run: npm test
+
+      - name: Runtime smoke test
+        run: |
+          node - <<'NODE'
+          const assert = require('assert');
+          const bot = require('./server');
+          assert.strictEqual(bot.VERSION, 'v309.0');
+          assert.strictEqual(bot.detectProduct('龜鹿飲180cc鋁袋').id, 'guilu-drink-180');
+          assert.strictEqual(bot.detectProduct('龜鹿飲30cc玻璃瓶').id, 'guilu-drink-30');
+          const welcome = bot.mascotWelcomeReply();
+          assert.ok(welcome.contents.hero.url.includes('/images/line-mascot/xianjiawei-mascot-line-welcome.jpg'));
+          const products = bot.productMenuReply();
+          assert.strictEqual(products.contents.contents.length, 7);
+          const combo = bot.comboMenuReply();
+          assert.strictEqual(combo.contents.contents.length, 6);
+          const usage = bot.usageChooserReply();
+          assert.strictEqual(usage.contents.contents.length, 7);
+          assert.ok(bot.brandStoryReply().hero.url.includes('/images/line-mascot/xianjiawei-mascot-line-brand.jpg'));
+          console.log('LINE OA runtime smoke test passed');
+          NODE
+
+      - name: Remove one-time files
+        run: |
+          rm -f LINE_V309_TRIGGER.txt
+          rm -f tools/apply_line_v309.py
+          rm -f .github/workflows/line-v309-consolidate.yml
+
+      - name: Commit final LINE OA v309
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "LINE OA v309：整合單一主程式、更新小老闆圖並完成全功能檢查" || exit 0
+          git push origin main
