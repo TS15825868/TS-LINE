@@ -29,6 +29,8 @@ jobs:
         run: |
           node --check tools/apply_mascot_line_v300_8.js
           node tools/apply_mascot_line_v300_8.js
+          node --check tools/patch_mascot_test_v300_8.js
+          node tools/patch_mascot_test_v300_8.js
           npm install --package-lock-only --ignore-scripts
       - name: Install updated dependencies
         run: npm ci
@@ -75,7 +77,7 @@ jobs:
         run: |
           rm -f FUNCTION_TEST_LOG.txt FUNCTION_TEST_STATUS.txt
           rm -f LINE_MASCOT_APPLY.txt LINE_MASCOT_PR_TRIGGER*.txt
-          rm -f tools/apply_mascot_line_v300_8.js
+          rm -f tools/apply_mascot_line_v300_8.js tools/patch_mascot_test_v300_8.js
           rm -f .github/workflows/apply-line-mascot-v300-8.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
