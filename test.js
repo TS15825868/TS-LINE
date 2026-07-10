@@ -24,7 +24,7 @@ const {
   isSensitiveHealthQuestion,
 } = require("./server");
 
-assert.strictEqual(VERSION, "v309.0");
+assert.strictEqual(VERSION, "v311.0");
 assert.deepStrictEqual(
   DATA.products.map((product) => product.id),
   ["guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]
@@ -61,7 +61,7 @@ const productCards = productCarousel();
 assert.strictEqual(productCards.type, "flex");
 assert.strictEqual(productCards.contents.type, "carousel");
 assert.strictEqual(productCards.contents.contents.length, DATA.products.length + 1);
-assert.strictEqual(priceCarousel().contents.contents.length, 6);
+assert.strictEqual(priceCarousel().contents.contents.length, DATA.products.length);
 
 for (const card of productCards.contents.contents) {
   for (const button of card.footer.contents) {
