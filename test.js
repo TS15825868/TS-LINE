@@ -77,7 +77,7 @@ assert.ok(usageReply(drink30).contents.body.contents[1].text.includes("開瓶即
 assert.ok(doctorReferralReply().contents.body.contents[1].text.includes("@changwuchi"));
 assert.strictEqual(doctorReferralReply().contents.footer.contents[0].action.uri, "https://lin.ee/1MK4NR9");
 assert.ok(huangdiNeijingReply().contents.body.contents[0].text.includes("黃帝內經"));
-assert.ok(brandStoryReply().contents.body.contents[1].text.includes("2008年"));
+assert.ok(brandStoryReply().body.contents[1].text.includes("2008年"));
 
 assert.strictEqual(isSensitiveHealthQuestion("我有高血壓可以吃嗎"), true);
 assert.strictEqual(isSensitiveHealthQuestion("枸杞可以明目嗎"), true);
