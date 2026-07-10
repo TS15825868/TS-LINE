@@ -1,0 +1,12 @@
+{
+  "size": { "width": 2500, "height": 1686 },
+  "layout": "3x2",
+  "areas": [
+    { "id": "A", "label": "看產品", "bounds": { "x": 0, "y": 0, "width": 833, "height": 843 }, "action": { "type": "message", "text": "看產品" } },
+    { "id": "B", "label": "購物車", "bounds": { "x": 833, "y": 0, "width": 834, "height": 843 }, "action": { "type": "message", "text": "購物車" } },
+    { "id": "C", "label": "幫我推薦", "bounds": { "x": 1667, "y": 0, "width": 833, "height": 843 }, "action": { "type": "message", "text": "幫我推薦" } },
+    { "id": "D", "label": "搭配組合", "bounds": { "x": 0, "y": 843, "width": 833, "height": 843 }, "action": { "type": "message", "text": "搭配組合" } },
+    { "id": "E", "label": "怎麼使用", "bounds": { "x": 833, "y": 843, "width": 834, "height": 843 }, "action": { "type": "message", "text": "怎麼使用" } },
+    { "id": "F", "label": "直接下單", "bounds": { "x": 1667, "y": 843, "width": 833, "height": 843 }, "action": { "type": "message", "text": "直接下單" } }
+  ]
+}

@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA v305 runtime wrapper
+ * 仙加味 LINE OA v306 runtime wrapper
  * 保留原正式主程式，於載入時恢復龜鹿飲180cc、門市時間與完整角色圖顯示。
  */
 
@@ -60,10 +60,10 @@ fs.readFileSync = function patchedRead(file, encoding, ...rest) {
 
 let source = originalReadFileSync(corePath, "utf8");
 source = source
-  .replace("仙加味 LINE OA Bot v303.0", "仙加味 LINE OA Bot v305.0")
-  .replace('const VERSION = "v303.0";', 'const VERSION = "v305.0";')
-  .replace(/xianjiawei-scene-([a-z]+)\.jpg\?v=303\.0/g, "xianjiawei-scene-$1.jpg?v=305.0")
-  .replace('aspectRatio: "4:5",\n    aspectMode: "cover",', 'aspectRatio: "4:3",\n    aspectMode: "contain",')
+  .replace("仙加味 LINE OA Bot v303.0", "仙加味 LINE OA Bot v306.0")
+  .replace('const VERSION = "v303.0";', 'const VERSION = "v306.0";')
+  .replace(/xianjiawei-scene-([a-z]+)\.jpg\?v=306\.0/g, "xianjiawei-scene-$1.jpg?v=305.0")
+  .replace('aspectRatio: "4:3",\n    aspectMode: "contain",', 'aspectRatio: "4:3",\n    aspectMode: "contain",')
   .replace(
     '  if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");',
     '  if (/龜鹿飲.*180|180cc|鋁袋/.test(raw)) return getProduct("guilu-drink-180");\n  if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");'
@@ -97,7 +97,7 @@ try {
 const core = runtimeModule.exports;
 if (require.main === module) {
   const port = process.env.PORT || 3000;
-  core.app.listen(port, () => console.log(`仙加味 LINE OA v305.0 running on ${port}`));
+  core.app.listen(port, () => console.log(`仙加味 LINE OA v306.0 running on ${port}`));
 }
 
 module.exports = core;
