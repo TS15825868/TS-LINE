@@ -4,12 +4,15 @@ on:
   push:
     branches: [main]
     paths: [LINE_MASCOT_APPLY.txt]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   apply-and-verify:
+    if: github.event_name == 'push' || startsWith(github.head_ref, 'line-mascot-v300-8')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -79,8 +82,10 @@ function mascotWelcomeReply() {
 '''
           s = replace_required(s, 'function recommendReply() {', mascot + 'function recommendReply() {', '小老闆函式')
 
-          old = '  const cards = [\n    flexCard('
-          new = '''  const cards = [
+          s = replace_required(
+              s,
+              '  const cards = [\n    flexCard(',
+              '''  const cards = [
     mascotBubble(
       "仙加味小老闆幫你選",
       "先依固定安排、方便即飲、沖泡燉湯、家庭規格或自行搭配飲品來比較。產品規格與價格仍以正式產品卡為準。",
@@ -90,8 +95,9 @@ function mascotWelcomeReply() {
         { label: "人工客服", text: "我要人工客服" },
       ]
     ),
-    flexCard('''
-          s = replace_required(s, old, new, '推薦卡')
+    flexCard(''',
+              '推薦卡'
+          )
 
           combo_start = s.index('function comboMenuReply()')
           combo_end = s.index('function comboDetailReply', combo_start)
@@ -112,12 +118,7 @@ function mascotWelcomeReply() {
         ...combos.slice(0, 9).map((combo, index) => {''',
               '搭配卡開頭'
           )
-          combo = replace_required(
-              combo,
-              '      }),\n    },\n  };\n}\n\n',
-              '      }),\n      ],\n    },\n  };\n}\n\n',
-              '搭配卡結尾'
-          )
+          combo = replace_required(combo, '      }),\n    },\n  };\n}\n\n', '      }),\n      ],\n    },\n  };\n}\n\n', '搭配卡結尾')
           s = before + combo + after
 
           s = replace_required(
@@ -148,8 +149,7 @@ function mascotWelcomeReply() {
               q.write_text(q.read_text(encoding='utf-8').replace('v300.7', 'v300.8'), encoding='utf-8')
 
           q = Path('catalog.test.js')
-          text = q.read_text(encoding='utf-8').replace('"300.4"', '"300.5"')
-          q.write_text(text, encoding='utf-8')
+          q.write_text(q.read_text(encoding='utf-8').replace('"300.4"', '"300.5"'), encoding='utf-8')
 
           q = Path('function.test.js')
           text = q.read_text(encoding='utf-8')
@@ -178,7 +178,8 @@ console.log("PASS LINE OA mascot welcome, recommend, combo and usage cards v300.
 
           q = Path('README.md')
           text = q.read_text(encoding='utf-8').replace('LINE OA v300.7', 'LINE OA v300.8').replace('"version": "v300.7"', '"version": "v300.8"')
-          text += '\n## v300.8 仙加味小老闆\n\n歡迎、幫我推薦、搭配組合與使用方式總覽加入小老闆品牌導覽卡；產品規格、價格、數量、購物車與結帳流程維持原功能。\n'
+          if '## v300.8 仙加味小老闆' not in text:
+              text += '\n## v300.8 仙加味小老闆\n\n歡迎、幫我推薦、搭配組合與使用方式總覽加入小老闆品牌導覽卡；產品規格、價格、數量、購物車與結帳流程維持原功能。\n'
           q.write_text(text, encoding='utf-8')
           PY
           npm install --package-lock-only --ignore-scripts
@@ -209,7 +210,7 @@ console.log("PASS LINE OA mascot welcome, recommend, combo and usage cards v300.
 
       - name: Commit verified update
         run: |
-          rm -f LINE_MASCOT_APPLY.txt
+          rm -f LINE_MASCOT_APPLY.txt LINE_MASCOT_PR_TRIGGER.txt
           rm -f .github/workflows/apply-line-mascot-v300-8.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
