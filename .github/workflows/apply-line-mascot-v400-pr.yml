@@ -29,8 +29,16 @@ jobs:
       - name: Apply LINE OA v400
         run: |
           rm -f line-v400-test.log
-          sed -i "s/cart_function = '''/cart_function = r'''/" tools/apply_line_mascot_v400.py
-          sed -i "s/price_function = '''/price_function = r'''/" tools/apply_line_mascot_v400.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('tools/apply_line_mascot_v400.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("cart_function = '''", "cart_function = r'''")
+          s = s.replace("price_function = '''", "price_function = r'''")
+          s = s.replace(', cart_function + "\\n\\nconst MASCOT_PATHS", s,', ', lambda _: cart_function + "\\n\\nconst MASCOT_PATHS", s,')
+          s = s.replace(', price_function + "\\n\\nfunction qtyMenu", s,', ', lambda _: price_function + "\\n\\nfunction qtyMenu", s,')
+          p.write_text(s, encoding='utf-8')
+          PY
           python3 tools/apply_line_mascot_v400.py
 
       - name: Install dependencies
