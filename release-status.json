@@ -1,19 +1,22 @@
 {
-  "release": "v324",
+  "release": "3.2.4",
   "updated": "2026-07-11",
   "branch": "main",
   "website": "https://ts15825868.github.io/xianjiawei/",
   "lineId": "@762jybnm",
+  "mascotAssets": "images/line-mascot",
   "features": [
     "產品卡片與產品圖片",
     "價格與優惠方案",
     "產品推薦與搭配組合",
     "使用方式與常見問題",
-    "購物車與結帳流程",
+    "購物車與完整結帳流程",
     "宅配、7-11賣貨便、門市自取與雙北親送",
-    "CRM訂單寫入與失敗重試",
+    "CRM訂單寫入、逾時處理與失敗重試",
     "健康敏感問題轉介合作中醫師",
-    "仙加味小老闆Flex卡片"
+    "LINE專用仙加味小老闆Flex卡片",
+    "Webhook重送事件防重複處理",
+    "healthz部署健康檢查"
   ],
   "requiredEnvironment": [
     "CHANNEL_ACCESS_TOKEN",
