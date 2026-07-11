@@ -1,1 +1,1 @@
-Apply the final LINE OA dedicated high-resolution mascot mapping v400.
+Retry LINE OA v400 after preserving JavaScript newline escapes.
