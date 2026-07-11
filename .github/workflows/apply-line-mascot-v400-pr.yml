@@ -21,80 +21,32 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Update LINE OA mascot mapping
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import json, re
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
 
-          p = Path('server.js')
-          s = p.read_text(encoding='utf-8')
-          s, n = re.subn(r'const VERSION = "v[^"]+";', 'const VERSION = "v400.0";', s, count=1)
-          if n != 1: raise SystemExit('VERSION not updated')
-          s = s.replace('仙加味 LINE OA Bot v312.0', '仙加味 LINE OA Bot v400.0')
+      - name: Apply LINE OA v400
+        run: python3 tools/apply_line_mascot_v400.py
 
-          block = '''const MASCOT_PATHS = {
-            welcome: "images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=400.0",
-            products: "images/line-mascot/xianjiawei-mascot-line-products.jpg?v=400.0",
-            recommend: "images/line-mascot/xianjiawei-mascot-line-recommend.jpg?v=400.0",
-            combo: "images/line-mascot/xianjiawei-mascot-line-combo.jpg?v=400.0",
-            usage: "images/line-mascot/xianjiawei-mascot-line-usage.jpg?v=400.0",
-            faq: "images/line-mascot/xianjiawei-mascot-line-faq.jpg?v=400.0",
-            service: "images/line-mascot/xianjiawei-mascot-line-service.jpg?v=400.0",
-            brand: "images/line-mascot/xianjiawei-mascot-line-brand.jpg?v=400.0",
-            cart: "images/line-mascot/xianjiawei-mascot-line-cart.jpg?v=400.0",
-          };'''
-          s, n = re.subn(r'const MASCOT_PATHS = \{.*?\n\};', block, s, count=1, flags=re.S)
-          if n != 1: raise SystemExit('MASCOT_PATHS not updated')
+      - name: Install dependencies
+        run: npm ci
 
-          pose = '''function mascotPoseForTitle(title = "") {
-            if (/常見問題|FAQ/.test(title)) return "faq";
-            if (/購物車|購買清單|直接下單/.test(title)) return "cart";
-            if (/客服|聯絡|確認|訂單|結帳|門市/.test(title)) return "service";
-            if (/使用|沖泡|燉湯|料理/.test(title)) return "usage";
-            if (/搭配|組合/.test(title)) return "combo";
-            if (/推薦|幫你選|怎麼選/.test(title)) return "recommend";
-            if (/傳承|故事|品牌|漢方|百科|資料/.test(title)) return "brand";
-            if (/產品|介紹|價格/.test(title)) return "products";
-            return "welcome";
-          }'''
-          s, n = re.subn(r'function mascotPoseForTitle\(title = ""\) \{.*?\n\}', pose, s, count=1, flags=re.S)
-          if n != 1: raise SystemExit('mascotPoseForTitle not updated')
-          p.write_text(s, encoding='utf-8')
-
-          package = json.loads(Path('package.json').read_text(encoding='utf-8'))
-          package['version'] = '4.0.0'
-          package['description'] = '仙加味 LINE OA 正式版｜LINE 專用高解析小老闆、產品卡、推薦、使用方式、FAQ、購物車、結帳、CRM 與客服轉介'
-          Path('package.json').write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-
-          status_path = Path('release-status.json')
-          status = json.loads(status_path.read_text(encoding='utf-8')) if status_path.exists() else {}
-          status.update({
-              'release': '4.0.0',
-              'updated': '2026-07-11',
-              'branch': 'main',
-              'website': 'https://ts15825868.github.io/xianjiawei/',
-              'lineId': '@762jybnm',
-              'mascotAssets': 'images/line-mascot',
-              'mascotVersion': '400.0',
-              'mascotScenes': ['welcome','products','recommend','combo','usage','faq','service','brand','cart'],
-              'mascotResolution': '1448x1086'
-          })
-          status_path.write_text(json.dumps(status, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          PY
-
-      - name: Validate LINE OA
+      - name: Validate LINE OA v400
         run: |
           node --check server.js
-          node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('release-status.json','utf8'));"
-          npm install --ignore-scripts --no-audit --no-fund
           npm test
+          grep -q 'const VERSION = "v400.0"' server.js
+          grep -q 'xianjiawei-mascot-line-cart.jpg?v=400.0' server.js
+          grep -q '價格方案｜小老闆幫你整理' server.js
+          grep -q '購物車｜確認購買清單' server.js
+          grep -q '"version": "4.0.0"' package.json
 
-      - name: Commit LINE OA release to PR branch
+      - name: Commit LINE OA v400 to PR branch
         run: |
           rm -f APPLY_LINE_MASCOT_V400_PR.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add server.js package.json package-lock.json release-status.json APPLY_LINE_MASCOT_V400_PR.txt
-          git diff --cached --quiet || git commit -m '正式上線 LINE OA 專用高解析小老闆 v400'
+          git add server.js function.test.js package.json package-lock.json release-status.json APPLY_LINE_MASCOT_V400_PR.txt
+          git diff --cached --quiet || git commit -m '正式上線 LINE OA 專用小老闆 v400'
           git push origin HEAD:${{ github.head_ref }}
