@@ -1,0 +1,49 @@
+name: Fix LINE aspectMode
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - FIX_LINE_ASPECTMODE.txt
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply fix
+        run: node tools/fix_line_aspectmode.js
+      - name: Verify
+        run: |
+          npm ci
+          node --check server.js
+          npm test
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('server.js','utf8');
+          if (source.includes('aspectMode: "contain"')) throw new Error('invalid aspectMode remains');
+          if (!source.includes('aspectMode: "fit"')) throw new Error('fit aspectMode missing');
+          console.log('PASS LINE image aspectMode validation');
+          NODE
+      - name: Commit fix
+        run: |
+          rm -f FIX_LINE_ASPECTMODE.txt
+          rm -f tools/fix_line_aspectmode.js
+          rm -f .github/workflows/fix-line-aspectmode.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m '修正 LINE Flex 圖片模式與重複事件重試'
+          git pull --rebase origin main
+          git push origin main
