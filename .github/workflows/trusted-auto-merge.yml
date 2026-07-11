@@ -1,4 +1,4 @@
-name: Trusted PR Auto Merge
+name: Trusted PR Test and Auto Merge
 
 on:
   pull_request_target:
@@ -7,11 +7,13 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  checks: read
-  statuses: read
+
+concurrency:
+  group: trusted-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  enable-auto-merge:
+  test-and-merge:
     if: >-
       !github.event.pull_request.draft &&
       github.event.pull_request.base.ref == 'main' &&
@@ -19,8 +21,65 @@ jobs:
       github.event.pull_request.user.login == 'TS15825868'
     runs-on: ubuntu-latest
     steps:
-      - name: Enable squash auto-merge for trusted PR
+      - name: Checkout trusted PR commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify shared catalog
+        run: npm run check:catalog
+
+      - name: Run all tests
+        run: npm test
+
+      - name: JavaScript syntax
+        run: |
+          node --check server.js
+          node --check test.js
+          node --check catalog.test.js
+          node --check security.test.js
+          node --check function.test.js
+          node --check tools/sync_website_catalog.js
+
+      - name: HTTP smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node server.js >/tmp/lineoa.log 2>&1 &
+          PID=$!
+          trap 'kill $PID' EXIT
+          sleep 2
+
+          ROOT_JSON="$(curl --fail --silent --show-error http://127.0.0.1:3000/)"
+          HEALTH_JSON="$(curl --fail --silent --show-error http://127.0.0.1:3000/healthz)"
+
+          node -e '
+            const payload = JSON.parse(process.argv[1]);
+            if (payload.ok !== true || payload.service !== "仙加味 LINE OA" || typeof payload.version !== "string") {
+              console.error(payload);
+              process.exit(1);
+            }
+          ' "$ROOT_JSON"
+
+          node -e '
+            const payload = JSON.parse(process.argv[1]);
+            if (payload.ok !== true || !/^v\d+\.\d+(?:\.\d+)?$/.test(payload.version) || payload.crmConfigured !== true) {
+              console.error(payload);
+              process.exit(1);
+            }
+          ' "$HEALTH_JSON"
+
+      - name: Squash merge trusted PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge "$PR_URL" --auto --squash
+        run: gh pr merge "$PR_URL" --squash --delete-branch
