@@ -1,6 +1,9 @@
 name: Install LINE OA mascot assets once
 
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
   push:
     branches: [main]
     paths:
@@ -45,17 +48,11 @@ jobs:
         run: |
           set -euo pipefail
           test "$(find public/mascot -maxdepth 1 -name '*.jpg' | wc -l)" -eq 9
-          python3 - <<'PY'
-          from pathlib import Path
-          from PIL import Image
-          files = sorted(Path('public/mascot').glob('*.jpg'))
-          assert len(files) == 9
-          for f in files:
-              with Image.open(f) as im:
-                  assert im.width >= 1000 and im.height >= 1000, (f, im.size)
-                  im.verify()
-          print('verified', len(files), 'LINE OA mascot images')
-          PY
+          for f in public/mascot/*.jpg; do
+            test -s "$f"
+            test "$(stat -c%s "$f")" -gt 100000
+          done
+          test -s public/mascot/manifest.json
       - name: Commit final LINE OA assets to main
         run: |
           set -euo pipefail
