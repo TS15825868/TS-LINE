@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v312.0";
+const VERSION = "v400.2";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "全系列可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -26,6 +26,12 @@ const config = {
 };
 
 const app = express();
+const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
+const MASCOT_VERSION = "400.2";
+const mascotAssetUrl = (name) => PUBLIC_BASE_URL
+  ? `${PUBLIC_BASE_URL}/mascot/${name}.jpg?v=${MASCOT_VERSION}`
+  : `https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${name}.jpg?v=${MASCOT_VERSION}`;
+app.use("/mascot", express.static(path.join(__dirname, "public", "mascot"), { maxAge: "7d", immutable: true }));
 const client = config.channelAccessToken && config.channelSecret ? new line.Client(config) : null;
 const states = new Map();
 const processedWebhookEvents = new Map();
@@ -447,14 +453,15 @@ function cartFlex(state) {
 }
 
 const MASCOT_PATHS = {
-  welcome: "images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=313.0",
-  products: "images/line-mascot/xianjiawei-mascot-line-products.jpg?v=313.0",
-  recommend: "images/line-mascot/xianjiawei-mascot-line-recommend.jpg?v=313.0",
-  combo: "images/line-mascot/xianjiawei-mascot-line-combo.jpg?v=313.0",
-  usage: "images/line-mascot/xianjiawei-mascot-line-usage.jpg?v=313.0",
-  faq: "images/line-mascot/xianjiawei-mascot-line-faq.jpg?v=313.0",
-  service: "images/line-mascot/xianjiawei-mascot-line-service.jpg?v=313.0",
-  brand: "images/line-mascot/xianjiawei-mascot-line-brand.jpg?v=313.0",
+  welcome: mascotAssetUrl("welcome"),
+  products: mascotAssetUrl("products"),
+  recommend: mascotAssetUrl("recommend"),
+  combo: mascotAssetUrl("combo"),
+  usage: mascotAssetUrl("usage"),
+  faq: mascotAssetUrl("faq"),
+  service: mascotAssetUrl("service"),
+  brand: mascotAssetUrl("brand"),
+  cart: mascotAssetUrl("cart"),
 };
 
 function mascotPoseForTitle(title = "") {

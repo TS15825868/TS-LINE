@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "3.2.6",
+  "version": "4.0.2",
   "main": "server.js",
   "engines": {
     "node": "22.x"
@@ -16,5 +16,5 @@
     "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
   },
-  "description": "仙加味 LINE OA 正式版｜八種不同情境小老闆、產品卡、價格、購物車、結帳、CRM、品牌故事、使用方式與敏感問題轉介"
+  "description": "仙加味 LINE OA 正式版｜九種本地高解析小老闆、產品卡、價格、購物車、結帳、CRM、品牌故事與使用方式"
 }

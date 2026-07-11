@@ -1,0 +1,78 @@
+{
+  "version": "400.2",
+  "scope": "TS-LINE/main local assets only",
+  "images": {
+    "welcome": {
+      "file": "public/mascot/welcome.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 231752,
+      "edgeMean": 4.967,
+      "sha256": "4648513ecea814e72811d712a688d544e9ae3735a955b435a1adb3b339ff4431"
+    },
+    "products": {
+      "file": "public/mascot/products.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 235283,
+      "edgeMean": 5.49,
+      "sha256": "a58769c1f406b108c7762831c5a2b498be6239b9694e582b369636667bf685b0"
+    },
+    "recommend": {
+      "file": "public/mascot/recommend.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 185980,
+      "edgeMean": 4.362,
+      "sha256": "cc356a0e61609a74538c9f68aa5bdb8f4e1a246ce23587e47382905d7a7c9962"
+    },
+    "combo": {
+      "file": "public/mascot/combo.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 178256,
+      "edgeMean": 4.167,
+      "sha256": "55f3aa4455044a3c00137df5e208f84608c811c8614290e8e2e870794cf5e4e5"
+    },
+    "usage": {
+      "file": "public/mascot/usage.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 175509,
+      "edgeMean": 4.229,
+      "sha256": "c6933337c9fabc6978113adc9e3a298aa22d8d1abf8e9f6eaad749a223c5d837"
+    },
+    "faq": {
+      "file": "public/mascot/faq.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 180460,
+      "edgeMean": 4.006,
+      "sha256": "db13d75912141041775ab89ee28a43741b67576a57f97f3c5c86becbc6cec57a"
+    },
+    "service": {
+      "file": "public/mascot/service.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 177751,
+      "edgeMean": 4.139,
+      "sha256": "21a4782d4deba0bd2659e4ec4785c3671695601fc82c36083b58d9f6c37e802c"
+    },
+    "brand": {
+      "file": "public/mascot/brand.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 153997,
+      "edgeMean": 3.987,
+      "sha256": "be6da4a3bb795be965c352136116f37d974836d8c78c21aea62fd4b509880fbb"
+    },
+    "cart": {
+      "file": "public/mascot/cart.jpg",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 229620,
+      "edgeMean": 5.402,
+      "sha256": "14d6858612790a19d6fd1cf5cea86f6fbc19800476484566e100b75002adeb2f"
+    }
+  }
+}
