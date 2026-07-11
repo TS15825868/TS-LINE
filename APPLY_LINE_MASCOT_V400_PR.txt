@@ -1,1 +1,1 @@
-Apply LINE OA v400 mascot mapping, price guide, cart card, version, tests and release metadata.
+Retry LINE OA v400 and commit diagnostics if validation fails.
