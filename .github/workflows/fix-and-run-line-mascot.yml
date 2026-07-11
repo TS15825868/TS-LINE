@@ -1,0 +1,41 @@
+name: Fix and run LINE mascot finalization
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+
+jobs:
+  fix-and-run:
+    if: github.event.issue.title == 'FIX AND RUN LINE MASCOT 400.1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fix gdown command and cleanup diagnostics
+        run: |
+          sed -i 's/gdown --id 1Fo0MhGFyUhnQd14COzo3ZjkzPsl2JDOL/gdown 1Fo0MhGFyUhnQd14COzo3ZjkzPsl2JDOL/' .github/workflows/bootstrap-line-mascot.yml
+          rm -f .github/workflows/trigger-line-mascot.yml
+          rm -f .github/workflows/report-line-mascot-run.yml
+          rm -f .github/workflows/report-line-job-tail.yml
+          rm -f .github/workflows/fix-and-run-line-mascot.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m '修正 LINE OA 小老闆安裝流程'
+          git push origin main
+      - name: Dispatch corrected finalization
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bootstrap-line-mascot.yml --repo ${{ github.repository }} --ref main
+      - name: Close trigger issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue close ${{ github.event.issue.number }} --repo ${{ github.repository }} --comment '已修正下載指令並重新執行正式安裝。'
