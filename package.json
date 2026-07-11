@@ -7,8 +7,8 @@
   },
   "scripts": {
     "start": "node start.js",
-    "test": "node tools/release_check.js && node test.js && node catalog.test.js && node security.test.js && node function.test.js",
-    "check:release": "node tools/release_check.js",
+    "test": "node --check start.js && node tools/release_check.js && node test.js && node catalog.test.js && node security.test.js && node function.test.js",
+    "check:release": "node --check start.js && node tools/release_check.js",
     "sync:catalog": "node tools/sync_website_catalog.js --write",
     "check:catalog": "node tools/sync_website_catalog.js --check"
   },
