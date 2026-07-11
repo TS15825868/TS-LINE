@@ -28,6 +28,24 @@ const config = {
 const app = express();
 const client = config.channelAccessToken && config.channelSecret ? new line.Client(config) : null;
 const states = new Map();
+const processedWebhookEvents = new Map();
+const WEBHOOK_EVENT_TTL_MS = 10 * 60 * 1000;
+
+function shouldSkipWebhookEvent(event) {
+  const id = String(event?.webhookEventId || "");
+  if (event?.deliveryContext?.isRedelivery) {
+    console.warn("略過 LINE 重送事件：" + (id || "unknown"));
+    return true;
+  }
+  if (!id) return false;
+  const now = Date.now();
+  for (const [key, createdAt] of processedWebhookEvents) {
+    if (now - createdAt > WEBHOOK_EVENT_TTL_MS) processedWebhookEvents.delete(key);
+  }
+  if (processedWebhookEvents.has(id)) return true;
+  processedWebhookEvents.set(id, now);
+  return false;
+}
 const DATA = loadData();
 
 function validateData(data) {
@@ -214,7 +232,7 @@ async function reply(token, messages) {
   } catch (error) {
     const detail = error?.originalError?.response?.data || error?.response?.data || error.message || error;
     console.error("LINE 回覆失敗：", typeof detail === "object" ? JSON.stringify(detail) : detail);
-    throw error;
+    return false;
   }
 }
 
@@ -237,7 +255,7 @@ function productBubble(product) {
       url: productImage,
       size: "full",
       aspectRatio: "1:1",
-      aspectMode: "contain",
+      aspectMode: "fit",
       backgroundColor: "#EFE4D2",
       action: { type: "uri", uri: productUrl },
     },
@@ -459,7 +477,7 @@ function mascotBubble(title, description, buttons, pose = "") {
     url: absoluteUrl(imagePath),
     size: "full",
     aspectRatio: "4:3",
-    aspectMode: "contain",
+    aspectMode: "fit",
     backgroundColor: "#EFE4D2",
     action: { type: "uri", uri: absoluteUrl("brand.html") },
   };
@@ -1136,6 +1154,7 @@ async function handleMessage(event) {
 }
 
 async function handleEvent(event) {
+  if (shouldSkipWebhookEvent(event)) return Promise.resolve();
   if (event.type === "follow") {
     return reply(
       event.replyToken,
@@ -1163,13 +1182,13 @@ app.get("/healthz", (_req, res) => {
 });
 
 if (config.channelAccessToken && config.channelSecret) {
-  app.post("/webhook", line.middleware(config), (req, res) => {
-    Promise.all(req.body.events.map(handleEvent))
-      .then(() => res.json({ ok: true }))
-      .catch((error) => {
-        console.error(error);
-        res.status(500).json({ ok: false });
-      });
+  app.post("/webhook", line.middleware(config), async (req, res) => {
+    const results = await Promise.allSettled(req.body.events.map(handleEvent));
+    const failed = results.filter((result) => result.status === "rejected");
+    if (failed.length) {
+      console.error("LINE 事件處理失敗數：" + failed.length);
+    }
+    res.json({ ok: true });
   });
 } else {
   console.warn("LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.");

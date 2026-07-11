@@ -141,6 +141,6 @@ for (const message of [mascotWelcomeReply(), recommendReply(), comboMenuReply(),
   const bubble = message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;
   assert.ok(bubble.hero, "小老闆卡缺少圖片");
   assert.ok(bubble.hero.url.includes("/images/line-mascot/xianjiawei-mascot-line-"));
-  assert.strictEqual(bubble.hero.aspectMode, "contain");
+  assert.strictEqual(bubble.hero.aspectMode, "fit");
 }
 console.log("PASS LINE OA mascot cards v312.0");
