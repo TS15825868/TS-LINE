@@ -20,38 +20,53 @@ const MASCOT_PATHS = {
   brand: mascotUrl("brand"),
 };`;
 
-source = source.replace(
-  /const MASCOT_PATHS = \{[\s\S]*?\n\};/,
-  mascotBlock
-);
+source = source.replace(/const MASCOT_PATHS = \{[\s\S]*?\n\};/, mascotBlock);
 
 const imageRouteCode = `
 const sharp = require("sharp");
-const mascotSources = {
-  welcome: "website-mascot-home.svg",
-  products: "website-mascot-products.svg",
-  recommend: "website-mascot-choose.svg",
-  combo: "website-mascot-combo.svg",
-  usage: "website-mascot-guide.svg",
-  faq: "website-mascot-faq.svg",
-  service: "website-mascot-contact.svg",
-  brand: "website-mascot-home.svg",
+const mascotTiles = {
+  welcome: [0, 0],
+  products: [1, 0],
+  recommend: [2, 0],
+  combo: [3, 0],
+  usage: [0, 1],
+  faq: [2, 1],
+  service: [3, 1],
+  brand: [0, 0],
 };
+let mascotSpritePromise = null;
 const mascotCache = new Map();
+async function getMascotSprite() {
+  if (!mascotSpritePromise) {
+    mascotSpritePromise = fetch(SITE_URL + "images/brand/xianjiawei-web-scenes-v324.webp?v=324.2")
+      .then((response) => {
+        if (!response.ok) throw new Error("mascot sprite HTTP " + response.status);
+        return response.arrayBuffer();
+      })
+      .then((buffer) => Buffer.from(buffer));
+  }
+  return mascotSpritePromise;
+}
 app.get("/mascot/:name.jpg", async (req, res) => {
   const name = String(req.params.name || "welcome");
-  const file = mascotSources[name] || mascotSources.welcome;
+  const tile = mascotTiles[name] || mascotTiles.welcome;
   try {
-    if (!mascotCache.has(file)) {
-      const response = await fetch(SITE_URL + "images/brand/" + file + "?v=324.2");
-      if (!response.ok) throw new Error("mascot source HTTP " + response.status);
-      const input = Buffer.from(await response.arrayBuffer());
-      const output = await sharp(input).resize(1200, 900, { fit: "cover" }).jpeg({ quality: 88 }).toBuffer();
-      mascotCache.set(file, output);
+    if (!mascotCache.has(name)) {
+      const sprite = await getMascotSprite();
+      const metadata = await sharp(sprite).metadata();
+      const tileWidth = Math.floor(metadata.width / 4);
+      const tileHeight = Math.floor(metadata.height / 2);
+      const output = await sharp(sprite)
+        .extract({ left: tile[0] * tileWidth, top: tile[1] * tileHeight, width: tileWidth, height: tileHeight })
+        .resize(1200, 900, { fit: "cover" })
+        .jpeg({ quality: 88 })
+        .toBuffer();
+      mascotCache.set(name, output);
     }
     res.set("Cache-Control", "public, max-age=86400, immutable");
-    res.type("image/jpeg").send(mascotCache.get(file));
+    res.type("image/jpeg").send(mascotCache.get(name));
   } catch (error) {
+    mascotSpritePromise = null;
     console.error("小老闆圖片轉換失敗：" + error.message);
     res.redirect(302, SITE_URL + "images/brand/xianjiawei-scene-guide.jpg?v=324.2");
   }
