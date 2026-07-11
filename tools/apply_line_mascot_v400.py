@@ -77,9 +77,13 @@ s, count = re.subn(r"function cartFlex\(state\) \{.*?\n\}\n\nconst MASCOT_PATHS"
 if count != 1:
     raise SystemExit("找不到 cartFlex")
 
-# 價格輪播前加上 LINE OA 專用導覽圖。
-old = '''      contents: DATA.products.map((product) => {'''
-new = '''      contents: [
+price_function = '''function priceCarousel() {
+  return {
+    type: "flex",
+    altText: "仙加味價格方案",
+    contents: {
+      type: "carousel",
+      contents: [
         mascotBubble(
           "價格方案｜小老闆幫你整理",
           `先查看各產品規格、單價與目前活動，再選擇數量加入購物車。\n\n${ORDER_NOTICE}`,
@@ -90,11 +94,26 @@ new = '''      contents: [
           ],
           "products"
         ),
-        ...DATA.products.map((product) => {'''
-if old not in s:
-    raise SystemExit("找不到 priceCarousel products map")
-s = s.replace(old, new, 1)
-s = s.replace('        return flexCard(product.displayName, `規格：${product.spec}\\n${original}${offers}\\n\\n${ORDER_NOTICE}`, [\n          { label: "選擇數量", text: `選擇數量｜${product.id}` },\n          { label: "看產品DM", uri: absoluteUrl(product.dmImage || product.image || "images/logo.png") },\n          { label: "看產品", text: "看產品" },\n        ]).contents;\n      }),', '        return flexCard(product.displayName, `規格：${product.spec}\\n${original}${offers}\\n\\n${ORDER_NOTICE}`, [\n          { label: "選擇數量", text: `選擇數量｜${product.id}` },\n          { label: "看產品DM", uri: absoluteUrl(product.dmImage || product.image || "images/logo.png") },\n          { label: "看產品", text: "看產品" },\n        ]).contents;\n      }),\n      ],')
+        ...DATA.products.map((product) => {
+          const original = product.originalPrice && product.originalPrice > product.price
+            ? `售價：${money(product.originalPrice)}\n優惠價：${money(product.price)}`
+            : `售價：${money(product.price)}`;
+          const offers = product.offers.length
+            ? `\n\n活動：\n${product.offers.map((offer) => `・${offer.label} ${money(offer.total)}`).join("\n")}`
+            : "";
+          return flexCard(product.displayName, `規格：${product.spec}\n${original}${offers}\n\n${ORDER_NOTICE}`, [
+            { label: "選擇數量", text: `選擇數量｜${product.id}` },
+            { label: "看產品DM", uri: absoluteUrl(product.dmImage || product.image || "images/logo.png") },
+            { label: "看產品", text: "看產品" },
+          ]).contents;
+        }),
+      ],
+    },
+  };
+}'''
+s, count = re.subn(r"function priceCarousel\(\) \{.*?\n\}\n\nfunction qtyMenu", price_function + "\n\nfunction qtyMenu", s, count=1, flags=re.S)
+if count != 1:
+    raise SystemExit("找不到 priceCarousel")
 
 server_path.write_text(s, encoding="utf-8")
 
@@ -112,4 +131,29 @@ package["version"] = "4.0.0"
 package["description"] = "仙加味 LINE OA v400｜LINE 專用小老闆、產品卡、價格方案、購物車、結帳、CRM、使用方式、FAQ 與敏感問題轉介"
 package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-status_path = Path("release-status.json")n
+status = {
+    "release": "4.0.0",
+    "updated": "2026-07-11",
+    "branch": "main",
+    "website": "https://ts15825868.github.io/xianjiawei/",
+    "lineId": "@762jybnm",
+    "mascotAssets": "website-hosted LINE OA dedicated v400 images",
+    "mascotScenes": ["welcome", "products", "recommend", "combo", "usage", "faq", "service", "brand", "cart"],
+    "features": [
+        "產品卡片與產品圖片",
+        "價格方案導覽卡",
+        "產品推薦與搭配組合",
+        "使用方式與常見問題",
+        "LINE專用購物車小老闆卡",
+        "完整結帳流程",
+        "CRM訂單寫入與失敗重試",
+        "健康敏感問題轉介合作中醫師",
+        "Webhook重送事件防重複處理",
+        "healthz部署健康檢查"
+    ],
+    "requiredEnvironment": ["CHANNEL_ACCESS_TOKEN", "CHANNEL_SECRET", "CRM_URL"],
+    "releaseCheck": "npm test"
+}
+Path("release-status.json").write_text(json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+print("LINE OA v400 小老闆、購物車、價格導覽與版本資料已套用")
