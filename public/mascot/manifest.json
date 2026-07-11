@@ -1,0 +1,70 @@
+{
+  "version": "400.3",
+  "scope": "TS-LINE/main LINE OA mascot assets only",
+  "aspectRatio": "1:1",
+  "images": {
+    "brand": {
+      "file": "public/mascot/brand.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 287893,
+      "sha256": "4bf76daedb1d2cd7f6e3b71dd402ec222313df47b8851660ff21651842ec2036"
+    },
+    "cart": {
+      "file": "public/mascot/cart.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 277370,
+      "sha256": "2a01f1a4393dec1f5a30d174901cfeb6678e402a28a24bab97fdb941e5eed516"
+    },
+    "combo": {
+      "file": "public/mascot/combo.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 293613,
+      "sha256": "e658373e0d6406dd6a6d30ba080a66f28a806cd0d911189f4ca105cffff10126"
+    },
+    "faq": {
+      "file": "public/mascot/faq.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 193025,
+      "sha256": "2a6ec21d38c2a6aadacb48c6620579b812c498209a8083ffa7da9926458aa536"
+    },
+    "products": {
+      "file": "public/mascot/products.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 232122,
+      "sha256": "43149d285f69b1e6cabed2da67e9168d0b5d71b153d7988ca2388946c9dee30b"
+    },
+    "recommend": {
+      "file": "public/mascot/recommend.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 228048,
+      "sha256": "96c005dd0edf38a2cec7b04c95ae212987e4685d05ba6746c12ddb71dbc417a7"
+    },
+    "service": {
+      "file": "public/mascot/service.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 205237,
+      "sha256": "0e915e925697547fc6899cc1d8a7a15f8908099e13008af9a7cca2a368ed0a3e"
+    },
+    "usage": {
+      "file": "public/mascot/usage.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 165048,
+      "sha256": "7dbb5098033f9314a3c5e984ab0dafb2e2ba35485ee56cca019d079ed990464c"
+    },
+    "welcome": {
+      "file": "public/mascot/welcome.jpg",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 229710,
+      "sha256": "f2a66a7fddc5c3727718c84fbb33e382e489d7bae5337936a4050b04c32dff04"
+    }
+  }
+}
