@@ -1,1 +1,1 @@
-Retry LINE OA v400 and commit diagnostics if validation fails.
+Retry LINE OA v400 after preserving JavaScript newline escapes.
