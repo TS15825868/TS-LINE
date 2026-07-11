@@ -4,7 +4,20 @@ on:
   push:
     branches: [main]
     paths:
+      - server.js
+      - start.js
+      - data.json
+      - package.json
+      - package-lock.json
+      - test.js
+      - catalog.test.js
+      - security.test.js
+      - function.test.js
+      - mascot-manifest.json
+      - public/mascot/**
+      - tools/**
       - .github/workflows/final-line-release-check.yml
+  workflow_dispatch:
 
 permissions:
   contents: read
