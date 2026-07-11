@@ -212,7 +212,8 @@ async function reply(token, messages) {
   try {
     await client.replyMessage(token, Array.isArray(messages) ? messages : [messages]);
   } catch (error) {
-    console.error("LINE 回覆失敗：", error?.originalError?.response?.data || error.message || error);
+    const detail = error?.originalError?.response?.data || error?.response?.data || error.message || error;
+    console.error("LINE 回覆失敗：", typeof detail === "object" ? JSON.stringify(detail) : detail);
     throw error;
   }
 }
@@ -451,6 +452,7 @@ function mascotPoseForTitle(title = "") {
 
 function mascotBubble(title, description, buttons, pose = "") {
   const bubble = flexCard(title, description, buttons).contents;
+  bubble.size = "mega";
   const imagePath = MASCOT_PATHS[pose || mascotPoseForTitle(title)] || MASCOT_PATHS.welcome;
   bubble.hero = {
     type: "image",
