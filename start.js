@@ -8,7 +8,12 @@ const sourcePath = path.join(__dirname, "server.js");
 let source = fs.readFileSync(sourcePath, "utf8");
 
 const mascotBlock = `const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\\/$/, "");
-const mascotUrl = (name) => PUBLIC_BASE_URL ? \`${"${PUBLIC_BASE_URL}"}/mascot/${"${name}"}.jpg?v=325.0\` : \`https://ts15825868.github.io/xianjiawei/images/line-mascot/xianjiawei-mascot-line-${"${name}"}.jpg?v=325.0\`;
+const MASCOT_VERSION = "325.1";
+const SHARED_MASCOT_BASE = "https://ts15825868.github.io/xianjiawei/images/line-mascot";
+const sharedMascotUrl = (name) => \`${"${SHARED_MASCOT_BASE}"}/xianjiawei-mascot-line-${"${name}"}.jpg?v=${"${MASCOT_VERSION}"}\`;
+const mascotUrl = (name) => PUBLIC_BASE_URL
+  ? \`${"${PUBLIC_BASE_URL}"}/mascot/${"${name}"}.jpg?v=${"${MASCOT_VERSION}"}\`
+  : sharedMascotUrl(name);
 const MASCOT_PATHS = {
   welcome: mascotUrl("welcome"),
   products: mascotUrl("products"),
@@ -23,58 +28,36 @@ const MASCOT_PATHS = {
 source = source.replace(/const MASCOT_PATHS = \{[\s\S]*?\n\};/, mascotBlock);
 
 const imageRouteCode = `
-const sharp = require("sharp");
-const mascotTiles = {
-  welcome: [0, 0],
-  products: [1, 0],
-  recommend: [2, 0],
-  combo: [3, 0],
-  usage: [0, 1],
-  faq: [2, 1],
-  service: [3, 1],
-  brand: [0, 0],
-};
-let mascotSpritePromise = null;
-const mascotCache = new Map();
-async function getMascotSprite() {
-  if (!mascotSpritePromise) {
-    mascotSpritePromise = fetch(SITE_URL + "images/brand/xianjiawei-web-scenes-v324.webp?v=324.2")
-      .then((response) => {
-        if (!response.ok) throw new Error("mascot sprite HTTP " + response.status);
-        return response.arrayBuffer();
-      })
-      .then((buffer) => Buffer.from(buffer));
-  }
-  return mascotSpritePromise;
-}
+const mascotNames = new Set(["welcome", "products", "recommend", "combo", "usage", "faq", "service", "brand"]);
+const mascotProxyCache = new Map();
 app.get("/mascot/:name.jpg", async (req, res) => {
-  const name = String(req.params.name || "welcome");
-  const tile = mascotTiles[name] || mascotTiles.welcome;
+  const requested = String(req.params.name || "welcome");
+  const name = mascotNames.has(requested) ? requested : "welcome";
   try {
-    if (!mascotCache.has(name)) {
-      const sprite = await getMascotSprite();
-      const metadata = await sharp(sprite).metadata();
-      const tileWidth = Math.floor(metadata.width / 4);
-      const tileHeight = Math.floor(metadata.height / 2);
-      const output = await sharp(sprite)
-        .extract({ left: tile[0] * tileWidth, top: tile[1] * tileHeight, width: tileWidth, height: tileHeight })
-        .resize(1200, 900, { fit: "cover" })
-        .jpeg({ quality: 88 })
-        .toBuffer();
-      mascotCache.set(name, output);
+    if (!mascotProxyCache.has(name)) {
+      const url = sharedMascotUrl(name);
+      const response = await fetch(url, { headers: { accept: "image/jpeg,image/*" } });
+      if (!response.ok) throw new Error("mascot HTTP " + response.status);
+      const contentType = response.headers.get("content-type") || "image/jpeg";
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!buffer.length) throw new Error("empty mascot image");
+      mascotProxyCache.set(name, { buffer, contentType });
     }
-    res.set("Cache-Control", "public, max-age=86400, immutable");
-    res.type("image/jpeg").send(mascotCache.get(name));
+    const cached = mascotProxyCache.get(name);
+    res.set("Cache-Control", "public, max-age=3600");
+    res.type(cached.contentType).send(cached.buffer);
   } catch (error) {
-    mascotSpritePromise = null;
-    console.error("小老闆圖片轉換失敗：" + error.message);
-    res.redirect(302, SITE_URL + "images/brand/xianjiawei-scene-guide.jpg?v=324.2");
+    console.error("小老闆圖片代理失敗：" + error.message);
+    res.redirect(302, sharedMascotUrl(name));
   }
 });
 `;
 
-source = source.replace("const port = process.env.PORT || 3000;", imageRouteCode + "\nconst port = process.env.PORT || 3000;");
-source = source.replace('const VERSION = "v312.0";', 'const VERSION = "v325.0";');
+source = source.replace(
+  "const port = process.env.PORT || 3000;",
+  imageRouteCode + "\nconst port = process.env.PORT || 3000;"
+);
+source = source.replace('const VERSION = "v312.0";', 'const VERSION = "v325.1";');
 source = source.replace("if (require.main === module) {", "if (true) {");
 
 const runtimeModule = new Module(path.join(__dirname, ".runtime-server.js"), module);
