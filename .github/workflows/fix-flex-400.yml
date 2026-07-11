@@ -1,0 +1,49 @@
+name: Fix LINE Flex 400
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - FIX_FLEX_400.txt
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply fix
+        run: node tools/fix_flex_400.js
+      - name: Verify
+        run: |
+          npm ci
+          node --check server.js
+          npm test
+          node - <<'NODE'
+          const { productMenuReply } = require('./server');
+          const msg = productMenuReply();
+          const sizes = msg.contents.contents.map(b => b.size || 'default');
+          if (!sizes.every(s => s === 'mega')) throw new Error('carousel bubble sizes mismatch: ' + sizes.join(','));
+          console.log('PASS carousel sizes:', sizes.join(','));
+          NODE
+      - name: Commit fix
+        run: |
+          rm -f FIX_FLEX_400.txt
+          rm -f tools/fix_flex_400.js
+          rm -f .github/workflows/fix-flex-400.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m '修正 LINE Flex 400：統一卡片尺寸並改善錯誤紀錄'
+          git pull --rebase origin main
+          git push origin main
