@@ -1,1 +1,1 @@
-Apply the final LINE OA dedicated high-resolution mascot mapping v400.
+Apply LINE OA v400 mascot mapping, price guide, cart card, version, tests and release metadata.
