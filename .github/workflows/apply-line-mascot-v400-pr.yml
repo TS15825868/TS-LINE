@@ -27,7 +27,11 @@ jobs:
           cache: npm
 
       - name: Apply LINE OA v400
-        run: python3 tools/apply_line_mascot_v400.py
+        run: |
+          rm -f line-v400-test.log
+          sed -i "s/cart_function = '''/cart_function = r'''/" tools/apply_line_mascot_v400.py
+          sed -i "s/price_function = '''/price_function = r'''/" tools/apply_line_mascot_v400.py
+          python3 tools/apply_line_mascot_v400.py
 
       - name: Install dependencies
         run: npm ci
