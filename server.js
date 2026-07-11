@@ -447,14 +447,14 @@ function cartFlex(state) {
 }
 
 const MASCOT_PATHS = {
-  welcome: "images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=312.0",
-  products: "images/line-mascot/xianjiawei-mascot-line-products.jpg?v=312.0",
-  recommend: "images/line-mascot/xianjiawei-mascot-line-recommend.jpg?v=312.0",
-  combo: "images/line-mascot/xianjiawei-mascot-line-combo.jpg?v=312.0",
-  usage: "images/line-mascot/xianjiawei-mascot-line-usage.jpg?v=312.0",
-  faq: "images/line-mascot/xianjiawei-mascot-line-faq.jpg?v=312.0",
-  service: "images/line-mascot/xianjiawei-mascot-line-service.jpg?v=312.0",
-  brand: "images/line-mascot/xianjiawei-mascot-line-brand.jpg?v=312.0",
+  welcome: "images/line-mascot/xianjiawei-mascot-line-welcome.jpg?v=313.0",
+  products: "images/line-mascot/xianjiawei-mascot-line-products.jpg?v=313.0",
+  recommend: "images/line-mascot/xianjiawei-mascot-line-recommend.jpg?v=313.0",
+  combo: "images/line-mascot/xianjiawei-mascot-line-combo.jpg?v=313.0",
+  usage: "images/line-mascot/xianjiawei-mascot-line-usage.jpg?v=313.0",
+  faq: "images/line-mascot/xianjiawei-mascot-line-faq.jpg?v=313.0",
+  service: "images/line-mascot/xianjiawei-mascot-line-service.jpg?v=313.0",
+  brand: "images/line-mascot/xianjiawei-mascot-line-brand.jpg?v=313.0",
 };
 
 function mascotPoseForTitle(title = "") {
