@@ -1,0 +1,39 @@
+name: Report LINE OA v401 failure
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  report:
+    if: github.event.issue.title == 'REPORT_LINEOA_V401'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Collect failure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          gh run list --repo "${{ github.repository }}" --workflow apply-lineoa-v401.yml --limit 5 --json databaseId,status,conclusion,headSha,displayTitle,createdAt > /tmp/runs.json
+          run_id=$(python3 - <<'PY'
+          import json
+          runs=json.load(open('/tmp/runs.json'))
+          print(runs[0]['databaseId'] if runs else '')
+          PY
+          )
+          gh run view "$run_id" --repo "${{ github.repository }}" --log-failed > /tmp/failed.log 2>&1
+          {
+            echo 'LINEOA_V401_FAILURE_REPORT'
+            echo '```json'
+            cat /tmp/runs.json
+            echo '```'
+            echo '```text'
+            tail -220 /tmp/failed.log
+            echo '```'
+          } > /tmp/comment.txt
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file /tmp/comment.txt
+          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
