@@ -1,4 +1,4 @@
-name: Apply LINE OA v401.0
+name: Apply LINE OA v401.0 final
 
 on:
   issues:
@@ -7,14 +7,15 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: read
 
 concurrency:
-  group: apply-lineoa-v401
+  group: apply-lineoa-v401-final
   cancel-in-progress: false
 
 jobs:
   apply:
-    if: github.event.issue.title == 'APPLY_LINEOA_V401'
+    if: github.event.issue.title == 'APPLY_LINEOA_V401_FINAL'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
@@ -31,7 +32,9 @@ jobs:
           import json, re
 
           BOT_VERSION = 'v401.0'
+          PACKAGE_VERSION = '4.1.0'
           ASSET_VERSION = '408.7'
+          TODAY = '2026-07-13'
 
           server_path = Path('server.js')
           server = server_path.read_text(encoding='utf-8')
@@ -59,12 +62,67 @@ jobs:
               '我可以帶您查看六項產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。',
               1,
           )
+          server = server.replace(
+              'if (/產品|介紹|價格|購物車/.test(title)) return "products";',
+              'if (/購物車|購買清單/.test(title)) return "cart";\n  if (/產品|介紹|價格/.test(title)) return "products";',
+              1,
+          )
+
+          cart_pattern = re.compile(r'function cartFlex\(state\) \{.*?\n\}\n\nconst MASCOT_PATHS', re.S)
+          cart_replacement = '''function cartFlex(state) {
+            const buildCartCard = (description, buttons) => {
+              const message = flexCard("購物車｜小老闆幫你整理", description, buttons);
+              message.contents.size = "mega";
+              message.contents.hero = {
+                type: "image",
+                url: absoluteUrl(MASCOT_PATHS.cart),
+                size: "full",
+                aspectRatio: "1:1",
+                aspectMode: "fit",
+                backgroundColor: "#EFE4D2",
+                action: { type: "uri", uri: absoluteUrl("products.html") },
+              };
+              return message;
+            };
+
+            if (!state.cart.length) {
+              return buildCartCard(`目前購物車是空的。\n\n${ORDER_NOTICE}`, [
+                { label: "看產品", text: "看產品" },
+                { label: "價格方案", text: "價格方案" },
+              ]);
+            }
+
+            const lines = state.cart
+              .map((item, index) => `${index + 1}. ${item.name}\n數量：${item.qty}${item.unit}\n方案：${item.label}\n小計：${money(item.total)}`)
+              .join("\n\n");
+
+            return buildCartCard(`${lines}\n\n合計：${money(cartTotal(state.cart))}\n\n${ORDER_NOTICE}`, [
+              { label: "直接結帳", text: "開始結帳" },
+              { label: "繼續選購", text: "看產品" },
+              { label: "清空購物車", text: "清空購物車" },
+            ]);
+          }
+
+          const MASCOT_PATHS'''
+          if not cart_pattern.search(server):
+              raise RuntimeError('找不到 cartFlex 區塊')
+          server = cart_pattern.sub(cart_replacement, server, count=1)
+
+          server = server.replace(
+              'crmConfigured: Boolean(CRM_URL),\n    activeStates: states.size,',
+              'crmConfigured: Boolean(CRM_URL),\n    catalogVersion: DATA.catalogVersion || "",\n    mascotVersion: MASCOT_VERSION,\n    productCount: DATA.products.length,\n    mascotAssetsReady: Object.values(MASCOT_PATHS).every((asset) => Boolean(asset)),\n    activeStates: states.size,',
+              1,
+          )
           server_path.write_text(server, encoding='utf-8')
 
           data_path = Path('data.json')
           data = json.loads(data_path.read_text(encoding='utf-8'))
+          data['version'] = '401.0'
           data['catalogVersion'] = ASSET_VERSION
           data['lineBotVersion'] = BOT_VERSION
+          data['lineAssetsVersion'] = '401.0'
+          data['updatedAt'] = TODAY
+          data['catalogSyncedAt'] = TODAY
           data['siteUrl'] = 'https://ts15825868.github.io/xianjiawei/'
           required = {
               'guilu-gao', 'guilu-drink-30', 'guilu-drink-180',
@@ -81,29 +139,119 @@ jobs:
 
           package_path = Path('package.json')
           package = json.loads(package_path.read_text(encoding='utf-8'))
-          package['version'] = '4.1.0'
-          package['description'] = '仙加味 LINE OA 正式版｜九種本地高解析小老闆、六項產品卡、價格、購物車、結帳、CRM、品牌故事、FAQ與使用方式'
+          package['version'] = PACKAGE_VERSION
+          package['description'] = '仙加味 LINE OA 正式版｜九種本地高解析小老闆、六項真實產品卡、價格、購物車、結帳、CRM、品牌故事、FAQ與使用方式'
           package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-          Path('README.md').write_text('''# 仙加味 LINE OA v4.1.0\n\n正式版以 `server.js` 為主程式、`start.js` 為部署啟動器、`data.json` 為產品與方案資料中心。\n\n## 正式功能\n\n- 五大產品型態、六項正式規格，與仙加味官網 v408.7 同步。\n- 九種 LINE OA 專用高清小老闆：welcome、products、recommend、combo、usage、faq、service、brand、cart。\n- 產品卡固定使用真實產品原圖，另提供正式 DM、完整官網介紹與使用方式。\n- 價格方案、數量選擇、購物車、結帳、配送、付款與 CRM 訂單寫入。\n- 常見問題、品牌故事、門市資訊、人工客服與健康敏感問題轉介。\n- LINE 憑證只從部署平台環境變數讀取，不寫入程式庫。\n\n## 必要環境變數\n\n- `CHANNEL_ACCESS_TOKEN`\n- `CHANNEL_SECRET`\n- `CRM_URL`\n\n## 選用環境變數\n\n- `PUBLIC_BASE_URL`：LINE OA 對外服務網址；Render 可使用 `RENDER_EXTERNAL_URL`。\n- `CRM_TIMEOUT_MS`、`STATE_TTL_MS`、`STATE_CLEANUP_INTERVAL_MS`、`MAX_STATE_ENTRIES`。\n\n## 檢查\n\n```bash\nnpm test\n```\n''', encoding='utf-8')
+          manifest_path = Path('public/mascot/manifest.json')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version'] = '401.0'
+          manifest['scope'] = 'TS-LINE/main LINE OA dedicated mascot assets'
+          manifest['verifiedAt'] = TODAY
+          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-          release = Path('tools/release_check.js').read_text(encoding='utf-8')
+          Path('README.md').write_text('''# 仙加味 LINE OA v4.1.0
+
+正式版以 `server.js` 為主程式、`start.js` 為部署啟動器、`data.json` 為產品與方案資料中心。
+
+## 正式功能
+
+- 五大產品型態、六項正式規格，與仙加味官網 v408.7 同步。
+- 九種 LINE OA 專用高清小老闆：welcome、products、recommend、combo、usage、faq、service、brand、cart。
+- 產品卡固定使用真實產品原圖，另提供正式 DM、完整官網介紹與使用方式。
+- 價格方案、數量選擇、購物車、結帳、配送、付款與 CRM 訂單寫入。
+- 常見問題、品牌故事、門市資訊、人工客服與健康敏感問題轉介。
+- LINE 憑證只從部署平台環境變數讀取，不寫入程式庫。
+
+## 必要環境變數
+
+- `CHANNEL_ACCESS_TOKEN`
+- `CHANNEL_SECRET`
+- `CRM_URL`
+
+## 選用環境變數
+
+- `PUBLIC_BASE_URL`：LINE OA 對外服務網址；Render 可使用 `RENDER_EXTERNAL_URL`。
+- `CRM_TIMEOUT_MS`、`STATE_TTL_MS`、`STATE_CLEANUP_INTERVAL_MS`、`MAX_STATE_ENTRIES`。
+
+## 正式檢查
+
+```bash
+npm test
+```
+
+健康檢查端點：`/healthz`，會回傳版本、產品數、官網目錄版本、憑證與 CRM 設定狀態。
+''', encoding='utf-8')
+
+          replacements = {
+              'test.js': [('assert.strictEqual(VERSION, "v400.2");', 'assert.strictEqual(VERSION, "v401.0");')],
+              'security.test.js': [
+                  ('assert.strictEqual(VERSION, "v400.2");', 'assert.strictEqual(VERSION, "v401.0");'),
+                  ('PASS security and UX v400.2', 'PASS security and UX v401.0'),
+              ],
+              'function.test.js': [
+                  ('assert.strictEqual(VERSION, "v400.2");', 'assert.strictEqual(VERSION, "v401.0");'),
+                  ('v400.2', 'v401.0'),
+              ],
+              'catalog.test.js': [
+                  ('assert.strictEqual(data.version, "300.0");', 'assert.strictEqual(data.version, "401.0");'),
+                  ('assert.strictEqual(data.catalogVersion, "300.5");', 'assert.strictEqual(data.catalogVersion, "408.7");'),
+              ],
+          }
+          for filename, pairs in replacements.items():
+              path = Path(filename)
+              text = path.read_text(encoding='utf-8')
+              for old, new in pairs:
+                  text = text.replace(old, new)
+              path.write_text(text, encoding='utf-8')
+
+          release_path = Path('tools/release_check.js')
+          release = release_path.read_text(encoding='utf-8')
           marker = 'if (errors.length) {'
-          extra = '''\nif (data.catalogVersion !== "408.7") errors.push("官網素材版本未同步至 408.7");\nif (data.lineBotVersion !== "v401.0") errors.push("LINE OA 版本未同步至 v401.0");\nif ((data.products || []).length !== 6) errors.push("正式產品規格必須為六項");\nfor (const product of data.products || []) {\n  if (!String(product.image || "").endsWith("?v=408.7")) errors.push(`${product.id} 產品圖版本不正確`);\n  if (!String(product.dmImage || "").endsWith("?v=408.7")) errors.push(`${product.id} DM版本不正確`);\n}\nif (!server.includes('const VERSION = "v401.0";')) errors.push("server.js 版本不正確");\nif (!server.includes('const MASCOT_VERSION = "401.0";')) errors.push("小老闆快取版本不正確");\n\n'''
-          if extra.strip() not in release:
+          extra = '''
+          if (data.version !== "401.0") errors.push("LINE OA 資料版本未同步至 401.0");
+          if (data.catalogVersion !== "408.7") errors.push("官網素材版本未同步至 408.7");
+          if (data.lineBotVersion !== "v401.0") errors.push("LINE OA 版本未同步至 v401.0");
+          if (data.lineAssetsVersion !== "401.0") errors.push("小老闆素材版本未同步至 401.0");
+          if ((data.products || []).length !== 6) errors.push("正式產品規格必須為六項");
+          for (const product of data.products || []) {
+            if (!String(product.image || "").endsWith("?v=408.7")) errors.push(`${product.id} 產品圖版本不正確`);
+            if (!String(product.dmImage || "").endsWith("?v=408.7")) errors.push(`${product.id} DM版本不正確`);
+          }
+          if (!server.includes('const VERSION = "v401.0";')) errors.push("server.js 版本不正確");
+          if (!server.includes('const MASCOT_VERSION = "401.0";')) errors.push("小老闆快取版本不正確");
+          if (!server.includes('return "cart";')) errors.push("購物車小老闆路由未啟用");
+
+          '''
+          if 'LINE OA 資料版本未同步至 401.0' not in release:
               release = release.replace(marker, extra + marker, 1)
-          Path('tools/release_check.js').write_text(release, encoding='utf-8')
+          release_path.write_text(release, encoding='utf-8')
           PY
 
-      - name: Install and test
+      - name: Install and run complete tests
         run: |
           set -euo pipefail
+          npm install --package-lock-only --ignore-scripts
           npm ci
           npm test
           grep -q 'const VERSION = "v401.0";' server.js
+          grep -q 'const MASCOT_VERSION = "401.0";' server.js
           grep -q '"catalogVersion": "408.7"' data.json
           grep -q '"lineBotVersion": "v401.0"' data.json
+          grep -q '"lineAssetsVersion": "401.0"' data.json
           test "$(grep -o '?v=408.7' data.json | wc -l)" -ge 12
+          test "$(find public/mascot -maxdepth 1 -name '*.jpg' | wc -l)" -eq 9
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          manifest=json.loads(Path('public/mascot/manifest.json').read_text(encoding='utf-8'))
+          assert manifest['version']=='401.0'
+          assert len(manifest['images'])==9
+          for item in manifest['images'].values():
+              path=Path(item['file'])
+              assert path.is_file() and path.stat().st_size > 100000, path
+          print('九張 LINE OA 專用小老闆圖驗收通過')
+          PY
 
       - name: Commit main
         id: commit
@@ -111,8 +259,8 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add server.js data.json package.json README.md tools/release_check.js
-          git commit -m '同步官網v408.7並更新LINE OA正式版 v401.0'
+          git add server.js data.json package.json package-lock.json README.md tools/release_check.js test.js catalog.test.js security.test.js function.test.js public/mascot/manifest.json
+          git commit -m '完成 LINE OA 全面檢查與正式更新 v401.0'
           git push origin HEAD:main
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
@@ -121,7 +269,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body 'LINEOA_V401_SUCCESS｜六項產品、真實產品圖、正式DM、價格、購物車、結帳、CRM、FAQ與九張小老闆已同步官網v408.7，所有測試通過並推送main。'
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body 'LINEOA_V401_SUCCESS｜六項產品、真實產品圖、正式DM、價格、購物車、結帳、CRM、FAQ、九張LINE OA專用小老闆、健康檢查與完整測試皆已同步官網v408.7並推送main。'
           gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
 
       - name: Report failure
