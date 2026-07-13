@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   apply:
-    if: github.event.issue.title == 'APPLY_LINEOA_V401_FINAL2'
+    if: github.event.issue.title == 'APPLY_LINEOA_V401_FINAL3'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
@@ -29,7 +29,7 @@ jobs:
           set -euo pipefail
           python3 -m pip install --quiet gdown
           gdown '1cxoZ8AXdAPqUmZEuEp09Z67GxQA39_li' -O /tmp/apply_lineoa_v401.py
-          echo '353aea0fe3f7d699f784acc501d1c746902bedea9c28da364962b326c52c3c6a  /tmp/apply_lineoa_v401.py' | sha256sum -c -
+          echo 'e4db7414d5fe1280f35591f4a2535204b6d49e41fe343b35815f7cd383d7f863  /tmp/apply_lineoa_v401.py' | sha256sum -c -
 
       - name: Apply LINE OA v401.0
         run: |
