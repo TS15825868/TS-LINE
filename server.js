@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v312.0
+ * 仙加味 LINE OA Bot v401.0
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,9 +11,9 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v400.3";
+const VERSION = "v401.0";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
-const ORDER_NOTICE = "全系列可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
+const ORDER_NOTICE = "仙加味五大產品型態、六項正式規格皆可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
 const STATE_TTL_MS = Number(process.env.STATE_TTL_MS || 24 * 60 * 60 * 1000);
@@ -27,7 +27,7 @@ const config = {
 
 const app = express();
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
-const MASCOT_VERSION = "400.3";
+const MASCOT_VERSION = "401.0";
 const mascotAssetUrl = (name) => PUBLIC_BASE_URL
   ? `${PUBLIC_BASE_URL}/mascot/${name}.jpg?v=${MASCOT_VERSION}`
   : `https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${name}.jpg?v=${MASCOT_VERSION}`;
@@ -178,6 +178,7 @@ function mainQuick() {
     { label: "幫我推薦", text: "幫我推薦" },
     { label: "搭配組合", text: "搭配組合" },
     { label: "怎麼使用", text: "怎麼使用" },
+    { label: "常見問題", text: "常見問題" },
     { label: "購物車", text: "查看購買清單" },
     { label: "人工客服", text: "我要人工客服" },
   ];
@@ -321,7 +322,7 @@ function productCarousel() {
       contents: [
         mascotBubble(
           "小老闆介紹產品",
-          "先看產品型態與日常使用方式，再進入各產品卡查看規格、價格、使用方式與購買按鈕。",
+          "先看五大產品型態與六項正式規格，再進入各產品卡查看真實產品圖、價格、使用方式、正式DM與購買按鈕。",
           [
             { label: "幫我推薦", text: "幫我推薦" },
             { label: "搭配組合", text: "搭配組合" },
@@ -434,8 +435,23 @@ function cartTotal(cart) {
 }
 
 function cartFlex(state) {
+  const buildCartCard = (description, buttons) => {
+    const message = flexCard("購物車｜小老闆幫你整理", description, buttons);
+    message.contents.size = "mega";
+    message.contents.hero = {
+      type: "image",
+      url: absoluteUrl(MASCOT_PATHS.cart),
+      size: "full",
+      aspectRatio: "1:1",
+      aspectMode: "fit",
+      backgroundColor: "#EFE4D2",
+      action: { type: "uri", uri: absoluteUrl("products.html") },
+    };
+    return message;
+  };
+
   if (!state.cart.length) {
-    return flexCard("購物車", `目前購物車是空的。\n\n${ORDER_NOTICE}`, [
+    return buildCartCard(`目前購物車是空的。\n\n${ORDER_NOTICE}`, [
       { label: "看產品", text: "看產品" },
       { label: "價格方案", text: "價格方案" },
     ]);
@@ -445,7 +461,7 @@ function cartFlex(state) {
     .map((item, index) => `${index + 1}. ${item.name}\n數量：${item.qty}${item.unit}\n方案：${item.label}\n小計：${money(item.total)}`)
     .join("\n\n");
 
-  return flexCard("購物車", `${lines}\n\n合計：${money(cartTotal(state.cart))}\n\n${ORDER_NOTICE}`, [
+  return buildCartCard(`${lines}\n\n合計：${money(cartTotal(state.cart))}\n\n${ORDER_NOTICE}`, [
     { label: "直接結帳", text: "開始結帳" },
     { label: "繼續選購", text: "看產品" },
     { label: "清空購物車", text: "清空購物車" },
@@ -471,7 +487,8 @@ function mascotPoseForTitle(title = "") {
   if (/搭配|組合/.test(title)) return "combo";
   if (/推薦|幫你選|怎麼選/.test(title)) return "recommend";
   if (/傳承|故事|品牌|漢方|百科|資料/.test(title)) return "brand";
-  if (/產品|介紹|價格|購物車/.test(title)) return "products";
+  if (/購物車|購買清單/.test(title)) return "cart";
+  if (/產品|介紹|價格/.test(title)) return "products";
   return "welcome";
 }
 
@@ -497,7 +514,7 @@ function mascotWelcomeReply() {
     altText: "歡迎來到仙加味",
     contents: mascotBubble(
       "歡迎來到仙加味",
-      `您好，歡迎來到仙加味。\n\n我可以帶您查看產品、比較怎麼選、了解搭配組合與使用方式。\n\n${ORDER_NOTICE}`,
+      `您好，歡迎來到仙加味。\n\n我可以帶您查看六項產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。\n\n${ORDER_NOTICE}`,
       [
         { label: "看產品", text: "看產品" },
         { label: "幫我推薦", text: "幫我推薦" },
@@ -1184,6 +1201,10 @@ app.get("/healthz", (_req, res) => {
     orderOpen: true,
     credentialsConfigured: Boolean(config.channelAccessToken && config.channelSecret),
     crmConfigured: Boolean(CRM_URL),
+    catalogVersion: DATA.catalogVersion || "",
+    mascotVersion: MASCOT_VERSION,
+    productCount: DATA.products.length,
+    mascotAssetsReady: Object.values(MASCOT_PATHS).every((asset) => Boolean(asset)),
     activeStates: states.size,
   });
 });

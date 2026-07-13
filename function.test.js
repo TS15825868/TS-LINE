@@ -39,7 +39,7 @@ function validateBubble(value) {
   validateMessage(wrapped);
 }
 
-assert.strictEqual(VERSION, "v400.2");
+assert.strictEqual(VERSION, "v401.0");
 const messages = [
   productMenuReply(), priceCarousel(), mascotWelcomeReply(), recommendReply(), comboMenuReply(),
   usageChooserReply(), doctorReferralReply(), huangdiNeijingReply(),
@@ -63,7 +63,7 @@ const source = fs.readFileSync("server.js", "utf8");
 for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
   assert.ok(source.includes(command), "missing command: " + command);
 }
-console.log("PASS full LINE function matrix v400.2");
+console.log("PASS full LINE function matrix v401.0");
 
 const expectedSales = {
   "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5] },
@@ -85,7 +85,7 @@ for (const product of DATA.products) {
   assert.strictEqual(menu.contents.footer.contents.length, 5);
   validateMessage(menu);
 }
-console.log("PASS quantity options and promotions v400.2");
+console.log("PASS quantity options and promotions v401.0");
 
 const websiteIntentCases = [
   ["我看了產品整理，想請你幫我比較產品。", "recommend"],
@@ -100,7 +100,7 @@ const websiteIntentCases = [
 for (const [message, expected] of websiteIntentCases) {
   assert.strictEqual(detectWebsiteIntent(message), expected, message);
 }
-console.log("PASS website message routing v400.2");
+console.log("PASS website message routing v401.0");
 
 const expectedComboPrices = [2500, 3500, 3600, 6100, 11600];
 for (let index = 0; index < expectedComboPrices.length; index += 1) {
@@ -121,7 +121,7 @@ assert.strictEqual(comboState.cart.length, 1);
 assert.strictEqual(comboState.cart[0].qty, 3);
 assert.strictEqual(comboState.cart[0].total, 10800);
 assert.ok(comboPromotionLines(getCombo(1)).some((line) => line.includes("買10送2")));
-console.log("PASS combo prices, quantities, promotions and cart v400.2");
+console.log("PASS combo prices, quantities, promotions and cart v401.0");
 
 for (const product of DATA.products) {
   const menu = productMenuReply();
@@ -135,7 +135,7 @@ for (const product of DATA.products) {
   assert.ok(dmButton, product.id + " missing DM button");
   assert.ok(dmButton.action.uri.includes("/images/dm-final/"), product.id + " wrong DM URL: " + dmButton.action.uri);
 }
-console.log("PASS LINE product images and final DM buttons v400.2");
+console.log("PASS LINE product images and final DM buttons v401.0");
 
 for (const message of [mascotWelcomeReply(), recommendReply(), comboMenuReply(), usageChooserReply()]) {
   const bubble = message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;
@@ -143,4 +143,4 @@ for (const message of [mascotWelcomeReply(), recommendReply(), comboMenuReply(),
   assert.ok(bubble.hero.url.includes("/TS-LINE/main/public/mascot/"), "小老闆卡未使用 TS-LINE 本地圖片：" + bubble.hero.url);
   assert.strictEqual(bubble.hero.aspectMode, "fit");
 }
-console.log("PASS LINE OA dedicated local mascot cards v400.2");
+console.log("PASS LINE OA dedicated local mascot cards v401.0");

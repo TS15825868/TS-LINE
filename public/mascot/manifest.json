@@ -1,6 +1,6 @@
 {
-  "version": "400.3",
-  "scope": "TS-LINE/main LINE OA mascot assets only",
+  "version": "401.0",
+  "scope": "TS-LINE/main LINE OA dedicated mascot assets",
   "aspectRatio": "1:1",
   "images": {
     "brand": {
@@ -66,5 +66,6 @@
       "bytes": 229710,
       "sha256": "f2a66a7fddc5c3727718c84fbb33e382e489d7bae5337936a4050b04c32dff04"
     }
-  }
+  },
+  "verifiedAt": "2026-07-13"
 }

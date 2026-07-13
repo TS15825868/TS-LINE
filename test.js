@@ -24,7 +24,7 @@ const {
   isSensitiveHealthQuestion,
 } = require("./server");
 
-assert.strictEqual(VERSION, "v400.2");
+assert.strictEqual(VERSION, "v401.0");
 assert.deepStrictEqual(
   DATA.products.map((product) => product.id),
   ["guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]

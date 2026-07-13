@@ -53,6 +53,20 @@ for (const token of requiredServerTokens) {
 if (/channelAccessToken\s*:\s*["'][^"']{20,}/.test(server)) errors.push("server.js 疑似含硬編碼 access token");
 if (/channelSecret\s*:\s*["'][^"']{10,}/.test(server)) errors.push("server.js 疑似含硬編碼 channel secret");
 
+
+if (data.version !== "401.0") errors.push("LINE OA 資料版本未同步至 401.0");
+if (data.catalogVersion !== "408.7") errors.push("官網素材版本未同步至 408.7");
+if (data.lineBotVersion !== "v401.0") errors.push("LINE OA 版本未同步至 v401.0");
+if (data.lineAssetsVersion !== "401.0") errors.push("小老闆素材版本未同步至 401.0");
+if ((data.products || []).length !== 6) errors.push("正式產品規格必須為六項");
+for (const product of data.products || []) {
+  if (!String(product.image || "").endsWith("?v=408.7")) errors.push(`${product.id} 產品圖版本不正確`);
+  if (!String(product.dmImage || "").endsWith("?v=408.7")) errors.push(`${product.id} DM版本不正確`);
+}
+if (!server.includes('const VERSION = "v401.0";')) errors.push("server.js 版本不正確");
+if (!server.includes('const MASCOT_VERSION = "401.0";')) errors.push("小老闆快取版本不正確");
+if (!server.includes('return "cart";')) errors.push("購物車小老闆路由未啟用");
+
 if (errors.length) {
   console.error("LINE OA 正式上線檢查失敗：\n- " + errors.join("\n- "));
   process.exit(1);
