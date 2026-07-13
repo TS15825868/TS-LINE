@@ -16,6 +16,10 @@ function clean(message) {
   return cleanOutgoingMessages(JSON.parse(JSON.stringify(message)));
 }
 
+function firstBubble(message) {
+  return message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;
+}
+
 const products = clean(productCarousel());
 assert.strictEqual(products.contents.type, "carousel");
 assert.strictEqual(products.contents.contents.length, 6, "產品入口應直接顯示六張真實產品卡");
@@ -27,21 +31,12 @@ for (const bubble of products.contents.contents) {
   );
 }
 
-const textOnlyCards = [
-  clean(mascotWelcomeReply()),
-  clean(recommendReply()),
-  clean(comboMenuReply()),
-  clean(usageChooserReply()),
-  clean(cartFlex({ cart: [], checkout: null })),
-];
-
-for (const message of textOnlyCards) {
-  const bubbles = message.contents.type === "carousel" ? message.contents.contents : [message.contents];
-  const first = bubbles[0];
-  assert.ok(!first.hero, "缺少合格獨立情境圖時應使用乾淨文字卡，不得拼湊");
+for (const message of [clean(mascotWelcomeReply()), clean(recommendReply()), clean(usageChooserReply()), clean(faqReply())]) {
+  assert.ok(firstBubble(message).hero, "歡迎、推薦、使用方式與FAQ應保留一張獨立小老闆圖");
 }
 
-const faq = clean(faqReply());
-assert.ok(faq.contents.hero, "FAQ可保留已核准的單一場景專用圖");
+for (const message of [clean(comboMenuReply()), clean(cartFlex({ cart: [], checkout: null }))]) {
+  assert.ok(!firstBubble(message).hero, "搭配組合與空購物車在沒有合格獨立圖時應維持乾淨文字卡");
+}
 
-console.log("PASS LINE OA image policy v401.1: no collage, real product images only, clean fallback cards");
+console.log("PASS LINE OA image policy v401.2: real product cards, selective mascot use, no collage");
