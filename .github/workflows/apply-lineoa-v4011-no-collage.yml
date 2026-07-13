@@ -1,6 +1,9 @@
 name: Apply LINE OA v401.1 no collage
 
 on:
+  push:
+    branches: [main]
+    paths: ['.trigger-v4011-no-collage']
   issues:
     types: [opened]
 
@@ -10,7 +13,7 @@ permissions:
 
 jobs:
   apply:
-    if: github.event.issue.title == 'APPLY_LINEOA_V4011_NO_COLLAGE'
+    if: github.event_name == 'push' || github.event.issue.title == 'APPLY_LINEOA_V4011_NO_COLLAGE'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +26,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import json, re
+          import json
 
           server_path=Path('server.js')
           s=server_path.read_text(encoding='utf-8')
@@ -45,9 +48,10 @@ jobs:
       ],'''
           new='''      // 產品列表直接顯示六張真實產品卡，不先放多產品拼湊圖。
       contents: DATA.products.map(productBubble),'''
-          if old not in s:
-              raise SystemExit('找不到產品拼湊卡片區塊')
-          s=s.replace(old,new,1)
+          if old in s:
+              s=s.replace(old,new,1)
+          elif 'contents: DATA.products.map(productBubble)' not in s:
+              raise SystemExit('找不到產品卡片區塊')
 
           marker='''    message.contents.hero = {
       type: "image",
@@ -62,9 +66,8 @@ jobs:
           replacement='''    // 購物車缺少符合標準的獨立情境圖時，不使用產品或舊圖拼湊。
     // 保留清楚的文字、金額與按鈕，待獨立專用圖完成後再單張替換。
     return message;'''
-          if marker not in s:
-              raise SystemExit('找不到購物車拼湊圖區塊')
-          s=s.replace(marker,replacement,1)
+          if marker in s:
+              s=s.replace(marker,replacement,1)
           server_path.write_text(s,encoding='utf-8')
 
           data_path=Path('data.json')
@@ -115,11 +118,9 @@ jobs:
               p.write_text(text,encoding='utf-8')
 
           release=Path('tools/release_check.js')
-          rt=release.read_text(encoding='utf-8').replace('v401.0','v401.1')
-          release.write_text(rt,encoding='utf-8')
+          release.write_text(release.read_text(encoding='utf-8').replace('v401.0','v401.1'),encoding='utf-8')
 
-          readme=Path('README.md').read_text(encoding='utf-8')
-          readme=readme.replace('v4.1.0','v4.1.1')
+          readme=Path('README.md').read_text(encoding='utf-8').replace('v4.1.0','v4.1.1')
           if '不拼湊圖片規則' not in readme:
               readme += '''\n## 不拼湊圖片規則\n\n- 產品卡只使用真實產品原圖。\n- 功能卡一個用途只使用一張獨立情境圖。\n- 沒有符合標準的圖片時先不顯示圖片，改為製作新的單一場景圖。\n- 不把產品、人物、背景與舊海報截圖拼成一張；不重畫產品包裝。\n'''
           Path('README.md').write_text(readme,encoding='utf-8')
@@ -139,13 +140,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add server.js data.json package.json README.md test.js security.test.js function.test.js tools/release_check.js
+          rm -f .trigger-v4011-no-collage
+          git add -A
           git commit -m '依品牌標準移除LINE OA拼湊圖 v401.1'
           git push origin HEAD:main
-
-      - name: Report
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body 'LINEOA_V4011_NO_COLLAGE_SUCCESS｜看產品改為直接顯示六張真實產品卡；購物車在沒有合格獨立圖時不使用拼湊圖。產品包裝不重畫，缺圖另做單一場景專用圖。完整測試通過並推送main。'
-          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
