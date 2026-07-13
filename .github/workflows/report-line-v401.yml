@@ -10,26 +10,21 @@ permissions:
 
 jobs:
   report:
-    if: github.event.issue.title == 'REPORT_LINEOA_V401_EXACT'
+    if: github.event.issue.title == 'REPORT_LINEOA_V401_EXACT2'
     runs-on: ubuntu-latest
     steps:
-      - name: Collect exact job log
+      - name: Collect exact job log tail
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          gh api -H 'Accept: application/vnd.github+json' /repos/${{ github.repository }}/actions/jobs/86814751499/logs > /tmp/joblog.zip
-          file /tmp/joblog.zip > /tmp/filetype.txt
-          if unzip -t /tmp/joblog.zip >/dev/null 2>&1; then
-            unzip -p /tmp/joblog.zip > /tmp/joblog.txt
-          else
-            cp /tmp/joblog.zip /tmp/joblog.txt
-          fi
+          gh api -H 'Accept: application/vnd.github+json' /repos/${{ github.repository }}/actions/jobs/86814751499/logs > /tmp/joblog.txt
           {
-            echo 'LINEOA_V401_EXACT_FAILURE'
+            echo 'LINEOA_V401_EXACT_FAILURE_2'
             echo '```text'
-            cat /tmp/filetype.txt
-            tail -220 /tmp/joblog.txt
+            grep -nE 'AssertionError|ERR_ASSERTION|SyntaxError|ReferenceError|TypeError|Error:|FAIL|failed|exit code' /tmp/joblog.txt | tail -80
+            echo '---TAIL---'
+            tail -70 /tmp/joblog.txt
             echo '```'
           } > /tmp/comment.txt
           gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file /tmp/comment.txt
