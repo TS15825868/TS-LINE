@@ -1,5 +1,5 @@
 {
-  "version": "401.1",
+  "version": "401.2",
   "updatedAt": "2026-07-13",
   "branch": "main",
   "service": "https://ts-line.onrender.com",
@@ -8,8 +8,9 @@
     "productCards": "real-product-images-only",
     "productIntroCollage": false,
     "redrawnPackaging": false,
-    "missingDedicatedImage": "text-card-until-approved-single-scene-image",
-    "approvedSingleSceneCards": ["faq", "support", "brand"]
+    "approvedSingleSceneCards": ["welcome", "recommend", "usage", "faq", "support", "brand"],
+    "textOnlyUntilApprovedImage": ["combo", "emptyCart"],
+    "onePurposeOneImage": true
   },
   "catalogVersion": "408.7",
   "productCount": 6
