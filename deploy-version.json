@@ -1,0 +1,16 @@
+{
+  "version": "401.1",
+  "updatedAt": "2026-07-13",
+  "branch": "main",
+  "service": "https://ts-line.onrender.com",
+  "status": "production",
+  "imagePolicy": {
+    "productCards": "real-product-images-only",
+    "productIntroCollage": false,
+    "redrawnPackaging": false,
+    "missingDedicatedImage": "text-card-until-approved-single-scene-image",
+    "approvedSingleSceneCards": ["faq", "support", "brand"]
+  },
+  "catalogVersion": "408.7",
+  "productCount": 6
+}
