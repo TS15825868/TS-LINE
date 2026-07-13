@@ -1,4 +1,4 @@
-name: Report LINE OA v401 failure
+name: Report LINE OA v401 exact failure
 
 on:
   issues:
@@ -10,29 +10,26 @@ permissions:
 
 jobs:
   report:
-    if: github.event.issue.title == 'REPORT_LINEOA_V401'
+    if: github.event.issue.title == 'REPORT_LINEOA_V401_EXACT'
     runs-on: ubuntu-latest
     steps:
-      - name: Collect failure
+      - name: Collect exact job log
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          gh run list --repo "${{ github.repository }}" --workflow apply-lineoa-v401.yml --limit 5 --json databaseId,status,conclusion,headSha,displayTitle,createdAt > /tmp/runs.json
-          run_id=$(python3 - <<'PY'
-          import json
-          runs=json.load(open('/tmp/runs.json'))
-          print(runs[0]['databaseId'] if runs else '')
-          PY
-          )
-          gh run view "$run_id" --repo "${{ github.repository }}" --log-failed > /tmp/failed.log 2>&1
+          gh api -H 'Accept: application/vnd.github+json' /repos/${{ github.repository }}/actions/jobs/86814751499/logs > /tmp/joblog.zip
+          file /tmp/joblog.zip > /tmp/filetype.txt
+          if unzip -t /tmp/joblog.zip >/dev/null 2>&1; then
+            unzip -p /tmp/joblog.zip > /tmp/joblog.txt
+          else
+            cp /tmp/joblog.zip /tmp/joblog.txt
+          fi
           {
-            echo 'LINEOA_V401_FAILURE_REPORT'
-            echo '```json'
-            cat /tmp/runs.json
-            echo '```'
+            echo 'LINEOA_V401_EXACT_FAILURE'
             echo '```text'
-            tail -220 /tmp/failed.log
+            cat /tmp/filetype.txt
+            tail -220 /tmp/joblog.txt
             echo '```'
           } > /tmp/comment.txt
           gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file /tmp/comment.txt
