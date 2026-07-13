@@ -1,19 +1,19 @@
 "use strict";
 
 /**
- * LINE OA 圖片政策 v401.1
+ * LINE OA 圖片政策 v401.2
  * - 產品卡僅保留官網真實產品原圖。
  * - 移除「小老闆介紹產品」多產品拼湊卡。
- * - 歡迎、推薦、搭配、使用與購物車在缺少合格獨立情境圖時改用乾淨文字卡。
- * - FAQ、客服與品牌故事可保留單一場景專用圖。
+ * - 歡迎、推薦、使用方式、FAQ、客服與品牌故事可保留一張獨立小老闆情境圖。
+ * - 搭配組合與購物車目前缺少符合標準的獨立圖，維持乾淨文字卡。
  * - 不重畫產品包裝，不使用九宮格、截圖或舊圖拼貼。
  */
 
 const line = require("@line/bot-sdk");
 
 const originalReplyMessage = line.Client.prototype.replyMessage;
-const PRESERVE_MASCOT_TITLES = /常見問題|FAQ|客服服務|人工客服|品牌故事|品牌傳承/;
-const REMOVE_MASCOT_TITLES = /歡迎|小老闆介紹產品|幫你選|推薦|怎麼選|搭配|組合|使用方式|怎麼使用|購物車|購買清單|價格方案/;
+const PRESERVE_MASCOT_TITLES = /歡迎|幫你選|推薦|怎麼選|使用方式|怎麼使用|常見問題|FAQ|客服服務|人工客服|品牌故事|品牌傳承/;
+const REMOVE_MASCOT_TITLES = /小老闆介紹產品|產品介紹|價格方案|搭配|組合|購物車|購買清單/;
 
 function collectText(node, output = []) {
   if (!node || typeof node !== "object") return output;
