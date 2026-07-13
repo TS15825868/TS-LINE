@@ -1,0 +1,132 @@
+name: Apply LINE OA v401.0
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: apply-lineoa-v401
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.event.issue.title == 'APPLY_LINEOA_V401'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Sync LINE OA with website v408.7
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          BOT_VERSION = 'v401.0'
+          ASSET_VERSION = '408.7'
+
+          server_path = Path('server.js')
+          server = server_path.read_text(encoding='utf-8')
+          server = re.sub(r'仙加味 LINE OA Bot v[^\n]+', '仙加味 LINE OA Bot v401.0', server, count=1)
+          server = re.sub(r'const VERSION = "v[^"]+";', f'const VERSION = "{BOT_VERSION}";', server, count=1)
+          server = re.sub(r'const MASCOT_VERSION = "[^"]+";', 'const MASCOT_VERSION = "401.0";', server, count=1)
+          server = re.sub(
+              r'const ORDER_NOTICE = "[^"]*";',
+              'const ORDER_NOTICE = "仙加味五大產品型態、六項正式規格皆可詢問與下單；實際庫存、活動與出貨時間由客服確認。";',
+              server,
+              count=1,
+          )
+          server = server.replace(
+              '{ label: "怎麼使用", text: "怎麼使用" },\n    { label: "購物車", text: "查看購買清單" },',
+              '{ label: "怎麼使用", text: "怎麼使用" },\n    { label: "常見問題", text: "常見問題" },\n    { label: "購物車", text: "查看購買清單" },',
+              1,
+          )
+          server = server.replace(
+              '先看產品型態與日常使用方式，再進入各產品卡查看規格、價格、使用方式與購買按鈕。',
+              '先看五大產品型態與六項正式規格，再進入各產品卡查看真實產品圖、價格、使用方式、正式DM與購買按鈕。',
+              1,
+          )
+          server = server.replace(
+              '我可以帶您查看產品、比較怎麼選、了解搭配組合與使用方式。',
+              '我可以帶您查看六項產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。',
+              1,
+          )
+          server_path.write_text(server, encoding='utf-8')
+
+          data_path = Path('data.json')
+          data = json.loads(data_path.read_text(encoding='utf-8'))
+          data['catalogVersion'] = ASSET_VERSION
+          data['lineBotVersion'] = BOT_VERSION
+          data['siteUrl'] = 'https://ts15825868.github.io/xianjiawei/'
+          required = {
+              'guilu-gao', 'guilu-drink-30', 'guilu-drink-180',
+              'guilu-tangkuai', 'guilu-jiao', 'luerong-fen'
+          }
+          found = {p.get('id') for p in data.get('products', [])}
+          assert found == required, (found, required)
+          for product in data['products']:
+              for key in ('image', 'dmImage'):
+                  value = str(product.get(key, ''))
+                  base = value.split('?')[0]
+                  product[key] = f'{base}?v={ASSET_VERSION}'
+          data_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          package_path = Path('package.json')
+          package = json.loads(package_path.read_text(encoding='utf-8'))
+          package['version'] = '4.1.0'
+          package['description'] = '仙加味 LINE OA 正式版｜九種本地高解析小老闆、六項產品卡、價格、購物車、結帳、CRM、品牌故事、FAQ與使用方式'
+          package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          Path('README.md').write_text('''# 仙加味 LINE OA v4.1.0\n\n正式版以 `server.js` 為主程式、`start.js` 為部署啟動器、`data.json` 為產品與方案資料中心。\n\n## 正式功能\n\n- 五大產品型態、六項正式規格，與仙加味官網 v408.7 同步。\n- 九種 LINE OA 專用高清小老闆：welcome、products、recommend、combo、usage、faq、service、brand、cart。\n- 產品卡固定使用真實產品原圖，另提供正式 DM、完整官網介紹與使用方式。\n- 價格方案、數量選擇、購物車、結帳、配送、付款與 CRM 訂單寫入。\n- 常見問題、品牌故事、門市資訊、人工客服與健康敏感問題轉介。\n- LINE 憑證只從部署平台環境變數讀取，不寫入程式庫。\n\n## 必要環境變數\n\n- `CHANNEL_ACCESS_TOKEN`\n- `CHANNEL_SECRET`\n- `CRM_URL`\n\n## 選用環境變數\n\n- `PUBLIC_BASE_URL`：LINE OA 對外服務網址；Render 可使用 `RENDER_EXTERNAL_URL`。\n- `CRM_TIMEOUT_MS`、`STATE_TTL_MS`、`STATE_CLEANUP_INTERVAL_MS`、`MAX_STATE_ENTRIES`。\n\n## 檢查\n\n```bash\nnpm test\n```\n''', encoding='utf-8')
+
+          release = Path('tools/release_check.js').read_text(encoding='utf-8')
+          marker = 'if (errors.length) {'
+          extra = '''\nif (data.catalogVersion !== "408.7") errors.push("官網素材版本未同步至 408.7");\nif (data.lineBotVersion !== "v401.0") errors.push("LINE OA 版本未同步至 v401.0");\nif ((data.products || []).length !== 6) errors.push("正式產品規格必須為六項");\nfor (const product of data.products || []) {\n  if (!String(product.image || "").endsWith("?v=408.7")) errors.push(`${product.id} 產品圖版本不正確`);\n  if (!String(product.dmImage || "").endsWith("?v=408.7")) errors.push(`${product.id} DM版本不正確`);\n}\nif (!server.includes('const VERSION = "v401.0";')) errors.push("server.js 版本不正確");\nif (!server.includes('const MASCOT_VERSION = "401.0";')) errors.push("小老闆快取版本不正確");\n\n'''
+          if extra.strip() not in release:
+              release = release.replace(marker, extra + marker, 1)
+          Path('tools/release_check.js').write_text(release, encoding='utf-8')
+          PY
+
+      - name: Install and test
+        run: |
+          set -euo pipefail
+          npm ci
+          npm test
+          grep -q 'const VERSION = "v401.0";' server.js
+          grep -q '"catalogVersion": "408.7"' data.json
+          grep -q '"lineBotVersion": "v401.0"' data.json
+          test "$(grep -o '?v=408.7' data.json | wc -l)" -ge 12
+
+      - name: Commit main
+        id: commit
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server.js data.json package.json README.md tools/release_check.js
+          git commit -m '同步官網v408.7並更新LINE OA正式版 v401.0'
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Report success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body 'LINEOA_V401_SUCCESS｜六項產品、真實產品圖、正式DM、價格、購物車、結帳、CRM、FAQ與九張小老闆已同步官網v408.7，所有測試通過並推送main。'
+          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body 'LINEOA_V401_FAILURE｜本次更新未完成，不宣稱上線；請查看失敗步驟。'
