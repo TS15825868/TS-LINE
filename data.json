@@ -1018,21 +1018,30 @@
     "role": "官網與 LINE OA 共用公開產品資料來源"
   },
   "catalogSyncedAt": "2026-07-13",
-  "lineAssetsVersion": "401.5",
-  "lineBotVersion": "v401.5",
+  "lineAssetsVersion": "401.6",
+  "lineBotVersion": "v401.6",
   "runtime": {
-    "version": "401.5",
-    "botVersion": "v401.5",
+    "version": "401.6",
+    "botVersion": "v401.6",
     "branch": "main",
     "service": "https://ts-line.onrender.com",
     "status": "production",
     "requiredEnvironment": [
       "CHANNEL_ACCESS_TOKEN",
       "CHANNEL_SECRET",
-      "CRM_URL"
+      "CRM_URL",
+      "SUPABASE_SECRET_KEY",
+      "INTERNAL_APP_PASSWORD",
+      "INTERNAL_APP_SECRET",
+      "SOCIAL_ADMIN_PIN"
     ],
     "optionalEnvironment": [
-      "PUBLIC_BASE_URL"
+      "PUBLIC_BASE_URL",
+      "SUPABASE_URL",
+      "META_PAGE_ID",
+      "META_PAGE_ACCESS_TOKEN",
+      "INSTAGRAM_USER_ID",
+      "INSTAGRAM_ACCESS_TOKEN"
     ],
     "imagePolicy": {
       "productCards": "real-product-images-only",
@@ -1044,10 +1053,10 @@
         "usage",
         "faq",
         "support",
-        "brand"
+        "brand",
+        "combo"
       ],
       "textOnlyUntilApprovedImage": [
-        "combo",
         "emptyCart"
       ],
       "onePurposeOneImage": true
