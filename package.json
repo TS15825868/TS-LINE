@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "4.1.3",
+  "version": "4.1.4",
   "main": "server.js",
   "engines": {
     "node": "22.x"

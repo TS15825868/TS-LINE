@@ -14,7 +14,7 @@ const expectedIds = [
   "luerong-fen",
 ];
 
-assert.strictEqual(data.version, "401.3");
+assert.strictEqual(data.version, "401.4");
 assert.strictEqual(data.catalogVersion, "408.7");
 assert.strictEqual(data.catalogSource.repository, "TS15825868/xianjiawei");
 assert.strictEqual(data.lineId, "@762jybnm");

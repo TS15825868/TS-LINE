@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v401.3
+ * 仙加味 LINE OA Bot v401.4
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v401.3";
+const VERSION = "v401.4";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "仙加味五大產品型態、六項正式規格皆可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -27,12 +27,17 @@ const config = {
 
 const app = express();
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
-const MASCOT_VERSION = "401.3";
+const MASCOT_VERSION = "401.4";
 const mascotAssetUrl = (name) => PUBLIC_BASE_URL
   ? `${PUBLIC_BASE_URL}/mascot/${name}.jpg?v=${MASCOT_VERSION}`
   : `https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${name}.jpg?v=${MASCOT_VERSION}`;
 app.use("/mascot", express.static(path.join(__dirname, "public", "mascot"), { maxAge: "7d", immutable: true }));
-const client = config.channelAccessToken && config.channelSecret ? new line.Client(config) : null;
+const client = config.channelAccessToken
+  ? new line.messagingApi.MessagingApiClient({ channelAccessToken: config.channelAccessToken })
+  : null;
+let lastWebhookAt = "";
+let lastReplySuccessAt = "";
+let lastReplyError = "";
 const states = new Map();
 const processedWebhookEvents = new Map();
 const WEBHOOK_EVENT_TTL_MS = 10 * 60 * 1000;
@@ -229,16 +234,56 @@ function flexCard(title, description, buttons = []) {
   };
 }
 
+function fallbackReplyText(messages) {
+  const list = Array.isArray(messages) ? messages : [messages];
+  for (const message of list) {
+    if (message?.type === "text" && message.text) return String(message.text).slice(0, 5000);
+    if (message?.type === "flex" && message.altText) return String(message.altText).slice(0, 5000);
+  }
+  return "仙加味已收到您的訊息，請稍候再試一次，或輸入「人工客服」。";
+}
+
 async function reply(token, messages) {
   if (!client) {
+    lastReplyError = "LINE credentials are not configured";
     console.warn("LINE credentials are not configured; reply skipped.");
-    return;
+    return false;
   }
+
+  const normalized = Array.isArray(messages) ? messages : [messages];
   try {
-    await client.replyMessage(token, Array.isArray(messages) ? messages : [messages]);
+    await client.replyMessage({ replyToken: token, messages: normalized });
+    lastReplySuccessAt = new Date().toISOString();
+    lastReplyError = "";
+    return true;
   } catch (error) {
-    const detail = error?.originalError?.response?.data || error?.response?.data || error.message || error;
-    console.error("LINE 回覆失敗：", typeof detail === "object" ? JSON.stringify(detail) : detail);
+    const detail = error?.body || error?.originalError?.response?.data || error?.response?.data || error.message || error;
+    lastReplyError = typeof detail === "object" ? JSON.stringify(detail).slice(0, 1000) : String(detail).slice(0, 1000);
+    console.error("LINE 回覆失敗：", lastReplyError);
+
+    if (normalized.some((message) => message?.type !== "text")) {
+      try {
+        await client.replyMessage({
+          replyToken: token,
+          messages: [{
+            type: "text",
+            text: fallbackReplyText(normalized),
+            quickReply: {
+              items: mainQuick().slice(0, 13).map((item) => ({
+                type: "action",
+                action: { type: "message", label: item.label, text: item.text },
+              })),
+            },
+          }],
+        });
+        lastReplySuccessAt = new Date().toISOString();
+        return true;
+      } catch (fallbackError) {
+        const fallbackDetail = fallbackError?.body || fallbackError?.message || fallbackError;
+        lastReplyError += ` | fallback: ${typeof fallbackDetail === "object" ? JSON.stringify(fallbackDetail) : String(fallbackDetail)}`;
+        console.error("LINE 純文字備援回覆失敗：", lastReplyError);
+      }
+    }
     return false;
   }
 }
@@ -1159,6 +1204,7 @@ async function handleMessage(event) {
 }
 
 async function handleEvent(event) {
+  lastWebhookAt = new Date().toISOString();
   if (shouldSkipWebhookEvent(event)) return Promise.resolve();
   if (event.type === "follow") {
     return reply(
@@ -1187,17 +1233,21 @@ app.get("/healthz", (_req, res) => {
     productCount: DATA.products.length,
     mascotAssetsReady: Object.values(MASCOT_PATHS).every((asset) => Boolean(asset)),
     activeStates: states.size,
+    lastWebhookAt,
+    lastReplySuccessAt,
+    lastReplyError,
+    replyClient: "MessagingApiClient",
   });
 });
 
 if (config.channelAccessToken && config.channelSecret) {
-  app.post("/webhook", line.middleware(config), async (req, res) => {
-    const results = await Promise.allSettled(req.body.events.map(handleEvent));
-    const failed = results.filter((result) => result.status === "rejected");
-    if (failed.length) {
-      console.error("LINE 事件處理失敗數：" + failed.length);
-    }
+  app.post("/webhook", line.middleware(config), (req, res) => {
+    // 先快速回覆 LINE 200，避免 Render 冷啟動或訊息處理時間造成 webhook 逾時。
     res.json({ ok: true });
+    Promise.allSettled((req.body.events || []).map(handleEvent)).then((results) => {
+      const failed = results.filter((result) => result.status === "rejected");
+      if (failed.length) console.error("LINE 事件處理失敗數：" + failed.length);
+    });
   });
 } else {
   console.warn("LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.");
