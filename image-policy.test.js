@@ -28,4 +28,4 @@ for (const message of [mascotWelcomeReply(), recommendReply(), usageChooserReply
 for (const message of [comboMenuReply(), cartFlex({ cart: [], checkout: null })]) {
   assert.ok(!firstBubble(message).hero, "搭配組合與空購物車應維持乾淨文字卡");
 }
-console.log("PASS LINE OA integrated image policy v401.4");
+console.log("PASS LINE OA integrated image policy v401.5");

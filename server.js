@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v401.4
+ * 仙加味 LINE OA Bot v401.5
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v401.4";
+const VERSION = "v401.5";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "仙加味五大產品型態、六項正式規格皆可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -27,7 +27,7 @@ const config = {
 
 const app = express();
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
-const MASCOT_VERSION = "401.4";
+const MASCOT_VERSION = "401.5";
 const mascotAssetUrl = (name) => PUBLIC_BASE_URL
   ? `${PUBLIC_BASE_URL}/mascot/${name}.jpg?v=${MASCOT_VERSION}`
   : `https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${name}.jpg?v=${MASCOT_VERSION}`;
@@ -40,22 +40,29 @@ let lastReplySuccessAt = "";
 let lastReplyError = "";
 const states = new Map();
 const processedWebhookEvents = new Map();
+const processingWebhookEvents = new Set();
 const WEBHOOK_EVENT_TTL_MS = 10 * 60 * 1000;
 
-function shouldSkipWebhookEvent(event) {
-  const id = String(event?.webhookEventId || "");
-  if (event?.deliveryContext?.isRedelivery) {
-    console.warn("略過 LINE 重送事件：" + (id || "unknown"));
-    return true;
-  }
-  if (!id) return false;
-  const now = Date.now();
+function cleanupWebhookEventCache(now = Date.now()) {
   for (const [key, createdAt] of processedWebhookEvents) {
     if (now - createdAt > WEBHOOK_EVENT_TTL_MS) processedWebhookEvents.delete(key);
   }
-  if (processedWebhookEvents.has(id)) return true;
-  processedWebhookEvents.set(id, now);
-  return false;
+}
+
+function beginWebhookEvent(event) {
+  const id = String(event?.webhookEventId || "");
+  cleanupWebhookEventCache();
+  if (!id) return true;
+  if (processedWebhookEvents.has(id) || processingWebhookEvents.has(id)) return false;
+  processingWebhookEvents.add(id);
+  return true;
+}
+
+function finishWebhookEvent(event, success) {
+  const id = String(event?.webhookEventId || "");
+  if (!id) return;
+  processingWebhookEvents.delete(id);
+  if (success) processedWebhookEvents.set(id, Date.now());
 }
 const DATA = loadData();
 
@@ -1205,16 +1212,27 @@ async function handleMessage(event) {
 
 async function handleEvent(event) {
   lastWebhookAt = new Date().toISOString();
-  if (shouldSkipWebhookEvent(event)) return Promise.resolve();
-  if (event.type === "follow") {
-    return reply(
-      event.replyToken,
-      mascotWelcomeReply()
-    );
+  if (!beginWebhookEvent(event)) return Promise.resolve();
+
+  try {
+    let result;
+    if (event.type === "follow") {
+      result = await reply(event.replyToken, mascotWelcomeReply());
+    } else if (event.type === "postback") {
+      result = await handleLegacyPostback(event);
+    } else if (event.type === "message") {
+      result = await handleMessage(event);
+    } else {
+      result = true;
+    }
+
+    const success = result !== false;
+    finishWebhookEvent(event, success);
+    return result;
+  } catch (error) {
+    finishWebhookEvent(event, false);
+    throw error;
   }
-  if (event.type === "postback") return handleLegacyPostback(event);
-  if (event.type === "message") return handleMessage(event);
-  return Promise.resolve();
 }
 
 app.get("/", (_req, res) => {
@@ -1233,6 +1251,8 @@ app.get("/healthz", (_req, res) => {
     productCount: DATA.products.length,
     mascotAssetsReady: Object.values(MASCOT_PATHS).every((asset) => Boolean(asset)),
     activeStates: states.size,
+    processedWebhookEvents: processedWebhookEvents.size,
+    processingWebhookEvents: processingWebhookEvents.size,
     lastWebhookAt,
     lastReplySuccessAt,
     lastReplyError,
@@ -1297,4 +1317,6 @@ module.exports = {
   qtyMenu,
   cartFlex,
   detectWebsiteIntent,
+  beginWebhookEvent,
+  finishWebhookEvent,
 };
