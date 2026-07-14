@@ -6,6 +6,7 @@ const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const DATA_PATH = path.join(ROOT, "data.json");
 const DEFAULT_CATALOG_URL = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/catalog-public.json";
+const WEBSITE_BASE = "https://ts15825868.github.io/xianjiawei/";
 const EXPECTED_IDS = [
   "guilu-gao",
   "guilu-drink-30",
@@ -62,6 +63,17 @@ function validateCatalog(catalog) {
   }
 }
 
+function normalizeWebsiteValue(field, value, catalogVersion) {
+  if (typeof value !== "string") return value;
+  let normalized = value;
+  if (normalized.startsWith(WEBSITE_BASE)) normalized = normalized.slice(WEBSITE_BASE.length);
+  if ((field === "image" || field === "dmImage") && normalized.startsWith("images/")) {
+    normalized = normalized.replace(/\?v=[^&]+$/, "");
+    normalized += `?v=${catalogVersion}`;
+  }
+  return normalized;
+}
+
 function normalizeComboItems(data) {
   const replacements = new Map([
     ["龜鹿飲 5 包", "龜鹿飲180cc 5 包"],
@@ -81,7 +93,9 @@ function mergeCatalog(localData, catalog) {
 
     const merged = { id: publicProduct.id };
     for (const field of SHARED_FIELDS) {
-      if (publicProduct[field] !== undefined) merged[field] = publicProduct[field];
+      if (publicProduct[field] !== undefined) {
+        merged[field] = normalizeWebsiteValue(field, publicProduct[field], catalog.catalogVersion);
+      }
     }
     for (const field of SALES_FIELDS) {
       if (local[field] !== undefined) merged[field] = local[field];
@@ -94,12 +108,16 @@ function mergeCatalog(localData, catalog) {
     brand: catalog.brand || localData.brand,
     lineId: catalog.lineId || localData.lineId,
     siteUrl: catalog.siteUrl || localData.siteUrl,
+    store: catalog.store || localData.store,
     payments: catalog.payments || localData.payments,
     shipping: catalog.shipping || localData.shipping,
     products: mergedProducts,
-    version: "300.0",
+    version: localData.version,
     catalogVersion: catalog.catalogVersion,
-    catalogSource: catalog.source,
+    catalogSource: {
+      ...(catalog.source || localData.catalogSource || {}),
+      role: "官網與 LINE OA 共用公開產品資料來源",
+    },
     catalogSyncedAt: catalog.updatedAt,
   };
   normalizeComboItems(result);
@@ -138,4 +156,12 @@ if (require.main === module) {
   });
 }
 
-module.exports = { mergeCatalog, validateCatalog, normalizeComboItems, EXPECTED_IDS, SHARED_FIELDS, SALES_FIELDS };
+module.exports = {
+  mergeCatalog,
+  validateCatalog,
+  normalizeComboItems,
+  normalizeWebsiteValue,
+  EXPECTED_IDS,
+  SHARED_FIELDS,
+  SALES_FIELDS,
+};
