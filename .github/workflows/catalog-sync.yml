@@ -1,0 +1,61 @@
+name: 仙加味資料同步與驗收
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "data.json"
+      - "server.js"
+      - "social-server.js"
+      - "internal-app.js"
+      - "internal-entry.js"
+      - "tools/**"
+      - "package.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-main-sync
+  cancel-in-progress: false
+
+jobs:
+  validate-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Sync website catalog
+        run: npm run sync:catalog
+
+      - name: Run release checks
+        run: npm test
+
+      - name: Commit synchronized catalog
+        run: |
+          if git diff --quiet; then
+            echo "Catalog already synchronized"
+            exit 0
+          fi
+          git config user.name "仙加味自動同步"
+          git config user.email "actions@users.noreply.github.com"
+          git add data.json
+          git commit -m "chore: auto-sync website catalog"
+          git push origin main
