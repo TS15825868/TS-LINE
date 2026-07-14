@@ -6,8 +6,7 @@ const path = require("path");
 const TABLE = "xjw_app_state";
 const INTERNAL_KEY = "internal";
 const SOCIAL_KEY = "social";
-const SYNC_DELAY_MS = 300;
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 1500;
 
 const status = {
   enabled: false,
@@ -28,10 +27,8 @@ function config() {
 }
 
 function files() {
-  const internal =
-    process.env.INTERNAL_DATA_PATH || "/tmp/xianjiawei-internal.json";
-  const social =
-    process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json";
+  const internal = process.env.INTERNAL_DATA_PATH || "/tmp/xianjiawei-internal.json";
+  const social = process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json";
   return [
     { key: INTERNAL_KEY, file: internal },
     { key: SOCIAL_KEY, file: social },
@@ -44,9 +41,7 @@ function headers() {
     apikey: key,
     "Content-Type": "application/json",
   };
-  if (key.startsWith("eyJ")) {
-    result.Authorization = `Bearer ${key}`;
-  }
+  if (key.startsWith("eyJ")) result.Authorization = `Bearer ${key}`;
   return result;
 }
 
@@ -70,8 +65,7 @@ async function request(url, options = {}) {
     }
   }
   if (!response.ok) {
-    const detail =
-      data?.message || data?.hint || data?.details || String(data || "");
+    const detail = data?.message || data?.hint || data?.details || String(data || "");
     throw new Error(`Supabase HTTP ${response.status}: ${detail}`);
   }
   return data;
@@ -86,9 +80,7 @@ async function readRemote(key) {
 async function writeRemote(key, data) {
   await request(endpoint("?on_conflict=key"), {
     method: "POST",
-    headers: {
-      Prefer: "resolution=merge-duplicates,return=minimal",
-    },
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
     body: JSON.stringify([
       {
         key,
@@ -105,6 +97,11 @@ async function writeRemote(key, data) {
 function readLocal(file) {
   if (!fs.existsSync(file)) return null;
   return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function readRaw(file) {
+  if (!fs.existsSync(file)) return "";
+  return fs.readFileSync(file, "utf8");
 }
 
 function writeLocal(file, data) {
@@ -167,36 +164,42 @@ async function restoreAll() {
 
 function startWatching() {
   if (!config().enabled) return () => {};
-  const timers = new Map();
-  const listeners = [];
 
-  for (const item of files()) {
-    const listener = (curr, prev) => {
-      if (curr.mtimeMs === prev.mtimeMs || curr.size === 0) return;
-      clearTimeout(timers.get(item.key));
-      timers.set(
-        item.key,
-        setTimeout(async () => {
-          try {
-            const data = readLocal(item.file);
-            if (data) await writeRemote(item.key, data);
-          } catch (error) {
-            status.connected = false;
-            status.lastError = error.message;
-            console.error(`Supabase save failed for ${item.key}`, error.message);
-          }
-        }, SYNC_DELAY_MS)
-      );
-    };
-    fs.watchFile(item.file, { interval: POLL_INTERVAL_MS }, listener);
-    listeners.push({ file: item.file, listener });
-  }
+  const snapshots = new Map();
+  for (const item of files()) snapshots.set(item.key, readRaw(item.file));
+
+  let running = false;
+  const poll = async () => {
+    if (running) return;
+    running = true;
+    try {
+      for (const item of files()) {
+        const raw = readRaw(item.file);
+        if (!raw || raw === snapshots.get(item.key)) continue;
+        const data = JSON.parse(raw);
+        await writeRemote(item.key, data);
+        snapshots.set(item.key, raw);
+      }
+    } catch (error) {
+      status.connected = false;
+      status.lastError = error.message;
+      console.error("Supabase save failed", error.message);
+    } finally {
+      running = false;
+    }
+  };
+
+  const timer = setInterval(poll, POLL_INTERVAL_MS);
+  timer.unref?.();
 
   const flush = async () => {
     for (const item of files()) {
       try {
-        const data = readLocal(item.file);
-        if (data) await writeRemote(item.key, data);
+        const raw = readRaw(item.file);
+        if (!raw) continue;
+        const data = JSON.parse(raw);
+        await writeRemote(item.key, data);
+        snapshots.set(item.key, raw);
       } catch (error) {
         status.lastError = error.message;
       }
@@ -204,6 +207,7 @@ function startWatching() {
   };
 
   const shutdown = async () => {
+    clearInterval(timer);
     await flush();
     process.exit(0);
   };
@@ -211,11 +215,9 @@ function startWatching() {
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
 
-  return () => {
-    for (const item of listeners) {
-      fs.unwatchFile(item.file, item.listener);
-    }
-  };
+  setTimeout(poll, 500).unref?.();
+
+  return () => clearInterval(timer);
 }
 
 function health() {
@@ -223,10 +225,8 @@ function health() {
     ...status,
     table: TABLE,
     storage: status.enabled ? "supabase" : "local-json",
-    internalPath:
-      process.env.INTERNAL_DATA_PATH || "/tmp/xianjiawei-internal.json",
-    socialPath:
-      process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json",
+    internalPath: process.env.INTERNAL_DATA_PATH || "/tmp/xianjiawei-internal.json",
+    socialPath: process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json",
   };
 }
 
