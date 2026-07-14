@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 仙加味 LINE OA Bot v401.0
+ * 仙加味 LINE OA Bot v401.3
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
  * LINE 憑證僅從部署環境變數讀取；CRM 可由環境變數覆蓋預設網址。
  */
@@ -11,7 +11,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v401.0";
+const VERSION = "v401.3";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "仙加味五大產品型態、六項正式規格皆可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -27,7 +27,7 @@ const config = {
 
 const app = express();
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
-const MASCOT_VERSION = "401.0";
+const MASCOT_VERSION = "401.3";
 const mascotAssetUrl = (name) => PUBLIC_BASE_URL
   ? `${PUBLIC_BASE_URL}/mascot/${name}.jpg?v=${MASCOT_VERSION}`
   : `https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${name}.jpg?v=${MASCOT_VERSION}`;
@@ -319,19 +319,7 @@ function productCarousel() {
     altText: "仙加味產品",
     contents: {
       type: "carousel",
-      contents: [
-        mascotBubble(
-          "小老闆介紹產品",
-          "先看五大產品型態與六項正式規格，再進入各產品卡查看真實產品圖、價格、使用方式、正式DM與購買按鈕。",
-          [
-            { label: "幫我推薦", text: "幫我推薦" },
-            { label: "搭配組合", text: "搭配組合" },
-            { label: "人工客服", text: "我要人工客服" },
-          ],
-          "products"
-        ),
-        ...DATA.products.map(productBubble),
-      ],
+      contents: DATA.products.map(productBubble),
     },
   };
 }
@@ -438,15 +426,6 @@ function cartFlex(state) {
   const buildCartCard = (description, buttons) => {
     const message = flexCard("購物車｜小老闆幫你整理", description, buttons);
     message.contents.size = "mega";
-    message.contents.hero = {
-      type: "image",
-      url: absoluteUrl(MASCOT_PATHS.cart),
-      size: "full",
-      aspectRatio: "1:1",
-      aspectMode: "fit",
-      backgroundColor: "#EFE4D2",
-      action: { type: "uri", uri: absoluteUrl("products.html") },
-    };
     return message;
   };
 
@@ -470,25 +449,19 @@ function cartFlex(state) {
 
 const MASCOT_PATHS = {
   welcome: mascotAssetUrl("welcome"),
-  products: mascotAssetUrl("products"),
   recommend: mascotAssetUrl("recommend"),
-  combo: mascotAssetUrl("combo"),
   usage: mascotAssetUrl("usage"),
   faq: mascotAssetUrl("faq"),
   service: mascotAssetUrl("service"),
   brand: mascotAssetUrl("brand"),
-  cart: mascotAssetUrl("cart"),
 };
 
 function mascotPoseForTitle(title = "") {
   if (/常見問題|FAQ/.test(title)) return "faq";
   if (/客服|聯絡|確認|訂單|結帳|門市/.test(title)) return "service";
   if (/使用|沖泡|燉湯|料理/.test(title)) return "usage";
-  if (/搭配|組合/.test(title)) return "combo";
   if (/推薦|幫你選|怎麼選/.test(title)) return "recommend";
   if (/傳承|故事|品牌|漢方|百科|資料/.test(title)) return "brand";
-  if (/購物車|購買清單/.test(title)) return "cart";
-  if (/產品|介紹|價格/.test(title)) return "products";
   return "welcome";
 }
 
@@ -571,9 +544,17 @@ function recommendReply() {
 }
 
 function comboReply() {
-  return mascotBubble(
+  return flexCard(
     "搭配組合｜依日常使用方式選擇",
-    "搭配組合以產品型態、使用方式與生活情境為主：\n\n・固定日常安排：龜鹿膏\n・方便即飲：龜鹿飲30cc\n・沖泡與料理：龜鹿湯塊\n・家庭長期使用：龜鹿膠\n・自行搭配飲品：鹿茸粉\n\n若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。",
+    `搭配組合以產品型態、使用方式與生活情境為主：
+
+・固定日常安排：龜鹿膏
+・方便即飲：龜鹿飲30cc
+・沖泡與料理：龜鹿湯塊
+・家庭長期使用：龜鹿膠
+・自行搭配飲品：鹿茸粉
+
+若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。`,
     [
       { label: "查看搭配組合", text: "搭配組合" },
       { label: "查看產品", text: "看產品" },
@@ -661,7 +642,7 @@ function comboMenuReply() {
     contents: {
       type: "carousel",
       contents: [
-        mascotBubble(
+        flexCard(
           "日常搭配導覽",
           "依日常節奏查看搭配組合。每組價格、可選組數、活動與加入購物車功能都保留在各方案卡中。",
           [
@@ -669,26 +650,26 @@ function comboMenuReply() {
             { label: "怎麼使用", text: "怎麼使用" },
             { label: "人工客服", text: "我要人工客服" },
           ]
-        ),
+        ).contents,
         ...combos.slice(0, 9).map((combo, index) => {
-        const unitPrice = comboUnitPrice(combo);
-        const quantities = combo.quantityOptions || [1, 2, 3, 5];
-        const promotions = comboPromotionLines(combo);
-        const description = [
-          ...(combo.items || []).map((item) => `・${item}`),
-          "",
-          combo.desc || "",
-          "",
-          `每組售價：${money(unitPrice)}`,
-          `可選組數：${quantities.join("、")}組`,
-          ...(promotions.length ? ["", "活動／優惠已套用：", ...promotions.map((line) => `・${line}`)] : []),
-        ].join("\n");
-        return flexCard(combo.name, description, [
-          { label: "選擇組數", text: `搭配組數｜${index}` },
-          { label: "看全部產品", text: "看產品" },
-          { label: "人工客服", text: "我要人工客服" },
-        ]).contents;
-      }),
+          const unitPrice = comboUnitPrice(combo);
+          const quantities = combo.quantityOptions || [1, 2, 3, 5];
+          const promotions = comboPromotionLines(combo);
+          const description = [
+            ...(combo.items || []).map((item) => `・${item}`),
+            "",
+            combo.desc || "",
+            "",
+            `每組售價：${money(unitPrice)}`,
+            `可選組數：${quantities.join("、")}組`,
+            ...(promotions.length ? ["", "活動／優惠已套用：", ...promotions.map((line) => `・${line}`)] : []),
+          ].join("\n");
+          return flexCard(combo.name, description, [
+            { label: "選擇組數", text: `搭配組數｜${index}` },
+            { label: "看全部產品", text: "看產品" },
+            { label: "人工客服", text: "我要人工客服" },
+          ]).contents;
+        }),
       ],
     },
   };

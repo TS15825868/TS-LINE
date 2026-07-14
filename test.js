@@ -24,7 +24,7 @@ const {
   isSensitiveHealthQuestion,
 } = require("./server");
 
-assert.strictEqual(VERSION, "v401.0");
+assert.strictEqual(VERSION, "v401.3");
 assert.deepStrictEqual(
   DATA.products.map((product) => product.id),
   ["guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]
@@ -60,7 +60,7 @@ assert.strictEqual(cartTotal(state.cart), 550);
 const productCards = productCarousel();
 assert.strictEqual(productCards.type, "flex");
 assert.strictEqual(productCards.contents.type, "carousel");
-assert.strictEqual(productCards.contents.contents.length, DATA.products.length + 1);
+assert.strictEqual(productCards.contents.contents.length, DATA.products.length);
 assert.strictEqual(priceCarousel().contents.contents.length, DATA.products.length);
 
 for (const card of productCards.contents.contents) {
@@ -71,7 +71,7 @@ for (const card of productCards.contents.contents) {
 }
 
 assert.strictEqual(recommendReply().contents.contents.length, 4);
-assert.ok(comboReply().body.contents[1].text.includes("搭配組合"));
+assert.ok(comboReply().contents.body.contents[1].text.includes("搭配組合"));
 assert.strictEqual(usageChooserReply().contents.contents.length, DATA.products.length + 1);
 assert.ok(usageReply(drink30).contents.body.contents[1].text.includes("開瓶即可飲用"));
 assert.ok(doctorReferralReply().contents.body.contents[1].text.includes("@changwuchi"));
@@ -86,7 +86,7 @@ assert.strictEqual(isSensitiveHealthQuestion("搭配組合"), false);
 
 console.log(`PASS LINE OA ${VERSION}: products, prices, cart, cards, usage, classics and referral`);
 
-assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length + 1);
+assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length);
 assert.strictEqual(comboMenuReply().contents.contents.length, DATA.offers.comboOffers.length + 1);
 assert.ok(comboMenuReply().contents.contents[0].body.contents[0].text.includes("日常搭配導覽"));
 assert.ok(comboMenuReply().contents.contents[1].body.contents[0].text.includes("日常節奏組"));
