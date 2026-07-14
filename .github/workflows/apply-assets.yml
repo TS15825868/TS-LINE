@@ -1,0 +1,56 @@
+name: 套用 LINE OA 正式圖片
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".asset-upload/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-asset-publish
+  cancel-in-progress: false
+
+jobs:
+  apply-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Decode staged images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/mascot
+          if [ -f .asset-upload/recommend-512.b64 ]; then
+            base64 --decode .asset-upload/recommend-512.b64 > public/mascot/recommend.jpg
+          fi
+          if [ -f .asset-upload/combo-512.b64 ]; then
+            base64 --decode .asset-upload/combo-512.b64 > public/mascot/combo.jpg
+          fi
+          file public/mascot/recommend.jpg public/mascot/combo.jpg
+          test -s public/mascot/recommend.jpg
+          test -s public/mascot/combo.jpg
+
+      - name: Commit official images and remove staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "仙加味自動圖片發布"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/mascot/recommend.jpg public/mascot/combo.jpg
+          git rm -f .asset-upload/recommend-512.b64 .asset-upload/combo-512.b64
+          if git diff --cached --quiet; then
+            echo "No image changes"
+            exit 0
+          fi
+          git commit -m "feat: publish official LINE OA recommendation and combo images"
+          git push origin main
