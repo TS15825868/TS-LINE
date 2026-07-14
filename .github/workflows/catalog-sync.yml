@@ -15,6 +15,7 @@ on:
       - "tools/**"
       - "package.json"
       - "catalog.test.js"
+      - ".github/workflows/catalog-sync.yml"
 
 permissions:
   contents: write
