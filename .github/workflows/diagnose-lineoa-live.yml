@@ -1,0 +1,45 @@
+name: Diagnose LINE OA live
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    if: github.event.issue.title == 'DIAGNOSE_LINEOA_LIVE'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read live health
+        id: health
+        run: |
+          set +e
+          curl -sS --max-time 60 -D /tmp/headers.txt https://ts-line.onrender.com/healthz -o /tmp/health.txt
+          code=$?
+          echo "curl_exit=$code" > /tmp/result.txt
+          echo "--- headers ---" >> /tmp/result.txt
+          cat /tmp/headers.txt >> /tmp/result.txt 2>/dev/null
+          echo "--- body ---" >> /tmp/result.txt
+          cat /tmp/health.txt >> /tmp/result.txt 2>/dev/null
+      - name: Check webhook route
+        run: |
+          set +e
+          echo "--- unsigned webhook probe ---" >> /tmp/result.txt
+          curl -sS --max-time 30 -i -X POST https://ts-line.onrender.com/webhook \
+            -H 'Content-Type: application/json' \
+            --data '{"events":[]}' >> /tmp/result.txt 2>&1
+      - name: Report diagnosis
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body=$(python3 - <<'PY'
+          from pathlib import Path
+          text=Path('/tmp/result.txt').read_text(errors='replace')
+          print('LINEOA_LIVE_DIAGNOSIS\n```text\n'+text[-12000:]+'\n```')
+          PY
+          )
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "$body"
+          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
