@@ -8,12 +8,14 @@ const INTERNAL_KEY = "internal";
 const SOCIAL_KEY = "social";
 const POLL_INTERVAL_MS = 1500;
 const DEFAULT_SUPABASE_URL = "https://iphexhvjhsmelbgwzhhr.supabase.co";
+const snapshots = new Map();
 
 const status = {
   enabled: false,
   connected: false,
   restoredAt: "",
   lastSavedAt: "",
+  lastVerifiedAt: "",
   lastError: "",
 };
 
@@ -75,6 +77,7 @@ async function request(url, options = {}) {
 async function readRemote(key) {
   const query = `?key=eq.${encodeURIComponent(key)}&select=data,updated_at&limit=1`;
   const rows = await request(endpoint(query), { method: "GET" });
+  status.lastVerifiedAt = new Date().toISOString();
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
@@ -92,6 +95,7 @@ async function writeRemote(key, data) {
   });
   status.connected = true;
   status.lastSavedAt = new Date().toISOString();
+  status.lastVerifiedAt = status.lastSavedAt;
   status.lastError = "";
 }
 
@@ -118,6 +122,44 @@ function hasMeaningfulData(data) {
   return Object.keys(data).length > 0;
 }
 
+async function saveState(key, data) {
+  if (!config().enabled) return false;
+  if (![INTERNAL_KEY, SOCIAL_KEY].includes(key)) throw new Error(`不支援的 Supabase 狀態鍵：${key}`);
+  try {
+    await writeRemote(key, data);
+    return true;
+  } catch (error) {
+    status.connected = false;
+    status.lastError = error.message;
+    console.error(`Supabase immediate save failed for ${key}`, error.message);
+    return false;
+  }
+}
+
+async function saveFile(key, file) {
+  const raw = readRaw(file);
+  if (!raw) return false;
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (error) {
+    status.lastError = `JSON parse failed for ${key}: ${error.message}`;
+    return false;
+  }
+  const saved = await saveState(key, data);
+  if (saved) snapshots.set(key, raw);
+  return saved;
+}
+
+async function syncAll() {
+  if (!config().enabled) return { enabled: false, saved: [] };
+  const saved = [];
+  for (const item of files()) {
+    if (await saveFile(item.key, item.file)) saved.push(item.key);
+  }
+  return { enabled: true, saved };
+}
+
 async function restoreOne(item) {
   const local = readLocal(item.file);
   const row = await readRemote(item.key);
@@ -125,16 +167,19 @@ async function restoreOne(item) {
 
   if (hasMeaningfulData(remote)) {
     writeLocal(item.file, remote);
+    snapshots.set(item.key, readRaw(item.file));
     return "restored";
   }
 
   if (hasMeaningfulData(local)) {
     await writeRemote(item.key, local);
+    snapshots.set(item.key, readRaw(item.file));
     return "seeded-from-local";
   }
 
   if (remote && typeof remote === "object") {
     writeLocal(item.file, remote);
+    snapshots.set(item.key, readRaw(item.file));
     return "initialized-empty";
   }
 
@@ -153,6 +198,7 @@ async function restoreAll() {
     }
     status.connected = true;
     status.restoredAt = new Date().toISOString();
+    status.lastVerifiedAt = status.restoredAt;
     status.lastError = "";
     return { enabled: true, results };
   } catch (error) {
@@ -166,8 +212,9 @@ async function restoreAll() {
 function startWatching() {
   if (!config().enabled) return () => {};
 
-  const snapshots = new Map();
-  for (const item of files()) snapshots.set(item.key, readRaw(item.file));
+  for (const item of files()) {
+    if (!snapshots.has(item.key)) snapshots.set(item.key, readRaw(item.file));
+  }
 
   let running = false;
   const poll = async () => {
@@ -177,9 +224,7 @@ function startWatching() {
       for (const item of files()) {
         const raw = readRaw(item.file);
         if (!raw || raw === snapshots.get(item.key)) continue;
-        const data = JSON.parse(raw);
-        await writeRemote(item.key, data);
-        snapshots.set(item.key, raw);
+        await saveFile(item.key, item.file);
       }
     } catch (error) {
       status.connected = false;
@@ -193,23 +238,23 @@ function startWatching() {
   const timer = setInterval(poll, POLL_INTERVAL_MS);
   timer.unref?.();
 
-  const flush = async () => {
-    for (const item of files()) {
-      try {
-        const raw = readRaw(item.file);
-        if (!raw) continue;
-        const data = JSON.parse(raw);
-        await writeRemote(item.key, data);
-        snapshots.set(item.key, raw);
-      } catch (error) {
-        status.lastError = error.message;
-      }
+  const verifyTimer = setInterval(async () => {
+    if (!config().enabled) return;
+    try {
+      await readRemote(INTERNAL_KEY);
+      status.connected = true;
+      status.lastError = "";
+    } catch (error) {
+      status.connected = false;
+      status.lastError = error.message;
     }
-  };
+  }, 5 * 60 * 1000);
+  verifyTimer.unref?.();
 
   const shutdown = async () => {
     clearInterval(timer);
-    await flush();
+    clearInterval(verifyTimer);
+    await syncAll();
     process.exit(0);
   };
 
@@ -218,15 +263,19 @@ function startWatching() {
 
   setTimeout(poll, 500).unref?.();
 
-  return () => clearInterval(timer);
+  return () => {
+    clearInterval(timer);
+    clearInterval(verifyTimer);
+  };
 }
 
 function health() {
   const cfg = config();
   return {
     ...status,
+    enabled: cfg.enabled,
     table: TABLE,
-    storage: status.enabled ? "supabase" : "local-json",
+    storage: cfg.enabled ? "supabase" : "local-json",
     projectUrl: cfg.url,
     internalPath: process.env.INTERNAL_DATA_PATH || "/tmp/xianjiawei-internal.json",
     socialPath: process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json",
@@ -234,7 +283,12 @@ function health() {
 }
 
 module.exports = {
+  INTERNAL_KEY,
+  SOCIAL_KEY,
   restoreAll,
   startWatching,
+  saveState,
+  saveFile,
+  syncAll,
   health,
 };
