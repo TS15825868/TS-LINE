@@ -1,0 +1,25 @@
+name: Diagnose LINE OA simple
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    if: github.event.issue.title == 'DIAGNOSE_LINEOA_SIMPLE'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read health
+        run: |
+          curl --fail --silent --show-error --max-time 60 https://ts-line.onrender.com/healthz > health.json
+      - name: Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body=$(cat health.json)
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "LINEOA_HEALTH_JSON\n\`\`\`json\n${body}\n\`\`\`"
+          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
