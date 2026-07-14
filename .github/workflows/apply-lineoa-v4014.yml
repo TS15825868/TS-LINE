@@ -24,10 +24,10 @@ jobs:
           set -euo pipefail
           npm ci
           npm test
-          grep -q 'const VERSION = "v401.4"' server.js
-          grep -q 'MessagingApiClient' server.js
-          grep -q 'lastReplyError' server.js
-          grep -q 'cron: "*/10 \* \* \* \*"' .github/workflows/keep-render-awake.yml
+          grep -Fq 'const VERSION = "v401.4"' server.js
+          grep -Fq 'MessagingApiClient' server.js
+          grep -Fq 'lastReplyError' server.js
+          grep -Fq 'cron: "*/10 * * * *"' .github/workflows/keep-render-awake.yml
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
