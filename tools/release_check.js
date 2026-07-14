@@ -12,6 +12,7 @@ const internalEntry = read("internal-entry.js");
 const internalApp = read("internal-app.js");
 const socialServer = read("social-server.js");
 const supabaseBridge = read("supabase-state-bridge.js");
+const persistenceAutoSave = read("persistence-auto-save.js");
 const errors = [];
 
 const requiredProducts = [
@@ -72,29 +73,36 @@ if (pkg.version !== "4.5.0") errors.push("package.json 版本必須為 4.5.0");
 if (pkg.scripts?.start !== "node -r ./line-image-safety.js internal-entry.js") errors.push("正式啟動程式未整合 LINE OA、社群與內部 App");
 if (!String(pkg.scripts?.test || "").includes("internal-app.test.js")) errors.push("內部 App 測試未納入 npm test");
 if (!String(pkg.scripts?.test || "").includes("supabase-state-bridge.test.js")) errors.push("Supabase 持久化測試未納入 npm test");
+if (!String(pkg.scripts?.test || "").includes("persistence-auto-save.test.js")) errors.push("即時自動保存測試未納入 npm test");
 
 for (const file of [
   "internal-entry.js",
   "internal-app.js",
   "social-server.js",
   "supabase-state-bridge.js",
+  "persistence-auto-save.js",
   "supabase/schema.sql",
   ".github/workflows/catalog-sync.yml",
+  ".github/workflows/ci.yml",
+  ".github/workflows/verify-line-and-website-catalog.yml",
 ]) {
   if (!exists(file)) errors.push(`缺少正式檔案：${file}`);
 }
 
-for (const token of ["restoreAll()", "startWatching()", "mountInternalApp(app)", 'app.get("/internal/db-healthz"']) {
+for (const token of ["restoreAll()", "startWatching()", "syncAll()", "installPersistenceAutoSave()", "mountInternalApp(app)", 'app.get("/internal/db-healthz"']) {
   if (!internalEntry.includes(token)) errors.push(`internal-entry.js 缺少：${token}`);
 }
 for (const token of ["/internal/login", "/internal/app", "/internal/api/state", "/internal/api/orders", "/internal/api/customers", "/internal/api/inventory", "/internal/api/reminders", "/internal/api/staff"]) {
   if (!internalApp.includes(token)) errors.push(`internal-app.js 缺少功能：${token}`);
 }
-for (const token of ["/social-review", "/social/api/posts", "/social/healthz"]) {
+for (const token of ["/social-review", "/social-login", "/social-post", "/social/healthz"]) {
   if (!socialServer.includes(token)) errors.push(`social-server.js 缺少功能：${token}`);
 }
-for (const token of ["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY", "xjw_app_state", "writeRemote", "restoreAll", "startWatching"]) {
+for (const token of ["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY", "xjw_app_state", "writeRemote", "restoreAll", "startWatching", "saveState", "syncAll"]) {
   if (!supabaseBridge.includes(token)) errors.push(`Supabase 持久化缺少：${token}`);
+}
+for (const token of ["fs.renameSync", "bridge.saveFile", "INTERNAL_DATA_PATH", "SOCIAL_DATA_PATH", "setImmediate"]) {
+  if (!persistenceAutoSave.includes(token)) errors.push(`即時自動保存缺少：${token}`);
 }
 
 if (errors.length) {
@@ -103,5 +111,5 @@ if (errors.length) {
 }
 
 console.log(
-  `PASS 仙加味正式版 v4.5.0：LINE OA v401.6、${data.products.length} 項產品、官網目錄 ${data.catalogVersion}、購物車、結帳、CRM、社群排程、內部 PWA 與 Supabase 持久化均已整合。`
+  `PASS 仙加味正式版 v4.5.0：LINE OA v401.6、${data.products.length} 項產品、官網目錄 ${data.catalogVersion}、購物車、結帳、CRM、社群排程、內部 PWA、即時自動保存與 Supabase 持久化均已整合。`
 );
