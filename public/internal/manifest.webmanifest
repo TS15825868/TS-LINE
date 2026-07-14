@@ -1,0 +1,19 @@
+{
+  "name": "仙加味內部管理台",
+  "short_name": "仙加味管理",
+  "description": "仙加味訂單、客戶、庫存、社群排程與提醒管理",
+  "start_url": "/internal",
+  "scope": "/internal",
+  "display": "standalone",
+  "background_color": "#f7f4ed",
+  "theme_color": "#0b1f3b",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "/internal-assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
