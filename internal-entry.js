@@ -1,6 +1,7 @@
 "use strict";
 
 const bridge = require("./supabase-state-bridge");
+const { installPersistenceAutoSave } = require("./persistence-auto-save");
 
 async function main() {
   const restore = await bridge.restoreAll();
@@ -9,6 +10,11 @@ async function main() {
   } else {
     console.warn("Supabase state bridge disabled; using local JSON fallback");
   }
+
+  // Install only after restore so restored files are not mistaken for user edits.
+  // Every subsequent atomic JSON write is persisted immediately, while polling
+  // remains enabled as an independent fallback.
+  installPersistenceAutoSave();
 
   const {
     mountInternalApp,
@@ -134,6 +140,13 @@ async function main() {
   });
 
   bridge.startWatching();
+
+  // Once all stores are initialized, seed/verify them immediately. This also
+  // gives db-healthz a concrete lastSavedAt after each successful deployment.
+  if (bridge.health().enabled) {
+    const startupSync = await bridge.syncAll();
+    console.log("Supabase startup synchronization", startupSync);
+  }
 
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
