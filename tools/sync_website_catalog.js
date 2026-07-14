@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, "..");
 const DATA_PATH = path.join(ROOT, "data.json");
 const DEFAULT_CATALOG_URL = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/catalog-public.json";
 const WEBSITE_BASE = "https://ts15825868.github.io/xianjiawei/";
+const LINE_DATA_VERSION = "401.6";
 const EXPECTED_IDS = [
   "guilu-gao",
   "guilu-drink-30",
@@ -103,6 +104,7 @@ function mergeCatalog(localData, catalog) {
     return merged;
   });
 
+  const syncedDate = String(catalog.updatedAt || new Date().toISOString().slice(0, 10));
   const result = {
     ...localData,
     brand: catalog.brand || localData.brand,
@@ -112,13 +114,21 @@ function mergeCatalog(localData, catalog) {
     payments: catalog.payments || localData.payments,
     shipping: catalog.shipping || localData.shipping,
     products: mergedProducts,
-    version: localData.version,
+    version: LINE_DATA_VERSION,
+    updatedAt: syncedDate,
     catalogVersion: catalog.catalogVersion,
     catalogSource: {
       ...(catalog.source || localData.catalogSource || {}),
       role: "官網與 LINE OA 共用公開產品資料來源",
     },
-    catalogSyncedAt: catalog.updatedAt,
+    catalogSyncedAt: syncedDate,
+    mascotAssets: localData.mascotAssets
+      ? {
+          ...localData.mascotAssets,
+          version: LINE_DATA_VERSION,
+          verifiedAt: syncedDate,
+        }
+      : localData.mascotAssets,
   };
   normalizeComboItems(result);
   return result;
@@ -139,7 +149,7 @@ async function main() {
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA data.json from website catalog ${catalog.catalogVersion}`);
+    console.log(`SYNCED LINE OA data.json ${LINE_DATA_VERSION} from website catalog ${catalog.catalogVersion}`);
     return;
   }
 
@@ -157,6 +167,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  LINE_DATA_VERSION,
   mergeCatalog,
   validateCatalog,
   normalizeComboItems,
