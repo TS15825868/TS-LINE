@@ -40,11 +40,14 @@ function files() {
 
 function headers() {
   const { key } = config();
-  return {
+  const result = {
     apikey: key,
-    Authorization: `Bearer ${key}`,
     "Content-Type": "application/json",
   };
+  if (key.startsWith("eyJ")) {
+    result.Authorization = `Bearer ${key}`;
+  }
+  return result;
 }
 
 function endpoint(query = "") {
@@ -111,18 +114,32 @@ function writeLocal(file, data) {
   fs.renameSync(temp, file);
 }
 
+function hasMeaningfulData(data) {
+  if (!data || typeof data !== "object") return false;
+  if (Array.isArray(data)) return data.length > 0;
+  return Object.keys(data).length > 0;
+}
+
 async function restoreOne(item) {
+  const local = readLocal(item.file);
   const row = await readRemote(item.key);
-  if (row?.data && typeof row.data === "object") {
-    writeLocal(item.file, row.data);
+  const remote = row?.data;
+
+  if (hasMeaningfulData(remote)) {
+    writeLocal(item.file, remote);
     return "restored";
   }
 
-  const local = readLocal(item.file);
-  if (local) {
+  if (hasMeaningfulData(local)) {
     await writeRemote(item.key, local);
-    return "seeded";
+    return "seeded-from-local";
   }
+
+  if (remote && typeof remote === "object") {
+    writeLocal(item.file, remote);
+    return "initialized-empty";
+  }
+
   return "empty";
 }
 
