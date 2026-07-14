@@ -1,25 +1,18 @@
 "use strict";
 
 /**
- * LINE OA image safety and approved mascot-image routing.
+ * LINE OA approved mascot-image routing.
  *
- * Approved production assets:
- * - public/mascot/recommend.jpg
- * - public/mascot/combo.jpg
- *
- * The old usage image remains blocked until its final approved replacement is
- * uploaded. This layer runs regardless of whether Render starts through npm or
- * directly with `node server.js`.
+ * Product cards continue to use real product photographs from the website
+ * catalog. The assets below are approved purpose-specific mascot scenes only.
  */
 const line = require("@line/bot-sdk");
 
-const ASSET_VERSION = "20260714-approved-2";
+const ASSET_VERSION = "20260715-approved-3";
 const RAW_BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
 const approvedAssetUrl = (name) => `${RAW_BASE}/${name}.jpg?v=${ASSET_VERSION}`;
 
-const BLOCKED_MASCOT_ASSETS = [
-  "/mascot/usage.jpg",
-];
+const BLOCKED_MASCOT_ASSETS = [];
 
 function isBlockedMascotUrl(value) {
   const url = String(value || "");
@@ -36,6 +29,9 @@ function bubbleTitle(node) {
 function approvedImageForTitle(title = "") {
   if (/搭配組合|搭配方案|日常搭配導覽/.test(title)) return approvedAssetUrl("combo");
   if (/幫我推薦|依日常使用方式幫你選|怎麼選|推薦/.test(title)) return approvedAssetUrl("recommend");
+  if (/怎麼使用|使用方式|日常節奏安排/.test(title)) return approvedAssetUrl("usage");
+  if (/常見問題|FAQ|小老闆幫你整理/.test(title)) return approvedAssetUrl("faq");
+  if (/品牌故事|四代傳承|仙加味的故事/.test(title)) return approvedAssetUrl("brand");
   return "";
 }
 
