@@ -6,8 +6,8 @@ const fs = require("fs");
 const path = require("path");
 const { app, VERSION } = require("./server");
 
-const SOCIAL_VERSION = "1.0.0";
-const GRAPH_VERSION = String(process.env.META_GRAPH_VERSION || "v23.0").replace(/^\/?/, "");
+const SOCIAL_VERSION = "1.1.0";
+const GRAPH_VERSION = String(process.env.META_GRAPH_VERSION || "v25.0").replace(/^\/?/, "");
 const IG_USER_ID = String(process.env.INSTAGRAM_USER_ID || "").trim();
 const IG_TOKEN = String(process.env.INSTAGRAM_ACCESS_TOKEN || "").trim();
 const FB_PAGE_ID = String(process.env.META_PAGE_ID || "").trim();
@@ -71,8 +71,9 @@ function requireAdmin(req, res, next) {
 }
 
 function validImageUrl(value) {
+  if (!String(value || "").trim()) return "";
   try {
-    const url = new URL(String(value || ""));
+    const url = new URL(String(value));
     return url.protocol === "https:" ? url.toString() : "";
   } catch {
     return "";
@@ -102,7 +103,7 @@ function postCard(post) {
 
 function reviewPage() {
   const posts = readStore().posts.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  return `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css()}</style><title>仙加味社群審核台</title></head><body><main><section><h1>仙加味社群審核台</h1><p class="notice">Instagram：${IG_USER_ID && IG_TOKEN ? "已設定" : "未設定"}／Facebook：${FB_PAGE_ID && FB_TOKEN ? "已設定" : "未設定"}／資料儲存：${STORE_PATH.startsWith("/tmp/") ? "暫存" : "持久化"}</p><form method="post" action="/social-logout"><button class="gray">登出</button></form></section><section><h2>新增待審核草稿</h2><form method="post" action="/social-post"><div class="row"><label>標題<input name="title" maxlength="120" required></label><label>預定時間<input name="scheduledAt" type="datetime-local" required></label></div><label>公開圖片網址<input name="imageUrl" type="url" placeholder="https://...jpg" required></label><label>Instagram 文案<textarea name="instagramCaption" maxlength="2200" required></textarea></label><label>Facebook 文案<textarea name="facebookCaption" maxlength="5000"></textarea></label><label><input style="width:auto" type="checkbox" name="publishInstagram" checked> 發布 Instagram</label><label><input style="width:auto" type="checkbox" name="publishFacebook" checked> 發布 Facebook</label><br><button>建立草稿</button></form></section>${posts.map(postCard).join("")}</main></body></html>`;
+  return `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css()}</style><title>仙加味社群審核台</title></head><body><main><section><h1>仙加味社群審核台</h1><p class="notice">Instagram：${IG_USER_ID && IG_TOKEN ? "已設定" : "未設定"}／Facebook：${FB_PAGE_ID && FB_TOKEN ? "已設定" : "未設定"}／資料儲存：${STORE_PATH.startsWith("/tmp/") ? "暫存（重新部署可能清除）" : "持久化"}</p><form method="post" action="/social-logout"><button class="gray">登出</button></form></section><section><h2>新增待審核草稿</h2><form method="post" action="/social-post"><div class="row"><label>標題<input name="title" maxlength="120" required></label><label>預定時間<input name="scheduledAt" type="datetime-local" required></label></div><label>公開圖片網址（Facebook 純文字貼文可留空；Instagram 必填）<input name="imageUrl" type="url" placeholder="https://...jpg"></label><label>Instagram 文案<textarea name="instagramCaption" maxlength="2200"></textarea></label><label>Facebook 文案<textarea name="facebookCaption" maxlength="5000"></textarea></label><label><input style="width:auto" type="checkbox" name="publishInstagram" checked> 發布 Instagram</label><label><input style="width:auto" type="checkbox" name="publishFacebook" checked> 發布 Facebook</label><br><button>建立草稿</button></form></section>${posts.map(postCard).join("")}</main></body></html>`;
 }
 
 async function request(url, options = {}) {
@@ -116,6 +117,8 @@ async function request(url, options = {}) {
 
 async function publishInstagram(post) {
   if (!IG_USER_ID || !IG_TOKEN) throw new Error("Instagram 環境變數尚未設定");
+  if (!post.imageUrl) throw new Error("Instagram 發布必須提供公開 HTTPS 圖片網址");
+  if (!post.instagramCaption) throw new Error("Instagram 文案不可為空");
   const created = await request(`https://graph.instagram.com/${GRAPH_VERSION}/${encodeURIComponent(IG_USER_ID)}/media`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -140,10 +143,16 @@ async function publishInstagram(post) {
 
 async function publishFacebook(post) {
   if (!FB_PAGE_ID || !FB_TOKEN) throw new Error("Facebook 粉絲專頁環境變數尚未設定");
-  return request(`https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(FB_PAGE_ID)}/photos`, {
+  const message = post.facebookCaption || post.instagramCaption;
+  if (!message) throw new Error("Facebook 文案不可為空");
+  const endpoint = post.imageUrl ? "photos" : "feed";
+  const body = post.imageUrl
+    ? { url: post.imageUrl, caption: message, published: "true", access_token: FB_TOKEN }
+    : { message, published: "true", access_token: FB_TOKEN };
+  return request(`https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(FB_PAGE_ID)}/${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ url: post.imageUrl, caption: post.facebookCaption || post.instagramCaption, published: "true", access_token: FB_TOKEN }),
+    body: new URLSearchParams(body),
   });
 }
 
@@ -175,6 +184,23 @@ async function scheduler() {
   }
 }
 
+function healthPayload() {
+  return {
+    ok: true,
+    service: "仙加味 LINE OA 社群發布系統",
+    socialVersion: SOCIAL_VERSION,
+    lineVersion: VERSION,
+    instagramConfigured: Boolean(IG_USER_ID && IG_TOKEN),
+    facebookConfigured: Boolean(FB_PAGE_ID && FB_TOKEN),
+    adminPinConfigured: Boolean(ADMIN_PIN),
+    persistentStoreConfigured: !STORE_PATH.startsWith("/tmp/"),
+    graphVersion: GRAPH_VERSION,
+    schedulerRunning: running,
+    postCount: readStore().posts.length,
+    checkedAt: now(),
+  };
+}
+
 app.get("/social-review", (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!ADMIN_PIN) return res.status(503).send(loginPage("請先在 Render 設定 SOCIAL_ADMIN_PIN"));
@@ -195,9 +221,16 @@ app.post("/social-logout", form, (_req, res) => {
 app.post("/social-post", requireAdmin, form, (req, res) => {
   const imageUrl = validImageUrl(req.body.imageUrl);
   const scheduledAt = new Date(req.body.scheduledAt);
-  if (!imageUrl || Number.isNaN(scheduledAt.getTime())) return res.status(400).send("圖片網址或時間格式不正確");
+  const publishInstagram = req.body.publishInstagram === "on";
+  const publishFacebook = req.body.publishFacebook === "on";
+  const instagramCaption = clean(req.body.instagramCaption, 2200);
+  const facebookCaption = clean(req.body.facebookCaption, 5000);
+  if (Number.isNaN(scheduledAt.getTime())) return res.status(400).send("時間格式不正確");
+  if (!publishInstagram && !publishFacebook) return res.status(400).send("至少選擇一個發布平台");
+  if (publishInstagram && (!imageUrl || !instagramCaption)) return res.status(400).send("Instagram 必須提供圖片網址與文案");
+  if (publishFacebook && !(facebookCaption || instagramCaption)) return res.status(400).send("Facebook 文案不可為空");
   const store = readStore();
-  store.posts.push({ id: id(), title: clean(req.body.title, 120), imageUrl, instagramCaption: clean(req.body.instagramCaption, 2200), facebookCaption: clean(req.body.facebookCaption, 5000), scheduledAt: scheduledAt.toISOString(), publishInstagram: req.body.publishInstagram === "on", publishFacebook: req.body.publishFacebook === "on", status: "draft", result: {}, lastError: "", createdAt: now(), updatedAt: now() });
+  store.posts.push({ id: id(), title: clean(req.body.title, 120), imageUrl, instagramCaption, facebookCaption, scheduledAt: scheduledAt.toISOString(), publishInstagram, publishFacebook, status: "draft", result: {}, lastError: "", createdAt: now(), updatedAt: now() });
   writeStore(store);
   res.redirect("/social-review");
 });
@@ -214,8 +247,11 @@ app.post("/social-post/:id/publish", requireAdmin, form, async (req, res) => {
   res.redirect("/social-review");
 });
 
-app.get("/social/healthz", (_req, res) => {
-  res.json({ ok: true, socialVersion: SOCIAL_VERSION, lineVersion: VERSION, instagramConfigured: Boolean(IG_USER_ID && IG_TOKEN), facebookConfigured: Boolean(FB_PAGE_ID && FB_TOKEN), adminPinConfigured: Boolean(ADMIN_PIN), persistentStoreConfigured: !STORE_PATH.startsWith("/tmp/"), graphVersion: GRAPH_VERSION, postCount: readStore().posts.length });
+app.get("/social/healthz", (_req, res) => res.json(healthPayload()));
+app.get("/health", (_req, res) => res.json(healthPayload()));
+app.get("/debug", (_req, res) => {
+  const data = healthPayload();
+  res.json({ ...data, environment: { metaPageIdPresent: Boolean(FB_PAGE_ID), metaPageTokenPresent: Boolean(FB_TOKEN), instagramUserIdPresent: Boolean(IG_USER_ID), instagramTokenPresent: Boolean(IG_TOKEN), socialDataPath: STORE_PATH } });
 });
 
 const timer = setInterval(scheduler, 30000);
@@ -225,4 +261,4 @@ scheduler();
 const port = process.env.PORT || 3000;
 if (require.main === module) app.listen(port, () => console.log(`仙加味 LINE OA ${VERSION} + social ${SOCIAL_VERSION} running on ${port}`));
 
-module.exports = { app, publishInstagram, publishFacebook, execute, scheduler };
+module.exports = { app, publishInstagram, publishFacebook, execute, scheduler, healthPayload };
