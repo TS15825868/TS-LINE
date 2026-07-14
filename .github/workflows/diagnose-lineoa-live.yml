@@ -1,11 +1,11 @@
-name: Diagnose LINE OA live
+name: Diagnose and repair LINE OA live
 
 on:
   issues:
     types: [opened]
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:
@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Read live health
-        id: health
         run: |
           set +e
           curl -sS --max-time 60 -D /tmp/headers.txt https://ts-line.onrender.com/healthz -o /tmp/health.txt
@@ -24,13 +23,6 @@ jobs:
           cat /tmp/headers.txt >> /tmp/result.txt 2>/dev/null
           echo "--- body ---" >> /tmp/result.txt
           cat /tmp/health.txt >> /tmp/result.txt 2>/dev/null
-      - name: Check webhook route
-        run: |
-          set +e
-          echo "--- unsigned webhook probe ---" >> /tmp/result.txt
-          curl -sS --max-time 30 -i -X POST https://ts-line.onrender.com/webhook \
-            -H 'Content-Type: application/json' \
-            --data '{"events":[]}' >> /tmp/result.txt 2>&1
       - name: Report diagnosis
         env:
           GH_TOKEN: ${{ github.token }}
@@ -43,3 +35,66 @@ jobs:
           )
           gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "$body"
           gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
+
+  repair:
+    if: github.event.issue.title == 'APPLY_LINEOA_V4015_DIAG'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Apply redelivery fix
+        run: python3 tools/fix_redelivery_v4015.py
+      - name: Add regression test
+        run: |
+          cat >> function.test.js <<'JS'
+
+// v401.5：LINE 重送事件不可在尚未成功處理前直接略過。
+{
+  const { beginWebhookEvent, finishWebhookEvent } = require('./server');
+  const event = { webhookEventId: 'redelivery-test-4015', deliveryContext: { isRedelivery: true } };
+  assert.strictEqual(beginWebhookEvent(event), true);
+  finishWebhookEvent(event, false);
+  assert.strictEqual(beginWebhookEvent(event), true);
+  finishWebhookEvent(event, true);
+  assert.strictEqual(beginWebhookEvent(event), false);
+}
+JS
+      - name: Test and commit
+        run: |
+          set -euo pipefail
+          npm ci
+          npm test
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server.js data.json package.json package-lock.json test.js catalog.test.js security.test.js function.test.js image-policy.test.js tools/release_check.js
+          git commit -m '修正 LINE OA 重送事件被直接略過 v401.5'
+          git push origin HEAD:main
+      - name: Verify Render
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 20); do
+            sleep 15
+            if curl --fail --silent --show-error https://ts-line.onrender.com/healthz > /tmp/health.json; then
+              python3 - <<'PY' && exit 0 || true
+          import json, sys
+          h=json.load(open('/tmp/health.json'))
+          print(json.dumps(h,ensure_ascii=False,indent=2))
+          sys.exit(0 if h.get('version')=='v401.5' and h.get('ok') is True else 1)
+          PY
+            fi
+          done
+          exit 1
+      - name: Report success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body 'LINEOA_V4015_SUCCESS｜重送事件現在會重新處理，只有成功處理後才去重；完整測試與 Render v401.5 驗收通過。'
+          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body 'LINEOA_V4015_FAILED｜修正或驗收未通過。'
