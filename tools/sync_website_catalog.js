@@ -85,6 +85,47 @@ function normalizeComboItems(data) {
   }
 }
 
+function normalizeRuntime(localData) {
+  const runtime = localData.runtime || {};
+  const imagePolicy = runtime.imagePolicy || {};
+  const approved = new Set(imagePolicy.approvedSingleSceneCards || []);
+  approved.add("combo");
+  return {
+    ...runtime,
+    version: LINE_DATA_VERSION,
+    botVersion: `v${LINE_DATA_VERSION}`,
+    branch: "main",
+    service: "https://ts-line.onrender.com",
+    status: "production",
+    requiredEnvironment: [
+      "CHANNEL_ACCESS_TOKEN",
+      "CHANNEL_SECRET",
+      "CRM_URL",
+      "SUPABASE_SECRET_KEY",
+      "INTERNAL_APP_PASSWORD",
+      "INTERNAL_APP_SECRET",
+      "SOCIAL_ADMIN_PIN",
+    ],
+    optionalEnvironment: [
+      "PUBLIC_BASE_URL",
+      "SUPABASE_URL",
+      "META_PAGE_ID",
+      "META_PAGE_ACCESS_TOKEN",
+      "INSTAGRAM_USER_ID",
+      "INSTAGRAM_ACCESS_TOKEN",
+    ],
+    imagePolicy: {
+      ...imagePolicy,
+      productCards: "real-product-images-only",
+      productIntroCollage: false,
+      redrawnPackaging: false,
+      approvedSingleSceneCards: Array.from(approved),
+      textOnlyUntilApprovedImage: (imagePolicy.textOnlyUntilApprovedImage || []).filter((name) => name !== "combo"),
+      onePurposeOneImage: true,
+    },
+  };
+}
+
 function mergeCatalog(localData, catalog) {
   validateCatalog(catalog);
   const localById = new Map((localData.products || []).map((product) => [product.id, product]));
@@ -116,6 +157,9 @@ function mergeCatalog(localData, catalog) {
     products: mergedProducts,
     version: LINE_DATA_VERSION,
     updatedAt: syncedDate,
+    lineAssetsVersion: LINE_DATA_VERSION,
+    lineBotVersion: `v${LINE_DATA_VERSION}`,
+    runtime: normalizeRuntime(localData),
     catalogVersion: catalog.catalogVersion,
     catalogSource: {
       ...(catalog.source || localData.catalogSource || {}),
@@ -172,6 +216,7 @@ module.exports = {
   validateCatalog,
   normalizeComboItems,
   normalizeWebsiteValue,
+  normalizeRuntime,
   EXPECTED_IDS,
   SHARED_FIELDS,
   SALES_FIELDS,
