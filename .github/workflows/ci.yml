@@ -17,16 +17,54 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
       - name: Install
         run: npm ci
-      - name: Full release verification
-        run: npm test
+
+      - name: Syntax checks
+        run: |
+          node --check server.js
+          node --check social-server.js
+          node --check internal-app.js
+          node --check internal-entry.js
+          node --check supabase-state-bridge.js
+          node --check persistence-auto-save.js
+          node --check line-image-safety.js
+          node --check tools/sync_website_catalog.js
+
+      - name: Production release gate
+        run: node tools/release_check.js
+
+      - name: Core LINE OA tests
+        run: node test.js
+
+      - name: Catalog tests
+        run: node catalog.test.js
+
+      - name: Security tests
+        run: node security.test.js
+
+      - name: Functional tests
+        run: node function.test.js
+
+      - name: Image policy tests
+        run: node image-policy.test.js
+
+      - name: Internal app tests
+        run: node internal-app.test.js
+
+      - name: Supabase bridge tests
+        run: node supabase-state-bridge.test.js
+
+      - name: Immediate persistence tests
+        run: node persistence-auto-save.test.js
