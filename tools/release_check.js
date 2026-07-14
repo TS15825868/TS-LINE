@@ -8,39 +8,100 @@ const exists = (file) => fs.existsSync(path.join(root, file));
 const data = JSON.parse(read("data.json"));
 const server = read("server.js");
 const pkg = JSON.parse(read("package.json"));
+const internalEntry = read("internal-entry.js");
+const internalApp = read("internal-app.js");
+const socialServer = read("social-server.js");
+const supabaseBridge = read("supabase-state-bridge.js");
 const errors = [];
-const requiredProducts = ["guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
+
+const requiredProducts = [
+  "guilu-gao",
+  "guilu-drink-30",
+  "guilu-drink-180",
+  "guilu-tangkuai",
+  "guilu-jiao",
+  "luerong-fen",
+];
+
 if (data.lineId !== "@762jybnm") errors.push("LINE ID 不正確");
 if (!Array.isArray(data.products)) errors.push("products 必須是陣列");
+if ((data.products || []).length !== 6) errors.push("正式產品規格必須為六項");
+if (data.catalogVersion !== "408.7") errors.push("官網產品目錄版本必須為 408.7");
+
 for (const id of requiredProducts) {
   const product = (data.products || []).find((item) => item.id === id);
-  if (!product) { errors.push(`缺少產品：${id}`); continue; }
-  for (const field of ["name", "spec", "price", "unit", "image", "page", "usage", "ingredients"]) {
-    if (product[field] === undefined || product[field] === null || product[field] === "") errors.push(`${id} 缺少 ${field}`);
+  if (!product) {
+    errors.push(`缺少產品：${id}`);
+    continue;
   }
+  for (const field of ["name", "displayName", "spec", "price", "unit", "image", "dmImage", "page", "usage", "ingredients"]) {
+    if (product[field] === undefined || product[field] === null || product[field] === "") {
+      errors.push(`${id} 缺少 ${field}`);
+    }
+  }
+  if (!String(product.image || "").startsWith("images/products-v3/")) errors.push(`${id} 未使用正式產品原圖`);
+  if (!String(product.dmImage || "").startsWith("images/dm-final/")) errors.push(`${id} 未使用正式 DM`);
+  if (!String(product.page || "").endsWith(".html")) errors.push(`${id} 產品頁連結不正確`);
 }
-for (const token of ["process.env.CHANNEL_ACCESS_TOKEN", "process.env.CHANNEL_SECRET", "process.env.CRM_URL", "app.post(\"/webhook\"", "app.get(\"/healthz\"", "productCarousel()", "priceCarousel()", "cartFlex(state)", "startCheckout(state)", "doctorReferralReply()", "mascotWelcomeReply()"]) {
+
+for (const token of [
+  'const VERSION = "v401.6"',
+  "process.env.CHANNEL_ACCESS_TOKEN",
+  "process.env.CHANNEL_SECRET",
+  "process.env.CRM_URL",
+  'app.post("/webhook"',
+  'app.get("/healthz"',
+  "productCarousel()",
+  "priceCarousel()",
+  "cartFlex(state)",
+  "startCheckout(state)",
+  "doctorReferralReply()",
+  "mascotWelcomeReply()",
+  "beginWebhookEvent",
+  "finishWebhookEvent",
+]) {
   if (!server.includes(token)) errors.push(`server.js 缺少必要功能：${token}`);
 }
+
 if (/channelAccessToken\s*:\s*["'][^"']{20,}/.test(server)) errors.push("server.js 疑似含硬編碼 access token");
 if (/channelSecret\s*:\s*["'][^"']{10,}/.test(server)) errors.push("server.js 疑似含硬編碼 channel secret");
-if (data.version !== "401.5") errors.push("data.json 版本未同步至 401.5");
-if (data.catalogVersion !== "408.7") errors.push("官網素材版本未同步至 408.7");
-if (data.lineBotVersion !== "v401.5") errors.push("LINE OA 版本未同步至 v401.5");
-if (data.lineAssetsVersion !== "401.5") errors.push("小老闆素材版本未同步至 401.5");
-if (data.runtime?.version !== "401.5") errors.push("中央 runtime 設定不正確");
 if (!data.richMenu?.areas || data.richMenu.areas.length !== 6) errors.push("Rich Menu 設定未整合");
 if (!data.mascotAssets?.images || Object.keys(data.mascotAssets.images).length !== 9) errors.push("小老闆素材清單未整合");
-if ((data.products || []).length !== 6) errors.push("正式產品規格必須為六項");
-for (const product of data.products || []) {
-  if (!String(product.image || "").endsWith("?v=408.7")) errors.push(`${product.id} 產品圖版本不正確`);
-  if (!String(product.dmImage || "").endsWith("?v=408.7")) errors.push(`${product.id} DM版本不正確`);
+
+if (pkg.version !== "4.4.0") errors.push("package.json 版本必須為 4.4.0");
+if (pkg.scripts?.start !== "node -r ./line-image-safety.js internal-entry.js") errors.push("正式啟動程式未整合 LINE OA、社群與內部 App");
+if (!String(pkg.scripts?.test || "").includes("internal-app.test.js")) errors.push("內部 App 測試未納入 npm test");
+if (!String(pkg.scripts?.test || "").includes("supabase-state-bridge.test.js")) errors.push("Supabase 持久化測試未納入 npm test");
+
+for (const file of [
+  "internal-entry.js",
+  "internal-app.js",
+  "social-server.js",
+  "supabase-state-bridge.js",
+  "supabase/schema.sql",
+  ".github/workflows/catalog-sync.yml",
+]) {
+  if (!exists(file)) errors.push(`缺少正式檔案：${file}`);
 }
-if (!server.includes('const VERSION = "v401.5";')) errors.push("server.js 版本不正確");
-if (!server.includes('const MASCOT_VERSION = "401.5";')) errors.push("小老闆快取版本不正確");
-if (pkg.version !== "4.1.5" || pkg.scripts?.start !== "node server.js") errors.push("package.json 未整合為單一主程式");
-for (const obsolete of ["start.js", "no-collage-runtime.js", "deploy-version.json", "release-status.json", "rich-menu-actions.json", "mascot-manifest.json", "public/mascot/manifest.json", "tools/fix_line_aspectmode.js", "tools/fix_mascot_image_urls.js"]) {
-  if (exists(obsolete)) errors.push(`應移除重複或舊檔：${obsolete}`);
+
+for (const token of ["restoreAll()", "startWatching()", "mountInternalApp(app)", 'app.get("/internal/db-healthz"']) {
+  if (!internalEntry.includes(token)) errors.push(`internal-entry.js 缺少：${token}`);
 }
-if (errors.length) { console.error("LINE OA 正式上線檢查失敗：\n- " + errors.join("\n- ")); process.exit(1); }
-console.log(`LINE OA v401.5 整合檢查通過：單一 server.js、中央 data.json、${data.products.length} 項產品、Webhook、購物車、結帳、CRM 與圖片政策正常。`);
+for (const token of ["/internal/login", "/internal/app", "/internal/api/state", "/internal/api/orders", "/internal/api/customers", "/internal/api/inventory", "/internal/api/reminders", "/internal/api/staff"]) {
+  if (!internalApp.includes(token)) errors.push(`internal-app.js 缺少功能：${token}`);
+}
+for (const token of ["/social-review", "/social/api/posts", "/social/healthz"]) {
+  if (!socialServer.includes(token)) errors.push(`social-server.js 缺少功能：${token}`);
+}
+for (const token of ["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY", "xjw_app_state", "writeRemote", "restoreAll", "startWatching"]) {
+  if (!supabaseBridge.includes(token)) errors.push(`Supabase 持久化缺少：${token}`);
+}
+
+if (errors.length) {
+  console.error("仙加味正式上線檢查失敗：\n- " + errors.join("\n- "));
+  process.exit(1);
+}
+
+console.log(
+  `PASS 仙加味正式版：LINE OA v401.6、${data.products.length} 項產品、官網目錄 ${data.catalogVersion}、購物車、結帳、CRM、社群排程、內部 PWA 與 Supabase 持久化均已整合。`
+);
