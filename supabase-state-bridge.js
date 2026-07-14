@@ -7,6 +7,7 @@ const TABLE = "xjw_app_state";
 const INTERNAL_KEY = "internal";
 const SOCIAL_KEY = "social";
 const POLL_INTERVAL_MS = 1500;
+const DEFAULT_SUPABASE_URL = "https://iphexhvjhsmelbgwzhhr.supabase.co";
 
 const status = {
   enabled: false,
@@ -17,7 +18,7 @@ const status = {
 };
 
 function config() {
-  const url = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
+  const url = String(process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/$/, "");
   const key = String(
     process.env.SUPABASE_SECRET_KEY ||
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -221,10 +222,12 @@ function startWatching() {
 }
 
 function health() {
+  const cfg = config();
   return {
     ...status,
     table: TABLE,
     storage: status.enabled ? "supabase" : "local-json",
+    projectUrl: cfg.url,
     internalPath: process.env.INTERNAL_DATA_PATH || "/tmp/xianjiawei-internal.json",
     socialPath: process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json",
   };
