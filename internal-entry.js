@@ -69,6 +69,19 @@ if (typeof originalFetch === "function") {
 }
 
 const { app, healthPayload } = require("./social-server");
+
+app.use((req, res, next) => {
+  if (req.path !== "/internal/api/state") return next();
+  const originalJson = res.json.bind(res);
+  res.json = (payload) => {
+    if (payload && Array.isArray(payload.staff)) {
+      payload.staff = payload.staff.map(({ passwordHash, ...staff }) => staff);
+    }
+    return originalJson(payload);
+  };
+  return next();
+});
+
 mountInternalApp(app);
 
 const port = process.env.PORT || 3000;
