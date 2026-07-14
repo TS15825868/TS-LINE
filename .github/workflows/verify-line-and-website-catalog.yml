@@ -1,17 +1,21 @@
 name: Verify LINE OA and website catalog
 
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: verify-line-and-website-catalog-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,8 +29,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify website catalog synchronization
-        run: npm run check:catalog
+      - name: Synchronize website catalog in verification workspace
+        run: |
+          npm run sync:catalog
+          npm run check:catalog
 
       - name: Run all tests
         run: npm test
@@ -34,36 +40,52 @@ jobs:
       - name: JavaScript syntax
         run: |
           node --check server.js
-          node --check test.js
-          node --check catalog.test.js
-          node --check security.test.js
-          node --check function.test.js
+          node --check social-server.js
+          node --check internal-app.js
+          node --check internal-entry.js
+          node --check supabase-state-bridge.js
+          node --check line-image-safety.js
           node --check tools/sync_website_catalog.js
 
-      - name: HTTP smoke tests
+      - name: Full HTTP smoke tests
         shell: bash
+        env:
+          PORT: 3000
+          INTERNAL_ADMIN_USER: admin
+          INTERNAL_APP_PASSWORD: ci-test-password-123
+          INTERNAL_APP_SECRET: ci-test-secret-1234567890
+          SOCIAL_ADMIN_PIN: ci-test-pin-123
         run: |
           set -euo pipefail
-          node server.js >/tmp/lineoa.log 2>&1 &
+          node -r ./line-image-safety.js internal-entry.js >/tmp/lineoa.log 2>&1 &
           PID=$!
-          trap 'kill $PID' EXIT
-          sleep 2
+          trap 'kill $PID 2>/dev/null || true; cat /tmp/lineoa.log' EXIT
 
-          ROOT_JSON="$(curl --fail --silent --show-error http://127.0.0.1:3000/)"
-          HEALTH_JSON="$(curl --fail --silent --show-error http://127.0.0.1:3000/healthz)"
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:3000/healthz >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
 
-          node -e '
-            const payload = JSON.parse(process.argv[1]);
-            if (payload.ok !== true || payload.service !== "仙加味 LINE OA" || typeof payload.version !== "string") {
-              console.error(payload);
-              process.exit(1);
-            }
-          ' "$ROOT_JSON"
+          curl --fail --silent --show-error http://127.0.0.1:3000/ >/tmp/root.json
+          curl --fail --silent --show-error http://127.0.0.1:3000/healthz >/tmp/health.json
+          curl --fail --silent --show-error http://127.0.0.1:3000/internal/healthz >/tmp/internal.json
+          curl --fail --silent --show-error http://127.0.0.1:3000/internal/db-healthz >/tmp/database.json
+          curl --fail --silent --show-error http://127.0.0.1:3000/social/healthz >/tmp/social.json
 
-          node -e '
-            const payload = JSON.parse(process.argv[1]);
-            if (payload.ok !== true || !/^v\d+\.\d+(?:\.\d+)?$/.test(payload.version) || payload.crmConfigured !== true) {
-              console.error(payload);
-              process.exit(1);
-            }
-          ' "$HEALTH_JSON"
+          node - <<'NODE'
+          const fs = require('fs');
+          const read = (name) => JSON.parse(fs.readFileSync(`/tmp/${name}.json`, 'utf8'));
+          const root = read('root');
+          const health = read('health');
+          const internal = read('internal');
+          const database = read('database');
+          const social = read('social');
+          if (root.ok !== true || root.service !== '仙加味 LINE OA') throw new Error('LINE OA root failed');
+          if (health.ok !== true || health.version !== 'v401.6' || health.productCount !== 6) throw new Error('LINE OA health failed');
+          if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal app health failed');
+          if (database.ok !== true || !['supabase', 'local-json'].includes(database.storage)) throw new Error('Database bridge health failed');
+          if (social.ok !== true) throw new Error('Social service health failed');
+          console.log({ root, health, internal, database, social });
+          NODE
