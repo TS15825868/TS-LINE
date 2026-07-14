@@ -1,14 +1,14 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "main": "internal-entry.js",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
     "start": "node -r ./line-image-safety.js internal-entry.js",
-    "test": "node --check server.js && node --check social-server.js && node --check internal-app.js && node --check internal-entry.js && node --check line-image-safety.js && node tools/release_check.js && node test.js && node catalog.test.js && node security.test.js && node function.test.js && node image-policy.test.js && node internal-app.test.js",
-    "check:release": "node --check server.js && node --check social-server.js && node --check internal-app.js && node --check internal-entry.js && node --check line-image-safety.js && node tools/release_check.js",
+    "test": "node --check server.js && node --check social-server.js && node --check internal-app.js && node --check internal-entry.js && node --check supabase-state-bridge.js && node --check line-image-safety.js && node tools/release_check.js && node test.js && node catalog.test.js && node security.test.js && node function.test.js && node image-policy.test.js && node internal-app.test.js",
+    "check:release": "node --check server.js && node --check social-server.js && node --check internal-app.js && node --check internal-entry.js && node --check supabase-state-bridge.js && node --check line-image-safety.js && node tools/release_check.js",
     "sync:catalog": "node tools/sync_website_catalog.js --write",
     "check:catalog": "node tools/sync_website_catalog.js --check"
   },
@@ -16,5 +16,5 @@
     "@line/bot-sdk": "10.8.0",
     "express": "^4.18.2"
   },
-  "description": "仙加味 LINE OA 正式版｜產品、購物車、CRM、社群審核、Facebook／Instagram 排程發布與內部管理 PWA"
+  "description": "仙加味 LINE OA 正式版｜產品、購物車、CRM、社群審核、內部管理 PWA 與 Supabase 持久化"
 }
