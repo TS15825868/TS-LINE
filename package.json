@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "main": "social-server.js",
   "engines": {
     "node": "22.x"

@@ -1,11 +1,11 @@
 "use strict";
 
 /**
- * LINE OA 圖片安全層
+ * LINE OA image safety layer.
  *
- * 暫時阻擋尚未通過正式產品驗收的「拼湊式小老闆圖」，避免它們繼續出現在
- * 幫我推薦、怎麼使用、搭配組合等功能卡片中。正式圖片完成並上傳後，只需
- * 從 BLOCKED_MASCOT_ASSETS 移除對應檔名即可恢復顯示。
+ * The current recommend/usage mascot images are known collage drafts and are not
+ * approved for production. Remove those hero images at send time regardless of
+ * whether Render starts through npm or directly with `node server.js`.
  */
 
 const line = require("@line/bot-sdk");

@@ -1,5 +1,8 @@
 "use strict";
 
+// Always install the LINE image safety layer, even when Render overrides npm start.
+require("./line-image-safety");
+
 /**
  * 仙加味 LINE OA Bot v401.5
  * 單一正式主程式：產品、價格、購物車、結帳、品牌故事、古籍資料與健康問題轉介。
@@ -11,7 +14,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v401.5";
+const VERSION = "v401.6";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const ORDER_NOTICE = "仙加味五大產品型態、六項正式規格皆可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
@@ -27,11 +30,16 @@ const config = {
 
 const app = express();
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
-const MASCOT_VERSION = "401.5";
-const mascotAssetUrl = (name) => PUBLIC_BASE_URL
-  ? `${PUBLIC_BASE_URL}/mascot/${name}.jpg?v=${MASCOT_VERSION}`
-  : `https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${name}.jpg?v=${MASCOT_VERSION}`;
-app.use("/mascot", express.static(path.join(__dirname, "public", "mascot"), { maxAge: "7d", immutable: true }));
+const MASCOT_VERSION = "401.6-20260714";
+// LINE fetches images independently from the webhook. Use GitHub's CDN instead of
+// the sleeping Render instance so image cards appear faster and cache busting is reliable.
+const mascotAssetUrl = (name) =>
+  `https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${name}.jpg?v=${MASCOT_VERSION}`;
+app.use("/mascot", express.static(path.join(__dirname, "public", "mascot"), {
+  maxAge: "1h",
+  immutable: false,
+  etag: true,
+}));
 const client = config.channelAccessToken
   ? new line.messagingApi.MessagingApiClient({ channelAccessToken: config.channelAccessToken })
   : null;
