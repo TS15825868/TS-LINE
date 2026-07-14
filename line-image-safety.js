@@ -13,7 +13,7 @@
  */
 const line = require("@line/bot-sdk");
 
-const ASSET_VERSION = "20260714-approved-1";
+const ASSET_VERSION = "20260714-approved-2";
 const RAW_BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
 const approvedAssetUrl = (name) => `${RAW_BASE}/${name}.jpg?v=${ASSET_VERSION}`;
 
