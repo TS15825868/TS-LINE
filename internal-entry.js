@@ -114,7 +114,12 @@ async function main() {
     };
   }
 
-  const { app, healthPayload } = require("./social-server");
+  const {
+    app,
+    healthPayload,
+    readStore: readSocialStore,
+    writeStore: writeSocialStore,
+  } = require("./social-server");
 
   app.use((req, res, next) => {
     if (req.path !== "/internal/api/state") return next();
@@ -139,14 +144,26 @@ async function main() {
     });
   });
 
+  // Normalize both stores on every startup. This initializes product inventory,
+  // arrays, timestamps and social posts, then the auto-save layer writes the
+  // normalized state to Supabase without requiring a manual test entry.
+  writeStore(readStore());
+  writeSocialStore(readSocialStore());
+
   bridge.startWatching();
 
-  // Once all stores are initialized, seed/verify them immediately. This also
-  // gives db-healthz a concrete lastSavedAt after each successful deployment.
   if (bridge.health().enabled) {
     const startupSync = await bridge.syncAll();
     console.log("Supabase startup synchronization", startupSync);
   }
+
+  // Periodic reconciliation is a final safety net if a platform restart or
+  // temporary network error occurs between writes.
+  const maintenanceTimer = setInterval(async () => {
+    const result = await bridge.syncAll();
+    if (result.enabled) console.log("Supabase periodic synchronization", result);
+  }, 10 * 60 * 1000);
+  maintenanceTimer.unref?.();
 
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
