@@ -15,10 +15,11 @@ function targets() {
 }
 
 function scheduleSave(destination) {
-  const key = targets().get(path.resolve(String(destination)));
+  const resolvedDestination = path.resolve(String(destination));
+  const key = targets().get(resolvedDestination);
   if (!key) return;
   setImmediate(async () => {
-    const saved = await bridge.saveFile(key, path.resolve(String(destination)));
+    const saved = await bridge.saveFile(key, resolvedDestination);
     if (!saved && bridge.health().enabled) {
       console.error(`Automatic Supabase save did not complete for ${key}`);
     }
@@ -28,9 +29,9 @@ function scheduleSave(destination) {
 function installPersistenceAutoSave() {
   if (installed) return;
   installed = true;
-  originalRenameSync = fs.renameSync.bind(fs);
+  originalRenameSync = fs.renameSync;
   fs.renameSync = function patchedRenameSync(oldPath, newPath) {
-    const result = originalRenameSync(oldPath, newPath);
+    const result = originalRenameSync.call(fs, oldPath, newPath);
     scheduleSave(newPath);
     return result;
   };
