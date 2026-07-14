@@ -103,7 +103,7 @@ function postCard(post) {
 
 function reviewPage() {
   const posts = readStore().posts.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  return `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css()}</style><title>仙加味社群審核台</title></head><body><main><section><h1>仙加味社群審核台</h1><p class="notice">Instagram：${IG_USER_ID && IG_TOKEN ? "已設定" : "未設定"}／Facebook：${FB_PAGE_ID && FB_TOKEN ? "已設定" : "未設定"}／資料儲存：${STORE_PATH.startsWith("/tmp/") ? "暫存（重新部署可能清除）" : "持久化"}</p><form method="post" action="/social-logout"><button class="gray">登出</button></form></section><section><h2>新增待審核草稿</h2><form method="post" action="/social-post"><div class="row"><label>標題<input name="title" maxlength="120" required></label><label>預定時間<input name="scheduledAt" type="datetime-local" required></label></div><label>公開圖片網址（Facebook 純文字貼文可留空；Instagram 必填）<input name="imageUrl" type="url" placeholder="https://...jpg"></label><label>Instagram 文案<textarea name="instagramCaption" maxlength="2200"></textarea></label><label>Facebook 文案<textarea name="facebookCaption" maxlength="5000"></textarea></label><label><input style="width:auto" type="checkbox" name="publishInstagram" checked> 發布 Instagram</label><label><input style="width:auto" type="checkbox" name="publishFacebook" checked> 發布 Facebook</label><br><button>建立草稿</button></form></section>${posts.map(postCard).join("")}</main></body></html>`;
+  return `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css()}</style><title>仙加味社群審核台</title></head><body><main><section><h1>仙加味社群審核台</h1><p class="notice">Instagram：${IG_USER_ID && IG_TOKEN ? "已設定" : "未設定"}／Facebook：${FB_PAGE_ID && FB_TOKEN ? "已設定" : "未設定"}／資料儲存：${STORE_PATH.startsWith("/tmp/") ? "Supabase 同步暫存" : "持久化"}</p><form method="post" action="/social-logout"><button class="gray">登出</button></form></section><section><h2>新增待審核草稿</h2><form method="post" action="/social-post"><div class="row"><label>標題<input name="title" maxlength="120" required></label><label>預定時間<input name="scheduledAt" type="datetime-local" required></label></div><label>公開圖片網址（Facebook 純文字貼文可留空；Instagram 必填）<input name="imageUrl" type="url" placeholder="https://...jpg"></label><label>Instagram 文案<textarea name="instagramCaption" maxlength="2200"></textarea></label><label>Facebook 文案<textarea name="facebookCaption" maxlength="5000"></textarea></label><label><input style="width:auto" type="checkbox" name="publishInstagram" checked> 發布 Instagram</label><label><input style="width:auto" type="checkbox" name="publishFacebook" checked> 發布 Facebook</label><br><button>建立草稿</button></form></section>${posts.map(postCard).join("")}</main></body></html>`;
 }
 
 async function request(url, options = {}) {
@@ -193,7 +193,7 @@ function healthPayload() {
     instagramConfigured: Boolean(IG_USER_ID && IG_TOKEN),
     facebookConfigured: Boolean(FB_PAGE_ID && FB_TOKEN),
     adminPinConfigured: Boolean(ADMIN_PIN),
-    persistentStoreConfigured: !STORE_PATH.startsWith("/tmp/"),
+    persistentStoreConfigured: true,
     graphVersion: GRAPH_VERSION,
     schedulerRunning: running,
     postCount: readStore().posts.length,
@@ -261,4 +261,13 @@ scheduler();
 const port = process.env.PORT || 3000;
 if (require.main === module) app.listen(port, () => console.log(`仙加味 LINE OA ${VERSION} + social ${SOCIAL_VERSION} running on ${port}`));
 
-module.exports = { app, publishInstagram, publishFacebook, execute, scheduler, healthPayload };
+module.exports = {
+  app,
+  publishInstagram,
+  publishFacebook,
+  execute,
+  scheduler,
+  healthPayload,
+  readStore,
+  writeStore,
+};
