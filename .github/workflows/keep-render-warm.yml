@@ -1,4 +1,4 @@
-name: Keep Render warm
+name: 仙加味正式服務自動監控
 
 on:
   push:
@@ -12,20 +12,65 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: xianjiawei-live-monitor
+  cancel-in-progress: true
+
 jobs:
-  ping:
+  monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
-      - name: Wake and verify LINE OA
+      - name: Wake Render and verify every service
+        shell: bash
         run: |
-          set -e
-          for attempt in 1 2 3; do
-            if curl --fail --silent --show-error --max-time 55 \
-              "https://ts-line.onrender.com/healthz?keepalive=$(date +%s)"; then
-              echo
-              exit 0
-            fi
-            sleep 10
-          done
-          exit 1
+          set -euo pipefail
+          BASE="https://ts-line.onrender.com"
+
+          request() {
+            local path="$1"
+            local output="$2"
+            for attempt in 1 2 3 4; do
+              if curl --fail --silent --show-error --max-time 60 \
+                "${BASE}${path}?monitor=$(date +%s)" > "$output"; then
+                return 0
+              fi
+              sleep 10
+            done
+            return 1
+          }
+
+          request "/healthz" /tmp/line.json
+          request "/internal/healthz" /tmp/internal.json
+          request "/internal/db-healthz" /tmp/database.json
+          request "/social/healthz" /tmp/social.json
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const read = (name) => JSON.parse(fs.readFileSync(`/tmp/${name}.json`, 'utf8'));
+          const line = read('line');
+          const internal = read('internal');
+          const database = read('database');
+          const social = read('social');
+
+          if (line.ok !== true || line.version !== 'v401.6' || line.productCount !== 6) {
+            throw new Error(`LINE OA health failed: ${JSON.stringify(line)}`);
+          }
+          if (internal.ok !== true || internal.app !== '仙加味內部管理 App') {
+            throw new Error(`Internal app health failed: ${JSON.stringify(internal)}`);
+          }
+          if (
+            database.ok !== true ||
+            database.enabled !== true ||
+            database.connected !== true ||
+            database.storage !== 'supabase' ||
+            database.projectUrl !== 'https://iphexhvjhsmelbgwzhhr.supabase.co'
+          ) {
+            throw new Error(`Supabase health failed: ${JSON.stringify(database)}`);
+          }
+          if (social.ok !== true || social.service !== '仙加味 LINE OA 社群發布系統') {
+            throw new Error(`Social service health failed: ${JSON.stringify(social)}`);
+          }
+
+          console.log(JSON.stringify({ line, internal, database, social }, null, 2));
+          NODE
