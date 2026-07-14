@@ -14,6 +14,7 @@ on:
       - "internal-entry.js"
       - "tools/**"
       - "package.json"
+      - "catalog.test.js"
 
 permissions:
   contents: write
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   validate-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -45,12 +46,11 @@ jobs:
       - name: Sync website catalog
         run: npm run sync:catalog
 
-      - name: Run release checks
-        run: npm test
-
-      - name: Commit synchronized catalog
+      - name: Commit synchronized catalog immediately
+        shell: bash
         run: |
-          if git diff --quiet; then
+          set -euo pipefail
+          if git diff --quiet -- data.json; then
             echo "Catalog already synchronized"
             exit 0
           fi
@@ -58,4 +58,8 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add data.json
           git commit -m "chore: auto-sync website catalog"
+          git pull --rebase origin main
           git push origin main
+
+      - name: Run complete release checks
+        run: npm test
