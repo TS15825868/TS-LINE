@@ -973,9 +973,9 @@
       "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
     }
   ],
-  "version": "401.5",
+  "version": "401.6",
   "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。",
-  "updatedAt": "2026-07-14",
+  "updatedAt": "2026-07-13",
   "referenceKnowledge": {
     "updatedAt": "2026-07-08",
     "sourcesPage": "https://ts15825868.github.io/xianjiawei/sources.html",
@@ -1147,10 +1147,10 @@
     ]
   },
   "mascotAssets": {
-    "version": "401.5",
+    "version": "401.6",
     "scope": "TS-LINE/main LINE OA dedicated mascot assets",
     "aspectRatio": "1:1",
-    "verifiedAt": "2026-07-14",
+    "verifiedAt": "2026-07-13",
     "images": {
       "brand": {
         "file": "public/mascot/brand.jpg",
