@@ -17,19 +17,27 @@ jobs:
         with:
           ref: main
           fetch-depth: 1
-      - name: Apply fix
-        run: python3 tools/upgrade_lineoa_v4014.py
-      - name: Test
+      - name: Apply and test
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          : > /tmp/apply.log
+          python3 tools/upgrade_lineoa_v4014.py >> /tmp/apply.log 2>&1
+          code=$?
+          if [ $code -eq 0 ]; then npm ci >> /tmp/apply.log 2>&1; code=$?; fi
+          if [ $code -eq 0 ]; then npm test >> /tmp/apply.log 2>&1; code=$?; fi
+          if [ $code -ne 0 ]; then
+            { echo '```text'; tail -n 120 /tmp/apply.log; echo '```'; } > /tmp/failure.md
+            gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file /tmp/failure.md
+            exit $code
+          fi
+          cat /tmp/apply.log
+      - name: Commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          npm ci
-          npm test
-          grep -Fq 'const VERSION = "v401.4"' server.js
-          grep -Fq 'MessagingApiClient' server.js
-          grep -Fq 'lastReplyError' server.js
-          grep -Fq 'cron: "*/10 * * * *"' .github/workflows/keep-render-awake.yml
-      - name: Commit
-        run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add server.js data.json package.json package-lock.json test.js catalog.test.js security.test.js function.test.js image-policy.test.js tools/release_check.js .github/workflows/keep-render-awake.yml
