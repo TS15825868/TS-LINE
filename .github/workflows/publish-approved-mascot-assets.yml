@@ -34,32 +34,33 @@ jobs:
       - name: Install image validator
         run: python -m pip install --disable-pip-version-check pillow
 
-      - name: Decode approved assets
+      - name: Decode and validate approved assets
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p public/mascot
-          base64 --decode .asset-upload/usage-approved.b64 > public/mascot/usage.jpg
-          base64 --decode .asset-upload/faq-approved.b64 > public/mascot/faq.jpg
-          base64 --decode .asset-upload/brand-approved.b64 > public/mascot/brand.jpg
-          file public/mascot/usage.jpg public/mascot/faq.jpg public/mascot/brand.jpg
-          test -s public/mascot/usage.jpg
-          test -s public/mascot/faq.jpg
-          test -s public/mascot/brand.jpg
-
-      - name: Validate image dimensions
-        shell: bash
-        run: |
           python - <<'PY'
+          import base64
+          from pathlib import Path
           from PIL import Image
+
           for name in ('usage', 'faq', 'brand'):
-              path = f'public/mascot/{name}.jpg'
-              with Image.open(path) as image:
+              source = Path(f'.asset-upload/{name}-approved.b64')
+              target = Path(f'public/mascot/{name}.jpg')
+              text = ''.join(source.read_text(encoding='utf-8').split())
+              padding = '=' * (-len(text) % 4)
+              data = base64.b64decode(text + padding, validate=False)
+              if not data.startswith(b'\xff\xd8') or not data.endswith(b'\xff\xd9'):
+                  raise SystemExit(f'{source}: invalid or incomplete JPEG data ({len(data)} bytes)')
+              target.write_bytes(data)
+              with Image.open(target) as image:
+                  image.verify()
+              with Image.open(target) as image:
                   if image.size != (800, 600):
-                      raise SystemExit(f'{path}: expected 800x600, got {image.size}')
+                      raise SystemExit(f'{target}: expected 800x600, got {image.size}')
                   if image.format != 'JPEG':
-                      raise SystemExit(f'{path}: expected JPEG, got {image.format}')
-                  print(path, image.size, image.format)
+                      raise SystemExit(f'{target}: expected JPEG, got {image.format}')
+                  print(source, len(text), 'chars ->', target, len(data), 'bytes', image.size, image.format)
           PY
 
       - name: Commit approved assets and clean staging
