@@ -5,7 +5,7 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260715-stable-9";
+const RUNTIME_VERSION = "20260715-stable-10";
 const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
@@ -30,6 +30,7 @@ function postbootScript() { return readScript(postbootFile); }
 function fixGeneratedHtml(body) {
   if (typeof body !== "string" || !body.includes("仙加味內部管理 App")) return body;
   const cleanHtml = body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  const orderStyle = '<style id="xjwOrderEntryOverride">#xjwProductPicker{display:none!important}</style>';
   const scripts = [
     `/internal/app-shell.js?v=${RUNTIME_VERSION}`,
     `/internal/app-runtime.js?v=${RUNTIME_VERSION}`,
@@ -41,7 +42,7 @@ function fixGeneratedHtml(body) {
     `/internal/app-social-filter.js?v=${RUNTIME_VERSION}`,
     `/internal/app-postboot.js?v=${RUNTIME_VERSION}`,
   ].map((src) => `<script src="${src}"></script>`).join("");
-  return cleanHtml.replace("</body>", `${scripts}</body>`);
+  return cleanHtml.replace("</body>", `${orderStyle}${scripts}</body>`);
 }
 
 function sendScript(res, source) {
