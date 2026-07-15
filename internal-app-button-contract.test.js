@@ -16,7 +16,8 @@ const retry = fs.readFileSync(require.resolve("./internal-app-social-retry"), "u
   "更新中…",
   "已更新",
   "更新失敗",
-  "data.refreshApp",
+  "dataset.refreshApp",
+  "button[data-refresh-app='true']",
   "window.xjwRefreshApp",
   "unhandledrejection",
 ].forEach((token) => assert.ok(shell.includes(token), `shell missing ${token}`));
