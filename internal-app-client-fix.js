@@ -5,118 +5,61 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260715-ops-6";
+const RUNTIME_VERSION = "20260715-stable-2";
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
-const helpersFile = path.join(__dirname, "internal-app-helpers.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
-const refreshControllerFile = path.join(__dirname, "internal-app-refresh-controller.js");
 const formControllerFile = path.join(__dirname, "internal-app-form-controller.js");
-const orderSyncControllerFile = path.join(__dirname, "internal-order-sync-controller.js");
+const safeExtrasFile = path.join(__dirname, "internal-app-safe-extras.js");
 
-function runtimeScript() {
-  return fs.readFileSync(runtimeFile, "utf8");
+function readScript(file) {
+  return fs.readFileSync(file, "utf8");
 }
 
-function helpersScript() {
-  return fs.readFileSync(helpersFile, "utf8");
+function runtimeScript() {
+  return readScript(runtimeFile);
 }
 
 function uploadControllerScript() {
-  return fs.readFileSync(uploadControllerFile, "utf8");
-}
-
-function refreshControllerScript() {
-  return fs.readFileSync(refreshControllerFile, "utf8");
+  return readScript(uploadControllerFile);
 }
 
 function formControllerScript() {
-  return fs.readFileSync(formControllerFile, "utf8");
+  return readScript(formControllerFile);
 }
 
-function orderSyncControllerScript() {
-  return fs.readFileSync(orderSyncControllerFile, "utf8");
+function safeExtrasScript() {
+  return readScript(safeExtrasFile);
 }
 
 function fixGeneratedHtml(body) {
   if (typeof body !== "string" || !body.includes("仙加味內部管理 App")) return body;
 
-  let html = body.replace(
-    /<script>[\s\S]*?<\/script>/,
-    `<script src="/internal/app-runtime.js?v=${RUNTIME_VERSION}"></script>`
-  );
+  const cleanHtml = body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  const scripts = [
+    `/internal/app-runtime.js?v=${RUNTIME_VERSION}`,
+    `/internal/app-upload-controller.js?v=${RUNTIME_VERSION}`,
+    `/internal/app-form-controller.js?v=${RUNTIME_VERSION}`,
+    `/internal/app-safe-extras.js?v=${RUNTIME_VERSION}`,
+  ].map((src) => `<script src="${src}"></script>`).join("");
 
-  if (!html.includes("/internal/app-runtime.js")) {
-    html = html.replace("</body>", `<script src="/internal/app-runtime.js?v=${RUNTIME_VERSION}"></script></body>`);
-  }
+  return cleanHtml.replace("</body>", `${scripts}</body>`);
+}
 
-  if (!html.includes("/internal/app-helpers.js")) {
-    html = html.replace("</body>", `<script src="/internal/app-helpers.js?v=${RUNTIME_VERSION}"></script></body>`);
-  }
-
-  if (!html.includes("/internal/app-upload-controller.js")) {
-    html = html.replace("</body>", `<script src="/internal/app-upload-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
-  }
-
-  if (!html.includes("/internal/app-refresh-controller.js")) {
-    html = html.replace("</body>", `<script src="/internal/app-refresh-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
-  }
-
-  if (!html.includes("/internal/app-form-controller.js")) {
-    html = html.replace("</body>", `<script src="/internal/app-form-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
-  }
-
-  if (!html.includes("/internal/order-sync-controller.js")) {
-    html = html.replace("</body>", `<script src="/internal/order-sync-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
-  }
-
-  return html;
+function sendScript(res, source) {
+  res.set({
+    "Cache-Control": "no-store, max-age=0",
+    "Content-Type": "application/javascript; charset=utf-8",
+  }).send(source);
 }
 
 function mountClientFix(app) {
   if (!app || mountedApps.has(app)) return;
   mountedApps.add(app);
 
-  app.get("/internal/app-runtime.js", (_req, res) => {
-    res.set({
-      "Cache-Control": "no-store, max-age=0",
-      "Content-Type": "application/javascript; charset=utf-8",
-    }).send(runtimeScript());
-  });
-
-  app.get("/internal/app-helpers.js", (_req, res) => {
-    res.set({
-      "Cache-Control": "no-store, max-age=0",
-      "Content-Type": "application/javascript; charset=utf-8",
-    }).send(helpersScript());
-  });
-
-  app.get("/internal/app-upload-controller.js", (_req, res) => {
-    res.set({
-      "Cache-Control": "no-store, max-age=0",
-      "Content-Type": "application/javascript; charset=utf-8",
-    }).send(uploadControllerScript());
-  });
-
-  app.get("/internal/app-refresh-controller.js", (_req, res) => {
-    res.set({
-      "Cache-Control": "no-store, max-age=0",
-      "Content-Type": "application/javascript; charset=utf-8",
-    }).send(refreshControllerScript());
-  });
-
-  app.get("/internal/app-form-controller.js", (_req, res) => {
-    res.set({
-      "Cache-Control": "no-store, max-age=0",
-      "Content-Type": "application/javascript; charset=utf-8",
-    }).send(formControllerScript());
-  });
-
-  app.get("/internal/order-sync-controller.js", (_req, res) => {
-    res.set({
-      "Cache-Control": "no-store, max-age=0",
-      "Content-Type": "application/javascript; charset=utf-8",
-    }).send(orderSyncControllerScript());
-  });
+  app.get("/internal/app-runtime.js", (_req, res) => sendScript(res, runtimeScript()));
+  app.get("/internal/app-upload-controller.js", (_req, res) => sendScript(res, uploadControllerScript()));
+  app.get("/internal/app-form-controller.js", (_req, res) => sendScript(res, formControllerScript()));
+  app.get("/internal/app-safe-extras.js", (_req, res) => sendScript(res, safeExtrasScript()));
 
   app.use("/internal/app", (_req, res, next) => {
     const originalSend = res.send.bind(res);
@@ -149,11 +92,9 @@ installHook();
 module.exports = {
   RUNTIME_VERSION,
   runtimeScript,
-  helpersScript,
   uploadControllerScript,
-  refreshControllerScript,
   formControllerScript,
-  orderSyncControllerScript,
+  safeExtrasScript,
   fixGeneratedHtml,
   mountClientFix,
   installHook,
