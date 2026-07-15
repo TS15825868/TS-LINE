@@ -3,7 +3,7 @@
 const express = require("express");
 const crypto = require("crypto");
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const json = express.json({ limit: "2mb" });
 const SHIPPED = new Set(["已出貨", "已完成"]);
 const CANCELLED = new Set(["已取消"]);
@@ -209,7 +209,8 @@ function mountLineOrderSync(app, { readStore, writeStore }) {
     const method = req.method.toUpperCase();
     if (!["POST", "PATCH", "DELETE"].includes(method)) return next();
     const beforeStore = readStore();
-    const before = method === "POST" ? null : beforeStore.orders.find((item) => item.id === req.params?.id || item.id === req.path.split("/").filter(Boolean)[0]);
+    const routeId = req.path.split("/").filter(Boolean)[0] || "";
+    const before = method === "POST" ? null : beforeStore.orders.find((item) => item.id === routeId);
 
     if (method === "PATCH" && before) {
       const candidate = { ...before, ...req.body };
@@ -228,15 +229,23 @@ function mountLineOrderSync(app, { readStore, writeStore }) {
       setImmediate(async () => {
         try {
           const store = readStore();
-          const after = res.locals.xjwOrderPayload?.order || null;
-          const removed = method === "DELETE" ? before : null;
+          const payloadOrder = res.locals.xjwOrderPayload?.order || null;
+          const after = payloadOrder
+            ? store.orders.find((item) => item.id === payloadOrder.id) || payloadOrder
+            : null;
           applyOrderTransition(store, before, after, req.internalUser?.user || "內部 App");
-          if (removed) removed.deletedAt = now();
           writeStore(store);
           if (after) {
-            try { await notifyOrder(store, before, after); }
-            catch (error) {
-              store.activities.push({ id: uid("act"), actor: "系統", action: "LINE 訂單通知失敗", detail: `${after.customerName || after.id}｜${error.message}`, createdAt: now() });
+            try {
+              await notifyOrder(store, before, after);
+            } catch (error) {
+              store.activities.push({
+                id: uid("act"),
+                actor: "系統",
+                action: "LINE 訂單通知失敗",
+                detail: `${after.customerName || after.id}｜${error.message}`,
+                createdAt: now(),
+              });
             }
             writeStore(store);
           }
