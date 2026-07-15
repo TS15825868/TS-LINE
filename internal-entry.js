@@ -7,6 +7,7 @@ const { mountUpload } = require("./internal-social-upload");
 const { seedInventory } = require("./internal-inventory-seed");
 const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
+const { displayCart, expandCart } = require("./line-order-cart");
 const {
   mountLineOrderSync,
   applyOrderTransition,
@@ -53,14 +54,8 @@ async function main() {
           );
 
           if (!duplicate) {
-            const orderLines = (payload.cart || []).map((item) => ({
-              productId: item.productId || item.id || "",
-              name: item.name || item.displayName || item.productId || "商品",
-              qty: Number(item.qty || item.quantity || 1),
-            }));
-            const items = orderLines
-              .map((item) => `${item.name} × ${item.qty}`)
-              .join("\n");
+            const orderLines = expandCart(payload.cart || []);
+            const items = displayCart(payload.cart || []);
 
             const order = {
               id: `ord-line-${Date.now().toString(36)}`,
@@ -191,7 +186,7 @@ async function main() {
         socialVersion: health.socialVersion,
         storage: bridge.health().storage,
         operationsVersion: "1.0.0",
-        orderSyncVersion: "1.0.1",
+        orderSyncVersion: "1.0.2",
       }
     );
   });
