@@ -5,12 +5,13 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260715-ops-5";
+const RUNTIME_VERSION = "20260715-ops-6";
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const helpersFile = path.join(__dirname, "internal-app-helpers.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
 const refreshControllerFile = path.join(__dirname, "internal-app-refresh-controller.js");
 const formControllerFile = path.join(__dirname, "internal-app-form-controller.js");
+const orderSyncControllerFile = path.join(__dirname, "internal-order-sync-controller.js");
 
 function runtimeScript() {
   return fs.readFileSync(runtimeFile, "utf8");
@@ -30,6 +31,10 @@ function refreshControllerScript() {
 
 function formControllerScript() {
   return fs.readFileSync(formControllerFile, "utf8");
+}
+
+function orderSyncControllerScript() {
+  return fs.readFileSync(orderSyncControllerFile, "utf8");
 }
 
 function fixGeneratedHtml(body) {
@@ -58,6 +63,10 @@ function fixGeneratedHtml(body) {
 
   if (!html.includes("/internal/app-form-controller.js")) {
     html = html.replace("</body>", `<script src="/internal/app-form-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
+  }
+
+  if (!html.includes("/internal/order-sync-controller.js")) {
+    html = html.replace("</body>", `<script src="/internal/order-sync-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
   }
 
   return html;
@@ -102,6 +111,13 @@ function mountClientFix(app) {
     }).send(formControllerScript());
   });
 
+  app.get("/internal/order-sync-controller.js", (_req, res) => {
+    res.set({
+      "Cache-Control": "no-store, max-age=0",
+      "Content-Type": "application/javascript; charset=utf-8",
+    }).send(orderSyncControllerScript());
+  });
+
   app.use("/internal/app", (_req, res, next) => {
     const originalSend = res.send.bind(res);
     res.send = (body) => originalSend(fixGeneratedHtml(body));
@@ -137,6 +153,7 @@ module.exports = {
   uploadControllerScript,
   refreshControllerScript,
   formControllerScript,
+  orderSyncControllerScript,
   fixGeneratedHtml,
   mountClientFix,
   installHook,
