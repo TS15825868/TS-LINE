@@ -13,6 +13,11 @@ const retry = fs.readFileSync(require.resolve("./internal-app-social-retry"), "u
 [
   "[data-view]",
   "重新整理",
+  "更新中…",
+  "已更新",
+  "更新失敗",
+  "data.refreshApp",
+  "window.xjwRefreshApp",
   "unhandledrejection",
 ].forEach((token) => assert.ok(shell.includes(token), `shell missing ${token}`));
 
@@ -71,13 +76,17 @@ const retry = fs.readFileSync(require.resolve("./internal-app-social-retry"), "u
 ].forEach((token) => assert.ok(extras.includes(token), `safe extras missing ${token}`));
 
 [
-  'data-social-action',
-  'publish',
-  'partial',
-  '重試失敗平台',
-  '立即發布',
+  "data-social-action",
+  "publish",
+  "partial",
+  "重試失敗平台",
+  "重新發布",
+  "立即發布",
+  "needsRetryFromCard",
+  "Access Token 已過期",
+  "data-xjw-social-duplicate",
 ].forEach((token) => assert.ok(retry.includes(token), `social retry missing ${token}`));
 
 assert.ok(!extras.includes("MutationObserver"), "safe extras must not use MutationObserver");
 assert.ok(!retry.includes("MutationObserver"), "social retry must not use MutationObserver");
-console.log("PASS all internal app button and function contracts including partial social retry");
+console.log("PASS all internal app button contracts including reliable refresh and partial social retry");
