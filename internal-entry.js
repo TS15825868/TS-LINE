@@ -6,6 +6,11 @@ const { mountClientFix } = require("./internal-app-client-fix");
 const { mountUpload } = require("./internal-social-upload");
 const { seedInventory } = require("./internal-inventory-seed");
 const { mountOperationsSuite } = require("./internal-operations-suite");
+const {
+  mountLineOrderSync,
+  applyOrderTransition,
+  notifyOrder,
+} = require("./internal-line-order-sync");
 
 async function main() {
   const restore = await bridge.restoreAll();
@@ -47,16 +52,16 @@ async function main() {
           );
 
           if (!duplicate) {
-            const items = (payload.cart || [])
-              .map(
-                (item) =>
-                  `${item.name || item.displayName || item.productId || "商品"} × ${
-                    item.qty || item.quantity || 1
-                  }`
-              )
+            const orderLines = (payload.cart || []).map((item) => ({
+              productId: item.productId || item.id || "",
+              name: item.name || item.displayName || item.productId || "商品",
+              qty: Number(item.qty || item.quantity || 1),
+            }));
+            const items = orderLines
+              .map((item) => `${item.name} × ${item.qty}`)
               .join("\n");
 
-            store.orders.push({
+            const order = {
               id: `ord-line-${Date.now().toString(36)}`,
               externalId,
               source: "LINE OA",
@@ -65,6 +70,7 @@ async function main() {
               customerName: payload.name || "LINE 客戶",
               phone: payload.phone || "",
               items,
+              orderLines,
               total: Number(payload.total || 0),
               payment: payload.payment || "",
               shipping: payload.shipping || "",
@@ -75,7 +81,8 @@ async function main() {
                 .join("｜"),
               createdAt: payload.createdAt || new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-            });
+            };
+            store.orders.push(order);
 
             if (
               payload.phone &&
@@ -93,6 +100,7 @@ async function main() {
               });
             }
 
+            applyOrderTransition(store, null, order, "LINE OA");
             store.activities.push({
               id: `act-line-${Date.now().toString(36)}`,
               actor: "LINE OA",
@@ -103,6 +111,9 @@ async function main() {
               createdAt: new Date().toISOString(),
             });
             writeStore(store);
+            notifyOrder(store, null, order)
+              .then(() => writeStore(store))
+              .catch((error) => console.error("LINE order confirmation sync failed", error.message));
           }
         }
       } catch (error) {
@@ -129,6 +140,7 @@ async function main() {
     writeSocialStore,
     bridge,
   });
+  mountLineOrderSync(app, { readStore, writeStore });
   mountInternalApp(app, {
     social: {
       execute: executeSocialPost,
@@ -176,6 +188,7 @@ async function main() {
         socialVersion: health.socialVersion,
         storage: bridge.health().storage,
         operationsVersion: "1.0.0",
+        orderSyncVersion: "1.0.0",
       }
     );
   });
