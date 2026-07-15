@@ -1,12 +1,12 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "4.6.4",
+  "version": "4.6.5",
   "main": "internal-entry.js",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
-    "start": "node -r ./line-image-safety.js -r ./internal-app-pro.js -r ./internal-app-security-patch.js -r ./internal-app-client-fix.js internal-entry.js",
+    "start": "node -r ./line-image-safety.js -r ./internal-app-pro.js -r ./internal-app-security-patch.js internal-entry.js",
     "test": "node --check server.js && node --check social-server.js && node --check internal-app.js && node --check internal-app-pro.js && node --check internal-app-security-patch.js && node --check internal-app-client-fix.js && node --check internal-social-upload.js && node --check internal-entry.js && node --check supabase-state-bridge.js && node --check persistence-auto-save.js && node --check line-image-safety.js && node tools/release_check.js && node test.js && node catalog.test.js && node security.test.js && node function.test.js && node image-policy.test.js && node internal-app.test.js && node internal-app-pro.test.js && node internal-app-client-fix.test.js && node internal-social-upload.test.js && node supabase-state-bridge.test.js && node persistence-auto-save.test.js",
     "check:release": "node --check server.js && node --check social-server.js && node --check internal-app.js && node --check internal-app-pro.js && node --check internal-app-security-patch.js && node --check internal-app-client-fix.js && node --check internal-social-upload.js && node --check internal-entry.js && node --check supabase-state-bridge.js && node --check persistence-auto-save.js && node --check line-image-safety.js && node tools/release_check.js",
     "sync:catalog": "node tools/sync_website_catalog.js --write",
