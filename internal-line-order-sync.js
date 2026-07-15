@@ -3,7 +3,7 @@
 const express = require("express");
 const crypto = require("crypto");
 
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 const json = express.json({ limit: "2mb" });
 const SHIPPED = new Set(["已出貨", "已完成"]);
 const CANCELLED = new Set(["已取消"]);
@@ -39,19 +39,14 @@ function rawOrderLines(order = {}) {
       if (!match) return null;
       const qty = number(match[2]);
       const subtotal = number(match[4]);
-      return {
-        name: match[1].trim(),
-        qty,
-        unitPrice: number(match[3]) || (qty && subtotal ? subtotal / qty : 0),
-      };
+      return { name: match[1].trim(), qty, unitPrice: number(match[3]) || (qty && subtotal ? subtotal / qty : 0) };
     })
     .filter(Boolean);
 }
 
 function normalizePricingLines(order = {}, inventory = []) {
-  const source = rawOrderLines(order);
   const lines = [];
-  for (const raw of source) {
+  for (const raw of rawOrderLines(order)) {
     const qty = Math.max(0, number(raw.qty ?? raw.quantity));
     if (!qty) continue;
     const item = inventoryMatch(raw, inventory);
@@ -69,6 +64,7 @@ function normalizePricingLines(order = {}, inventory = []) {
 }
 
 function hasManagedPricing(order = {}) {
+  if (order.pricingManaged === true || order.pricingManaged === "true") return true;
   if (Array.isArray(order.orderLines)) return true;
   if (typeof order.orderLines === "string" && order.orderLines.trim().startsWith("[")) return true;
   return ["subtotal", "discount", "shippingFee", "paidAmount", "paymentStatus", "balance"].some((key) => order[key] !== undefined && order[key] !== "");
@@ -78,10 +74,12 @@ function normalizeOrderPayload(order = {}, inventory = []) {
   const next = { ...order };
   const lines = normalizePricingLines(next, inventory);
   const managed = hasManagedPricing(next);
-  if (lines.length) {
+
+  if (managed && lines.length) {
     next.orderLines = lines;
     next.items = lines.map((line) => `${line.name} × ${line.qty}｜單價 $${Math.round(line.unitPrice).toLocaleString("en-US")}｜小計 $${Math.round(line.subtotal).toLocaleString("en-US")}`).join("\n");
   }
+
   if (managed) {
     const subtotal = lines.reduce((sum, line) => sum + number(line.subtotal), 0);
     const discount = Math.max(0, number(next.discount));
@@ -105,6 +103,7 @@ function normalizeOrderPayload(order = {}, inventory = []) {
     next.pricingManaged = true;
     next.pricingUpdatedAt = now();
   }
+
   if (next.status && ORDER_STATUSES.has(clean(next.status, 40))) next.status = clean(next.status, 40);
   return next;
 }
@@ -147,13 +146,8 @@ function quantities(order, inventory) {
 function movement(item, delta, reservedDelta, reason, actor, order) {
   item.movements = Array.isArray(item.movements) ? item.movements : [];
   item.movements.push({
-    id: uid("mov"),
-    delta,
-    reservedDelta,
-    reason: clean(reason, 300),
-    actor: clean(actor, 80),
-    orderId: clean(order?.id, 120),
-    createdAt: now(),
+    id: uid("mov"), delta, reservedDelta, reason: clean(reason, 300), actor: clean(actor, 80),
+    orderId: clean(order?.id, 120), createdAt: now(),
   });
   item.movements = item.movements.slice(-300);
 }
@@ -172,13 +166,13 @@ function applyOrderTransition(store, before, after, actor = "系統") {
     if (!item) continue;
     item.stock = Math.max(0, number(item.stock));
     item.reserved = Math.max(0, number(item.reserved));
-    const oldLine = beforeQty.get(productId) || { reserved: 0, shipped: 0, qty: 0 };
-    const newLine = afterQty.get(productId) || { reserved: 0, shipped: 0, qty: 0 };
+    const oldLine = beforeQty.get(productId) || { reserved: 0, shipped: 0 };
+    const newLine = afterQty.get(productId) || { reserved: 0, shipped: 0 };
     const reservedDelta = newLine.reserved - oldLine.reserved;
     const shippedDelta = newLine.shipped - oldLine.shipped;
     const stockDelta = -shippedDelta;
-
     if (!reservedDelta && !stockDelta) continue;
+
     item.reserved = Math.max(0, item.reserved + reservedDelta);
     item.stock = Math.max(0, item.stock + stockDelta);
     item.availableStock = Math.max(0, item.stock - item.reserved);
@@ -197,12 +191,9 @@ function applyOrderTransition(store, before, after, actor = "系統") {
     after.inventoryMode = inventoryMode(after);
     after.inventorySyncedAt = now();
   }
-
   if (changes.length) {
     store.activities.push({
-      id: uid("act"),
-      actor: clean(actor, 80),
-      action: "訂單庫存連動",
+      id: uid("act"), actor: clean(actor, 80), action: "訂單庫存連動",
       detail: changes.map((item) => `${item.name}｜庫存${item.stockDelta >= 0 ? "+" : ""}${item.stockDelta}｜保留${item.reservedDelta >= 0 ? "+" : ""}${item.reservedDelta}`).join("；"),
       createdAt: now(),
     });
@@ -279,13 +270,9 @@ function validateOrderAvailability(store, before, candidate) {
   const candidateQty = quantities(candidate, inventory);
   const mode = inventoryMode(candidate);
   const shortages = [];
-
   for (const [productId, line] of candidateQty.entries()) {
     const item = inventory.find((entry) => entry.productId === productId);
-    if (!item) {
-      shortages.push(`${line.name} 找不到庫存品項`);
-      continue;
-    }
+    if (!item) { shortages.push(`${line.name} 找不到庫存品項`); continue; }
     const previous = beforeQty.get(productId) || { reserved: 0, shipped: 0 };
     const available = mode === "shipped"
       ? number(item.stock) + number(previous.shipped)
@@ -323,9 +310,7 @@ function mountLineOrderSync(app, { readStore, writeStore }) {
         try {
           const store = readStore();
           const payloadOrder = payload?.order || null;
-          let after = payloadOrder
-            ? store.orders.find((item) => item.id === payloadOrder.id) || payloadOrder
-            : null;
+          let after = payloadOrder ? store.orders.find((item) => item.id === payloadOrder.id) || payloadOrder : null;
           if (!after && method === "POST") after = store.orders.at(-1) || null;
           if (after) {
             Object.assign(after, normalizeOrderPayload({ ...after, ...req.body }, store.inventory || []));
@@ -347,16 +332,9 @@ function mountLineOrderSync(app, { readStore, writeStore }) {
       setImmediate(async () => {
         const store = readStore();
         const after = store.orders.find((item) => item.id === res.locals.xjwOrderAfter.id) || res.locals.xjwOrderAfter;
-        try {
-          await notifyOrder(store, before, after);
-        } catch (error) {
-          store.activities.push({
-            id: uid("act"),
-            actor: "系統",
-            action: "LINE 訂單通知失敗",
-            detail: `${after.customerName || after.id}｜${error.message}`,
-            createdAt: now(),
-          });
+        try { await notifyOrder(store, before, after); }
+        catch (error) {
+          store.activities.push({ id: uid("act"), actor: "系統", action: "LINE 訂單通知失敗", detail: `${after.customerName || after.id}｜${error.message}`, createdAt: now() });
         }
         writeStore(store);
       });
@@ -366,17 +344,7 @@ function mountLineOrderSync(app, { readStore, writeStore }) {
 }
 
 module.exports = {
-  VERSION,
-  ORDER_STATUSES,
-  rawOrderLines,
-  normalizePricingLines,
-  normalizeOrderPayload,
-  parseOrderLines,
-  inventoryMode,
-  applyOrderTransition,
-  statusMessage,
-  notifyOrder,
-  validateOrderAvailability,
-  validateShipment,
-  mountLineOrderSync,
+  VERSION, ORDER_STATUSES, rawOrderLines, normalizePricingLines, normalizeOrderPayload, parseOrderLines,
+  inventoryMode, applyOrderTransition, statusMessage, notifyOrder, validateOrderAvailability,
+  validateShipment, mountLineOrderSync,
 };
