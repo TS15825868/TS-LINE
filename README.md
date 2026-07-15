@@ -1,6 +1,6 @@
-# 仙加味 LINE OA v4.5.0
+# 仙加味 LINE OA v4.6.1
 
-正式版以 `server.js` 為 LINE OA 主程式、`social-server.js` 為社群發布服務、`internal-entry.js` 為正式部署啟動器、`internal-app.js` 為內部管理 PWA、`supabase-state-bridge.js` 為免費方案資料持久化層、`data.json` 為產品與方案資料中心。
+正式版以 `server.js` 為 LINE OA 主程式、`social-server.js` 為社群發布服務、`internal-entry.js` 為正式部署啟動器、`internal-app.js` 為基礎管理與登入層、`internal-app-pro.js` 為完整內部管理 App v2、`supabase-state-bridge.js` 為免費方案資料持久化層、`data.json` 為產品與方案資料中心。
 
 ## 正式功能
 
@@ -9,18 +9,22 @@
 - 產品卡固定使用真實產品原圖，另提供正式 DM、完整官網介紹與使用方式。
 - 價格方案、數量選擇、購物車、結帳、配送、付款與 CRM 訂單寫入。
 - Facebook／Instagram 草稿、審核、排程與發布。
-- 內部管理 App：儀表板、訂單、客戶 CRM、庫存、提醒、報表、員工權限與操作紀錄。
+- 完整內部管理 App v2：營運儀表板、訂單、客戶 CRM、庫存異動、提醒、社群排程、期間報表、員工權限、操作紀錄與備份還原。
+- 訂單與客戶支援新增、搜尋、編輯與管理員刪除；訂單可記錄付款、配送、地址與物流單號。
+- 庫存支援直接盤點、進貨／出貨增減與異動原因紀錄。
+- 可匯出訂單及客戶 CSV；管理員可下載與還原完整 JSON 備份。
 - LINE OA 訂單成功寫入 CRM 後，會自動同步一份到內部管理 App。
 - Supabase PostgreSQL 自動保存與還原內部 App、社群草稿及排程資料。
 - 常見問題、品牌故事、門市資訊、人工客服與健康敏感問題轉介。
 - LINE、Meta 與 Supabase 憑證只從部署平台環境變數讀取，不寫入程式庫。
+- 公開 `/debug` 診斷入口已關閉；完整備份只允許管理員下載。
 
 ## 必要環境變數
 
 - `CHANNEL_ACCESS_TOKEN`
 - `CHANNEL_SECRET`
 - `CRM_URL`
-- `SOCIAL_ADMIN_PIN`：社群審核台密碼，也可作為內部管理 App 備用密碼。
+- `SOCIAL_ADMIN_PIN`：舊社群審核台密碼，也可作為內部管理 App 備用密碼。
 
 ## 內部管理 App
 
@@ -28,6 +32,8 @@
 - 建議設定 `INTERNAL_APP_PASSWORD`，不要與公開服務共用密碼。
 - 可設定 `INTERNAL_ADMIN_USER`，預設為 `admin`。
 - 可設定 `INTERNAL_APP_SECRET` 作為登入工作階段簽章密鑰。
+- 管理員可新增員工帳號、設定管理員或員工權限、停用帳號、重設密碼與刪除帳號。
+- 手機可透過瀏覽器「加入主畫面」安裝成 PWA。
 - 免費 Render 方案可保持 `/tmp` 本機路徑，Supabase bridge 會在啟動時還原、異動後同步到資料庫。
 
 ## Supabase 免費資料庫
