@@ -8,7 +8,7 @@ const { seedInventory } = require("./internal-inventory-seed");
 const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
-const { seedSocialDraftLibraryExtended } = require("./social-draft-library-extended");
+const { seedSocialDraftLibraryWeekly } = require("./social-draft-library-weekly");
 const {
   mountLineOrderSync,
   applyOrderTransition,
@@ -151,7 +151,7 @@ async function main() {
   console.log("Internal inventory catalog synchronization", inventorySeed);
   const reservationRebuild = rebuildReservations(readStore, writeStore);
   console.log("Internal reserved inventory rebuild", reservationRebuild);
-  const socialDraftSeed = seedSocialDraftLibraryExtended(readSocialStore, writeSocialStore);
+  const socialDraftSeed = seedSocialDraftLibraryWeekly(readSocialStore, writeSocialStore);
   console.log("Social weekly draft library synchronization", socialDraftSeed);
 
   app.get("/internal/db-healthz", (_req, res) => {
@@ -192,8 +192,10 @@ async function main() {
         orderSyncVersion: "1.0.2",
         socialDraftCampaign: socialDraftSeed.campaignId,
         socialDraftCadence: socialDraftSeed.cadence,
+        socialDraftTimezone: socialDraftSeed.timezone,
         socialDraftsAdded: socialDraftSeed.added,
         socialDraftsUpdated: socialDraftSeed.updated,
+        socialDraftsPreserved: socialDraftSeed.preserved,
         socialDraftsTotal: socialDraftSeed.total,
       }
     );
