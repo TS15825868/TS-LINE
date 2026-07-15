@@ -5,6 +5,7 @@ const { installPersistenceAutoSave } = require("./persistence-auto-save");
 const { mountClientFix } = require("./internal-app-client-fix");
 const { mountUpload } = require("./internal-social-upload");
 const { seedInventory } = require("./internal-inventory-seed");
+const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
 const {
   mountLineOrderSync,
@@ -152,6 +153,8 @@ async function main() {
 
   const inventorySeed = seedInventory(readStore, writeStore);
   console.log("Internal inventory catalog synchronization", inventorySeed);
+  const reservationRebuild = rebuildReservations(readStore, writeStore);
+  console.log("Internal reserved inventory rebuild", reservationRebuild);
 
   app.get("/internal/db-healthz", (_req, res) => {
     const state = bridge.health();
@@ -188,7 +191,7 @@ async function main() {
         socialVersion: health.socialVersion,
         storage: bridge.health().storage,
         operationsVersion: "1.0.0",
-        orderSyncVersion: "1.0.0",
+        orderSyncVersion: "1.0.1",
       }
     );
   });
