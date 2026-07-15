@@ -4,10 +4,11 @@ const { POSTS: BASE_POSTS, weeklySchedule } = require("./social-draft-library-we
 
 const CAMPAIGN_ID = "xjw-knowledge-202607-v1";
 const APP = "https://ts-line.onrender.com";
+const IMAGE_VERSION = "2";
 const TAGS = "#仙加味 #仙加味小老闆 #龜鹿 #漢方生活 #日常補養 #補養是一種節奏";
 
 function image(slug) {
-  return `${APP}/social-assets/knowledge/${slug}.png?v=1`;
+  return `${APP}/social-assets/knowledge/${slug}.png?v=${IMAGE_VERSION}`;
 }
 
 function ig(headline, body, tags = TAGS) {
@@ -18,9 +19,10 @@ function fb(headline, body, cta = "有產品、保存或使用方式的問題，
   return [headline, "", body, "", "仙加味小老闆幫你整理", "補養，是一種節奏。", "", cta, "", tags].join("\n");
 }
 
-const KNOWLEDGE = [
+const CONTENT = [
   {
     slug: "hot-water",
+    topicKey: "沖泡水溫與持續煮沸",
     title: "小老闆知識 01｜沖泡一定要用滾水嗎",
     headline: "沖泡龜鹿膏、湯塊或龜鹿膠，一定要用持續滾沸的水嗎？",
     ig: "使用足夠溫熱、能均勻化開的熱水即可，不必讓產品持續煮滾。先攪拌均勻，再依口味增加水量。",
@@ -29,6 +31,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "cold-texture",
+    topicKey: "冷藏後質地與乾燥取用",
     title: "小老闆知識 02｜冷藏後龜鹿膏變稠怎麼取用",
     headline: "龜鹿膏冷藏後質地變得較稠，是不是不能用了？",
     ig: "冷藏後質地較稠時，可用乾燥湯匙先取需要的份量，再加入溫熱水慢慢化開，不要把水氣帶回罐內。",
@@ -37,6 +40,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "sediment",
+    topicKey: "沖泡沉澱的確認步驟",
     title: "小老闆知識 03｜杯底有少量沉澱怎麼看",
     headline: "沖泡後杯底看到少量沉澱，先做哪幾個確認？",
     ig: "先攪拌或搖勻，確認氣味、包裝與保存狀況。沉澱不能單靠外觀判斷；有疑問可保留包裝並拍照詢問。",
@@ -45,6 +49,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "color",
+    topicKey: "顏色深淺不能單獨判斷",
     title: "小老闆知識 04｜顏色深淺能判斷品質嗎",
     headline: "顏色比較深，就一定代表原料比較多或品質比較好嗎？",
     ig: "顏色會受到原料、配料、批次、光線與製作方式影響，不能只用深淺判斷。比較時仍要看完整成分、規格與保存。",
@@ -53,6 +58,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "serving",
+    topicKey: "總重量與單次份量分開理解",
     title: "小老闆知識 05｜看總重量也要看每次份量",
     headline: "產品總重量，和每次實際取用的份量，是同一件事嗎？",
     ig: "總重量是整包或整罐規格；每次份量則是日常怎麼安排。兩個數字要分開看，才不會只用包裝大小比較。",
@@ -61,6 +67,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "one-format",
+    topicKey: "同日不必使用所有型態",
     title: "小老闆知識 06｜同一天不一定要安排多種型態",
     headline: "家裡有膏、飲和湯塊，同一天一定都要安排嗎？",
     ig: "不必為了種類多而全部使用。依當天是在家、外出、沖泡或料理，選一種方便的型態即可。",
@@ -69,6 +76,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "batch-info",
+    topicKey: "保留批號期限與保存標示",
     title: "小老闆知識 07｜批號與保存資訊先留好",
     headline: "產品開封前，為什麼建議先拍下批號與保存標示？",
     ig: "外盒與標示先不要急著丟，拍下批號、期限與保存方式；日後有問題時，會更容易確認。",
@@ -77,6 +85,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "support-photos",
+    topicKey: "客服確認需要的三類照片",
     title: "小老闆知識 08｜詢問產品問題先拍這三張",
     headline: "向客服詢問產品狀況，拍哪三張照片最有幫助？",
     ig: "建議拍完整包裝、批號期限，以及實際內容與保存環境。不要只拍局部，客服會更容易判斷。",
@@ -85,6 +94,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "delivery-check",
+    topicKey: "宅配外箱異常留存證據",
     title: "小老闆知識 09｜宅配外箱破損先怎麼處理",
     headline: "宅配外箱有壓痕、滲漏或破損，先不要把包裝丟掉。",
     ig: "先拍外箱六面、物流標籤與內包裝，再確認是否有滲漏或品項受損，保留訂單資料聯絡客服。",
@@ -93,6 +103,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "clean-cup",
+    topicKey: "容器殘留氣味影響口感",
     title: "小老闆知識 10｜杯子殘留味道會影響口感",
     headline: "同一款產品，為什麼換一個杯子喝起來不一樣？",
     ig: "咖啡、茶、牛奶或清潔劑殘留，都可能改變氣味與口感。沖泡前先把杯子與保溫壺洗乾淨。",
@@ -101,6 +112,7 @@ const KNOWLEDGE = [
   },
   {
     slug: "soup-balance",
+    topicKey: "燉湯完成後再調整濃淡",
     title: "小老闆知識 11｜燉湯完成後再調整濃淡",
     headline: "龜鹿湯品一開始就要把所有份量決定好嗎？",
     ig: "可以先依鍋量少量加入，完成後再試味道、調整熱水或其他食材，不用一次放得很複雜。",
@@ -109,20 +121,97 @@ const KNOWLEDGE = [
   },
   {
     slug: "similar-name",
+    topicKey: "相近品名仍須逐項看配方",
     title: "小老闆知識 12｜名稱相近配方仍要逐項看",
     headline: "產品名稱看起來很像，內容就一定相同嗎？",
     ig: "名稱相近不代表完整配方、配料比例、規格與使用方式相同。選擇前要逐項看完整標示。",
     fb: "市場上產品名稱可能很接近，但完整成分、是否加入其他配料、每份規格與使用方式仍可能不同。不要只看品名就判斷相同或不同，應逐項閱讀標示與實際內容。",
     tags: `${TAGS} #產品標示 #選購觀念`,
   },
-].map((item, index) => ({
+  {
+    slug: "units",
+    topicKey: "公克與毫升容量不可直接互換",
+    title: "小老闆知識 13｜g與cc不能只看數字比較",
+    headline: "100g 和 100cc 看起來都是 100，代表的其實一樣嗎？",
+    ig: "g 是重量，cc 是容量。膏、飲、湯塊型態不同，不能只用數字大小直接換算或比較。",
+    fb: "產品標示中的 g 代表重量，cc 代表容量。龜鹿膏、龜鹿飲與湯塊的型態不同，數字相同也不代表份量或使用方式相同。比較前要先確認單位，再看總規格與每次怎麼使用。",
+    tags: `${TAGS} #規格單位 #產品比較`,
+  },
+  {
+    slug: "pieces-weight",
+    topicKey: "片數與總重量是兩項資訊",
+    title: "小老闆知識 14｜片數多不代表總重量比較多",
+    headline: "同樣是塊狀產品，片數比較多就一定代表內容比較多嗎？",
+    ig: "片數是切分方式，總重量是整盒或整包規格。兩個數字要一起看，不能只看幾片。",
+    fb: "塊狀產品切得較小，片數可能較多；切得較大，片數可能較少。片數本身不能代表總重量或原料比例。比較時應同時確認總重量、片數與每片約重。",
+    tags: `${TAGS} #片數 #總重量`,
+  },
+  {
+    slug: "taiwan-catty",
+    topicKey: "台灣一台斤換算六百公克",
+    title: "小老闆知識 15｜一台斤是多少公克",
+    headline: "看到一斤裝時，先確認是不是台灣常用的台斤。",
+    ig: "在台灣，一台斤通常以 600g 計算。看大規格產品時，可把斤數與公克標示一起確認。",
+    fb: "台灣日常所說的一台斤，通常等於 600g。仙加味龜鹿膠一斤裝即為 600g。比較不同規格時，建議以包裝上的公克數為準，不要只看『一斤』兩個字。",
+    tags: `${TAGS} #台斤 #規格換算`,
+  },
+  {
+    slug: "dissolve-speed",
+    topicKey: "化開速度受水溫塊大小攪拌影響",
+    title: "小老闆知識 16｜化開快慢不能單獨判斷品質",
+    headline: "同一款湯塊，有時化得快、有時比較慢，可能差在哪裡？",
+    ig: "水溫、塊的大小、容器與攪拌方式都會影響化開速度，不能只用快慢判斷內容。",
+    fb: "塊狀產品的化開速度，會受到水溫、每塊大小、是否先切小、容器形狀及攪拌方式影響。化得快或慢不能單獨代表原料比例或品質；先把沖泡條件調整一致再觀察。",
+    tags: `${TAGS} #沖泡方式 #化開速度`,
+  },
+  {
+    slug: "taste-strength",
+    topicKey: "味道濃淡不能代表成分多寡",
+    title: "小老闆知識 17｜味道重不等於成分一定比較多",
+    headline: "喝起來味道比較重，就能直接判斷原料比較多嗎？",
+    ig: "味道會受到配料、水量、溫度與個人口感影響。比較內容仍要回到成分與規格。",
+    fb: "產品味道會受到原料、其他配料、沖泡水量、飲用溫度與個人口感影響。味道較重或較淡，都不能單獨代表原料比例。想比較產品，仍要看完整成分、規格與每次份量。",
+    tags: `${TAGS} #口感 #選購觀念`,
+  },
+  {
+    slug: "fair-compare",
+    topicKey: "同條件公平比較不貶低其他型態",
+    title: "小老闆知識 18｜比較產品不用先說別人不好",
+    headline: "好的產品介紹，應該把自己的內容說清楚，而不是貶低其他型態。",
+    ig: "比較時先確認同單位、同規格、同使用情境，再看成分與標示，不用靠負面話術做選擇。",
+    fb: "膏、飲、湯塊、膠與凍品各有不同的使用情境。公平比較應先確認單位、規格、成分與使用方式是否在相同條件下，而不是先把其他產品說成麻煩或不好。仙加味會把自己的內容說清楚，讓大家自行選擇。",
+    cta: "想比較仙加味不同產品，可直接詢問規格、成分與使用方式。",
+    tags: `${TAGS} #公平比較 #品牌觀念`,
+  },
+  {
+    slug: "ad-vs-label",
+    topicKey: "廣告圖片不能取代完整產品標示",
+    title: "小老闆知識 19｜廣告圖不是完整產品標示",
+    headline: "社群圖片看起來很清楚，為什麼還是要回到包裝標示？",
+    ig: "廣告圖負責整理重點，完整成分、規格、保存與期限仍以實際包裝標示為準。",
+    fb: "社群圖片適合快速整理重點，但不會取代產品包裝上的完整資訊。購買或使用前，仍應確認實際包裝上的品名、成分、規格、保存方式、有效日期與製造資訊。",
+    tags: `${TAGS} #產品標示 #廣告資訊`,
+  },
+  {
+    slug: "spoon-material",
+    topicKey: "取用工具乾淨乾燥比材質重要",
+    title: "小老闆知識 20｜取用重點不在木匙或金屬匙",
+    headline: "龜鹿膏一定要用特定材質的湯匙取用嗎？",
+    ig: "比湯匙材質更重要的是乾淨、乾燥、不沾其他食物，取用後立即密封保存。",
+    fb: "取用龜鹿膏時，不必只糾結木匙或金屬匙。更重要的是湯匙乾淨、乾燥，沒有沾到其他食物或水氣；取出需要的份量後，立即把罐子密封並依標示保存。",
+    tags: `${TAGS} #取用方式 #保存細節`,
+  },
+];
+
+const KNOWLEDGE = CONTENT.map((item, index) => ({
   campaignId: CAMPAIGN_ID,
   campaignKey: `${CAMPAIGN_ID}-${String(index + 1).padStart(2, "0")}`,
   campaignDay: index + 1,
+  knowledgeTopic: item.topicKey,
   title: item.title,
   imageUrl: image(item.slug),
   instagramCaption: ig(item.headline, item.ig, item.tags),
-  facebookCaption: fb(item.headline, item.fb, undefined, item.tags),
+  facebookCaption: fb(item.headline, item.fb, item.cta, item.tags),
   publishInstagram: true,
   publishFacebook: true,
 }));
@@ -143,9 +232,9 @@ function interleave(base, knowledge) {
   let k = 0;
   base.forEach((item, index) => {
     result.push({ ...item });
-    if ((index + 1) % 5 === 0 && k < knowledge.length) result.push({ ...knowledge[k++] });
+    if ((index + 1) % 3 === 0 && k < knowledge.length) result.push({ ...knowledge[k++] });
   });
-  while (k < knowledge.length) result.push({ ...knowledge[k++] });
+  while (k < knowledge.length) result.push({ ...knowledge[k++]);
   return result.map((item, index) => ({ ...item, scheduledAt: weeklySchedule(index) }));
 }
 
@@ -193,6 +282,7 @@ function seedSocialContentLibrary(readStore, writeStore) {
     Object.assign(existing, {
       campaignId: item.campaignId || existing.campaignId,
       campaignDay: item.campaignDay,
+      knowledgeTopic: item.knowledgeTopic || existing.knowledgeTopic,
       title: item.title,
       imageUrl: item.imageUrl,
       instagramCaption: item.instagramCaption,
@@ -223,6 +313,7 @@ function seedSocialContentLibrary(readStore, writeStore) {
 
 module.exports = {
   CAMPAIGN_ID,
+  IMAGE_VERSION,
   KNOWLEDGE,
   POSTS,
   normalize,
