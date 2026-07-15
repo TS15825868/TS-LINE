@@ -2,7 +2,7 @@
 
 const sharp = require("sharp");
 
-const VERSION = "1.0.1";
+const VERSION = "1.0.2";
 const SITE = "https://ts15825868.github.io/xianjiawei/";
 const MASCOTS = {
   faq: `${SITE}images/brand/approved-v405/faq.webp?v=408.7`,
@@ -19,7 +19,7 @@ const CARDS = {
   "one-format": { eyebrow: "小老闆知識卡｜日常篇", title: ["同一天不一定要", "安排多種型態"], bullets: ["依當天情境選一種即可", "外出、沖泡、料理分開想", "簡單才容易持續"], mascot: "choose" },
   "batch-info": { eyebrow: "小老闆知識卡｜保存篇", title: ["批號與保存資訊", "先留在哪裡？"], bullets: ["外盒先不要急著丟", "拍下批號與期限", "有問題比較容易確認"], mascot: "faq" },
   "support-photos": { eyebrow: "小老闆知識卡｜客服篇", title: ["詢問產品問題", "先拍這三張"], bullets: ["完整包裝", "批號與期限", "實際內容與保存狀況"], mascot: "faq" },
-  "delivery-check": { eyebrow: "小老闆知識卡｜收貨篇", title: ["宅配收到後", "先做三個確認"], bullets: ["外箱有沒有破損", "產品規格是否正確", "依標示立即妥善保存"], mascot: "faq" },
+  "delivery-check": { eyebrow: "小老闆知識卡｜宅配篇", title: ["宅配外箱破損", "先怎麼處理？"], bullets: ["保留外箱與物流標籤", "拍下六面與內包裝", "帶訂單資料聯絡客服"], mascot: "faq" },
   "clean-cup": { eyebrow: "小老闆知識卡｜沖泡篇", title: ["杯子殘留咖啡味", "會影響口感"], bullets: ["先把杯子洗乾淨", "避免其他飲品氣味", "再調整自己喜歡的濃淡"], mascot: "guide" },
   "soup-balance": { eyebrow: "小老闆知識卡｜料理篇", title: ["燉湯完成後", "再調整濃淡"], bullets: ["先看整鍋水量", "少量加入再試味道", "不用一次放得很複雜"], mascot: "guide" },
   "similar-name": { eyebrow: "小老闆知識卡｜選購篇", title: ["名稱相近的產品", "配方仍要逐項看"], bullets: ["先看完整成分", "再看規格與配料", "不要只看品名下判斷"], mascot: "choose" },
