@@ -5,6 +5,7 @@ const {
   detectImage,
   publicUrl,
   injectUploadUi,
+  storageHeaders,
   MAX_IMAGE_BYTES,
 } = require("./internal-social-upload");
 
@@ -31,12 +32,22 @@ assert.strictEqual(
   "https://example.supabase.co/storage/v1/object/public/social%20media/2026/07/a%20b.png"
 );
 
+const previous = process.env.SUPABASE_SECRET_KEY;
+process.env.SUPABASE_SECRET_KEY = "sb_secret_example";
+const secretHeaders = storageHeaders();
+assert.strictEqual(secretHeaders.apikey, "sb_secret_example");
+assert.ok(!("Authorization" in secretHeaders));
+process.env.SUPABASE_SECRET_KEY = "eyJexample";
+assert.strictEqual(storageHeaders().Authorization, "Bearer eyJexample");
+if (previous === undefined) delete process.env.SUPABASE_SECRET_KEY;
+else process.env.SUPABASE_SECRET_KEY = previous;
+
 const html = '<html><head><style>body{}</style></head><body><form id="socialForm"><label>公開圖片網址<input name="imageUrl" type="url" placeholder="https://..."></label></form></body></html>';
 const injected = injectUploadUi(html);
 assert.ok(injected.includes('id="socialImageFile"'));
 assert.ok(injected.includes('id="socialImageUploadBtn"'));
-assert.ok(injected.includes('/internal/api/v2/social/upload'));
-assert.ok(injected.includes('上傳完成，可以建立草稿'));
+assert.ok(injected.includes('/internal/social-upload.js'));
+assert.ok(injected.includes('從相簿或檔案選擇照片'));
 assert.strictEqual(injectUploadUi(injected), injected);
 
 console.log("PASS internal social image upload helpers");
