@@ -51,9 +51,9 @@ function install() {
     if (request === "./internal-app" && parent?.filename?.endsWith("internal-entry.js") && loaded && !loaded.__xjwSecurityWrapped) {
       const originalMount = loaded.mountInternalApp;
       loaded.mountInternalApp = function mountWithSecurity(app) {
+        // The public health endpoints remain available for GitHub Actions and Render uptime checks.
+        // Full backup data contains all operations and staff password hashes, so it is admin-only.
         app.get("/internal/api/v2/export/backup", requireSignedIn, requireAdmin, (_req, _res, next) => next());
-        app.get("/internal/healthz", requireSignedIn, (_req, _res, next) => next());
-        app.get("/internal/db-healthz", requireSignedIn, requireAdmin, (_req, _res, next) => next());
         return originalMount(app);
       };
       Object.defineProperty(loaded, "__xjwSecurityWrapped", { value: true });
