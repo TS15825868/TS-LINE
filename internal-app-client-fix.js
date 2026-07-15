@@ -5,12 +5,13 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260715-stable-7";
+const RUNTIME_VERSION = "20260715-stable-8";
 const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
 const formControllerFile = path.join(__dirname, "internal-app-form-controller.js");
 const safeExtrasFile = path.join(__dirname, "internal-app-safe-extras.js");
+const orderCalculatorFile = path.join(__dirname, "internal-app-order-calculator.js");
 const socialRetryFile = path.join(__dirname, "internal-app-social-retry.js");
 const socialFilterFile = path.join(__dirname, "internal-app-social-filter.js");
 const postbootFile = path.join(__dirname, "internal-app-postboot.js");
@@ -19,37 +20,15 @@ function readScript(file) {
   return fs.readFileSync(file, "utf8");
 }
 
-function shellScript() {
-  return readScript(shellFile);
-}
-
-function runtimeScript() {
-  return readScript(runtimeFile);
-}
-
-function uploadControllerScript() {
-  return readScript(uploadControllerFile);
-}
-
-function formControllerScript() {
-  return readScript(formControllerFile);
-}
-
-function safeExtrasScript() {
-  return readScript(safeExtrasFile);
-}
-
-function socialRetryScript() {
-  return readScript(socialRetryFile);
-}
-
-function socialFilterScript() {
-  return readScript(socialFilterFile);
-}
-
-function postbootScript() {
-  return readScript(postbootFile);
-}
+function shellScript() { return readScript(shellFile); }
+function runtimeScript() { return readScript(runtimeFile); }
+function uploadControllerScript() { return readScript(uploadControllerFile); }
+function formControllerScript() { return readScript(formControllerFile); }
+function safeExtrasScript() { return readScript(safeExtrasFile); }
+function orderCalculatorScript() { return readScript(orderCalculatorFile); }
+function socialRetryScript() { return readScript(socialRetryFile); }
+function socialFilterScript() { return readScript(socialFilterFile); }
+function postbootScript() { return readScript(postbootFile); }
 
 function fixGeneratedHtml(body) {
   if (typeof body !== "string" || !body.includes("仙加味內部管理 App")) return body;
@@ -61,6 +40,7 @@ function fixGeneratedHtml(body) {
     `/internal/app-upload-controller.js?v=${RUNTIME_VERSION}`,
     `/internal/app-form-controller.js?v=${RUNTIME_VERSION}`,
     `/internal/app-safe-extras.js?v=${RUNTIME_VERSION}`,
+    `/internal/app-order-calculator.js?v=${RUNTIME_VERSION}`,
     `/internal/app-social-retry.js?v=${RUNTIME_VERSION}`,
     `/internal/app-social-filter.js?v=${RUNTIME_VERSION}`,
     `/internal/app-postboot.js?v=${RUNTIME_VERSION}`,
@@ -85,6 +65,7 @@ function mountClientFix(app) {
   app.get("/internal/app-upload-controller.js", (_req, res) => sendScript(res, uploadControllerScript()));
   app.get("/internal/app-form-controller.js", (_req, res) => sendScript(res, formControllerScript()));
   app.get("/internal/app-safe-extras.js", (_req, res) => sendScript(res, safeExtrasScript()));
+  app.get("/internal/app-order-calculator.js", (_req, res) => sendScript(res, orderCalculatorScript()));
   app.get("/internal/app-social-retry.js", (_req, res) => sendScript(res, socialRetryScript()));
   app.get("/internal/app-social-filter.js", (_req, res) => sendScript(res, socialFilterScript()));
   app.get("/internal/app-postboot.js", (_req, res) => sendScript(res, postbootScript()));
@@ -124,6 +105,7 @@ module.exports = {
   uploadControllerScript,
   formControllerScript,
   safeExtrasScript,
+  orderCalculatorScript,
   socialRetryScript,
   socialFilterScript,
   postbootScript,
