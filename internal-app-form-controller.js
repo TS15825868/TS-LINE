@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260715-form-1";
+  const VERSION = "20260715-form-stable-2";
   const HEADERS = {
     "Content-Type": "application/json",
     "X-XJW-Requested-With": "internal-app-v2",
@@ -17,6 +17,7 @@
 
   async function api(url, options = {}) {
     const response = await fetch(url, {
+      cache: "no-store",
       ...options,
       headers: { ...HEADERS, ...(options.headers || {}) },
     });
@@ -31,11 +32,26 @@
 
   function clearDraft(form) {
     try { localStorage.removeItem(`xjw-draft-${form.id}`); } catch {}
+    const note = form.querySelector(".xjw-safe-draft,.stable-draft-note,.ops-draft");
+    if (note) note.textContent = "";
+  }
+
+  function nextSocialTime() {
+    const date = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 16);
   }
 
   function resetSocial(form) {
     form.reset();
     if (form.elements.socialEditId) form.elements.socialEditId.value = "";
+    ["title", "imageUrl", "instagramCaption", "facebookCaption"].forEach((name) => {
+      if (form.elements[name]) form.elements[name].value = "";
+    });
+    if (form.elements.scheduledAt) form.elements.scheduledAt.value = nextSocialTime();
+    if (form.elements.publishInstagram) form.elements.publishInstagram.checked = true;
+    if (form.elements.publishFacebook) form.elements.publishFacebook.checked = true;
+
     const preview = document.getElementById("socialImagePreview");
     if (preview) {
       preview.hidden = true;
@@ -50,11 +66,12 @@
       status.textContent = "選擇照片後會自動壓縮並上傳";
       status.style.color = "#6b655d";
     }
+    clearDraft(form);
   }
 
   async function refresh() {
     if (typeof window.loadAll === "function") await window.loadAll();
-    if (typeof window.xjwRefreshAll === "function") await window.xjwRefreshAll();
+    if (typeof window.xjwSafeExtras?.refresh === "function") await window.xjwSafeExtras.refresh();
   }
 
   async function submitForm(form) {
@@ -70,7 +87,7 @@
       window.resetOrderForm?.();
       clearDraft(form);
       await refresh();
-      return;
+      return "訂單已儲存";
     }
 
     if (form.id === "customerForm") {
@@ -83,7 +100,7 @@
       window.resetCustomerForm?.();
       clearDraft(form);
       await refresh();
-      return;
+      return "客戶資料已儲存";
     }
 
     if (form.id === "reminderForm") {
@@ -96,21 +113,19 @@
       window.resetReminderForm?.();
       clearDraft(form);
       await refresh();
-      return;
+      return "提醒已儲存";
     }
 
     if (form.id === "socialForm") {
-      if (data.socialEditId) return;
+      const id = data.socialEditId || "";
       delete data.socialEditId;
-      await api("/internal/api/v2/social", {
-        method: "POST",
+      await api(id ? `/internal/api/v2/social/${encodeURIComponent(id)}` : "/internal/api/v2/social", {
+        method: id ? "PATCH" : "POST",
         body: JSON.stringify(data),
       });
       resetSocial(form);
-      clearDraft(form);
       await refresh();
-      alert("已建立待審草稿");
-      return;
+      return id ? "草稿已更新，表單已清空" : "已建立待審草稿，表單已清空";
     }
 
     if (form.id === "staffForm") {
@@ -121,7 +136,7 @@
       form.reset();
       clearDraft(form);
       await refresh();
-      return;
+      return "員工帳號已建立";
     }
 
     if (form.id === "restoreForm") {
@@ -134,20 +149,21 @@
       });
       form.reset();
       await refresh();
-      alert("備份還原完成");
+      return "備份還原完成";
     }
+
+    return "操作完成";
   }
 
   document.addEventListener("submit", (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement)) return;
     if (!["orderForm", "customerForm", "reminderForm", "socialForm", "staffForm", "restoreForm"].includes(form.id)) return;
-    if (form.id === "socialForm" && form.elements.socialEditId?.value) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    const submit = form.querySelector('button[type="submit"],input[type="submit"]');
+    const submit = form.querySelector('button[type="submit"],button:not([type]),input[type="submit"]');
     const originalText = submit?.tagName === "BUTTON" ? submit.textContent : submit?.value;
     if (submit) {
       submit.disabled = true;
@@ -156,6 +172,9 @@
     }
 
     submitForm(form)
+      .then((message) => {
+        if (message) alert(message);
+      })
       .catch((error) => alert(error.message || "操作失敗"))
       .finally(() => {
         if (!submit) return;
@@ -165,5 +184,5 @@
       });
   }, true);
 
-  window.xjwFormController = { version: VERSION };
+  window.xjwFormController = { version: VERSION, resetSocial };
 })();
