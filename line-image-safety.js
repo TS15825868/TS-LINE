@@ -1,68 +1,32 @@
 "use strict";
 
 /**
- * LINE OA approved mascot-image routing.
+ * LINE OA image safety.
  *
- * Product cards keep the real product photographs from the website catalog.
- * Only service and guidance cards are assigned purpose-specific mascot scenes.
+ * The previous public/mascot JPG set was an older stitched/composited set and is
+ * intentionally blocked. Product cards continue to use the real product photos.
+ * Purpose-specific mascot scenes will only be re-enabled after the approved
+ * independent LINE OA artwork files are installed.
  */
 const line = require("@line/bot-sdk");
 
-const ASSET_VERSION = "20260715-lineoa-5";
-const RAW_BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
-const approvedAssetUrl = (name) => `${RAW_BASE}/${name}.jpg?v=${ASSET_VERSION}`;
-
-const BLOCKED_MASCOT_ASSETS = [];
-
-const MASCOT_RULES = [
-  { pattern: /客服|聯絡|確認|訂單|結帳|購物車|門市/, asset: "service" },
-  { pattern: /搭配組合|搭配方案|日常搭配導覽/, asset: "combo" },
-  { pattern: /幫我推薦|依日常使用方式幫你選|怎麼選|推薦/, asset: "recommend" },
-  { pattern: /怎麼使用|使用方式|日常節奏安排|沖泡|燉湯|料理/, asset: "usage" },
-  { pattern: /常見問題|FAQ/, asset: "faq" },
-  { pattern: /品牌故事|四代傳承|仙加味的故事|漢方百科|古籍資料/, asset: "brand" },
-  { pattern: /歡迎來到仙加味|歡迎/, asset: "welcome" },
+const LEGACY_MASCOT_PATH = "/public/mascot/";
+const LEGACY_MASCOT_NAMES = [
+  "welcome.jpg",
+  "recommend.jpg",
+  "combo.jpg",
+  "usage.jpg",
+  "faq.jpg",
+  "service.jpg",
+  "brand.jpg",
 ];
+
+const BLOCKED_MASCOT_ASSETS = [LEGACY_MASCOT_PATH, ...LEGACY_MASCOT_NAMES];
+const MASCOT_RULES = [];
 
 function isBlockedMascotUrl(value) {
   const url = String(value || "");
   return BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(asset));
-}
-
-function bubbleTitle(node) {
-  const bodyContents = node?.body?.contents;
-  if (!Array.isArray(bodyContents)) return "";
-
-  const preferred = bodyContents.find(
-    (item) => item?.type === "text" && item?.text && (item?.weight === "bold" || item?.size === "xl")
-  );
-  const fallback = bodyContents.find((item) => item?.type === "text" && item?.text);
-  return String(preferred?.text || fallback?.text || "");
-}
-
-function approvedImageForTitle(title = "") {
-  const rule = MASCOT_RULES.find(({ pattern }) => pattern.test(String(title || "")));
-  return rule ? approvedAssetUrl(rule.asset) : "";
-}
-
-function installApprovedHero(node) {
-  if (node?.type !== "bubble") return;
-  const imageUrl = approvedImageForTitle(bubbleTitle(node));
-  if (!imageUrl) return;
-
-  const previousAction = node.hero?.action;
-  node.hero = {
-    type: "image",
-    url: imageUrl,
-    size: "full",
-    aspectRatio: "1:1",
-    aspectMode: "fit",
-    backgroundColor: "#F7F4ED",
-    action: previousAction || {
-      type: "uri",
-      uri: "https://ts15825868.github.io/xianjiawei/",
-    },
-  };
 }
 
 function applyImageSafety(node) {
@@ -73,11 +37,8 @@ function applyImageSafety(node) {
     return node;
   }
 
-  if (node.type === "bubble") {
-    if (node.hero?.type === "image" && isBlockedMascotUrl(node.hero.url)) {
-      delete node.hero;
-    }
-    installApprovedHero(node);
+  if (node.type === "bubble" && node.hero?.type === "image" && isBlockedMascotUrl(node.hero.url)) {
+    delete node.hero;
   }
 
   for (const value of Object.values(node)) applyImageSafety(value);
@@ -103,6 +64,5 @@ module.exports = {
   BLOCKED_MASCOT_ASSETS,
   MASCOT_RULES,
   isBlockedMascotUrl,
-  approvedImageForTitle,
   applyImageSafety,
 };
