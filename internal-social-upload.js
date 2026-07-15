@@ -2,9 +2,8 @@
 
 const crypto = require("crypto");
 const express = require("express");
-const Module = require("module");
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const COOKIE = "xjw_internal";
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 const DEFAULT_BUCKET = "xjw-social-media";
@@ -13,6 +12,7 @@ const rawImage = express.raw({
   limit: MAX_IMAGE_BYTES,
 });
 
+const mountedApps = new WeakSet();
 const clean = (value, max = 500) => String(value ?? "")
   .replace(/[\u0000-\u001f\u007f]/g, "")
   .trim()
@@ -79,11 +79,12 @@ function storageConfig() {
 
 function storageHeaders(contentType = "application/json") {
   const { key } = storageConfig();
-  return {
+  const headers = {
     apikey: key,
-    Authorization: `Bearer ${key}`,
     "Content-Type": contentType,
   };
+  if (key.startsWith("eyJ")) headers.Authorization = `Bearer ${key}`;
+  return headers;
 }
 
 function detectImage(buffer) {
@@ -100,8 +101,8 @@ function detectImage(buffer) {
   return null;
 }
 
-function encodeObjectPath(path) {
-  return String(path).split("/").map(encodeURIComponent).join("/");
+function encodeObjectPath(value) {
+  return String(value).split("/").map(encodeURIComponent).join("/");
 }
 
 function publicUrl(config, objectPath) {
@@ -111,7 +112,7 @@ function publicUrl(config, objectPath) {
 let bucketReady = null;
 async function ensurePublicBucket() {
   const config = storageConfig();
-  if (!config.enabled) throw new Error("Supabase 儲存尚未設定，請先設定 SUPABASE_SECRET_KEY");
+  if (!config.enabled) throw new Error("Supabase 圖片儲存尚未設定");
   if (bucketReady) return bucketReady;
 
   bucketReady = (async () => {
@@ -162,17 +163,17 @@ async function uploadToSupabase(buffer, detected) {
 
 function uploadUi() {
   return `<div class="media-upload-card">
-    <label>從手機或電腦選擇圖片
-      <input id="socialImageFile" type="file" accept="image/jpeg,image/png,image/webp">
+    <label>從相簿或檔案選擇照片
+      <input id="socialImageFile" type="file" accept="image/*">
     </label>
     <div class="media-upload-actions">
-      <button id="socialImageUploadBtn" class="btn gold" type="button">上傳圖片</button>
-      <span id="socialImageStatus" class="muted">支援 JPG、PNG、WebP，最大 12 MB</span>
+      <button id="socialImageUploadBtn" class="btn gold" type="button">選好後上傳</button>
+      <span id="socialImageStatus" class="muted">會自動壓縮並產生公開圖片網址</span>
     </div>
     <img id="socialImagePreview" class="media-preview" alt="社群圖片預覽" hidden>
   </div>
-  <label>圖片網址（上傳完成後會自動填入，也可自行貼上公開網址）
-    <input id="socialImageUrl" name="imageUrl" type="url" inputmode="url" placeholder="選擇圖片後會自動產生網址">
+  <label>圖片網址
+    <input id="socialImageUrl" name="imageUrl" type="url" inputmode="url" placeholder="上傳完成後自動填入，也可自行貼上網址">
   </label>`;
 }
 
@@ -181,17 +182,29 @@ function injectUploadUi(html) {
   const original = '<label>公開圖片網址<input name="imageUrl" type="url" placeholder="https://..."></label>';
   if (!html.includes(original)) return html;
 
-  const extraCss = `.media-upload-card{border:1px dashed #b08a45;border-radius:16px;padding:13px;background:#fffaf0;margin:10px 0}.media-upload-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.media-preview{display:block;width:min(360px,100%);aspect-ratio:1/1;object-fit:contain;background:#f7f4ed;border:1px solid #ded7ca;border-radius:14px;margin-top:12px}.uploading{opacity:.65;pointer-events:none}`;
-  const extraJs = `<script>(()=>{const file=document.getElementById('socialImageFile'),button=document.getElementById('socialImageUploadBtn'),status=document.getElementById('socialImageStatus'),url=document.getElementById('socialImageUrl'),preview=document.getElementById('socialImagePreview'),form=document.getElementById('socialForm');if(!file||!button||!status||!url||!preview||!form)return;let uploading=false;function setStatus(text,isError=false){status.textContent=text;status.style.color=isError?'#8d2024':'#6b655d'}function showPreview(src){if(!src){preview.hidden=true;preview.removeAttribute('src');return}preview.src=src;preview.hidden=false}async function upload(){const image=file.files&&file.files[0];if(!image)return alert('請先選擇圖片');if(!['image/jpeg','image/png','image/webp'].includes(image.type))return alert('只支援 JPG、PNG 或 WebP 圖片');if(image.size>12*1024*1024)return alert('圖片不可超過 12 MB');uploading=true;button.classList.add('uploading');button.textContent='上傳中…';setStatus('正在上傳，請不要關閉畫面');showPreview(URL.createObjectURL(image));try{const response=await fetch('/internal/api/v2/social/upload',{method:'POST',headers:{'Content-Type':image.type,'X-XJW-Requested-With':'internal-app-v2','X-File-Name':encodeURIComponent(image.name||'social-image')},body:image});const data=await response.json().catch(()=>({ok:false,error:'系統回覆格式錯誤'}));if(response.status===401){location.href='/internal/login';return}if(!response.ok||data.ok===false)throw new Error(data.error||'上傳失敗');url.value=data.url;showPreview(data.url);setStatus('✓ 上傳完成，可以建立草稿');}catch(error){setStatus(error.message||'上傳失敗',true);alert(error.message||'上傳失敗');}finally{uploading=false;button.classList.remove('uploading');button.textContent='重新上傳圖片'}}button.addEventListener('click',upload);file.addEventListener('change',()=>{url.value='';setStatus('已選擇圖片，正在自動上傳');upload()});url.addEventListener('change',()=>{if(/^https:\/\//i.test(url.value))showPreview(url.value)});form.addEventListener('submit',event=>{if(uploading){event.preventDefault();event.stopImmediatePropagation();alert('圖片仍在上傳，請稍候');return}const instagram=form.querySelector('[name="publishInstagram"]');if(instagram?.checked&&!url.value){event.preventDefault();event.stopImmediatePropagation();alert('發布 Instagram 前請先選擇並上傳圖片')}},true)})();</script>`;
-
+  const extraCss = `.media-upload-card{border:1px dashed #b08a45;border-radius:16px;padding:13px;background:#fffaf0;margin:10px 0}.media-upload-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.media-preview{display:block;width:min(420px,100%);max-height:420px;object-fit:contain;background:#f7f4ed;border:1px solid #ded7ca;border-radius:14px;margin-top:12px}.uploading{opacity:.65;pointer-events:none}`;
   return html
     .replace(original, uploadUi())
     .replace("</style>", `${extraCss}</style>`)
-    .replace("</body>", `${extraJs}</body>`);
+    .replace("</body>", `<script src="/internal/social-upload.js?v=${VERSION}"></script></body>`);
+}
+
+function browserScript() {
+  return `(()=>{"use strict";const file=document.getElementById("socialImageFile"),button=document.getElementById("socialImageUploadBtn"),status=document.getElementById("socialImageStatus"),url=document.getElementById("socialImageUrl"),preview=document.getElementById("socialImagePreview"),form=document.getElementById("socialForm");if(!file||!button||!status||!url||!preview||!form)return;let uploading=false;const allowed=["image/jpeg","image/png","image/webp"];function setStatus(text,bad=false){status.textContent=text;status.style.color=bad?"#8d2024":"#6b655d"}function show(src){if(!src){preview.hidden=true;preview.removeAttribute("src");return}preview.src=src;preview.hidden=false}function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error("無法讀取這張照片"));img.src=src})}async function normalizeImage(source){if(allowed.includes(source.type)&&source.size<=8*1024*1024)return source;const local=URL.createObjectURL(source);try{const img=await loadImage(local);const max=2048;const scale=Math.min(1,max/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round((img.naturalWidth||img.width)*scale));canvas.height=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.9));if(!blob)throw new Error("照片轉檔失敗");return blob}finally{URL.revokeObjectURL(local)}}async function upload(){const selected=file.files&&file.files[0];if(!selected)return alert("請先選擇照片");uploading=true;button.classList.add("uploading");button.textContent="上傳中…";setStatus("正在處理並上傳照片，請不要關閉畫面");show(URL.createObjectURL(selected));try{const image=await normalizeImage(selected);if(image.size>12*1024*1024)throw new Error("照片處理後仍超過 12 MB");const response=await fetch("/internal/api/v2/social/upload",{method:"POST",headers:{"Content-Type":image.type||"image/jpeg","X-XJW-Requested-With":"internal-app-v2"},body:image});const data=await response.json().catch(()=>({ok:false,error:"系統回覆格式錯誤"}));if(response.status===401){location.href="/internal/login";return}if(!response.ok||data.ok===false)throw new Error(data.error||"上傳失敗");url.value=data.url;show(data.url);setStatus("✓ 上傳完成，可以建立待審草稿")}catch(error){setStatus(error.message||"上傳失敗",true);alert(error.message||"上傳失敗")}finally{uploading=false;button.classList.remove("uploading");button.textContent="重新上傳照片"}}button.addEventListener("click",upload);file.addEventListener("change",()=>{url.value="";setStatus("已選擇照片，按按鈕開始上傳");const selected=file.files&&file.files[0];if(selected)show(URL.createObjectURL(selected))});url.addEventListener("change",()=>{if(/^https:\/\//i.test(url.value))show(url.value)});form.addEventListener("submit",event=>{if(uploading){event.preventDefault();event.stopImmediatePropagation();alert("照片仍在上傳，請稍候");return}const instagram=form.querySelector('[name="publishInstagram"]');if(instagram&&instagram.checked&&!url.value){event.preventDefault();event.stopImmediatePropagation();alert("發布 Instagram 前請先選擇並上傳照片")}},true)})();`;
 }
 
 function mountUpload(app) {
-  app.use("/internal/app", (req, res, next) => {
+  if (!app || mountedApps.has(app)) return;
+  mountedApps.add(app);
+
+  app.get("/internal/social-upload.js", (_req, res) => {
+    res.set({
+      "Cache-Control": "no-store, max-age=0",
+      "Content-Type": "application/javascript; charset=utf-8",
+    }).send(browserScript());
+  });
+
+  app.use("/internal/app", (_req, res, next) => {
     const originalSend = res.send.bind(res);
     res.send = (body) => originalSend(injectUploadUi(body));
     next();
@@ -205,7 +218,7 @@ function mountUpload(app) {
       }
       const detected = detectImage(buffer);
       if (!detected) {
-        return res.status(415).json({ ok: false, error: "圖片格式不支援，請使用 JPG、PNG 或 WebP" });
+        return res.status(415).json({ ok: false, error: "圖片格式不支援，請改用 JPG、PNG 或 WebP" });
       }
       const result = await uploadToSupabase(buffer, detected);
       return res.json({ ok: true, ...result, mimeType: detected.mime, size: buffer.length });
@@ -227,36 +240,15 @@ function mountUpload(app) {
   });
 }
 
-let installed = false;
-function installHook() {
-  if (installed) return;
-  installed = true;
-  const originalLoad = Module._load;
-  Module._load = function patchedLoad(request, parent, isMain) {
-    const loaded = originalLoad.apply(this, arguments);
-    if (request === "./internal-app" && parent?.filename?.endsWith("internal-entry.js") && loaded && !loaded.__xjwSocialUploadWrapped) {
-      const originalMount = loaded.mountInternalApp;
-      loaded.mountInternalApp = function mountWithSocialUpload(app) {
-        mountUpload(app);
-        return originalMount(app);
-      };
-      Object.defineProperty(loaded, "__xjwSocialUploadWrapped", { value: true });
-    }
-    return loaded;
-  };
-}
-
-installHook();
-
 module.exports = {
   VERSION,
   MAX_IMAGE_BYTES,
   DEFAULT_BUCKET,
   storageConfig,
+  storageHeaders,
   detectImage,
   publicUrl,
   injectUploadUi,
   uploadToSupabase,
   mountUpload,
-  installHook,
 };
