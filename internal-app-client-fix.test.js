@@ -9,6 +9,7 @@ const {
   formControllerScript,
   safeExtrasScript,
   socialRetryScript,
+  socialFilterScript,
   postbootScript,
   fixGeneratedHtml,
 } = require("./internal-app-client-fix");
@@ -48,6 +49,11 @@ assert.ok(retry.includes('["approved", "failed", "partial"]'));
 assert.ok(!retry.includes("MutationObserver"));
 new vm.Script(retry);
 
+const filter = socialFilterScript();
+["待審核", "已審核", "已發佈", "未發佈", "data-social-filter"].forEach((token) => assert.ok(filter.includes(token)));
+assert.ok(!filter.includes("MutationObserver"));
+new vm.Script(filter);
+
 const postboot = postbootScript();
 assert.ok(postboot.includes("window.loadAll"));
 assert.ok(postboot.includes("xjwAppReady"));
@@ -61,6 +67,7 @@ assert.ok(fixed.includes('/internal/app-upload-controller.js'));
 assert.ok(fixed.includes('/internal/app-form-controller.js'));
 assert.ok(fixed.includes('/internal/app-safe-extras.js'));
 assert.ok(fixed.includes('/internal/app-social-retry.js'));
+assert.ok(fixed.includes('/internal/app-social-filter.js'));
 assert.ok(fixed.includes('/internal/app-postboot.js'));
 assert.ok(!fixed.includes('broken('));
 assert.ok(!fixed.includes('/old.js'));
@@ -69,4 +76,4 @@ assert.ok(!fixed.includes('/internal/app-refresh-controller.js'));
 assert.ok(!fixed.includes('/internal/order-sync-controller.js'));
 assert.strictEqual(fixGeneratedHtml("plain response"), "plain response");
 
-console.log("PASS stable internal app shell, core, upload, forms, safe extras, social retry and postboot");
+console.log("PASS stable internal app shell, core, upload, forms, safe extras, social retry, filters and postboot");
