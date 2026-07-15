@@ -51,8 +51,40 @@ function install() {
     if (request === "./internal-app" && parent?.filename?.endsWith("internal-entry.js") && loaded && !loaded.__xjwSecurityWrapped) {
       const originalMount = loaded.mountInternalApp;
       loaded.mountInternalApp = function mountWithSecurity(app) {
-        // The public health endpoints remain available for GitHub Actions and Render uptime checks.
-        // Full backup data contains all operations and staff password hashes, so it is admin-only.
+        const bridge = require("./supabase-state-bridge");
+
+        // Health checks remain public for uptime monitoring, but return only the
+        // minimum operational status and never expose database URLs or file paths.
+        app.get("/internal/healthz", (_req, res) => {
+          const store = loaded.readStore();
+          res.json({
+            ok: true,
+            app: "仙加味內部管理 App",
+            version: "2.0.0",
+            orders: store.orders.length,
+            customers: store.customers.length,
+            reminders: store.reminders.length,
+            checkedAt: new Date().toISOString(),
+          });
+        });
+
+        app.get("/internal/db-healthz", (_req, res) => {
+          const state = bridge.health();
+          res.status(state.enabled && !state.connected ? 503 : 200).json({
+            ok: !state.enabled || state.connected,
+            service: "仙加味 Supabase persistence",
+            enabled: state.enabled,
+            connected: state.connected,
+            storage: state.storage,
+            restoredAt: state.restoredAt,
+            lastSavedAt: state.lastSavedAt,
+            lastVerifiedAt: state.lastVerifiedAt,
+            lastError: state.lastError,
+            checkedAt: new Date().toISOString(),
+          });
+        });
+
+        // Complete backups contain all operations and staff password hashes.
         app.get("/internal/api/v2/export/backup", requireSignedIn, requireAdmin, (_req, _res, next) => next());
         return originalMount(app);
       };
