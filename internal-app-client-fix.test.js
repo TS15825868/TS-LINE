@@ -8,7 +8,7 @@ const {
   uploadControllerScript,
   formControllerScript,
   safeExtrasScript,
-  orderCalculatorScript,
+  orderEntryScript,
   socialRetryScript,
   socialFilterScript,
   postbootScript,
@@ -43,14 +43,26 @@ assert.ok(extras.includes("data-xjw-social-edit"));
 assert.ok(!extras.includes("MutationObserver"));
 new vm.Script(extras);
 
-const orderCalculator = orderCalculatorScript();
-["orderLinesJson", "xjwOrderProductPrice", "訂單總額（自動計算）", "待送貨", "data-order-remove"].forEach((token) => assert.ok(orderCalculator.includes(token), `order calculator missing ${token}`));
-assert.ok(!orderCalculator.includes("MutationObserver"));
-new vm.Script(orderCalculator);
+const orderEntry = orderEntryScript();
+[
+  "orderLines",
+  "單價",
+  "數量",
+  "折扣",
+  "運費",
+  "已收金額",
+  "未收餘額",
+  "付款狀態",
+  "預計送貨日",
+  "待送貨",
+  "可用庫存",
+].forEach((token) => assert.ok(orderEntry.includes(token), `order entry missing ${token}`));
+assert.ok(!orderEntry.includes("MutationObserver"));
+new vm.Script(orderEntry);
 
 const retry = socialRetryScript();
 assert.ok(retry.includes("重試失敗平台"));
-assert.ok(retry.includes('data-social-action'));
+assert.ok(retry.includes("data-social-action"));
 assert.ok(retry.includes('["approved", "failed", "partial"]'));
 assert.ok(!retry.includes("MutationObserver"));
 new vm.Script(retry);
@@ -67,20 +79,18 @@ new vm.Script(postboot);
 
 const broken = '<html><head><title>仙加味內部管理 App</title></head><body><script>broken(</script><script src="/old.js"></script></body></html>';
 const fixed = fixGeneratedHtml(broken);
-assert.ok(fixed.includes('/internal/app-shell.js'));
-assert.ok(fixed.includes('/internal/app-runtime.js'));
-assert.ok(fixed.includes('/internal/app-upload-controller.js'));
-assert.ok(fixed.includes('/internal/app-form-controller.js'));
-assert.ok(fixed.includes('/internal/app-safe-extras.js'));
-assert.ok(fixed.includes('/internal/app-order-calculator.js'));
-assert.ok(fixed.includes('/internal/app-social-retry.js'));
-assert.ok(fixed.includes('/internal/app-social-filter.js'));
-assert.ok(fixed.includes('/internal/app-postboot.js'));
-assert.ok(!fixed.includes('broken('));
-assert.ok(!fixed.includes('/old.js'));
-assert.ok(!fixed.includes('/internal/app-helpers.js'));
-assert.ok(!fixed.includes('/internal/app-refresh-controller.js'));
-assert.ok(!fixed.includes('/internal/order-sync-controller.js'));
+assert.ok(fixed.includes("/internal/app-shell.js"));
+assert.ok(fixed.includes("/internal/app-runtime.js"));
+assert.ok(fixed.includes("/internal/app-upload-controller.js"));
+assert.ok(fixed.includes("/internal/app-form-controller.js"));
+assert.ok(fixed.includes("/internal/app-safe-extras.js"));
+assert.ok(fixed.includes("/internal/order-entry-controller.js"));
+assert.ok(fixed.includes("/internal/app-social-retry.js"));
+assert.ok(fixed.includes("/internal/app-social-filter.js"));
+assert.ok(fixed.includes("/internal/app-postboot.js"));
+assert.ok(!fixed.includes("broken("));
+assert.ok(!fixed.includes("/old.js"));
+assert.ok(!fixed.includes("/internal/app-order-calculator.js"));
 assert.strictEqual(fixGeneratedHtml("plain response"), "plain response");
 
-console.log("PASS stable internal app shell, core, upload, forms, safe extras, order calculator, social retry, filters and postboot");
+console.log("PASS stable internal app shell, core, upload, forms, itemized order entry, social retry, filters and postboot");
