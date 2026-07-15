@@ -8,6 +8,7 @@ const {
   uploadControllerScript,
   formControllerScript,
   safeExtrasScript,
+  postbootScript,
   fixGeneratedHtml,
 } = require("./internal-app-client-fix");
 
@@ -39,6 +40,11 @@ assert.ok(extras.includes("data-xjw-social-edit"));
 assert.ok(!extras.includes("MutationObserver"));
 new vm.Script(extras);
 
+const postboot = postbootScript();
+assert.ok(postboot.includes("window.loadAll"));
+assert.ok(postboot.includes("xjwAppReady"));
+new vm.Script(postboot);
+
 const broken = '<html><head><title>仙加味內部管理 App</title></head><body><script>broken(</script><script src="/old.js"></script></body></html>';
 const fixed = fixGeneratedHtml(broken);
 assert.ok(fixed.includes('/internal/app-shell.js'));
@@ -46,6 +52,7 @@ assert.ok(fixed.includes('/internal/app-runtime.js'));
 assert.ok(fixed.includes('/internal/app-upload-controller.js'));
 assert.ok(fixed.includes('/internal/app-form-controller.js'));
 assert.ok(fixed.includes('/internal/app-safe-extras.js'));
+assert.ok(fixed.includes('/internal/app-postboot.js'));
 assert.ok(!fixed.includes('broken('));
 assert.ok(!fixed.includes('/old.js'));
 assert.ok(!fixed.includes('/internal/app-helpers.js'));
@@ -53,4 +60,4 @@ assert.ok(!fixed.includes('/internal/app-refresh-controller.js'));
 assert.ok(!fixed.includes('/internal/order-sync-controller.js'));
 assert.strictEqual(fixGeneratedHtml("plain response"), "plain response");
 
-console.log("PASS stable internal app shell, core, upload, forms and safe extras");
+console.log("PASS stable internal app shell, core, upload, forms, safe extras and postboot");
