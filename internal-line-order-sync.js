@@ -3,7 +3,7 @@
 const express = require("express");
 const crypto = require("crypto");
 
-const VERSION = "1.0.1";
+const VERSION = "1.0.2";
 const json = express.json({ limit: "2mb" });
 const SHIPPED = new Set(["已出貨", "已完成"]);
 const CANCELLED = new Set(["已取消"]);
@@ -220,38 +220,41 @@ function mountLineOrderSync(app, { readStore, writeStore }) {
 
     const originalJson = res.json.bind(res);
     res.json = (payload) => {
-      res.locals.xjwOrderPayload = payload;
-      return originalJson(payload);
-    };
-
-    res.on("finish", () => {
-      if (res.statusCode < 200 || res.statusCode >= 300) return;
-      setImmediate(async () => {
+      if (res.statusCode >= 200 && res.statusCode < 300 && payload?.ok !== false) {
         try {
           const store = readStore();
-          const payloadOrder = res.locals.xjwOrderPayload?.order || null;
+          const payloadOrder = payload?.order || null;
           const after = payloadOrder
             ? store.orders.find((item) => item.id === payloadOrder.id) || payloadOrder
             : null;
           applyOrderTransition(store, before, after, req.internalUser?.user || "內部 App");
           writeStore(store);
-          if (after) {
-            try {
-              await notifyOrder(store, before, after);
-            } catch (error) {
-              store.activities.push({
-                id: uid("act"),
-                actor: "系統",
-                action: "LINE 訂單通知失敗",
-                detail: `${after.customerName || after.id}｜${error.message}`,
-                createdAt: now(),
-              });
-            }
-            writeStore(store);
-          }
+          res.locals.xjwOrderAfter = after;
+          if (after) payload.order = after;
         } catch (error) {
-          console.error("order inventory/LINE synchronization failed", error.message);
+          console.error("order inventory synchronization failed", error.message);
         }
+      }
+      return originalJson(payload);
+    };
+
+    res.on("finish", () => {
+      if (res.statusCode < 200 || res.statusCode >= 300 || !res.locals.xjwOrderAfter) return;
+      setImmediate(async () => {
+        const store = readStore();
+        const after = store.orders.find((item) => item.id === res.locals.xjwOrderAfter.id) || res.locals.xjwOrderAfter;
+        try {
+          await notifyOrder(store, before, after);
+        } catch (error) {
+          store.activities.push({
+            id: uid("act"),
+            actor: "系統",
+            action: "LINE 訂單通知失敗",
+            detail: `${after.customerName || after.id}｜${error.message}`,
+            createdAt: now(),
+          });
+        }
+        writeStore(store);
       });
     });
     next();
