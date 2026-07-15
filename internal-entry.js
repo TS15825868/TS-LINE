@@ -11,12 +11,14 @@ const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
 const { seedSocialContentLibrary } = require("./social-content-library");
 const { removeLegacyDuplicateDrafts } = require("./social-legacy-dedupe");
+const { VERSION: ORDER_PRICING_VERSION, mountOrderPricing } = require("./internal-order-pricing");
 const {
   VERSION: SOCIAL_PLATFORM_STATUS_VERSION,
   normalizeSocialPlatformStatus,
   wrapExecute: wrapSocialExecute,
 } = require("./social-platform-status");
 const {
+  VERSION: ORDER_SYNC_VERSION,
   mountLineOrderSync,
   applyOrderTransition,
   notifyOrder,
@@ -150,6 +152,7 @@ async function main() {
     writeSocialStore,
     bridge,
   });
+  mountOrderPricing(app, { readStore });
   mountLineOrderSync(app, { readStore, writeStore });
   mountInternalApp(app, {
     social: {
@@ -215,7 +218,8 @@ async function main() {
         socialVersion: health.socialVersion,
         storage: bridge.health().storage,
         operationsVersion: "1.0.0",
-        orderSyncVersion: "1.0.2",
+        orderPricingVersion: ORDER_PRICING_VERSION,
+        orderSyncVersion: ORDER_SYNC_VERSION,
         socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
         socialLegacyDraftsRemoved: legacyDraftCleanup.removed,
         socialDraftCampaign: socialDraftSeed.campaignId,
