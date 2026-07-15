@@ -48,6 +48,9 @@ store.posts[0].status = "published";
 store.posts[0].scheduledAt = "2026-01-01T00:00:00.000Z";
 store.posts[1].status = "cancelled";
 store.posts[1].scheduledAt = "2026-01-02T00:00:00.000Z";
+store.posts[2].status = "approved";
+store.posts[2].result = { instagram: { id: "old-result" } };
+store.posts[2].lastError = "old error";
 const second = seedSocialDraftLibraryWeekly(readStore, writeStore);
 assert.strictEqual(second.added, 0);
 assert.strictEqual(second.updated, 58);
@@ -55,5 +58,8 @@ assert.strictEqual(second.preserved, 2);
 assert.strictEqual(store.posts[0].scheduledAt, "2026-01-01T00:00:00.000Z");
 assert.strictEqual(store.posts[1].scheduledAt, "2026-01-02T00:00:00.000Z");
 assert.strictEqual(store.posts[2].scheduledAt, POSTS[2].scheduledAt);
+assert.strictEqual(store.posts[2].status, "draft", "approved unpublished post must return to review draft");
+assert.deepStrictEqual(store.posts[2].result, {}, "old publish result must be cleared");
+assert.strictEqual(store.posts[2].lastError, "", "old publish error must be cleared");
 
 console.log("PASS 60 social drafts on Wednesday and Friday at 20:00 Asia/Taipei");
