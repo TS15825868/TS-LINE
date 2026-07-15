@@ -2,6 +2,7 @@
 
 const bridge = require("./supabase-state-bridge");
 const { installPersistenceAutoSave } = require("./persistence-auto-save");
+const { mountClientFix } = require("./internal-app-client-fix");
 
 async function main() {
   const restore = await bridge.restoreAll();
@@ -116,6 +117,7 @@ async function main() {
     writeStore: writeSocialStore,
   } = require("./social-server");
 
+  mountClientFix(app);
   mountInternalApp(app, {
     social: {
       execute: executeSocialPost,
