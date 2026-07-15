@@ -8,7 +8,7 @@ const { seedInventory } = require("./internal-inventory-seed");
 const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
-const { seedSocialDraftLibrary } = require("./social-draft-library");
+const { seedSocialDraftLibraryExtended } = require("./social-draft-library-extended");
 const {
   mountLineOrderSync,
   applyOrderTransition,
@@ -151,8 +151,8 @@ async function main() {
   console.log("Internal inventory catalog synchronization", inventorySeed);
   const reservationRebuild = rebuildReservations(readStore, writeStore);
   console.log("Internal reserved inventory rebuild", reservationRebuild);
-  const socialDraftSeed = seedSocialDraftLibrary(readSocialStore, writeSocialStore);
-  console.log("Social draft library synchronization", socialDraftSeed);
+  const socialDraftSeed = seedSocialDraftLibraryExtended(readSocialStore, writeSocialStore);
+  console.log("Social weekly draft library synchronization", socialDraftSeed);
 
   app.get("/internal/db-healthz", (_req, res) => {
     const state = bridge.health();
@@ -191,7 +191,10 @@ async function main() {
         operationsVersion: "1.0.0",
         orderSyncVersion: "1.0.2",
         socialDraftCampaign: socialDraftSeed.campaignId,
+        socialDraftCadence: socialDraftSeed.cadence,
         socialDraftsAdded: socialDraftSeed.added,
+        socialDraftsUpdated: socialDraftSeed.updated,
+        socialDraftsTotal: socialDraftSeed.total,
       }
     );
   });
