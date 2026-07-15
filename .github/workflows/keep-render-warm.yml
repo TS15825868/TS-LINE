@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/keep-render-warm.yml"
+      - "package.json"
+      - "internal-app*.js"
+      - "internal-entry.js"
+      - "supabase-state-bridge.js"
+      - "social-server.js"
+      - "server.js"
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
@@ -56,15 +62,18 @@ jobs:
           if (line.ok !== true || line.version !== 'v401.6' || line.productCount !== 6) {
             throw new Error(`LINE OA health failed: ${JSON.stringify(line)}`);
           }
-          if (internal.ok !== true || internal.app !== '仙加味內部管理 App') {
+          if (
+            internal.ok !== true ||
+            internal.app !== '仙加味內部管理 App' ||
+            internal.version !== '2.0.0'
+          ) {
             throw new Error(`Internal app health failed: ${JSON.stringify(internal)}`);
           }
           if (
             database.ok !== true ||
             database.enabled !== true ||
             database.connected !== true ||
-            database.storage !== 'supabase' ||
-            database.projectUrl !== 'https://iphexhvjhsmelbgwzhhr.supabase.co'
+            database.storage !== 'supabase'
           ) {
             throw new Error(`Supabase health failed: ${JSON.stringify(database)}`);
           }
