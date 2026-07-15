@@ -3,14 +3,14 @@
 const express = require("express");
 const crypto = require("crypto");
 
-const VERSION = "1.0.2";
+const VERSION = "1.1.0";
 const json = express.json({ limit: "2mb" });
 const SHIPPED = new Set(["已出貨", "已完成"]);
 const CANCELLED = new Set(["已取消"]);
 const clean = (value, max = 1000) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
 const now = () => new Date().toISOString();
 const uid = (prefix) => `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(3).toString("hex")}`;
-const number = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+const number = (value) => Number.isFinite(Number(String(value ?? "").replace(/,/g, ""))) ? Number(String(value ?? "").replace(/,/g, "")) : 0;
 
 function normalized(value) {
   return clean(value, 300).toLowerCase().replace(/[\s　()（）\[\]【】]/g, "");
@@ -23,8 +23,15 @@ function parseOrderLines(order = {}, inventory = []) {
     : String(order.items || "")
         .split(/\n|、|；|;/)
         .map((line) => {
-          const match = line.trim().match(/^(.+?)\s*[×xX*]\s*(\d+(?:\.\d+)?)\s*$/);
-          return match ? { name: match[1].trim(), qty: Number(match[2]) } : null;
+          const match = line.trim().match(/^(.+?)\s*[×xX*]\s*(\d+(?:\.\d+)?)(?:\s*[｜|]\s*單價\s*\$?([\d,]+(?:\.\d+)?))?(?:\s*[｜|]\s*小計\s*\$?([\d,]+(?:\.\d+)?))?\s*$/);
+          if (!match) return null;
+          const qty = Number(match[2]);
+          const subtotal = number(match[4]);
+          return {
+            name: match[1].trim(),
+            qty,
+            unitPrice: number(match[3]) || (qty && subtotal ? subtotal / qty : 0),
+          };
         })
         .filter(Boolean);
 
@@ -38,9 +45,12 @@ function parseOrderLines(order = {}, inventory = []) {
       || inventory.find((entry) => normalized(entry.name) === wantedName)
       || inventory.find((entry) => wantedName && (normalized(entry.name).includes(wantedName) || wantedName.includes(normalized(entry.name))));
     if (!item) continue;
-    const previous = merged.get(item.productId) || { productId: item.productId, name: item.name, qty: 0 };
+    const unitPrice = Math.max(0, number(line.unitPrice ?? line.price ?? item.price));
+    const key = `${item.productId}::${unitPrice}`;
+    const previous = merged.get(key) || { productId: item.productId, name: item.name, qty: 0, unitPrice };
     previous.qty += qty;
-    merged.set(item.productId, previous);
+    previous.subtotal = Math.round(previous.qty * previous.unitPrice);
+    merged.set(key, previous);
   }
   return [...merged.values()];
 }
@@ -56,11 +66,11 @@ function quantities(order, inventory) {
   if (!order) return result;
   const mode = inventoryMode(order);
   for (const line of parseOrderLines(order, inventory)) {
-    result.set(line.productId, {
-      ...line,
-      reserved: mode === "reserved" ? line.qty : 0,
-      shipped: mode === "shipped" ? line.qty : 0,
-    });
+    const previous = result.get(line.productId) || { ...line, qty: 0, reserved: 0, shipped: 0 };
+    previous.qty += line.qty;
+    previous.reserved += mode === "reserved" ? line.qty : 0;
+    previous.shipped += mode === "shipped" ? line.qty : 0;
+    result.set(line.productId, previous);
   }
   return result;
 }
@@ -114,6 +124,9 @@ function applyOrderTransition(store, before, after, actor = "系統") {
 
   if (after) {
     after.orderLines = parseOrderLines(after, store.inventory);
+    after.total = after.orderLines.some((line) => Number(line.unitPrice || 0) > 0)
+      ? after.orderLines.reduce((sum, line) => sum + Number(line.subtotal || 0), 0)
+      : Number(after.total || 0);
     after.inventoryMode = inventoryMode(after);
     after.inventorySyncedAt = now();
   }
@@ -150,6 +163,7 @@ function statusMessage(order, before = {}) {
     "已聯絡": "您的仙加味訂單已由客服確認。",
     "已付款": "您的仙加味訂單已確認付款。",
     "備貨中": "您的仙加味訂單正在備貨中。",
+    "待送貨": "您的仙加味訂單已完成備貨，正在等待安排寄送。",
     "已出貨": `您的仙加味訂單已出貨。${tracking}`,
     "已完成": "您的仙加味訂單已完成，謝謝您的支持。",
     "已取消": "您的仙加味訂單已取消；如有疑問請直接回覆官方 LINE。",
