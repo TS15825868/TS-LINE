@@ -5,15 +5,9 @@ const { installPersistenceAutoSave } = require("./persistence-auto-save");
 
 async function main() {
   const restore = await bridge.restoreAll();
-  if (restore.enabled) {
-    console.log("Supabase state restore", restore);
-  } else {
-    console.warn("Supabase state bridge disabled; using local JSON fallback");
-  }
+  if (restore.enabled) console.log("Supabase state restore", restore);
+  else console.warn("Supabase state bridge disabled; using local JSON fallback");
 
-  // Install only after restore so restored files are not mistaken for user edits.
-  // Every subsequent atomic JSON write is persisted immediately, while polling
-  // remains enabled as an independent fallback.
   installPersistenceAutoSave();
 
   const {
@@ -116,24 +110,21 @@ async function main() {
 
   const {
     app,
+    execute: executeSocialPost,
     healthPayload,
     readStore: readSocialStore,
     writeStore: writeSocialStore,
   } = require("./social-server");
 
-  app.use((req, res, next) => {
-    if (req.path !== "/internal/api/state") return next();
-    const originalJson = res.json.bind(res);
-    res.json = (payload) => {
-      if (payload && Array.isArray(payload.staff)) {
-        payload.staff = payload.staff.map(({ passwordHash, ...staff }) => staff);
-      }
-      return originalJson(payload);
-    };
-    return next();
+  mountInternalApp(app, {
+    social: {
+      execute: executeSocialPost,
+      healthPayload,
+      readStore: readSocialStore,
+      writeStore: writeSocialStore,
+    },
   });
 
-  mountInternalApp(app);
   app.get("/internal/db-healthz", (_req, res) => {
     const state = bridge.health();
     res.status(state.enabled && !state.connected ? 503 : 200).json({
@@ -144,12 +135,8 @@ async function main() {
     });
   });
 
-  // Normalize both stores on every startup. This initializes product inventory,
-  // arrays, timestamps and social posts, then the auto-save layer writes the
-  // normalized state to Supabase without requiring a manual test entry.
   writeStore(readStore());
   writeSocialStore(readSocialStore());
-
   bridge.startWatching();
 
   if (bridge.health().enabled) {
@@ -157,8 +144,6 @@ async function main() {
     console.log("Supabase startup synchronization", startupSync);
   }
 
-  // Periodic reconciliation is a final safety net if a platform restart or
-  // temporary network error occurs between writes.
   const maintenanceTimer = setInterval(async () => {
     const result = await bridge.syncAll();
     if (result.enabled) console.log("Supabase periodic synchronization", result);
