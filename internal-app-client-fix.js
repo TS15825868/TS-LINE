@@ -5,10 +5,11 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260715-ops-3";
+const RUNTIME_VERSION = "20260715-ops-4";
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const helpersFile = path.join(__dirname, "internal-app-helpers.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
+const refreshControllerFile = path.join(__dirname, "internal-app-refresh-controller.js");
 
 function runtimeScript() {
   return fs.readFileSync(runtimeFile, "utf8");
@@ -20,6 +21,10 @@ function helpersScript() {
 
 function uploadControllerScript() {
   return fs.readFileSync(uploadControllerFile, "utf8");
+}
+
+function refreshControllerScript() {
+  return fs.readFileSync(refreshControllerFile, "utf8");
 }
 
 function fixGeneratedHtml(body) {
@@ -40,6 +45,10 @@ function fixGeneratedHtml(body) {
 
   if (!html.includes("/internal/app-upload-controller.js")) {
     html = html.replace("</body>", `<script src="/internal/app-upload-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
+  }
+
+  if (!html.includes("/internal/app-refresh-controller.js")) {
+    html = html.replace("</body>", `<script src="/internal/app-refresh-controller.js?v=${RUNTIME_VERSION}"></script></body>`);
   }
 
   return html;
@@ -68,6 +77,13 @@ function mountClientFix(app) {
       "Cache-Control": "no-store, max-age=0",
       "Content-Type": "application/javascript; charset=utf-8",
     }).send(uploadControllerScript());
+  });
+
+  app.get("/internal/app-refresh-controller.js", (_req, res) => {
+    res.set({
+      "Cache-Control": "no-store, max-age=0",
+      "Content-Type": "application/javascript; charset=utf-8",
+    }).send(refreshControllerScript());
   });
 
   app.use("/internal/app", (_req, res, next) => {
@@ -103,6 +119,7 @@ module.exports = {
   runtimeScript,
   helpersScript,
   uploadControllerScript,
+  refreshControllerScript,
   fixGeneratedHtml,
   mountClientFix,
   installHook,
