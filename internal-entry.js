@@ -5,6 +5,10 @@ const { installPersistenceAutoSave } = require("./persistence-auto-save");
 const { mountClientFix } = require("./internal-app-client-fix");
 const { mountUpload } = require("./internal-social-upload");
 const { mountKnowledgeCards } = require("./knowledge-card-server");
+const {
+  VERSION: KNOWLEDGE_STATIC_VERSION,
+  mountKnowledgeCardStatic,
+} = require("./knowledge-card-static-server");
 const { seedInventory } = require("./internal-inventory-seed");
 const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
@@ -152,6 +156,7 @@ async function main() {
 
   mountClientFix(app);
   mountUpload(app);
+  mountKnowledgeCardStatic(app);
   mountKnowledgeCards(app);
   mountOperationsSuite(app, {
     readStore,
@@ -230,6 +235,7 @@ async function main() {
         operationsVersion: "1.0.0",
         orderPricingVersion: ORDER_PRICING_VERSION,
         orderSyncVersion: ORDER_SYNC_VERSION,
+        knowledgeStaticVersion: KNOWLEDGE_STATIC_VERSION,
         knowledgeCopyVersion: KNOWLEDGE_COPY_VERSION,
         knowledgeCopyUpdated: socialCopyFix.updated,
         socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
