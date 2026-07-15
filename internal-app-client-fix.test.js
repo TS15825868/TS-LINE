@@ -2,7 +2,19 @@
 
 const assert = require("assert");
 const vm = require("vm");
-const { runtimeScript, helpersScript, fixGeneratedHtml } = require("./internal-app-client-fix");
+const {
+  shellScript,
+  runtimeScript,
+  uploadControllerScript,
+  formControllerScript,
+  safeExtrasScript,
+  fixGeneratedHtml,
+} = require("./internal-app-client-fix");
+
+const shell = shellScript();
+assert.ok(shell.includes("function showView"));
+assert.ok(shell.includes("unhandledrejection"));
+new vm.Script(shell);
 
 const runtime = runtimeScript();
 assert.ok(runtime.includes("async function loadAll"));
@@ -10,18 +22,35 @@ assert.ok(runtime.includes("function renderInventory"));
 assert.ok(runtime.includes("function renderSocial"));
 new vm.Script(runtime);
 
-const helpers = helpersScript();
-assert.ok(helpers.includes("installToolsView"));
-assert.ok(helpers.includes("bulkInventory"));
-assert.ok(helpers.includes("editSocial"));
-assert.ok(helpers.includes("installAutosave"));
-new vm.Script(helpers);
+const upload = uploadControllerScript();
+assert.ok(upload.includes("/internal/api/v2/social/upload"));
+assert.ok(upload.includes("file.addEventListener"));
+new vm.Script(upload);
 
-const broken = '<html><head><title>仙加味內部管理 App</title></head><body><script>broken(</script></body></html>';
+const forms = formControllerScript();
+assert.ok(forms.includes("草稿已更新，表單已清空"));
+assert.ok(forms.includes("event.stopImmediatePropagation"));
+new vm.Script(forms);
+
+const extras = safeExtrasScript();
+assert.ok(extras.includes("installToolsView"));
+assert.ok(extras.includes("xjwSaveAllInventory"));
+assert.ok(extras.includes("data-xjw-social-edit"));
+assert.ok(!extras.includes("MutationObserver"));
+new vm.Script(extras);
+
+const broken = '<html><head><title>仙加味內部管理 App</title></head><body><script>broken(</script><script src="/old.js"></script></body></html>';
 const fixed = fixGeneratedHtml(broken);
+assert.ok(fixed.includes('/internal/app-shell.js'));
 assert.ok(fixed.includes('/internal/app-runtime.js'));
-assert.ok(fixed.includes('/internal/app-helpers.js'));
+assert.ok(fixed.includes('/internal/app-upload-controller.js'));
+assert.ok(fixed.includes('/internal/app-form-controller.js'));
+assert.ok(fixed.includes('/internal/app-safe-extras.js'));
 assert.ok(!fixed.includes('broken('));
+assert.ok(!fixed.includes('/old.js'));
+assert.ok(!fixed.includes('/internal/app-helpers.js'));
+assert.ok(!fixed.includes('/internal/app-refresh-controller.js'));
+assert.ok(!fixed.includes('/internal/order-sync-controller.js'));
 assert.strictEqual(fixGeneratedHtml("plain response"), "plain response");
 
-console.log("PASS stable internal app runtime and operations helper injection");
+console.log("PASS stable internal app shell, core, upload, forms and safe extras");
