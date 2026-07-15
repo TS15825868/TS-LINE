@@ -10,6 +10,7 @@ const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
 const { seedSocialContentLibrary } = require("./social-content-library");
+const { removeLegacyDuplicateDrafts } = require("./social-legacy-dedupe");
 const {
   VERSION: SOCIAL_PLATFORM_STATUS_VERSION,
   normalizeSocialPlatformStatus,
@@ -163,6 +164,8 @@ async function main() {
   console.log("Internal inventory catalog synchronization", inventorySeed);
   const reservationRebuild = rebuildReservations(readStore, writeStore);
   console.log("Internal reserved inventory rebuild", reservationRebuild);
+  const legacyDraftCleanup = removeLegacyDuplicateDrafts(readSocialStore, writeSocialStore);
+  console.log("Social legacy duplicate draft cleanup", legacyDraftCleanup);
   const socialDraftSeed = seedSocialContentLibrary(readSocialStore, writeSocialStore);
   console.log("Social interleaved content library synchronization", socialDraftSeed);
   const socialStatusNormalize = normalizeSocialPlatformStatus(readSocialStore, writeSocialStore);
@@ -214,6 +217,7 @@ async function main() {
         operationsVersion: "1.0.0",
         orderSyncVersion: "1.0.2",
         socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
+        socialLegacyDraftsRemoved: legacyDraftCleanup.removed,
         socialDraftCampaign: socialDraftSeed.campaignId,
         socialDraftCadence: socialDraftSeed.cadence,
         socialDraftTimezone: socialDraftSeed.timezone,
