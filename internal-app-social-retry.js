@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260715-social-retry-1";
+  const VERSION = "20260715-social-retry-2";
   const HEADERS = {
     "Content-Type": "application/json",
     "X-XJW-Requested-With": "internal-app-v2",
@@ -26,28 +26,41 @@
   function postIdFromCard(card) {
     return card.querySelector("[data-social-action][data-id]")?.dataset.id
       || card.querySelector("[data-xjw-social-edit]")?.dataset.xjwSocialEdit
+      || card.querySelector("[data-xjw-social-duplicate]")?.dataset.xjwSocialDuplicate
+      || card.querySelector("[data-id]")?.dataset.id
       || "";
   }
 
-  function addPublishButton(card, post) {
-    if (!["approved", "failed", "partial"].includes(post.status)) return;
+  function needsRetryFromCard(card) {
+    const value = String(card.textContent || "");
+    return value.includes("Facebook：失敗")
+      || value.includes("Instagram：失敗")
+      || value.includes("部分成功")
+      || value.includes("Access Token 已過期");
+  }
+
+  function addPublishButton(card, post = null) {
     const actions = card.querySelector(".actions");
     if (!actions || actions.querySelector('[data-social-action="publish"]')) return;
+
+    const id = post?.id || postIdFromCard(card);
+    if (!id) return;
+
+    const allowed = post
+      ? ["approved", "failed", "partial"].includes(post.status)
+      : needsRetryFromCard(card);
+    if (!allowed) return;
+
+    const instagramDone = Boolean(post?.result?.instagram) || post?.platformStatus?.instagram === "成功";
+    const facebookDone = Boolean(post?.result?.facebook) || post?.platformStatus?.facebook === "成功";
+    const retry = post?.status === "partial" || instagramDone || facebookDone || needsRetryFromCard(card);
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "btn success";
     button.dataset.socialAction = "publish";
-    button.dataset.id = post.id;
-
-    const instagramDone = Boolean(post.result?.instagram) || post.platformStatus?.instagram === "成功";
-    const facebookDone = Boolean(post.result?.facebook) || post.platformStatus?.facebook === "成功";
-    button.textContent = post.status === "partial" || instagramDone || facebookDone
-      ? "重試失敗平台"
-      : post.status === "failed"
-        ? "重新發布"
-        : "立即發布";
-
+    button.dataset.id = id;
+    button.textContent = retry ? "重試失敗平台" : post?.status === "failed" ? "重新發布" : "立即發布";
     actions.insertAdjacentElement("afterbegin", button);
   }
 
@@ -58,16 +71,15 @@
     running = true;
     try {
       const state = await loadState();
-      if (!state) return;
-      const posts = Array.isArray(state.socialPosts) ? state.socialPosts : [];
+      const posts = Array.isArray(state?.socialPosts) ? state.socialPosts : [];
       list.querySelectorAll(".item").forEach((card) => {
         const id = postIdFromCard(card);
-        if (!id) return;
-        const post = posts.find((item) => item.id === id);
-        if (post) addPublishButton(card, post);
+        const post = id ? posts.find((item) => item.id === id) : null;
+        addPublishButton(card, post);
       });
     } catch (error) {
       console.warn("social retry controller", error.message);
+      list.querySelectorAll(".item").forEach((card) => addPublishButton(card, null));
     } finally {
       running = false;
     }
@@ -75,7 +87,8 @@
 
   function start() {
     refresh();
-    timer = setInterval(refresh, 2000);
+    timer = setInterval(refresh, 1000);
+    document.addEventListener("xjw:app-refreshed", refresh);
     window.addEventListener("beforeunload", () => clearInterval(timer), { once: true });
     window.xjwSocialRetry = { version: VERSION, refresh };
   }
