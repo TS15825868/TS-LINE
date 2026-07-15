@@ -4,11 +4,12 @@ const bridge = require("./supabase-state-bridge");
 const { installPersistenceAutoSave } = require("./persistence-auto-save");
 const { mountClientFix } = require("./internal-app-client-fix");
 const { mountUpload } = require("./internal-social-upload");
+const { mountKnowledgeCards } = require("./knowledge-card-server");
 const { seedInventory } = require("./internal-inventory-seed");
 const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
-const { seedSocialDraftLibraryWeekly } = require("./social-draft-library-weekly");
+const { seedSocialContentLibrary } = require("./social-content-library");
 const {
   VERSION: SOCIAL_PLATFORM_STATUS_VERSION,
   normalizeSocialPlatformStatus,
@@ -140,6 +141,7 @@ async function main() {
 
   mountClientFix(app);
   mountUpload(app);
+  mountKnowledgeCards(app);
   mountOperationsSuite(app, {
     readStore,
     writeStore,
@@ -161,8 +163,8 @@ async function main() {
   console.log("Internal inventory catalog synchronization", inventorySeed);
   const reservationRebuild = rebuildReservations(readStore, writeStore);
   console.log("Internal reserved inventory rebuild", reservationRebuild);
-  const socialDraftSeed = seedSocialDraftLibraryWeekly(readSocialStore, writeSocialStore);
-  console.log("Social weekly draft library synchronization", socialDraftSeed);
+  const socialDraftSeed = seedSocialContentLibrary(readSocialStore, writeSocialStore);
+  console.log("Social interleaved content library synchronization", socialDraftSeed);
   const socialStatusNormalize = normalizeSocialPlatformStatus(readSocialStore, writeSocialStore);
   console.log("Social platform status reconciliation", socialStatusNormalize);
 
@@ -218,6 +220,8 @@ async function main() {
         socialDraftsAdded: socialDraftSeed.added,
         socialDraftsUpdated: socialDraftSeed.updated,
         socialDraftsPreserved: socialDraftSeed.preserved,
+        socialDraftsSkippedDuplicate: socialDraftSeed.skippedDuplicate,
+        socialKnowledgeTotal: socialDraftSeed.knowledgeTotal,
         socialDraftsTotal: socialDraftSeed.total,
       }
     );
