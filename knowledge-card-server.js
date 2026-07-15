@@ -1,10 +1,21 @@
 "use strict";
 
+const fs = require("fs/promises");
+const path = require("path");
+const os = require("os");
+const crypto = require("crypto");
 const sharp = require("sharp");
 
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const SITE = "https://ts15825868.github.io/xianjiawei/";
 const FONT_STACK = "Noto Sans CJK TC, Noto Sans TC, PingFang TC, Microsoft JhengHei, Arial Unicode MS, sans-serif";
+const CACHE_DIR = path.join(os.tmpdir(), "xjw-knowledge-cards-v120");
+const pending = new Map();
+let renderQueue = Promise.resolve();
+
+sharp.cache(false);
+sharp.concurrency(1);
+
 const MASCOTS = {
   faq: `${SITE}images/brand/approved-v405/faq.webp?v=408.7`,
   guide: `${SITE}images/brand/approved-v405/guide-how-to-use.webp?v=408.7`,
@@ -18,11 +29,11 @@ const CARDS = {
   "hot-water": { eyebrow: "小老闆知識卡｜沖泡篇", title: ["沖泡一定要用", "滾水嗎？"], bullets: ["熱水能均勻化開即可", "不必持續煮滾", "濃淡再依口味調整"], mascot: "guide" },
   "cold-texture": { eyebrow: "小老闆知識卡｜取用篇", title: ["冷藏後變得較稠", "怎麼取用？"], bullets: ["使用乾燥湯匙", "先取需要的份量", "再用溫熱水慢慢化開"], mascot: "guide" },
   sediment: { eyebrow: "小老闆知識卡｜觀察篇", title: ["杯底有少量沉澱", "先別急著判斷"], bullets: ["先攪拌或搖勻", "觀察氣味與包裝", "有疑問再拍照詢問"], mascot: "faq" },
-  color: { eyebrow: "小老闆知識卡｜比較篇", title: ["顏色深淺", "能判斷品質嗎？"], bullets: ["不能只看顏色", "要看成分與規格", "保存與批次也要一起確認"], mascot: "choose" },
+  color: { eyebrow: "小老闆知識卡｜比較篇", title: ["顏色深淺", "能判斷品質嗎？"], bullets: ["不能只看顏色", "要看成分與規格", "保存方式也要一起確認"], mascot: "choose" },
   serving: { eyebrow: "小老闆知識卡｜標示篇", title: ["看總重量之外", "也要看每次份量"], bullets: ["總容量是整包規格", "每次取用量是日常安排", "兩個數字要分開理解"], mascot: "choose" },
   "one-format": { eyebrow: "小老闆知識卡｜日常篇", title: ["同一天不一定要", "安排多種型態"], bullets: ["依當天情境選一種即可", "外出、沖泡、料理分開想", "簡單才容易持續"], mascot: "products" },
-  "batch-info": { eyebrow: "小老闆知識卡｜保存篇", title: ["批號與保存資訊", "先留在哪裡？"], bullets: ["外盒先不要急著丟", "拍下批號與期限", "有問題比較容易確認"], mascot: "faq" },
-  "support-photos": { eyebrow: "小老闆知識卡｜客服篇", title: ["詢問產品問題", "先拍這三張"], bullets: ["完整包裝", "批號與期限", "實際內容與保存狀況"], mascot: "faq" },
+  "batch-info": { eyebrow: "小老闆知識卡｜收貨篇", title: ["收到商品後", "先確認哪些資訊？"], bullets: ["先看包裝是否完整", "確認品名、規格與期限", "依標示方式妥善保存"], mascot: "faq" },
+  "support-photos": { eyebrow: "小老闆知識卡｜客服篇", title: ["詢問產品問題", "先拍這三張"], bullets: ["完整包裝正反面", "產品名稱與有效日期", "實際內容與保存狀況"], mascot: "faq" },
   "delivery-check": { eyebrow: "小老闆知識卡｜宅配篇", title: ["宅配外箱破損", "先怎麼處理？"], bullets: ["保留外箱與物流標籤", "拍下六面與內包裝", "帶訂單資料聯絡客服"], mascot: "faq" },
   "clean-cup": { eyebrow: "小老闆知識卡｜沖泡篇", title: ["杯子殘留咖啡味", "會影響口感"], bullets: ["先把杯子洗乾淨", "避免其他飲品氣味", "再調整自己喜歡的濃淡"], mascot: "guide" },
   "soup-balance": { eyebrow: "小老闆知識卡｜料理篇", title: ["燉湯完成後", "再調整濃淡"], bullets: ["先看整鍋水量", "少量加入再試味道", "不用一次放得很複雜"], mascot: "recipes" },
@@ -32,13 +43,10 @@ const CARDS = {
   "taiwan-catty": { eyebrow: "小老闆知識卡｜換算篇", title: ["一台斤", "到底是多少公克？"], bullets: ["台灣一台斤通常是 600g", "斤數與公克一起確認", "以包裝標示為準"], mascot: "products" },
   "dissolve-speed": { eyebrow: "小老闆知識卡｜沖泡篇", title: ["化開快慢", "能判斷品質嗎？"], bullets: ["水溫會影響化開速度", "塊大小與攪拌也有差", "快慢不能單獨判斷品質"], mascot: "guide" },
   "taste-strength": { eyebrow: "小老闆知識卡｜口感篇", title: ["味道比較重", "原料就一定比較多？"], bullets: ["味道受配料與水量影響", "飲用溫度也會改變口感", "比較仍要看成分與規格"], mascot: "faq" },
-  "fair-compare": { eyebrow: "小老闆知識卡｜品牌篇", title: ["比較產品", "不用先說別人不好"], bullets: ["先確認同單位與同規格", "再比較成分與使用方式", "不靠貶低別人做選擇"], mascot: "brand" },
+  "fair-compare": { eyebrow: "小老闆知識卡｜選擇篇", title: ["比較產品前", "先了解自己的需求"], bullets: ["先看成分與規格", "選擇能融入日常的型態", "依自己的使用習慣決定"], mascot: "choose" },
   "ad-vs-label": { eyebrow: "小老闆知識卡｜標示篇", title: ["廣告圖", "不是完整產品標示"], bullets: ["廣告圖只整理重點", "完整資訊看實際包裝", "成分規格期限都要確認"], mascot: "faq" },
   "spoon-material": { eyebrow: "小老闆知識卡｜取用篇", title: ["取用重點", "不在木匙或金屬匙"], bullets: ["湯匙材質不是唯一重點", "乾淨乾燥更重要", "取用後立即密封保存"], mascot: "guide" },
 };
-
-const mascotCache = new Map();
-const imageCache = new Map();
 
 function esc(value) {
   return String(value || "").replace(/[&<>"']/g, (char) => ({
@@ -46,14 +54,39 @@ function esc(value) {
   }[char]));
 }
 
-async function mascotBuffer(key) {
-  if (mascotCache.has(key)) return mascotCache.get(key);
-  const response = await fetch(MASCOTS[key] || MASCOTS.faq, { cache: "no-store" });
+async function exists(file) {
+  try {
+    const stat = await fs.stat(file);
+    return stat.isFile() && stat.size > 1000;
+  } catch {
+    return false;
+  }
+}
+
+function digest(value) {
+  return crypto.createHash("sha1").update(JSON.stringify(value)).digest("hex").slice(0, 12);
+}
+
+async function ensureCacheDir() {
+  await fs.mkdir(CACHE_DIR, { recursive: true });
+}
+
+async function mascotFile(key) {
+  await ensureCacheDir();
+  const url = MASCOTS[key] || MASCOTS.faq;
+  const file = path.join(CACHE_DIR, `mascot-${key}-${digest(url)}.png`);
+  if (await exists(file)) return file;
+
+  const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`mascot HTTP ${response.status}`);
-  const buffer = Buffer.from(await response.arrayBuffer());
-  const resized = await sharp(buffer).resize({ width: 390, height: 350, fit: "contain", withoutEnlargement: true }).png().toBuffer();
-  mascotCache.set(key, resized);
-  return resized;
+  const source = Buffer.from(await response.arrayBuffer());
+  const temp = `${file}.${process.pid}.tmp`;
+  await sharp(source, { limitInputPixels: 64 * 1024 * 1024 })
+    .resize({ width: 390, height: 350, fit: "contain", withoutEnlargement: true })
+    .png({ compressionLevel: 9, effort: 7 })
+    .toFile(temp);
+  await fs.rename(temp, file);
+  return file;
 }
 
 function svg(card) {
@@ -91,36 +124,62 @@ function svg(card) {
   </svg>`;
 }
 
-async function renderCard(slug) {
-  if (imageCache.has(slug)) return imageCache.get(slug);
+async function renderCardFile(slug) {
   const card = CARDS[slug];
   if (!card) return null;
-  let output;
+  await ensureCacheDir();
+  const file = path.join(CACHE_DIR, `${slug}-${digest({ version: VERSION, card })}.png`);
+  if (await exists(file)) return file;
+  if (pending.has(file)) return pending.get(file);
+
+  const task = renderQueue
+    .catch(() => undefined)
+    .then(async () => {
+      if (await exists(file)) return file;
+      const mascot = await mascotFile(card.mascot);
+      const temp = `${file}.${process.pid}.tmp`;
+      try {
+        await sharp(Buffer.from(svg(card)), { density: 72, limitInputPixels: 64 * 1024 * 1024 })
+          .resize(1080, 1350, { fit: "fill" })
+          .composite([{ input: mascot, left: 584, top: 842 }])
+          .png({ compressionLevel: 9, effort: 7 })
+          .toFile(temp);
+      } catch (error) {
+        console.warn("knowledge card mascot fallback", slug, error.message);
+        await sharp(Buffer.from(svg(card)), { density: 72, limitInputPixels: 64 * 1024 * 1024 })
+          .resize(1080, 1350, { fit: "fill" })
+          .png({ compressionLevel: 9, effort: 7 })
+          .toFile(temp);
+      }
+      await fs.rename(temp, file);
+      return file;
+    });
+
+  renderQueue = task;
+  pending.set(file, task);
   try {
-    const mascot = await mascotBuffer(card.mascot);
-    output = await sharp(Buffer.from(svg(card)), { density: 144 })
-      .composite([{ input: mascot, left: 584, top: 842 }])
-      .png({ quality: 94, compressionLevel: 9 })
-      .toBuffer();
-  } catch (error) {
-    console.warn("knowledge card mascot fallback", slug, error.message);
-    output = await sharp(Buffer.from(svg(card)), { density: 144 }).png({ quality: 94, compressionLevel: 9 }).toBuffer();
+    return await task;
+  } finally {
+    pending.delete(file);
   }
-  imageCache.set(slug, output);
-  return output;
+}
+
+async function renderCard(slug) {
+  const file = await renderCardFile(slug);
+  return file ? fs.readFile(file) : null;
 }
 
 function mountKnowledgeCards(app) {
   app.get("/social-assets/knowledge/:slug.png", async (req, res) => {
     try {
-      const buffer = await renderCard(String(req.params.slug || ""));
-      if (!buffer) return res.status(404).send("not found");
+      const file = await renderCardFile(String(req.params.slug || ""));
+      if (!file) return res.status(404).send("not found");
       res.set({
         "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=86400",
+        "Cache-Control": "public, max-age=604800, immutable",
         "X-XJW-Knowledge-Card": VERSION,
       });
-      return res.send(buffer);
+      return res.sendFile(file);
     } catch (error) {
       console.error("knowledge card render failed", error);
       return res.status(500).send("image render failed");
@@ -128,4 +187,11 @@ function mountKnowledgeCards(app) {
   });
 }
 
-module.exports = { VERSION, CARDS, renderCard, mountKnowledgeCards };
+module.exports = {
+  VERSION,
+  CACHE_DIR,
+  CARDS,
+  renderCard,
+  renderCardFile,
+  mountKnowledgeCards,
+};
