@@ -3,6 +3,7 @@
 const bridge = require("./supabase-state-bridge");
 const { installPersistenceAutoSave } = require("./persistence-auto-save");
 const { mountClientFix } = require("./internal-app-client-fix");
+const { mountSocialAutoUpload } = require("./internal-social-auto-upload");
 const { mountUpload } = require("./internal-social-upload");
 const { seedInventory } = require("./internal-inventory-seed");
 const { mountOperationsSuite } = require("./internal-operations-suite");
@@ -121,6 +122,7 @@ async function main() {
   } = require("./social-server");
 
   mountClientFix(app);
+  mountSocialAutoUpload(app);
   mountUpload(app);
   mountOperationsSuite(app, {
     readStore,
@@ -176,6 +178,7 @@ async function main() {
         socialVersion: health.socialVersion,
         storage: bridge.health().storage,
         operationsVersion: "1.0.0",
+        socialAutoUploadVersion: "1.0.0",
       }
     );
   });
