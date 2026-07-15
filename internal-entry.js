@@ -10,6 +10,11 @@ const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
 const { seedSocialDraftLibraryWeekly } = require("./social-draft-library-weekly");
 const {
+  VERSION: SOCIAL_PLATFORM_STATUS_VERSION,
+  normalizeSocialPlatformStatus,
+  wrapExecute: wrapSocialExecute,
+} = require("./social-platform-status");
+const {
   mountLineOrderSync,
   applyOrderTransition,
   notifyOrder,
@@ -122,11 +127,16 @@ async function main() {
 
   const {
     app,
-    execute: executeSocialPost,
+    execute: baseExecuteSocialPost,
     healthPayload,
     readStore: readSocialStore,
     writeStore: writeSocialStore,
   } = require("./social-server");
+  const executeSocialPost = wrapSocialExecute(
+    baseExecuteSocialPost,
+    readSocialStore,
+    writeSocialStore
+  );
 
   mountClientFix(app);
   mountUpload(app);
@@ -153,6 +163,8 @@ async function main() {
   console.log("Internal reserved inventory rebuild", reservationRebuild);
   const socialDraftSeed = seedSocialDraftLibraryWeekly(readSocialStore, writeSocialStore);
   console.log("Social weekly draft library synchronization", socialDraftSeed);
+  const socialStatusNormalize = normalizeSocialPlatformStatus(readSocialStore, writeSocialStore);
+  console.log("Social platform status reconciliation", socialStatusNormalize);
 
   app.get("/internal/db-healthz", (_req, res) => {
     const state = bridge.health();
@@ -173,6 +185,15 @@ async function main() {
     console.log("Supabase startup synchronization", startupSync);
   }
 
+  const socialStatusTimer = setInterval(() => {
+    try {
+      normalizeSocialPlatformStatus(readSocialStore, writeSocialStore);
+    } catch (error) {
+      console.error("social platform status reconciliation failed", error.message);
+    }
+  }, 15 * 1000);
+  socialStatusTimer.unref?.();
+
   const maintenanceTimer = setInterval(async () => {
     const result = await bridge.syncAll();
     if (result.enabled) console.log("Supabase periodic synchronization", result);
@@ -190,6 +211,7 @@ async function main() {
         storage: bridge.health().storage,
         operationsVersion: "1.0.0",
         orderSyncVersion: "1.0.2",
+        socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
         socialDraftCampaign: socialDraftSeed.campaignId,
         socialDraftCadence: socialDraftSeed.cadence,
         socialDraftTimezone: socialDraftSeed.timezone,
