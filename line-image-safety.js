@@ -8,19 +8,19 @@
  */
 const line = require("@line/bot-sdk");
 
-const ASSET_VERSION = "20260715-lineoa-4";
+const ASSET_VERSION = "20260715-lineoa-5";
 const RAW_BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
 const approvedAssetUrl = (name) => `${RAW_BASE}/${name}.jpg?v=${ASSET_VERSION}`;
 
 const BLOCKED_MASCOT_ASSETS = [];
 
 const MASCOT_RULES = [
+  { pattern: /客服|聯絡|確認|訂單|結帳|購物車|門市/, asset: "service" },
   { pattern: /搭配組合|搭配方案|日常搭配導覽/, asset: "combo" },
   { pattern: /幫我推薦|依日常使用方式幫你選|怎麼選|推薦/, asset: "recommend" },
   { pattern: /怎麼使用|使用方式|日常節奏安排|沖泡|燉湯|料理/, asset: "usage" },
-  { pattern: /常見問題|FAQ|小老闆幫你整理/, asset: "faq" },
+  { pattern: /常見問題|FAQ/, asset: "faq" },
   { pattern: /品牌故事|四代傳承|仙加味的故事|漢方百科|古籍資料/, asset: "brand" },
-  { pattern: /客服|聯絡|確認|訂單|結帳|購物車|門市/, asset: "service" },
   { pattern: /歡迎來到仙加味|歡迎/, asset: "welcome" },
 ];
 
