@@ -3,6 +3,8 @@
 const bridge = require("./supabase-state-bridge");
 const { installPersistenceAutoSave } = require("./persistence-auto-save");
 const { mountClientFix } = require("./internal-app-client-fix");
+const { mountUpload } = require("./internal-social-upload");
+const { seedInventory } = require("./internal-inventory-seed");
 
 async function main() {
   const restore = await bridge.restoreAll();
@@ -118,6 +120,7 @@ async function main() {
   } = require("./social-server");
 
   mountClientFix(app);
+  mountUpload(app);
   mountInternalApp(app, {
     social: {
       execute: executeSocialPost,
@@ -126,6 +129,9 @@ async function main() {
       writeStore: writeSocialStore,
     },
   });
+
+  const inventorySeed = seedInventory(readStore, writeStore);
+  console.log("Internal inventory catalog synchronization", inventorySeed);
 
   app.get("/internal/db-healthz", (_req, res) => {
     const state = bridge.health();
