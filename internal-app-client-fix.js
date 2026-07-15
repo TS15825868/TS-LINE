@@ -5,7 +5,8 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260715-stable-2";
+const RUNTIME_VERSION = "20260715-stable-3";
+const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
 const formControllerFile = path.join(__dirname, "internal-app-form-controller.js");
@@ -13,6 +14,10 @@ const safeExtrasFile = path.join(__dirname, "internal-app-safe-extras.js");
 
 function readScript(file) {
   return fs.readFileSync(file, "utf8");
+}
+
+function shellScript() {
+  return readScript(shellFile);
 }
 
 function runtimeScript() {
@@ -36,6 +41,7 @@ function fixGeneratedHtml(body) {
 
   const cleanHtml = body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
   const scripts = [
+    `/internal/app-shell.js?v=${RUNTIME_VERSION}`,
     `/internal/app-runtime.js?v=${RUNTIME_VERSION}`,
     `/internal/app-upload-controller.js?v=${RUNTIME_VERSION}`,
     `/internal/app-form-controller.js?v=${RUNTIME_VERSION}`,
@@ -56,6 +62,7 @@ function mountClientFix(app) {
   if (!app || mountedApps.has(app)) return;
   mountedApps.add(app);
 
+  app.get("/internal/app-shell.js", (_req, res) => sendScript(res, shellScript()));
   app.get("/internal/app-runtime.js", (_req, res) => sendScript(res, runtimeScript()));
   app.get("/internal/app-upload-controller.js", (_req, res) => sendScript(res, uploadControllerScript()));
   app.get("/internal/app-form-controller.js", (_req, res) => sendScript(res, formControllerScript()));
@@ -91,6 +98,7 @@ installHook();
 
 module.exports = {
   RUNTIME_VERSION,
+  shellScript,
   runtimeScript,
   uploadControllerScript,
   formControllerScript,
