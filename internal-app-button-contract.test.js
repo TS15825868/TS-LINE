@@ -8,6 +8,7 @@ const runtime = fs.readFileSync(require.resolve("./internal-app-runtime"), "utf8
 const upload = fs.readFileSync(require.resolve("./internal-app-upload-controller"), "utf8");
 const forms = fs.readFileSync(require.resolve("./internal-app-form-controller"), "utf8");
 const extras = fs.readFileSync(require.resolve("./internal-app-safe-extras"), "utf8");
+const retry = fs.readFileSync(require.resolve("./internal-app-social-retry"), "utf8");
 
 [
   "[data-view]",
@@ -69,5 +70,14 @@ const extras = fs.readFileSync(require.resolve("./internal-app-safe-extras"), "u
   "/internal/api/v2/export/backup",
 ].forEach((token) => assert.ok(extras.includes(token), `safe extras missing ${token}`));
 
+[
+  'data-social-action',
+  'publish',
+  'partial',
+  '重試失敗平台',
+  '立即發布',
+].forEach((token) => assert.ok(retry.includes(token), `social retry missing ${token}`));
+
 assert.ok(!extras.includes("MutationObserver"), "safe extras must not use MutationObserver");
-console.log("PASS all internal app button and function contracts");
+assert.ok(!retry.includes("MutationObserver"), "social retry must not use MutationObserver");
+console.log("PASS all internal app button and function contracts including partial social retry");
