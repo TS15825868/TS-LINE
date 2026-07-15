@@ -5,6 +5,7 @@ const { installPersistenceAutoSave } = require("./persistence-auto-save");
 const { mountClientFix } = require("./internal-app-client-fix");
 const { mountUpload } = require("./internal-social-upload");
 const { seedInventory } = require("./internal-inventory-seed");
+const { mountOperationsSuite } = require("./internal-operations-suite");
 
 async function main() {
   const restore = await bridge.restoreAll();
@@ -121,6 +122,13 @@ async function main() {
 
   mountClientFix(app);
   mountUpload(app);
+  mountOperationsSuite(app, {
+    readStore,
+    writeStore,
+    readSocialStore,
+    writeSocialStore,
+    bridge,
+  });
   mountInternalApp(app, {
     social: {
       execute: executeSocialPost,
@@ -167,6 +175,7 @@ async function main() {
         lineVersion: health.lineVersion,
         socialVersion: health.socialVersion,
         storage: bridge.health().storage,
+        operationsVersion: "1.0.0",
       }
     );
   });
