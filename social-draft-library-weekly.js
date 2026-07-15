@@ -239,6 +239,10 @@ function seedSocialDraftLibraryWeekly(readStore, writeStore) {
       scheduledAt: item.scheduledAt,
       publishInstagram: true,
       publishFacebook: true,
+      status: "draft",
+      result: {},
+      platformStatus: { instagram: "待處理", facebook: "待處理" },
+      lastError: "",
       updatedAt: now,
     });
     updated += 1;
