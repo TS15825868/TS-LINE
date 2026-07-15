@@ -9,6 +9,7 @@ const upload = fs.readFileSync(require.resolve("./internal-app-upload-controller
 const forms = fs.readFileSync(require.resolve("./internal-app-form-controller"), "utf8");
 const extras = fs.readFileSync(require.resolve("./internal-app-safe-extras"), "utf8");
 const retry = fs.readFileSync(require.resolve("./internal-app-social-retry"), "utf8");
+const filter = fs.readFileSync(require.resolve("./internal-app-social-filter"), "utf8");
 
 [
   "[data-view]",
@@ -88,6 +89,17 @@ const retry = fs.readFileSync(require.resolve("./internal-app-social-retry"), "u
   "data-xjw-social-duplicate",
 ].forEach((token) => assert.ok(retry.includes(token), `social retry missing ${token}`));
 
+[
+  "全部",
+  "待審核",
+  "已審核",
+  "已發佈",
+  "未發佈",
+  "data-social-filter",
+  "groupFor",
+].forEach((token) => assert.ok(filter.includes(token), `social filter missing ${token}`));
+
 assert.ok(!extras.includes("MutationObserver"), "safe extras must not use MutationObserver");
 assert.ok(!retry.includes("MutationObserver"), "social retry must not use MutationObserver");
-console.log("PASS all internal app button contracts including reliable refresh and partial social retry");
+assert.ok(!filter.includes("MutationObserver"), "social filter must not use MutationObserver");
+console.log("PASS all internal app button contracts including refresh, social retry and status filters");
