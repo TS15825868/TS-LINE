@@ -13,6 +13,11 @@ const { seedSocialContentLibrary } = require("./social-content-library");
 const { removeLegacyDuplicateDrafts } = require("./social-legacy-dedupe");
 const { VERSION: ORDER_PRICING_VERSION, mountOrderPricing } = require("./internal-order-pricing");
 const {
+  VERSION: KNOWLEDGE_COPY_VERSION,
+  applyKnowledgeCardCopyFix,
+  applySocialCopyFix,
+} = require("./knowledge-card-copy-fix");
+const {
   VERSION: SOCIAL_PLATFORM_STATUS_VERSION,
   normalizeSocialPlatformStatus,
   wrapExecute: wrapSocialExecute,
@@ -142,6 +147,9 @@ async function main() {
     writeSocialStore
   );
 
+  const knowledgeCardCopyFix = applyKnowledgeCardCopyFix();
+  console.log("Knowledge card copy fix", knowledgeCardCopyFix);
+
   mountClientFix(app);
   mountUpload(app);
   mountKnowledgeCards(app);
@@ -171,6 +179,8 @@ async function main() {
   console.log("Social legacy duplicate draft cleanup", legacyDraftCleanup);
   const socialDraftSeed = seedSocialContentLibrary(readSocialStore, writeSocialStore);
   console.log("Social interleaved content library synchronization", socialDraftSeed);
+  const socialCopyFix = applySocialCopyFix(readSocialStore, writeSocialStore);
+  console.log("Social knowledge copy synchronization", socialCopyFix);
   const socialStatusNormalize = normalizeSocialPlatformStatus(readSocialStore, writeSocialStore);
   console.log("Social platform status reconciliation", socialStatusNormalize);
 
@@ -220,6 +230,8 @@ async function main() {
         operationsVersion: "1.0.0",
         orderPricingVersion: ORDER_PRICING_VERSION,
         orderSyncVersion: ORDER_SYNC_VERSION,
+        knowledgeCopyVersion: KNOWLEDGE_COPY_VERSION,
+        knowledgeCopyUpdated: socialCopyFix.updated,
         socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
         socialLegacyDraftsRemoved: legacyDraftCleanup.removed,
         socialDraftCampaign: socialDraftSeed.campaignId,
