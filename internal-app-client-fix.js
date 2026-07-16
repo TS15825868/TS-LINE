@@ -5,7 +5,7 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260715-stable-10";
+const RUNTIME_VERSION = "20260716-mobile-1";
 const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
@@ -14,6 +14,7 @@ const safeExtrasFile = path.join(__dirname, "internal-app-safe-extras.js");
 const orderEntryFile = path.join(__dirname, "internal-order-entry-controller.js");
 const socialRetryFile = path.join(__dirname, "internal-app-social-retry.js");
 const socialFilterFile = path.join(__dirname, "internal-app-social-filter.js");
+const mobileFile = path.join(__dirname, "internal-app-mobile.js");
 const postbootFile = path.join(__dirname, "internal-app-postboot.js");
 
 function readScript(file) { return fs.readFileSync(file, "utf8"); }
@@ -25,6 +26,7 @@ function safeExtrasScript() { return readScript(safeExtrasFile); }
 function orderEntryScript() { return readScript(orderEntryFile); }
 function socialRetryScript() { return readScript(socialRetryFile); }
 function socialFilterScript() { return readScript(socialFilterFile); }
+function mobileScript() { return readScript(mobileFile); }
 function postbootScript() { return readScript(postbootFile); }
 
 function fixGeneratedHtml(body) {
@@ -40,6 +42,7 @@ function fixGeneratedHtml(body) {
     `/internal/order-entry-controller.js?v=${RUNTIME_VERSION}`,
     `/internal/app-social-retry.js?v=${RUNTIME_VERSION}`,
     `/internal/app-social-filter.js?v=${RUNTIME_VERSION}`,
+    `/internal/app-mobile.js?v=${RUNTIME_VERSION}`,
     `/internal/app-postboot.js?v=${RUNTIME_VERSION}`,
   ].map((src) => `<script src="${src}"></script>`).join("");
   return cleanHtml.replace("</body>", `${orderStyle}${scripts}</body>`);
@@ -63,6 +66,7 @@ function mountClientFix(app) {
   app.get("/internal/order-entry-controller.js", (_req, res) => sendScript(res, orderEntryScript()));
   app.get("/internal/app-social-retry.js", (_req, res) => sendScript(res, socialRetryScript()));
   app.get("/internal/app-social-filter.js", (_req, res) => sendScript(res, socialFilterScript()));
+  app.get("/internal/app-mobile.js", (_req, res) => sendScript(res, mobileScript()));
   app.get("/internal/app-postboot.js", (_req, res) => sendScript(res, postbootScript()));
   app.use("/internal/app", (_req, res, next) => {
     const originalSend = res.send.bind(res);
@@ -102,6 +106,7 @@ module.exports = {
   orderEntryScript,
   socialRetryScript,
   socialFilterScript,
+  mobileScript,
   postbootScript,
   fixGeneratedHtml,
   mountClientFix,
