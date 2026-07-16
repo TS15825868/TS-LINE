@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "5.6.7",
+  "version": "5.6.8",
   "main": "internal-entry.js",
   "engines": {
     "node": "22.x"
@@ -19,5 +19,5 @@
     "satori": "0.28.0",
     "sharp": "^0.34.3"
   },
-  "description": "仙加味 LINE OA 正式版｜20 張知識卡使用思源黑體台灣繁體字形並在建置時轉成 SVG 路徑，避免 Render 缺字方框；圖片網址 v7、手機內部 App、訂單庫存連動、社群排程與 Supabase 持久化"
+  "description": "仙加味 LINE OA 正式版｜移除全部舊知識卡檔案與草稿圖片連結，20 張繁體知識卡重新建置到獨立 v8 實體路徑並重新綁定；手機內部 App、訂單庫存連動、社群排程與 Supabase 持久化"
 }
