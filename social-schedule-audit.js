@@ -6,7 +6,8 @@ const library = require("./social-content-library");
 const { EXTRA_KNOWLEDGE } = require("./social-knowledge-extension");
 const { weeklySchedule } = require("./social-draft-library-weekly");
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
+const KNOWLEDGE_IMAGE_BASE = "https://ts-line.onrender.com/social-assets/knowledge/v9";
 const ACTIVE_STATUSES = new Set(["draft", "rejected", "approved"]);
 const HISTORY_STATUSES = new Set(["published", "cancelled", "failed", "partial", "publishing"]);
 const CATEGORY_PATTERN = [
@@ -113,8 +114,22 @@ function duplicateReason(left, right) {
   return "";
 }
 
+function knowledgeSlug(post) {
+  const match = String(post.imageUrl || "").match(/\/([^/?]+)\.png(?:\?|$)/i);
+  return match ? match[1] : "";
+}
+
+function normalizeCanonicalPost(post) {
+  const next = { ...post };
+  if (/xjw-knowledge/.test(String(next.campaignId || ""))) {
+    const slug = knowledgeSlug(next);
+    if (slug) next.imageUrl = `${KNOWLEDGE_IMAGE_BASE}/${slug}.png`;
+  }
+  return next;
+}
+
 function canonicalPosts() {
-  const all = [...library.POSTS, ...EXTRA_KNOWLEDGE];
+  const all = [...library.POSTS, ...EXTRA_KNOWLEDGE].map(normalizeCanonicalPost);
   const seen = new Set();
   return all.filter((post) => {
     const key = String(post.campaignKey || "");
@@ -225,7 +240,6 @@ function auditSocialSchedule(readStore, writeStore, options = {}) {
   store.posts = Array.isArray(store.posts) ? store.posts : [];
   const now = options.now ? new Date(options.now) : new Date();
   const canonical = canonicalPosts();
-  const canonicalByKey = new Map(canonical.map((post, index) => [post.campaignKey, { ...post, canonicalIndex: index }]));
   const existingByKey = new Map(store.posts.map((post) => [post.campaignKey, post]));
   const stamp = now.toISOString();
   let added = 0;
@@ -269,7 +283,6 @@ function auditSocialSchedule(readStore, writeStore, options = {}) {
 
   const candidates = store.posts.filter((post) => ACTIVE_STATUSES.has(post.status));
   const uniqueResult = chooseUnique(candidates);
-  const keptSet = new Set(uniqueResult.kept.map((post) => post.id));
   let duplicatesCancelled = 0;
 
   uniqueResult.duplicates.forEach(({ post, kept, reason }) => {
@@ -349,6 +362,7 @@ function auditSocialSchedule(readStore, writeStore, options = {}) {
 
 module.exports = {
   VERSION,
+  KNOWLEDGE_IMAGE_BASE,
   ACTIVE_STATUSES,
   CATEGORY_PATTERN,
   clean,
@@ -358,6 +372,8 @@ module.exports = {
   category,
   semanticFamily,
   duplicateReason,
+  knowledgeSlug,
+  normalizeCanonicalPost,
   canonicalPosts,
   validImage,
   validCopy,
