@@ -5,7 +5,7 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260716-mobile-1";
+const RUNTIME_VERSION = "20260716-mobile-2";
 const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
@@ -14,7 +14,7 @@ const safeExtrasFile = path.join(__dirname, "internal-app-safe-extras.js");
 const orderEntryFile = path.join(__dirname, "internal-order-entry-controller.js");
 const socialRetryFile = path.join(__dirname, "internal-app-social-retry.js");
 const socialFilterFile = path.join(__dirname, "internal-app-social-filter.js");
-const mobileFile = path.join(__dirname, "internal-app-mobile.js");
+const mobileFile = path.join(__dirname, "internal-app-mobile-stable.js");
 const postbootFile = path.join(__dirname, "internal-app-postboot.js");
 
 function readScript(file) { return fs.readFileSync(file, "utf8"); }
