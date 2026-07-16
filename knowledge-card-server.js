@@ -6,12 +6,17 @@ const os = require("os");
 const crypto = require("crypto");
 const sharp = require("sharp");
 
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const SITE = "https://ts15825868.github.io/xianjiawei/";
-const FONT_STACK = "Noto Sans CJK TC, Noto Sans TC, PingFang TC, Microsoft JhengHei, Arial Unicode MS, sans-serif";
-const CACHE_DIR = path.join(os.tmpdir(), "xjw-knowledge-cards-v130");
+const FONT_NAME = "XJW Source Han Sans TW";
+const FONT_URL = "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/SubsetOTF/TW/SourceHanSansTW-Regular.otf";
+const FONT_DIR = path.join(__dirname, ".cache", "knowledge-fonts");
+const FONT_FILE = path.join(FONT_DIR, "SourceHanSansTW-Regular.otf");
+const CACHE_DIR = path.join(os.tmpdir(), "xjw-knowledge-cards-v140");
 const pending = new Map();
 let renderQueue = Promise.resolve();
+let fontPromise = null;
+let satoriPromise = null;
 
 sharp.cache(false);
 sharp.concurrency(1);
@@ -48,16 +53,10 @@ const CARDS = {
   "spoon-material": { number: "20", eyebrow: "取用篇", title: ["取用重點", "是乾淨與乾燥"], bullets: ["湯匙材質不是唯一重點", "乾淨乾燥更重要", "取用後立即密封保存"], mascot: "guide" },
 };
 
-function esc(value) {
-  return String(value || "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",
-  }[char]));
-}
-
-async function exists(file) {
+async function exists(file, minimum = 1000) {
   try {
     const stat = await fs.stat(file);
-    return stat.isFile() && stat.size > 1000;
+    return stat.isFile() && stat.size >= minimum;
   } catch {
     return false;
   }
@@ -67,8 +66,11 @@ function digest(value) {
   return crypto.createHash("sha1").update(JSON.stringify(value)).digest("hex").slice(0, 12);
 }
 
-async function ensureCacheDir() {
-  await fs.mkdir(CACHE_DIR, { recursive: true });
+async function atomicWrite(file, data) {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const temp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  await fs.writeFile(temp, data);
+  await fs.rename(temp, file);
 }
 
 async function fetchBuffer(url) {
@@ -77,13 +79,47 @@ async function fetchBuffer(url) {
     try {
       const response = await fetch(url, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return Buffer.from(await response.arrayBuffer());
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!buffer.length) throw new Error("empty response");
+      return buffer;
     } catch (error) {
       lastError = error;
-      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 700));
     }
   }
   throw lastError;
+}
+
+async function ensureFont() {
+  if (await exists(FONT_FILE, 1024 * 1024)) return FONT_FILE;
+  const font = await fetchBuffer(FONT_URL);
+  if (font.length < 1024 * 1024) throw new Error(`Traditional Chinese font incomplete: ${font.length}`);
+  await atomicWrite(FONT_FILE, font);
+  return FONT_FILE;
+}
+
+async function fontData() {
+  if (!fontPromise) {
+    fontPromise = ensureFont().then((file) => fs.readFile(file)).catch((error) => {
+      fontPromise = null;
+      throw error;
+    });
+  }
+  return fontPromise;
+}
+
+async function satoriRenderer() {
+  if (!satoriPromise) {
+    satoriPromise = import("satori").then((module) => module.default || module).catch((error) => {
+      satoriPromise = null;
+      throw error;
+    });
+  }
+  return satoriPromise;
+}
+
+async function ensureCacheDir() {
+  await fs.mkdir(CACHE_DIR, { recursive: true });
 }
 
 async function mascotFile(key) {
@@ -101,68 +137,210 @@ async function mascotFile(key) {
   return file;
 }
 
-function svg(card) {
-  const [line1, line2] = card.title;
-  const bulletMarkup = card.bullets.map((item, index) => `
-    <g transform="translate(0 ${index * 92})">
-      <circle cx="100" cy="656" r="25" fill="#315c45"/>
-      <text x="100" y="665" text-anchor="middle" font-family="${FONT_STACK}" font-size="22" font-weight="800" fill="#fff">${index + 1}</text>
-      <text x="150" y="666" font-family="${FONT_STACK}" font-size="31" font-weight="700" fill="#24211d">${esc(item)}</text>
-    </g>`).join("");
+function element(type, style, children, attributes = {}) {
+  const list = Array.isArray(children) ? children : children == null ? [] : [children];
+  return {
+    type,
+    props: {
+      ...attributes,
+      style,
+      children: list.length === 1 ? list[0] : list,
+    },
+  };
+}
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-  <svg width="1080" height="1350" viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#0b1f3b" flood-opacity="0.14"/></filter>
-      <pattern id="dots" width="42" height="42" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#d9c9a7" opacity="0.34"/></pattern>
-    </defs>
-    <rect width="1080" height="1350" fill="#f7f4ed"/>
-    <rect width="1080" height="1350" fill="url(#dots)"/>
-    <rect x="46" y="46" width="988" height="1258" rx="42" fill="#fffdf8" stroke="#d8c6a4" stroke-width="3" filter="url(#shadow)"/>
-    <rect x="46" y="46" width="988" height="126" rx="42" fill="#0b1f3b"/>
-    <rect x="46" y="130" width="988" height="42" fill="#0b1f3b"/>
-    <text x="92" y="122" font-family="${FONT_STACK}" font-size="34" font-weight="800" fill="#fff">仙加味・龜鹿</text>
-    <text x="988" y="122" text-anchor="end" font-family="${FONT_STACK}" font-size="27" font-weight="600" fill="#f4d9a0">補養，是一種節奏。</text>
-    <rect x="88" y="205" width="245" height="54" rx="27" fill="#9b2f2f"/>
-    <text x="210" y="242" text-anchor="middle" font-family="${FONT_STACK}" font-size="25" font-weight="800" fill="#fff">小老闆知識 ${esc(card.number)}</text>
-    <text x="360" y="242" font-family="${FONT_STACK}" font-size="27" font-weight="800" fill="#315c45">${esc(card.eyebrow)}</text>
-    <text x="88" y="375" font-family="${FONT_STACK}" font-size="68" font-weight="900" fill="#0b1f3b">${esc(line1)}</text>
-    <text x="88" y="468" font-family="${FONT_STACK}" font-size="68" font-weight="900" fill="#0b1f3b">${esc(line2)}</text>
-    <line x1="90" y1="548" x2="990" y2="548" stroke="#d8c6a4" stroke-width="3"/>
-    ${bulletMarkup}
-    <rect x="566" y="858" width="428" height="350" rx="32" fill="#f2eadb" stroke="#d8c6a4" stroke-width="2"/>
-    <text x="92" y="1127" font-family="${FONT_STACK}" font-size="27" font-weight="700" fill="#6b655d">看清楚內容，再依自己的日常選擇。</text>
-    <rect x="88" y="1230" width="214" height="54" rx="27" fill="#9b2f2f"/>
-    <text x="195" y="1267" text-anchor="middle" font-family="${FONT_STACK}" font-size="27" font-weight="800" fill="#fff">仙加味小老闆</text>
-    <text x="988" y="1267" text-anchor="end" font-family="${FONT_STACK}" font-size="26" font-weight="700" fill="#315c45">LINE｜@762jybnm</text>
-  </svg>`;
+function text(value, style = {}) {
+  return element("div", {
+    display: "flex",
+    fontFamily: FONT_NAME,
+    fontWeight: 400,
+    color: "#24211d",
+    ...style,
+  }, String(value));
+}
+
+function cardElement(card) {
+  const bullets = card.bullets.map((item, index) => element("div", {
+    position: "absolute",
+    left: 88,
+    top: 602 + index * 102,
+    width: 492,
+    height: 78,
+    display: "flex",
+    alignItems: "center",
+  }, [
+    element("div", {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: "#315c45",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }, text(index + 1, { color: "#ffffff", fontSize: 23, fontWeight: 700 })),
+    text(item, { marginLeft: 20, fontSize: 31, fontWeight: 700, lineHeight: 1.25 }),
+  ]));
+
+  return element("div", {
+    width: 1080,
+    height: 1350,
+    position: "relative",
+    display: "flex",
+    backgroundColor: "#f7f4ed",
+    fontFamily: FONT_NAME,
+  }, [
+    element("div", {
+      position: "absolute",
+      left: 46,
+      top: 46,
+      width: 988,
+      height: 1258,
+      borderRadius: 42,
+      backgroundColor: "#fffdf8",
+      border: "3px solid #d8c6a4",
+      display: "flex",
+    }, []),
+    element("div", {
+      position: "absolute",
+      left: 46,
+      top: 46,
+      width: 988,
+      height: 126,
+      borderRadius: 42,
+      backgroundColor: "#0b1f3b",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingLeft: 46,
+      paddingRight: 46,
+    }, [
+      text("仙加味・龜鹿", { color: "#ffffff", fontSize: 34, fontWeight: 700 }),
+      text("補養，是一種節奏。", { color: "#f4d9a0", fontSize: 27, fontWeight: 700 }),
+    ]),
+    element("div", {
+      position: "absolute",
+      left: 88,
+      top: 205,
+      width: 245,
+      height: 54,
+      borderRadius: 27,
+      backgroundColor: "#9b2f2f",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }, text(`小老闆知識 ${card.number}`, { color: "#ffffff", fontSize: 25, fontWeight: 700 })),
+    text(card.eyebrow, {
+      position: "absolute",
+      left: 360,
+      top: 217,
+      fontSize: 27,
+      fontWeight: 700,
+      color: "#315c45",
+    }),
+    text(card.title[0], {
+      position: "absolute",
+      left: 88,
+      top: 315,
+      fontSize: 68,
+      fontWeight: 700,
+      color: "#0b1f3b",
+      letterSpacing: -1,
+    }),
+    text(card.title[1], {
+      position: "absolute",
+      left: 88,
+      top: 408,
+      fontSize: 68,
+      fontWeight: 700,
+      color: "#0b1f3b",
+      letterSpacing: -1,
+    }),
+    element("div", {
+      position: "absolute",
+      left: 90,
+      top: 548,
+      width: 900,
+      height: 3,
+      backgroundColor: "#d8c6a4",
+      display: "flex",
+    }, []),
+    ...bullets,
+    element("div", {
+      position: "absolute",
+      left: 566,
+      top: 858,
+      width: 428,
+      height: 350,
+      borderRadius: 32,
+      backgroundColor: "#f2eadb",
+      border: "2px solid #d8c6a4",
+      display: "flex",
+    }, []),
+    text("看清楚內容，再依自己的日常選擇。", {
+      position: "absolute",
+      left: 92,
+      top: 1096,
+      fontSize: 27,
+      fontWeight: 700,
+      color: "#6b655d",
+    }),
+    element("div", {
+      position: "absolute",
+      left: 88,
+      top: 1230,
+      width: 214,
+      height: 54,
+      borderRadius: 27,
+      backgroundColor: "#9b2f2f",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }, text("仙加味小老闆", { color: "#ffffff", fontSize: 27, fontWeight: 700 })),
+    text("LINE｜@762jybnm", {
+      position: "absolute",
+      right: 92,
+      top: 1244,
+      fontSize: 26,
+      fontWeight: 700,
+      color: "#315c45",
+    }),
+  ], { lang: "zh-TW" });
+}
+
+async function renderCardSvg(slug) {
+  const card = CARDS[slug];
+  if (!card) return null;
+  const [satori, font] = await Promise.all([satoriRenderer(), fontData()]);
+  return satori(cardElement(card), {
+    width: 1080,
+    height: 1350,
+    embedFont: true,
+    fonts: [
+      { name: FONT_NAME, data: font, weight: 400, style: "normal" },
+      { name: FONT_NAME, data: font, weight: 700, style: "normal" },
+    ],
+  });
 }
 
 async function renderCardFile(slug) {
   const card = CARDS[slug];
   if (!card) return null;
   await ensureCacheDir();
-  const file = path.join(CACHE_DIR, `${slug}-${digest({ version: VERSION, card })}.png`);
+  const file = path.join(CACHE_DIR, `${slug}-${digest({ version: VERSION, font: FONT_URL, card })}.png`);
   if (await exists(file)) return file;
   if (pending.has(file)) return pending.get(file);
 
   const task = renderQueue.catch(() => undefined).then(async () => {
     if (await exists(file)) return file;
-    const mascot = await mascotFile(card.mascot);
+    const [svg, mascot] = await Promise.all([renderCardSvg(slug), mascotFile(card.mascot)]);
+    if (!svg) throw new Error(`unknown knowledge card: ${slug}`);
+    if (svg.includes("<text")) throw new Error("knowledge card font was not embedded as paths");
     const temp = `${file}.${process.pid}.tmp`;
-    try {
-      await sharp(Buffer.from(svg(card)), { density: 72, limitInputPixels: 64 * 1024 * 1024 })
-        .resize(1080, 1350, { fit: "fill" })
-        .composite([{ input: mascot, left: 584, top: 858 }])
-        .png({ compressionLevel: 9, effort: 5 })
-        .toFile(temp);
-    } catch (error) {
-      console.warn("knowledge card mascot fallback", slug, error.message);
-      await sharp(Buffer.from(svg(card)), { density: 72, limitInputPixels: 64 * 1024 * 1024 })
-        .resize(1080, 1350, { fit: "fill" })
-        .png({ compressionLevel: 9, effort: 5 })
-        .toFile(temp);
-    }
+    await sharp(Buffer.from(svg), { density: 72, limitInputPixels: 64 * 1024 * 1024 })
+      .resize(1080, 1350, { fit: "fill" })
+      .composite([{ input: mascot, left: 584, top: 858 }])
+      .png({ compressionLevel: 9, effort: 5 })
+      .toFile(temp);
     await fs.rename(temp, file);
     return file;
   });
@@ -190,6 +368,7 @@ function mountKnowledgeCards(app) {
         "Content-Type": "image/png",
         "Cache-Control": "public, max-age=604800, immutable",
         "X-XJW-Knowledge-Card": VERSION,
+        "X-XJW-Font-Mode": "embedded-glyph-paths",
       });
       return res.sendFile(file);
     } catch (error) {
@@ -201,8 +380,12 @@ function mountKnowledgeCards(app) {
 
 module.exports = {
   VERSION,
+  FONT_URL,
+  FONT_FILE,
   CACHE_DIR,
   CARDS,
+  ensureFont,
+  renderCardSvg,
   renderCard,
   renderCardFile,
   mountKnowledgeCards,
