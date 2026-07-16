@@ -15,6 +15,10 @@ const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
 const { seedSocialContentLibrary } = require("./social-content-library");
 const { removeLegacyDuplicateDrafts } = require("./social-legacy-dedupe");
+const {
+  VERSION: SOCIAL_AUDIT_VERSION,
+  auditSocialSchedule,
+} = require("./social-schedule-audit");
 const { VERSION: ORDER_PRICING_VERSION, mountOrderPricing } = require("./internal-order-pricing");
 const {
   VERSION: KNOWLEDGE_COPY_VERSION,
@@ -186,6 +190,8 @@ async function main() {
   console.log("Social interleaved content library synchronization", socialDraftSeed);
   const socialCopyFix = applySocialCopyFix(readSocialStore, writeSocialStore);
   console.log("Social knowledge copy synchronization", socialCopyFix);
+  const socialScheduleAudit = auditSocialSchedule(readSocialStore, writeSocialStore);
+  console.log("Social full schedule audit", socialScheduleAudit);
   const socialStatusNormalize = normalizeSocialPlatformStatus(readSocialStore, writeSocialStore);
   console.log("Social platform status reconciliation", socialStatusNormalize);
 
@@ -238,6 +244,15 @@ async function main() {
         knowledgeStaticVersion: KNOWLEDGE_STATIC_VERSION,
         knowledgeCopyVersion: KNOWLEDGE_COPY_VERSION,
         knowledgeCopyUpdated: socialCopyFix.updated,
+        socialAuditVersion: SOCIAL_AUDIT_VERSION,
+        socialAuditCanonicalTotal: socialScheduleAudit.canonicalTotal,
+        socialAuditActiveTotal: socialScheduleAudit.activeTotal,
+        socialAuditDuplicatesCancelled: socialScheduleAudit.duplicatesCancelled,
+        socialAuditNeedsFix: socialScheduleAudit.needsFix,
+        socialAuditFirstAt: socialScheduleAudit.firstAt,
+        socialAuditLastAt: socialScheduleAudit.lastAt,
+        socialAuditCategories: socialScheduleAudit.categoryCounts,
+        socialAuditConsecutiveImageRepeats: socialScheduleAudit.consecutiveImageRepeats,
         socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
         socialLegacyDraftsRemoved: legacyDraftCleanup.removed,
         socialDraftCampaign: socialDraftSeed.campaignId,
