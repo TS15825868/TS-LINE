@@ -12,8 +12,8 @@ const { CARDS } = require("./knowledge-card-server");
 
 const fixed = applyKnowledgeCardCopyFix();
 assert.strictEqual(fixed.updatedCards, 5);
-assert.strictEqual(IMAGE_VERSION, "8");
-assert.strictEqual(IMAGE_PATH_VERSION, "v8");
+assert.strictEqual(IMAGE_VERSION, "9");
+assert.strictEqual(IMAGE_PATH_VERSION, "v9");
 
 const cardText = JSON.stringify({
   sediment: CARDS.sediment,
@@ -35,7 +35,7 @@ let store = {
     campaignId: "xjw-knowledge-202607-v1",
     status: "draft",
     title: slug === "units" ? "小老闆知識 13｜g與cc不能只看數字比較" : "舊文案",
-    imageUrl: `https://ts-line.onrender.com/social-assets/knowledge/${slug}.png?v=7`,
+    imageUrl: `https://ts-line.onrender.com/social-assets/knowledge/${slug}.png?v=8`,
     instagramCaption: slug === "units" ? "g 與 cc 單位說明" : "舊文案含批號與批次",
     facebookCaption: slug === "units" ? "先確認單位" : "比較產品不用先說別人不好，也不要貶低",
   })),
@@ -46,12 +46,12 @@ const result = applySocialCopyFix(readStore, writeStore);
 assert.strictEqual(result.updated, slugs.length);
 assert.strictEqual(result.imagesRemoved, slugs.length);
 assert.strictEqual(result.imagesRebound, slugs.length);
-assert.ok(store.posts.every((post) => /^https:\/\/ts-line\.onrender\.com\/social-assets\/knowledge\/v8\/[a-z0-9-]+\.png$/.test(post.imageUrl)));
+assert.ok(store.posts.every((post) => /^https:\/\/ts-line\.onrender\.com\/social-assets\/knowledge\/v9\/[a-z0-9-]+\.png$/.test(post.imageUrl)));
 assert.ok(store.posts.every((post) => !post.imageUrl.includes("?v=")));
-const unitPost = store.posts.find((post) => post.imageUrl.includes("/v8/units.png"));
+const unitPost = store.posts.find((post) => post.imageUrl.includes("/v9/units.png"));
 assert.strictEqual(unitPost.title, "小老闆知識 13｜g與cc不能只看數字比較");
 const postText = JSON.stringify(store.posts);
 ["批號", "批次", "貶低", "別人不好", "仇人", "孕婦", "小朋友", "素食者"].forEach((token) => {
   assert.ok(!postText.includes(token), `social copy still contains ${token}`);
 });
-console.log("PASS old knowledge images removed and all drafts rebound to unique v8 paths");
+console.log("PASS old knowledge images removed and all drafts rebound to unique v9 paths");
