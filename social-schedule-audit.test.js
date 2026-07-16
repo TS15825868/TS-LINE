@@ -79,9 +79,10 @@ const writeStore = (next) => { store = JSON.parse(JSON.stringify(next)); };
 
 const first = auditSocialSchedule(readStore, writeStore, { now: "2026-07-16T00:00:00.000Z" });
 assert.strictEqual(first.canonicalTotal, 90);
-assert.ok(first.activeTotal >= 70 && first.activeTotal <= 90, `unexpected active total after dedupe: ${first.activeTotal}`);
-assert.ok(first.duplicatesCancelled >= 1, "duplicate draft must be cancelled");
+assert.strictEqual(first.activeTotal, 68, "the verified 90-post source library must deduplicate to 68 distinct scheduled posts");
+assert.ok(first.duplicatesCancelled >= 20, "all detected duplicate and highly similar drafts must be cancelled");
 assert.strictEqual(first.needsFix, 1, "missing-image draft must be marked for correction");
+assert.strictEqual(first.consecutiveImageRepeats, 0, "balanced schedule must not place the same image in consecutive posts");
 
 const verified = store.posts.filter((post) => post.auditStatus === "verified" && ACTIVE_STATUSES.has(post.status));
 assert.strictEqual(verified.length, first.activeTotal);
@@ -111,7 +112,7 @@ const verifiedAgain = store.posts.filter((post) => post.auditStatus === "verifie
 assert.deepStrictEqual(verifiedAgain.map((post) => post.scheduledAt), schedules, "restarts must not shift the audited schedule");
 assert.strictEqual(second.scheduleOffset, first.scheduleOffset);
 
-console.log("PASS full social schedule dedupe, balanced order, verified images and matched platform copy", {
+console.log("PASS 68 unique social posts, balanced order, verified images and matched platform copy", {
   canonical: first.canonicalTotal,
   scheduled: first.activeTotal,
   duplicatesCancelled: first.duplicatesCancelled,
