@@ -10,29 +10,16 @@ const { applyKnowledgeCardCopyFix } = require("../knowledge-card-copy-fix");
 
 const OUTPUT_DIR = path.join(__dirname, "..", "public", "social-assets", "knowledge");
 
-async function exists(file) {
-  try {
-    const stat = await fs.stat(file);
-    return stat.isFile() && stat.size > 1000;
-  } catch {
-    return false;
-  }
-}
-
 async function main() {
   applyKnowledgeCardCopyFix();
+  await fs.rm(OUTPUT_DIR, { recursive: true, force: true });
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
   const slugs = Object.keys(CARDS);
-  const result = { total: slugs.length, built: 0, reused: 0, failed: [] };
+  const result = { total: slugs.length, built: 0, failed: [] };
 
   for (const slug of slugs) {
     const destination = path.join(OUTPUT_DIR, `${slug}.png`);
-    if (await exists(destination)) {
-      result.reused += 1;
-      continue;
-    }
-
     try {
       const source = await renderCardFile(slug);
       if (!source) throw new Error("render returned no file");
@@ -43,16 +30,17 @@ async function main() {
       console.log(`knowledge card built: ${slug}`);
     } catch (error) {
       result.failed.push({ slug, error: error.message });
-      console.warn(`knowledge card build skipped: ${slug}`, error.message);
+      console.error(`knowledge card build failed: ${slug}`, error.message);
     }
   }
 
   console.log("Knowledge card static build", result);
-  // Keep install/deploy resilient. Runtime has a serialized low-memory fallback.
-  process.exitCode = 0;
+  if (result.built !== slugs.length || result.failed.length) {
+    throw new Error(`knowledge card build incomplete: ${result.built}/${slugs.length}`);
+  }
 }
 
 main().catch((error) => {
   console.error("Knowledge card static build failed", error);
-  process.exitCode = 0;
+  process.exit(1);
 });
