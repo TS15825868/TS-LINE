@@ -4,8 +4,10 @@ const fs = require("fs/promises");
 const path = require("path");
 const { CARDS } = require("./knowledge-card-server");
 
-const VERSION = "1.0.0";
-const STATIC_DIR = path.join(__dirname, "public", "social-assets", "knowledge");
+const VERSION = "2.0.0";
+const IMAGE_PATH_VERSION = "v8";
+const STATIC_ROOT = path.join(__dirname, "public", "social-assets", "knowledge");
+const STATIC_DIR = path.join(STATIC_ROOT, IMAGE_PATH_VERSION);
 
 async function exists(file) {
   try {
@@ -17,7 +19,7 @@ async function exists(file) {
 }
 
 function mountKnowledgeCardStatic(app) {
-  app.get("/social-assets/knowledge/:slug.png", async (req, res, next) => {
+  app.get(`/social-assets/knowledge/${IMAGE_PATH_VERSION}/:slug.png`, async (req, res, next) => {
     const slug = String(req.params.slug || "");
     if (!Object.prototype.hasOwnProperty.call(CARDS, slug)) return next();
 
@@ -27,10 +29,28 @@ function mountKnowledgeCardStatic(app) {
     res.set({
       "Content-Type": "image/png",
       "Cache-Control": "public, max-age=31536000, immutable",
-      "X-XJW-Knowledge-Card-Source": `static-${VERSION}`,
+      "X-XJW-Knowledge-Card-Source": `static-${VERSION}-${IMAGE_PATH_VERSION}`,
     });
     return res.sendFile(file);
   });
+
+  // Old paths are intentionally no longer used by drafts. Keep this explicit so
+  // stale browser/proxy requests do not silently return an outdated card.
+  app.get("/social-assets/knowledge/:slug.png", (req, res, next) => {
+    const slug = String(req.params.slug || "");
+    if (!Object.prototype.hasOwnProperty.call(CARDS, slug)) return next();
+    res.set({
+      "Cache-Control": "no-store, max-age=0",
+      "X-XJW-Knowledge-Card-Replaced-By": `/social-assets/knowledge/${IMAGE_PATH_VERSION}/${slug}.png`,
+    });
+    return res.status(410).send("knowledge card image replaced");
+  });
 }
 
-module.exports = { VERSION, STATIC_DIR, mountKnowledgeCardStatic };
+module.exports = {
+  VERSION,
+  IMAGE_PATH_VERSION,
+  STATIC_ROOT,
+  STATIC_DIR,
+  mountKnowledgeCardStatic,
+};
