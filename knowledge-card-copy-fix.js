@@ -2,10 +2,10 @@
 
 const { CARDS } = require("./knowledge-card-server");
 
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const APP = "https://ts-line.onrender.com";
-const IMAGE_VERSION = "8";
-const IMAGE_PATH_VERSION = "v8";
+const IMAGE_VERSION = "9";
+const IMAGE_PATH_VERSION = "v9";
 const CAMPAIGN_ID = "xjw-knowledge-202607-v1";
 const TAGS = "#仙加味 #仙加味小老闆 #龜鹿 #漢方生活 #日常補養 #補養是一種節奏";
 const CTA = "有產品、保存或使用方式的問題，可私訊或加入官方 LINE：@762jybnm。";
