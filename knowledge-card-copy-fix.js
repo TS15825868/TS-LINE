@@ -2,9 +2,10 @@
 
 const { CARDS } = require("./knowledge-card-server");
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const APP = "https://ts-line.onrender.com";
-const IMAGE_VERSION = "7";
+const IMAGE_VERSION = "8";
+const IMAGE_PATH_VERSION = "v8";
 const CAMPAIGN_ID = "xjw-knowledge-202607-v1";
 const TAGS = "#仙加味 #仙加味小老闆 #龜鹿 #漢方生活 #日常補養 #補養是一種節奏";
 const CTA = "有產品、保存或使用方式的問題，可私訊或加入官方 LINE：@762jybnm。";
@@ -87,15 +88,20 @@ function applyKnowledgeCardCopyFix() {
 }
 
 function slugFrom(post) {
-  const match = String(post?.imageUrl || "").match(/\/knowledge\/([^/?]+)\.png/i);
+  const match = String(post?.imageUrl || "").match(/\/knowledge\/(?:v\d+\/)?([^/?]+)\.png/i);
   return match ? match[1] : "";
+}
+
+function newImageUrl(slug) {
+  return `${APP}/social-assets/knowledge/${IMAGE_PATH_VERSION}/${slug}.png`;
 }
 
 function applySocialCopyFix(readStore, writeStore) {
   const store = readStore();
   store.posts = Array.isArray(store.posts) ? store.posts : [];
   let updated = 0;
-  let imagesUpdated = 0;
+  let imagesRemoved = 0;
+  let imagesRebound = 0;
 
   for (const post of store.posts) {
     if (post.campaignId !== CAMPAIGN_ID) continue;
@@ -103,10 +109,17 @@ function applySocialCopyFix(readStore, writeStore) {
     const slug = slugFrom(post);
     if (!slug || !Object.prototype.hasOwnProperty.call(CARDS, slug)) continue;
 
+    const oldImageUrl = String(post.imageUrl || "");
+    const replacementImageUrl = newImageUrl(slug);
+    if (oldImageUrl !== replacementImageUrl) {
+      post.imageUrl = "";
+      imagesRemoved += 1;
+      post.imageUrl = replacementImageUrl;
+      imagesRebound += 1;
+    }
+
     const patch = PATCHES[slug];
-    const next = {
-      imageUrl: `${APP}/social-assets/knowledge/${slug}.png?v=${IMAGE_VERSION}`,
-    };
+    const next = {};
     if (patch) {
       Object.assign(next, {
         knowledgeTopic: patch.knowledgeTopic,
@@ -116,10 +129,9 @@ function applySocialCopyFix(readStore, writeStore) {
       });
     }
 
-    let changed = false;
+    let changed = oldImageUrl !== replacementImageUrl;
     for (const [key, value] of Object.entries(next)) {
       if (post[key] !== value) {
-        if (key === "imageUrl") imagesUpdated += 1;
         post[key] = value;
         changed = true;
       }
@@ -134,15 +146,18 @@ function applySocialCopyFix(readStore, writeStore) {
   return {
     version: VERSION,
     updated,
-    imagesUpdated,
+    imagesRemoved,
+    imagesRebound,
     total: store.posts.length,
     imageVersion: IMAGE_VERSION,
+    imagePathVersion: IMAGE_PATH_VERSION,
   };
 }
 
 module.exports = {
   VERSION,
   IMAGE_VERSION,
+  IMAGE_PATH_VERSION,
   PATCHES,
   applyKnowledgeCardCopyFix,
   applySocialCopyFix,
