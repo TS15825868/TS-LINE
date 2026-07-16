@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "5.7.0",
+  "version": "5.7.1",
   "main": "internal-entry.js",
   "engines": {
     "node": "22.x"
@@ -19,5 +19,5 @@
     "satori": "0.28.0",
     "sharp": "^0.34.3"
   },
-  "description": "仙加味 LINE OA 正式版｜全面檢查社群排程標題、IG文案、FB文案與圖片，取消重複或高度近似草稿，依產品、知識、使用、FAQ、料理與品牌交錯排序，固定週三週五晚上8點；30張小老闆知識卡、訂單庫存、社群發布與Supabase持久化"
+  "description": "仙加味 LINE OA 正式版｜從90篇來源內容驗證並保留68篇不重複社群排程，標題、IG文案、FB文案與圖片一一對應，依產品、知識、使用、FAQ、料理與品牌交錯排序，固定週三週五晚上8點；30張小老闆知識卡、訂單庫存、社群發布與Supabase持久化"
 }
