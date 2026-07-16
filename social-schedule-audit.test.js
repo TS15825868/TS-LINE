@@ -13,8 +13,9 @@ const {
 } = require("./social-schedule-audit");
 
 const canonical = canonicalPosts();
-assert.strictEqual(VERSION, "1.0.0");
+assert.strictEqual(VERSION, "1.0.1");
 assert.strictEqual(canonical.length, 90, "canonical social library must contain 90 source posts before dedupe");
+assert.ok(canonical.filter((post) => /xjw-knowledge/.test(String(post.campaignId || ""))).every((post) => /\/social-assets\/knowledge\/v9\/[a-z0-9-]+\.png$/.test(post.imageUrl)), "all 30 knowledge posts must use independent v9 image paths");
 
 const createdAt = "2026-07-16T00:00:00.000Z";
 let store = {
