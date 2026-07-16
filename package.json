@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "5.6.5",
+  "version": "5.6.6",
   "main": "internal-entry.js",
   "engines": {
     "node": "22.x"
@@ -18,5 +18,5 @@
     "express": "^4.18.2",
     "sharp": "^0.34.3"
   },
-  "description": "仙加味 LINE OA 正式版｜手機內部 App 完整導覽、更多功能選單、iPhone 安全區與不遮內容的連線狀態；知識卡於建置階段產生為靜態 PNG；訂單庫存連動、社群排程與 Supabase 持久化"
+  "description": "仙加味 LINE OA 正式版｜20 張小老闆知識卡於部署階段強制重建為獨立 1080×1350 PNG，使用核准小老闆素材、精準繁體文案與圖片網址 v6；手機內部 App、訂單庫存連動、社群排程與 Supabase 持久化"
 }
