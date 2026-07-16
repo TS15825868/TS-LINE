@@ -18,7 +18,7 @@ const cardText = JSON.stringify({
   supportPhotos: CARDS["support-photos"],
   fairCompare: CARDS["fair-compare"],
 });
-["批號", "批次", "貶低", "別人不好", "仇人"].forEach((token) => {
+["批號", "批次", "貶低", "別人不好", "仇人", "孕婦", "小朋友", "素食者"].forEach((token) => {
   assert.ok(!cardText.includes(token), `knowledge card still contains ${token}`);
 });
 assert.ok(CARDS["fair-compare"].title.join("").includes("了解自己的需求"));
@@ -39,9 +39,9 @@ const readStore = () => JSON.parse(JSON.stringify(store));
 const writeStore = (next) => { store = JSON.parse(JSON.stringify(next)); };
 const result = applySocialCopyFix(readStore, writeStore);
 assert.strictEqual(result.updated, 5);
-assert.ok(store.posts.every((post) => post.imageUrl.endsWith("?v=3")));
+assert.ok(store.posts.every((post) => post.imageUrl.endsWith("?v=6")));
 const postText = JSON.stringify(store.posts);
-["批號", "批次", "貶低", "別人不好", "仇人"].forEach((token) => {
+["批號", "批次", "貶低", "別人不好", "仇人", "孕婦", "小朋友", "素食者"].forEach((token) => {
   assert.ok(!postText.includes(token), `social copy still contains ${token}`);
 });
-console.log("PASS neutral knowledge cards and social copy without batch references");
+console.log("PASS formal neutral knowledge cards and refreshed social copy v6");
