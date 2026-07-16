@@ -1,0 +1,1 @@
+Approved post images from user-provided 貼文.zip. Binary images are stored in this directory.
