@@ -4,8 +4,8 @@ const fs = require("fs/promises");
 const path = require("path");
 const { CARDS } = require("./knowledge-card-server");
 
-const VERSION = "2.0.0";
-const IMAGE_PATH_VERSION = "v8";
+const VERSION = "2.1.0";
+const IMAGE_PATH_VERSION = "v9";
 const STATIC_ROOT = path.join(__dirname, "public", "social-assets", "knowledge");
 const STATIC_DIR = path.join(STATIC_ROOT, IMAGE_PATH_VERSION);
 
@@ -34,8 +34,6 @@ function mountKnowledgeCardStatic(app) {
     return res.sendFile(file);
   });
 
-  // Old paths are intentionally no longer used by drafts. Keep this explicit so
-  // stale browser/proxy requests do not silently return an outdated card.
   app.get("/social-assets/knowledge/:slug.png", (req, res, next) => {
     const slug = String(req.params.slug || "");
     if (!Object.prototype.hasOwnProperty.call(CARDS, slug)) return next();
