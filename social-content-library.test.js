@@ -5,6 +5,7 @@ const { POSTS: BASE_POSTS } = require("./social-draft-library-weekly");
 const { CARDS, renderCard } = require("./knowledge-card-server");
 const {
   CAMPAIGN_ID,
+  IMAGE_VERSION,
   KNOWLEDGE,
   POSTS,
   normalize,
@@ -34,10 +35,11 @@ function similarity(a, b) {
 }
 
 assert.strictEqual(CAMPAIGN_ID, "xjw-knowledge-202607-v1");
+assert.strictEqual(IMAGE_VERSION, "6");
 assert.strictEqual(KNOWLEDGE.length, 20);
 assert.strictEqual(Object.keys(CARDS).length, 20);
 assert.strictEqual(POSTS.length, BASE_POSTS.length + KNOWLEDGE.length);
-assert.ok(KNOWLEDGE.every((post) => /^https:\/\/ts-line\.onrender\.com\/social-assets\/knowledge\/.+\.png\?v=2$/.test(post.imageUrl)));
+assert.ok(KNOWLEDGE.every((post) => /^https:\/\/ts-line\.onrender\.com\/social-assets\/knowledge\/.+\.png\?v=6$/.test(post.imageUrl)));
 assert.strictEqual(new Set(KNOWLEDGE.map((post) => post.title)).size, KNOWLEDGE.length);
 assert.strictEqual(new Set(KNOWLEDGE.map((post) => post.knowledgeTopic)).size, KNOWLEDGE.length);
 assert.strictEqual(new Set(KNOWLEDGE.map(fingerprint)).size, KNOWLEDGE.length);
@@ -62,8 +64,8 @@ KNOWLEDGE.forEach((post) => {
   assert.ok(!/[�]/.test(`${post.title}${post.instagramCaption}${post.facebookCaption}`), `invalid character in ${post.title}`);
 });
 
-["治療", "治癒", "療效", "保證有效", "改善疾病"].forEach((term) => {
-  assert.ok(!KNOWLEDGE.some((post) => `${post.instagramCaption}${post.facebookCaption}`.includes(term)), `medical claim found: ${term}`);
+["治療", "治癒", "療效", "保證有效", "改善疾病", "孕婦", "小朋友", "素食者", "批號", "批次", "貶低", "別人不好"].forEach((term) => {
+  assert.ok(!KNOWLEDGE.some((post) => `${post.title}${post.instagramCaption}${post.facebookCaption}`.includes(term)), `unsafe or unwanted wording found: ${term}`);
 });
 
 let store = { posts: [] };
@@ -79,7 +81,7 @@ assert.strictEqual(store.posts.length, POSTS.length);
 (async () => {
   const image = await renderCard("fair-compare");
   assert.ok(Buffer.isBuffer(image) && image.length > 10000, "knowledge image must render as a non-empty PNG");
-  console.log("PASS 20 unique interleaved mascot knowledge posts and deterministic PNG cards");
+  console.log("PASS 20 formal non-duplicated mascot knowledge posts and deterministic PNG cards");
 })().catch((error) => {
   console.error(error);
   process.exit(1);
