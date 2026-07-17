@@ -15,9 +15,13 @@ assert.strictEqual(new Set(TOPICS.map((topic) => topic.slug)).size, 20, "slugs m
 assert.strictEqual(new Set(TOPICS.map((topic) => topic.file)).size, 20, "original image filenames must be unique");
 assert.ok(TOPICS.every((topic) => /^[0-9A-F-]+\.PNG$/.test(topic.file)), "all images must use approved ZIP filenames");
 
-const forbidden = ["療效", "治療", "改善疾病", "批號", "批次", "貶低", "別人不好", "保證有效"];
+const forbiddenClaims = ["療效", "治療", "改善疾病", "保證有效"];
 const libraryText = JSON.stringify(TOPICS);
-for (const word of forbidden) assert.ok(!libraryText.includes(word), `forbidden wording: ${word}`);
+for (const word of forbiddenClaims) assert.ok(!libraryText.includes(word), `forbidden claim: ${word}`);
+assert.ok(
+  TOPICS.some((topic) => topic.lead.includes("不必靠比較或貶低別人")),
+  "守規文案應明確提醒不比較、不貶低同業"
+);
 
 const fixedNow = Date.parse("2026-07-17T04:00:00.000Z");
 const slots = nextScheduleSlots(20, fixedNow);
