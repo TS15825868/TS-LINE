@@ -5,14 +5,15 @@ const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
 const sharp = require("sharp");
+const { TOPICS } = require("./social-official-rebuild");
 
-const VERSION = "1.4.0";
+const VERSION = "2.0.0";
 const SITE = "https://ts15825868.github.io/xianjiawei/";
 const FONT_NAME = "XJW Source Han Sans TW";
 const FONT_URL = "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/SubsetOTF/TW/SourceHanSansTW-Regular.otf";
 const FONT_DIR = path.join(__dirname, ".cache", "knowledge-fonts");
 const FONT_FILE = path.join(FONT_DIR, "SourceHanSansTW-Regular.otf");
-const CACHE_DIR = path.join(os.tmpdir(), "xjw-knowledge-cards-v140");
+const CACHE_DIR = path.join(os.tmpdir(), "xjw-knowledge-cards-v200");
 const pending = new Map();
 let renderQueue = Promise.resolve();
 let fontPromise = null;
@@ -30,28 +31,42 @@ const MASCOTS = {
   recipes: `${SITE}images/brand/approved-v405/recipes.webp?v=408.7`,
 };
 
-const CARDS = {
-  "hot-water": { number: "01", eyebrow: "沖泡篇", title: ["沖泡一定要用", "滾水嗎？"], bullets: ["熱水能均勻化開即可", "不必持續煮滾", "濃淡再依口味調整"], mascot: "guide" },
-  "cold-texture": { number: "02", eyebrow: "取用篇", title: ["冷藏後變得較稠", "怎麼取用？"], bullets: ["使用乾淨乾燥湯匙", "先取需要的份量", "再用溫熱水慢慢化開"], mascot: "guide" },
-  sediment: { number: "03", eyebrow: "觀察篇", title: ["杯底有少量沉澱", "先怎麼確認？"], bullets: ["先攪拌或搖勻", "確認氣味與保存狀況", "有疑問保留包裝再詢問"], mascot: "faq" },
-  color: { number: "04", eyebrow: "選購篇", title: ["顏色深淺", "能判斷內容嗎？"], bullets: ["不能只看顏色", "要看成分與規格", "保存與製作方式也要確認"], mascot: "choose" },
-  serving: { number: "05", eyebrow: "標示篇", title: ["看總重量之外", "也要看每次份量"], bullets: ["總重量是完整規格", "每次份量是日常安排", "兩個數字要分開理解"], mascot: "choose" },
-  "one-format": { number: "06", eyebrow: "日常篇", title: ["同一天不一定要", "安排多種型態"], bullets: ["依當天情境選一種即可", "外出沖泡料理分開想", "簡單才容易持續"], mascot: "products" },
-  "batch-info": { number: "07", eyebrow: "收貨篇", title: ["收到商品後", "先確認哪些資訊？"], bullets: ["先看包裝是否完整", "確認品名規格與期限", "依標示方式妥善保存"], mascot: "faq" },
-  "support-photos": { number: "08", eyebrow: "客服篇", title: ["詢問產品問題", "先拍這三張"], bullets: ["完整包裝正反面", "產品名稱與有效日期", "實際內容與保存狀況"], mascot: "faq" },
-  "delivery-check": { number: "09", eyebrow: "宅配篇", title: ["宅配外箱破損", "先怎麼處理？"], bullets: ["保留外箱與物流標籤", "拍下六面與內包裝", "帶訂單資料聯絡客服"], mascot: "faq" },
-  "clean-cup": { number: "10", eyebrow: "沖泡篇", title: ["杯子殘留氣味", "會影響口感"], bullets: ["先把杯子洗乾淨", "避免其他飲品氣味", "再調整喜歡的濃淡"], mascot: "guide" },
-  "soup-balance": { number: "11", eyebrow: "料理篇", title: ["燉湯完成後", "再調整濃淡"], bullets: ["先看整鍋水量", "少量加入再試味道", "不用一次放得很複雜"], mascot: "recipes" },
-  "similar-name": { number: "12", eyebrow: "選購篇", title: ["名稱相近的產品", "內容仍要逐項看"], bullets: ["先看完整成分", "再看規格與配料", "不要只看品名下判斷"], mascot: "choose" },
-  units: { number: "13", eyebrow: "單位篇", title: ["g 與 cc", "不能只看數字比較"], bullets: ["g 是重量 cc 是容量", "數字相同不代表同份量", "先看單位再看使用方式"], mascot: "choose" },
-  "pieces-weight": { number: "14", eyebrow: "規格篇", title: ["片數比較多", "不等於總重量多"], bullets: ["片數是切分方式", "總重量是完整規格", "再一起看每片約重"], mascot: "products" },
-  "taiwan-catty": { number: "15", eyebrow: "換算篇", title: ["一台斤", "是多少公克？"], bullets: ["台灣一台斤通常是 600g", "斤數與公克一起確認", "以包裝標示為準"], mascot: "products" },
-  "dissolve-speed": { number: "16", eyebrow: "沖泡篇", title: ["化開快慢", "不能單獨判斷內容"], bullets: ["水溫會影響化開速度", "塊大小與攪拌也有差", "先統一沖泡條件再觀察"], mascot: "guide" },
-  "taste-strength": { number: "17", eyebrow: "口感篇", title: ["味道濃淡", "不能代表原料多寡"], bullets: ["配料與水量會影響", "飲用溫度也會改變口感", "比較仍要看成分與規格"], mascot: "faq" },
-  "fair-compare": { number: "18", eyebrow: "選擇篇", title: ["比較產品前", "先了解自己的需求"], bullets: ["先看成分與規格", "選擇能融入日常的型態", "依自己的使用習慣決定"], mascot: "choose" },
-  "ad-vs-label": { number: "19", eyebrow: "標示篇", title: ["廣告圖", "不是完整產品標示"], bullets: ["廣告圖只整理重點", "完整資訊看實際包裝", "成分規格期限都要確認"], mascot: "faq" },
-  "spoon-material": { number: "20", eyebrow: "取用篇", title: ["取用重點", "是乾淨與乾燥"], bullets: ["湯匙材質不是唯一重點", "乾淨乾燥更重要", "取用後立即密封保存"], mascot: "guide" },
-};
+const EYEBROWS = [
+  "日常篇", "早晨篇", "午後篇", "情境篇", "型態篇", "規格篇",
+  "單位篇", "換算篇", "規格篇", "份量篇", "型態篇", "成分篇",
+  "沖泡篇", "口感篇", "風味篇", "沖泡篇", "保存篇", "保存篇",
+  "收貨篇", "確認篇", "選購篇", "標示篇", "品牌篇", "資訊篇",
+  "分享篇", "情境篇", "選擇篇", "選購篇", "日常篇", "沖泡篇",
+];
+
+const MASCOT_KEYS = [
+  "brand", "guide", "guide", "choose", "products", "products",
+  "choose", "products", "products", "choose", "products", "choose",
+  "recipes", "guide", "recipes", "guide", "faq", "faq", "faq", "faq",
+  "choose", "choose", "brand", "faq", "brand", "choose", "products", "choose", "guide", "guide",
+];
+
+const CARDS = Object.fromEntries(TOPICS.map((topic, index) => [topic.slug, {
+  number: String(topic.number).padStart(2, "0"),
+  eyebrow: EYEBROWS[index],
+  title: splitTitle(topic.title),
+  bullets: topic.bullets,
+  mascot: MASCOT_KEYS[index],
+}]));
+
+function splitTitle(value) {
+  const title = String(value || "").trim();
+  const punctuation = ["，", "：", "？"];
+  for (const mark of punctuation) {
+    const at = title.indexOf(mark);
+    if (at >= 4 && at <= 13) {
+      return [title.slice(0, at + 1), title.slice(at + 1)];
+    }
+  }
+  if (title.length <= 12) return [title, ""];
+  const cut = Math.min(12, Math.max(7, Math.ceil(title.length / 2)));
+  return [title.slice(0, cut), title.slice(cut)];
+}
 
 async function exists(file, minimum = 1000) {
   try {
@@ -122,15 +137,45 @@ async function ensureCacheDir() {
   await fs.mkdir(CACHE_DIR, { recursive: true });
 }
 
-async function mascotFile(key) {
+async function sourceBuffer(key) {
   await ensureCacheDir();
   const url = MASCOTS[key] || MASCOTS.faq;
-  const file = path.join(CACHE_DIR, `mascot-${key}-${digest(url)}.png`);
-  if (await exists(file)) return file;
+  const file = path.join(CACHE_DIR, `source-${key}-${digest(url)}.webp`);
+  if (await exists(file)) return fs.readFile(file);
   const source = await fetchBuffer(url);
+  await atomicWrite(file, source);
+  return source;
+}
+
+async function sceneFile(key) {
+  await ensureCacheDir();
+  const file = path.join(CACHE_DIR, `scene-${key}-${VERSION}.png`);
+  if (await exists(file)) return file;
+  const source = await sourceBuffer(key);
   const temp = `${file}.${process.pid}.tmp`;
   await sharp(source, { limitInputPixels: 64 * 1024 * 1024 })
-    .resize({ width: 390, height: 350, fit: "contain", withoutEnlargement: true })
+    .resize(1080, 1080, { fit: "cover", position: "attention" })
+    .blur(3.2)
+    .modulate({ brightness: 0.48, saturation: 0.72 })
+    .png({ compressionLevel: 9, effort: 5 })
+    .toFile(temp);
+  await fs.rename(temp, file);
+  return file;
+}
+
+async function mascotFile(key) {
+  await ensureCacheDir();
+  const file = path.join(CACHE_DIR, `mascot-integrated-${key}-${VERSION}.png`);
+  if (await exists(file)) return file;
+  const source = await sourceBuffer(key);
+  const width = 560;
+  const height = 650;
+  const mask = Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="black" stop-opacity="0"/><stop offset="0.18" stop-color="white" stop-opacity="0.82"/><stop offset="0.34" stop-color="white"/><stop offset="1" stop-color="white"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#fade)"/></svg>`);
+  const temp = `${file}.${process.pid}.tmp`;
+  await sharp(source, { limitInputPixels: 64 * 1024 * 1024 })
+    .resize(width, height, { fit: "cover", position: "right" })
+    .ensureAlpha()
+    .composite([{ input: mask, blend: "dest-in" }])
     .png({ compressionLevel: 9, effort: 5 })
     .toFile(temp);
   await fs.rename(temp, file);
@@ -154,7 +199,7 @@ function text(value, style = {}) {
     display: "flex",
     fontFamily: FONT_NAME,
     fontWeight: 400,
-    color: "#24211d",
+    color: "#251e18",
     ...style,
   }, String(value));
 }
@@ -162,149 +207,163 @@ function text(value, style = {}) {
 function cardElement(card) {
   const bullets = card.bullets.map((item, index) => element("div", {
     position: "absolute",
-    left: 88,
-    top: 602 + index * 102,
-    width: 492,
-    height: 78,
+    left: 92,
+    top: 475 + index * 135,
+    width: 505,
+    minHeight: 100,
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
   }, [
     element("div", {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      backgroundColor: "#315c45",
+      flexShrink: 0,
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      backgroundColor: "#314d22",
+      border: "2px solid #c9a65a",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-    }, text(index + 1, { color: "#ffffff", fontSize: 23, fontWeight: 700 })),
-    text(item, { marginLeft: 20, fontSize: 31, fontWeight: 700, lineHeight: 1.25 }),
+    }, text(`${index + 1}.`, { color: "#fff8e8", fontSize: 28, fontWeight: 700 })),
+    text(item, {
+      marginLeft: 22,
+      width: 420,
+      fontSize: 31,
+      fontWeight: 700,
+      lineHeight: 1.35,
+      whiteSpace: "pre-wrap",
+    }),
   ]));
 
   return element("div", {
     width: 1080,
-    height: 1350,
+    height: 1080,
     position: "relative",
     display: "flex",
-    backgroundColor: "#f7f4ed",
     fontFamily: FONT_NAME,
   }, [
     element("div", {
       position: "absolute",
-      left: 46,
-      top: 46,
-      width: 988,
-      height: 1258,
-      borderRadius: 42,
-      backgroundColor: "#fffdf8",
-      border: "3px solid #d8c6a4",
+      inset: 28,
+      border: "3px solid #d4ad5d",
+      borderRadius: 34,
       display: "flex",
     }, []),
     element("div", {
       position: "absolute",
-      left: 46,
-      top: 46,
-      width: 988,
-      height: 126,
-      borderRadius: 42,
-      backgroundColor: "#0b1f3b",
+      left: 38,
+      top: 36,
+      width: 1004,
+      height: 250,
+      borderRadius: 30,
+      backgroundColor: "#071b32",
+      border: "3px solid #d4ad5d",
       display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingLeft: 46,
-      paddingRight: 46,
-    }, [
-      text("仙加味・龜鹿", { color: "#ffffff", fontSize: 34, fontWeight: 700 }),
-      text("補養，是一種節奏。", { color: "#f4d9a0", fontSize: 27, fontWeight: 700 }),
-    ]),
+    }, []),
     element("div", {
       position: "absolute",
-      left: 88,
-      top: 205,
-      width: 245,
-      height: 54,
-      borderRadius: 27,
-      backgroundColor: "#9b2f2f",
+      left: 74,
+      top: 76,
+      width: 82,
+      height: 126,
+      borderRadius: 28,
+      backgroundColor: "#9b2727",
+      border: "3px solid #d4ad5d",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-    }, text(`小老闆知識 ${card.number}`, { color: "#ffffff", fontSize: 25, fontWeight: 700 })),
-    text(card.eyebrow, {
-      position: "absolute",
-      left: 360,
-      top: 217,
-      fontSize: 27,
-      fontWeight: 700,
-      color: "#315c45",
-    }),
+    }, text("仙\n加\n味", { color: "#fff4dd", fontSize: 27, fontWeight: 700, lineHeight: 1.12, whiteSpace: "pre-wrap", textAlign: "center" })),
     text(card.title[0], {
       position: "absolute",
-      left: 88,
-      top: 315,
-      fontSize: 68,
+      left: 190,
+      top: card.title[1] ? 66 : 105,
+      width: 800,
+      justifyContent: "center",
+      color: "#fff2d6",
+      fontSize: card.title[0].length > 13 ? 50 : 61,
       fontWeight: 700,
-      color: "#0b1f3b",
-      letterSpacing: -1,
+      letterSpacing: 1,
     }),
-    text(card.title[1], {
+    card.title[1] ? text(card.title[1], {
       position: "absolute",
-      left: 88,
-      top: 408,
-      fontSize: 68,
+      left: 190,
+      top: 145,
+      width: 800,
+      justifyContent: "center",
+      color: "#fff2d6",
+      fontSize: card.title[1].length > 13 ? 50 : 61,
       fontWeight: 700,
-      color: "#0b1f3b",
-      letterSpacing: -1,
+      letterSpacing: 1,
+    }) : null,
+    element("div", {
+      position: "absolute",
+      left: 46,
+      top: 284,
+      width: 988,
+      height: 674,
+      borderRadius: 38,
+      backgroundColor: "#f8eedc",
+      border: "3px solid #d2b779",
+      display: "flex",
+    }, []),
+    element("div", {
+      position: "absolute",
+      left: 340,
+      top: 262,
+      width: 400,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: "#314d22",
+      border: "3px solid #d4ad5d",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }, text(`小老闆知識卡 ${card.number}`, { color: "#fff4dd", fontSize: 32, fontWeight: 700 })),
+    text(card.eyebrow, {
+      position: "absolute",
+      left: 92,
+      top: 375,
+      color: "#7a221f",
+      fontSize: 30,
+      fontWeight: 700,
     }),
     element("div", {
       position: "absolute",
-      left: 90,
-      top: 548,
-      width: 900,
-      height: 3,
-      backgroundColor: "#d8c6a4",
+      left: 92,
+      top: 428,
+      width: 500,
+      height: 2,
+      backgroundColor: "#c9a65a",
       display: "flex",
     }, []),
     ...bullets,
     element("div", {
       position: "absolute",
-      left: 566,
-      top: 858,
-      width: 428,
-      height: 350,
-      borderRadius: 32,
-      backgroundColor: "#f2eadb",
-      border: "2px solid #d8c6a4",
-      display: "flex",
-    }, []),
-    text("看清楚內容，再依自己的日常選擇。", {
-      position: "absolute",
-      left: 92,
-      top: 1096,
-      fontSize: 27,
-      fontWeight: 700,
-      color: "#6b655d",
-    }),
-    element("div", {
-      position: "absolute",
-      left: 88,
-      top: 1230,
-      width: 214,
-      height: 54,
-      borderRadius: 27,
-      backgroundColor: "#9b2f2f",
+      left: 112,
+      top: 852,
+      width: 475,
+      height: 78,
+      borderRadius: 18,
+      backgroundColor: "#fff9ed",
+      border: "2px solid #b99b5f",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-    }, text("仙加味小老闆", { color: "#ffffff", fontSize: 27, fontWeight: 700 })),
-    text("LINE｜@762jybnm", {
+    }, text("先看需求，再做選擇。", { color: "#314d22", fontSize: 31, fontWeight: 700 })),
+    element("div", {
       position: "absolute",
-      right: 92,
-      top: 1244,
-      fontSize: 26,
-      fontWeight: 700,
-      color: "#315c45",
-    }),
-  ], { lang: "zh-TW" });
+      left: 38,
+      top: 954,
+      width: 1004,
+      height: 92,
+      borderRadius: 24,
+      backgroundColor: "#243b1d",
+      border: "3px solid #d4ad5d",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }, text("仙加味・龜鹿｜補養，是一種節奏。", { color: "#f5d9a0", fontSize: 35, fontWeight: 700 })),
+  ].filter(Boolean), { lang: "zh-TW" });
 }
 
 async function renderCardSvg(slug) {
@@ -313,7 +372,7 @@ async function renderCardSvg(slug) {
   const [satori, font] = await Promise.all([satoriRenderer(), fontData()]);
   return satori(cardElement(card), {
     width: 1080,
-    height: 1350,
+    height: 1080,
     embedFont: true,
     fonts: [
       { name: FONT_NAME, data: font, weight: 400, style: "normal" },
@@ -332,13 +391,19 @@ async function renderCardFile(slug) {
 
   const task = renderQueue.catch(() => undefined).then(async () => {
     if (await exists(file)) return file;
-    const [svg, mascot] = await Promise.all([renderCardSvg(slug), mascotFile(card.mascot)]);
+    const [svg, scene, mascot] = await Promise.all([
+      renderCardSvg(slug),
+      sceneFile(card.mascot),
+      mascotFile(card.mascot),
+    ]);
     if (!svg) throw new Error(`unknown knowledge card: ${slug}`);
     if (svg.includes("<text")) throw new Error("knowledge card font was not embedded as paths");
     const temp = `${file}.${process.pid}.tmp`;
-    await sharp(Buffer.from(svg), { density: 72, limitInputPixels: 64 * 1024 * 1024 })
-      .resize(1080, 1350, { fit: "fill" })
-      .composite([{ input: mascot, left: 584, top: 858 }])
+    await sharp(scene, { limitInputPixels: 64 * 1024 * 1024 })
+      .composite([
+        { input: Buffer.from(svg), left: 0, top: 0 },
+        { input: mascot, left: 510, top: 314 },
+      ])
       .png({ compressionLevel: 9, effort: 5 })
       .toFile(temp);
     await fs.rename(temp, file);
@@ -369,6 +434,7 @@ function mountKnowledgeCards(app) {
         "Cache-Control": "public, max-age=604800, immutable",
         "X-XJW-Knowledge-Card": VERSION,
         "X-XJW-Font-Mode": "embedded-glyph-paths",
+        "X-XJW-Layout": "approved-integrated-square",
       });
       return res.sendFile(file);
     } catch (error) {
