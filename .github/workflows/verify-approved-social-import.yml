@@ -15,43 +15,67 @@ permissions:
 jobs:
   verify-import:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
+    env:
+      ZIP_SHA256: "5d5826a47fee6c3d2af08d4d1926b2b9280b8e8d7a2d2be94c10d0984030b557"
+      ZIP_URL: "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-c854-7207-93a4-a956e11a10be/raw?se=2026-07-17T12%3A33%3A45Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-16T23%3A29%3A24Z&ske=2026-07-18T23%3A29%3A24Z&sks=b&skv=2026-02-06&sig=Q2jD/K8JpetZxkOYqGA3Xy38%2BcWyB5CulKInWdZSO00%3D"
+      HEALTH_ENDPOINT: "https://ts-line.onrender.com/internal/approved-social-one-time-healthz"
+      IMPORT_ENDPOINT: "https://ts-line.onrender.com/internal/api/v2/social/import-approved-once-5d5826a47fee6c3d"
+
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Wait for Render deployment and verify exact result
-        id: verify
+      - name: Download and lock the exact approved ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --location --fail --show-error --retry 3 --max-time 180 "$ZIP_URL" --output /tmp/approved-social.zip
+          printf '%s  %s\n' "$ZIP_SHA256" /tmp/approved-social.zip | sha256sum --check --strict
+          test "$(stat -c '%s' /tmp/approved-social.zip)" = "66586139"
+
+      - name: Wait for Render receiver
         shell: bash
         run: |
           set -uo pipefail
-          endpoint="https://ts-line.onrender.com/internal/approved-social-one-time-healthz"
-          mkdir -p deploy-status
           for attempt in $(seq 1 40); do
-            body="$(curl --location --silent --show-error --max-time 25 "$endpoint" || true)"
-            echo "Attempt ${attempt}: ${body}"
-            if printf '%s' "$body" | jq -e '
-              .ok == true and
-              (.state == "complete" or .state == "already-imported") and
-              .uploaded == 20 and
-              .pendingReview == 20 and
-              .preservedPublished >= 1
-            ' >/dev/null 2>&1; then
-              printf '%s\n' "$body" | jq '.' > deploy-status/approved-social-import.json
-              echo "PASS: 20 approved originals imported, 20 pending review, published record preserved."
+            body="$(curl --location --silent --show-error --max-time 25 "$HEALTH_ENDPOINT" || true)"
+            echo "Receiver attempt ${attempt}: ${body}"
+            if printf '%s' "$body" | jq -e '.version == "1.2.0" or .ok == true' >/dev/null 2>&1; then
               exit 0
             fi
             sleep 15
           done
-          echo "Render did not report a completed approved social import in time."
           exit 1
 
-      - name: Commit verified result to main
-        if: success()
+      - name: Send the approved ZIP and create 20 pending-review posts
         shell: bash
         run: |
+          set -euo pipefail
+          curl --location --fail-with-body --show-error --max-time 720 \
+            --request POST \
+            --header "Content-Type: application/zip" \
+            --header "X-XJW-Approved-Zip-SHA256: $ZIP_SHA256" \
+            --data-binary @/tmp/approved-social.zip \
+            "$IMPORT_ENDPOINT" \
+            --output /tmp/import-result.json
+          cat /tmp/import-result.json
+          jq -e '
+            .ok == true and
+            (.state == "complete" or .state == "already-imported") and
+            .uploaded == 20 and
+            .pendingReview == 20 and
+            .preservedPublished >= 1
+          ' /tmp/import-result.json
+
+      - name: Record verified result on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deploy-status
+          jq '.' /tmp/import-result.json > deploy-status/approved-social-import.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add deploy-status/approved-social-import.json
