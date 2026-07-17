@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "5.9.3",
+  "version": "5.9.2",
   "main": "internal-entry.js",
   "engines": {
     "node": "22.x"
