@@ -106,7 +106,7 @@ for (const file of [
   if (!exists(file)) errors.push(`缺少正式檔案：${file}`);
 }
 
-for (const token of ["restoreAll()", "startWatching()", "syncAll()", "installPersistenceAutoSave()", "mountInternalApp(app)", 'app.get("/internal/db-healthz"', "rebuildOfficialSocialSchedule("]) {
+for (const token of ["restoreAll()", "startWatching()", "syncAll()", "installPersistenceAutoSave()", "mountInternalApp(app,", 'app.get("/internal/db-healthz"', "rebuildOfficialSocialSchedule("]) {
   if (!internalEntry.includes(token)) errors.push(`internal-entry.js 缺少：${token}`);
 }
 for (const token of ["/internal/login", "/internal/app", "/internal/api/state", "/internal/api/orders", "/internal/api/customers", "/internal/api/inventory", "/internal/api/reminders", "/internal/api/staff"]) {
@@ -115,7 +115,7 @@ for (const token of ["/internal/login", "/internal/app", "/internal/api/state", 
 for (const token of ["/social-review", "/social-login", "/social-post", "/social/healthz"]) {
   if (!socialServer.includes(token)) errors.push(`social-server.js 缺少功能：${token}`);
 }
-for (const token of ["TOPICS", "nextScheduleSlots", "approvedMascotAssets", "status === \"published\"", "Wednesday", "Friday"]) {
+for (const token of ["TOPICS", "nextScheduleSlots", "approvedMascotAssets", "status === \"published\"", "Date.UTC(year, month, date, 20, 0, 0)", "day !== 3 && day !== 5"]) {
   if (!socialRebuild.includes(token)) errors.push(`20 篇正式排程重建缺少：${token}`);
 }
 for (const token of ["EXPECTED_WIDTH = 1254", "EXPECTED_HEIGHT = 1254", "selectApprovedEntries", "validateOriginalImage", "/internal/api/v2/social/import-approved-zip", "approvedMascotAssets"]) {
