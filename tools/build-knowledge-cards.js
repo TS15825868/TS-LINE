@@ -3,10 +3,10 @@
 const fs = require("fs/promises");
 const path = require("path");
 const {
+  VERSION: CARD_VERSION,
   CARDS,
   renderCardFile,
 } = require("../knowledge-card-server");
-const { applyKnowledgeCardCopyFix } = require("../knowledge-card-copy-fix");
 const {
   IMAGE_PATH_VERSION,
   STATIC_ROOT,
@@ -14,16 +14,13 @@ const {
 } = require("../knowledge-card-static-server");
 
 async function main() {
-  applyKnowledgeCardCopyFix();
-
-  // Remove every previously generated knowledge-card path first. The rebuilt
-  // cards live under a brand-new physical path so no browser/proxy can reuse an
-  // old PNG that contained missing-glyph boxes.
   await fs.rm(STATIC_ROOT, { recursive: true, force: true });
   await fs.mkdir(STATIC_DIR, { recursive: true });
 
   const slugs = Object.keys(CARDS);
   const result = {
+    cardVersion: CARD_VERSION,
+    layout: "approved-integrated-square",
     pathVersion: IMAGE_PATH_VERSION,
     total: slugs.length,
     removedOldTree: true,
@@ -40,20 +37,20 @@ async function main() {
       await fs.copyFile(source, temp);
       await fs.rename(temp, destination);
       result.built += 1;
-      console.log(`knowledge card rebuilt: ${IMAGE_PATH_VERSION}/${slug}`);
+      console.log(`official mascot card built: ${IMAGE_PATH_VERSION}/${slug}`);
     } catch (error) {
       result.failed.push({ slug, error: error.message });
-      console.error(`knowledge card build failed: ${slug}`, error.message);
+      console.error(`official mascot card build failed: ${slug}`, error.message);
     }
   }
 
-  console.log("Knowledge card full replacement build", result);
-  if (result.built !== slugs.length || result.failed.length) {
-    throw new Error(`knowledge card build incomplete: ${result.built}/${slugs.length}`);
+  console.log("Official mascot card replacement build", result);
+  if (slugs.length !== 30 || result.built !== 30 || result.failed.length) {
+    throw new Error(`official mascot card build incomplete: ${result.built}/${slugs.length}`);
   }
 }
 
 main().catch((error) => {
-  console.error("Knowledge card static build failed", error);
+  console.error("Official mascot card static build failed", error);
   process.exit(1);
 });
