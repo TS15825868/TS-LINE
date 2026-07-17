@@ -63,5 +63,5 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Run complete release checks
+      - name: Run complete approved ZIP release checks
         run: npm test
