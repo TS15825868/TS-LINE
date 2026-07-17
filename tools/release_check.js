@@ -11,6 +11,9 @@ const pkg = JSON.parse(read("package.json"));
 const internalEntry = read("internal-entry.js");
 const internalApp = read("internal-app.js");
 const socialServer = read("social-server.js");
+const socialRebuild = read("social-official-rebuild.js");
+const approvedZipImporter = read("social-approved-zip-import.js");
+const disableAutoCards = read("disable-auto-knowledge-cards.js");
 const supabaseBridge = read("supabase-state-bridge.js");
 const persistenceAutoSave = read("persistence-auto-save.js");
 const errors = [];
@@ -69,16 +72,30 @@ if (/channelSecret\s*:\s*["'][^"']{10,}/.test(server)) errors.push("server.js �
 if (!data.richMenu?.areas || data.richMenu.areas.length !== 6) errors.push("Rich Menu 設定未整合");
 if (!data.mascotAssets?.images || Object.keys(data.mascotAssets.images).length !== 9) errors.push("小老闆素材清單未整合");
 
-if (pkg.version !== "4.5.0") errors.push("package.json 版本必須為 4.5.0");
-if (pkg.scripts?.start !== "node -r ./line-image-safety.js internal-entry.js") errors.push("正式啟動程式未整合 LINE OA、社群與內部 App");
+if (pkg.version !== "5.9.2") errors.push("package.json 版本必須為 5.9.2");
+const startScript = String(pkg.scripts?.start || "");
+for (const token of [
+  "disable-auto-knowledge-cards.js",
+  "internal-social-upload-approved-patch.js",
+  "social-approved-zip-import.test.js",
+  "internal-entry.js",
+]) {
+  if (!startScript.includes(token)) errors.push(`正式啟動程式缺少：${token}`);
+}
 if (!String(pkg.scripts?.test || "").includes("internal-app.test.js")) errors.push("內部 App 測試未納入 npm test");
 if (!String(pkg.scripts?.test || "").includes("supabase-state-bridge.test.js")) errors.push("Supabase 持久化測試未納入 npm test");
 if (!String(pkg.scripts?.test || "").includes("persistence-auto-save.test.js")) errors.push("即時自動保存測試未納入 npm test");
+if (!String(pkg.scripts?.test || "").includes("social-approved-zip-import.test.js")) errors.push("核准 ZIP 匯入測試未納入 npm test");
 
 for (const file of [
   "internal-entry.js",
   "internal-app.js",
   "social-server.js",
+  "social-official-rebuild.js",
+  "social-approved-zip-import.js",
+  "social-approved-zip-import.test.js",
+  "internal-social-upload-approved-patch.js",
+  "disable-auto-knowledge-cards.js",
   "supabase-state-bridge.js",
   "persistence-auto-save.js",
   "supabase/schema.sql",
@@ -89,7 +106,7 @@ for (const file of [
   if (!exists(file)) errors.push(`缺少正式檔案：${file}`);
 }
 
-for (const token of ["restoreAll()", "startWatching()", "syncAll()", "installPersistenceAutoSave()", "mountInternalApp(app)", 'app.get("/internal/db-healthz"']) {
+for (const token of ["restoreAll()", "startWatching()", "syncAll()", "installPersistenceAutoSave()", "mountInternalApp(app)", 'app.get("/internal/db-healthz"', "rebuildOfficialSocialSchedule("]) {
   if (!internalEntry.includes(token)) errors.push(`internal-entry.js 缺少：${token}`);
 }
 for (const token of ["/internal/login", "/internal/app", "/internal/api/state", "/internal/api/orders", "/internal/api/customers", "/internal/api/inventory", "/internal/api/reminders", "/internal/api/staff"]) {
@@ -97,6 +114,15 @@ for (const token of ["/internal/login", "/internal/app", "/internal/api/state", 
 }
 for (const token of ["/social-review", "/social-login", "/social-post", "/social/healthz"]) {
   if (!socialServer.includes(token)) errors.push(`social-server.js 缺少功能：${token}`);
+}
+for (const token of ["TOPICS", "nextScheduleSlots", "approvedMascotAssets", "status === \"published\"", "Wednesday", "Friday"]) {
+  if (!socialRebuild.includes(token)) errors.push(`20 篇正式排程重建缺少：${token}`);
+}
+for (const token of ["EXPECTED_WIDTH = 1254", "EXPECTED_HEIGHT = 1254", "selectApprovedEntries", "validateOriginalImage", "/internal/api/v2/social/import-approved-zip", "approvedMascotAssets"]) {
+  if (!approvedZipImporter.includes(token)) errors.push(`核准 ZIP 原圖匯入缺少：${token}`);
+}
+for (const token of ["disabledGeneratedKnowledgeCards", "disabledStaticKnowledgeCards"]) {
+  if (!disableAutoCards.includes(token)) errors.push(`自動圖卡停用保護缺少：${token}`);
 }
 for (const token of ["SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY", "xjw_app_state", "writeRemote", "restoreAll", "startWatching", "saveState", "syncAll"]) {
   if (!supabaseBridge.includes(token)) errors.push(`Supabase 持久化缺少：${token}`);
@@ -111,5 +137,5 @@ if (errors.length) {
 }
 
 console.log(
-  `PASS 仙加味正式版 v4.5.0：LINE OA v401.6、${data.products.length} 項產品、官網目錄 ${data.catalogVersion}、購物車、結帳、CRM、社群排程、內部 PWA、即時自動保存與 Supabase 持久化均已整合。`
+  `PASS 仙加味正式版 v5.9.2：LINE OA v401.6、${data.products.length} 項產品、官網目錄 ${data.catalogVersion}、核准 ZIP 原始 20 圖匯入、保留已發布紀錄、清除錯誤未發布草稿、週三週五 20:00 待審排程、內部 PWA 與 Supabase 持久化均已整合。`
 );
