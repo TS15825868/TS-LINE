@@ -13,18 +13,11 @@ const { seedInventory } = require("./internal-inventory-seed");
 const { rebuildReservations } = require("./internal-reservation-rebuild");
 const { mountOperationsSuite } = require("./internal-operations-suite");
 const { displayCart, expandCart } = require("./line-order-cart");
-const { seedSocialContentLibrary } = require("./social-content-library");
-const { removeLegacyDuplicateDrafts } = require("./social-legacy-dedupe");
 const {
-  VERSION: SOCIAL_AUDIT_VERSION,
-  auditSocialSchedule,
-} = require("./social-schedule-audit");
+  VERSION: OFFICIAL_SOCIAL_VERSION,
+  rebuildOfficialSocialSchedule,
+} = require("./social-official-rebuild");
 const { VERSION: ORDER_PRICING_VERSION, mountOrderPricing } = require("./internal-order-pricing");
-const {
-  VERSION: KNOWLEDGE_COPY_VERSION,
-  applyKnowledgeCardCopyFix,
-  applySocialCopyFix,
-} = require("./knowledge-card-copy-fix");
 const {
   VERSION: SOCIAL_PLATFORM_STATUS_VERSION,
   normalizeSocialPlatformStatus,
@@ -155,9 +148,6 @@ async function main() {
     writeSocialStore
   );
 
-  const knowledgeCardCopyFix = applyKnowledgeCardCopyFix();
-  console.log("Knowledge card copy fix", knowledgeCardCopyFix);
-
   mountClientFix(app);
   mountUpload(app);
   mountKnowledgeCardStatic(app);
@@ -184,14 +174,13 @@ async function main() {
   console.log("Internal inventory catalog synchronization", inventorySeed);
   const reservationRebuild = rebuildReservations(readStore, writeStore);
   console.log("Internal reserved inventory rebuild", reservationRebuild);
-  const legacyDraftCleanup = removeLegacyDuplicateDrafts(readSocialStore, writeSocialStore);
-  console.log("Social legacy duplicate draft cleanup", legacyDraftCleanup);
-  const socialDraftSeed = seedSocialContentLibrary(readSocialStore, writeSocialStore);
-  console.log("Social interleaved content library synchronization", socialDraftSeed);
-  const socialCopyFix = applySocialCopyFix(readSocialStore, writeSocialStore);
-  console.log("Social knowledge copy synchronization", socialCopyFix);
-  const socialScheduleAudit = auditSocialSchedule(readSocialStore, writeSocialStore);
-  console.log("Social full schedule audit", socialScheduleAudit);
+
+  const officialSocialSchedule = rebuildOfficialSocialSchedule(
+    readSocialStore,
+    writeSocialStore
+  );
+  console.log("Official mascot pending-review social schedule rebuild", officialSocialSchedule);
+
   const socialStatusNormalize = normalizeSocialPlatformStatus(readSocialStore, writeSocialStore);
   console.log("Social platform status reconciliation", socialStatusNormalize);
 
@@ -242,28 +231,19 @@ async function main() {
         orderPricingVersion: ORDER_PRICING_VERSION,
         orderSyncVersion: ORDER_SYNC_VERSION,
         knowledgeStaticVersion: KNOWLEDGE_STATIC_VERSION,
-        knowledgeCopyVersion: KNOWLEDGE_COPY_VERSION,
-        knowledgeCopyUpdated: socialCopyFix.updated,
-        socialAuditVersion: SOCIAL_AUDIT_VERSION,
-        socialAuditCanonicalTotal: socialScheduleAudit.canonicalTotal,
-        socialAuditActiveTotal: socialScheduleAudit.activeTotal,
-        socialAuditDuplicatesCancelled: socialScheduleAudit.duplicatesCancelled,
-        socialAuditNeedsFix: socialScheduleAudit.needsFix,
-        socialAuditFirstAt: socialScheduleAudit.firstAt,
-        socialAuditLastAt: socialScheduleAudit.lastAt,
-        socialAuditCategories: socialScheduleAudit.categoryCounts,
-        socialAuditConsecutiveImageRepeats: socialScheduleAudit.consecutiveImageRepeats,
+        officialSocialVersion: OFFICIAL_SOCIAL_VERSION,
+        officialSocialCampaign: officialSocialSchedule.campaignId,
+        officialSocialImageVersion: officialSocialSchedule.imageVersion,
+        officialSocialPublishedPreserved: officialSocialSchedule.preservedPublished,
+        officialSocialOldUnpublishedRemoved: officialSocialSchedule.removedUnpublished,
+        officialSocialInserted: officialSocialSchedule.inserted,
+        officialSocialUpdated: officialSocialSchedule.updated,
+        officialSocialPendingReview: officialSocialSchedule.pendingReview,
+        officialSocialActiveTotal: officialSocialSchedule.activeTotal,
+        officialSocialFirstAt: officialSocialSchedule.firstAt,
+        officialSocialLastAt: officialSocialSchedule.lastAt,
+        officialSocialSignature: officialSocialSchedule.signature,
         socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
-        socialLegacyDraftsRemoved: legacyDraftCleanup.removed,
-        socialDraftCampaign: socialDraftSeed.campaignId,
-        socialDraftCadence: socialDraftSeed.cadence,
-        socialDraftTimezone: socialDraftSeed.timezone,
-        socialDraftsAdded: socialDraftSeed.added,
-        socialDraftsUpdated: socialDraftSeed.updated,
-        socialDraftsPreserved: socialDraftSeed.preserved,
-        socialDraftsSkippedDuplicate: socialDraftSeed.skippedDuplicate,
-        socialKnowledgeTotal: socialDraftSeed.knowledgeTotal,
-        socialDraftsTotal: socialDraftSeed.total,
       }
     );
   });
