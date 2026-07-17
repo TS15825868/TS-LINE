@@ -16,10 +16,10 @@ const {
   validateOriginalImage,
 } = require("./social-approved-zip-import");
 
-const VERSION = "1.1.0";
+const VERSION = "1.1.1";
 const SOURCE_NAME = "社群排程_正式20張_可直接匯入.zip";
 const ZIP_SHA256 = "5d5826a47fee6c3d2af08d4d1926b2b9280b8e8d7a2d2be94c10d0984030b557";
-const ZIP_SOURCE = "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-a560-7207-b489-2d6f3a9e6152/raw?se=2026-07-17T12%3A18%3A47Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-16T22%3A41%3A00Z&ske=2026-07-18T22%3A41%3A00Z&sks=b&skv=2026-02-06&sig=tgLqHO4Qpny%2BnCn8fy4ROZv4bhpiqa9%2BiETBTbyp5og%3D";
+const ZIP_SOURCE = "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-4868-7207-b132-473aa3a7acc0/raw?se=2026-07-17T12%3A23%3A15Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-16T23%3A28%3A47Z&ske=2026-07-18T23%3A28%3A47Z&sks=b&skv=2026-02-06&sig=EsIThhw1naf/9QkufL33IC0ztNBN74McURDQK8wOzzs%3D";
 
 const status = {
   ok: false,
@@ -53,6 +53,7 @@ async function downloadApprovedZip() {
 async function importOnce(readSocialStore, writeSocialStore) {
   const existing = readSocialStore();
   const current = existing?.[ASSET_STORE_KEY];
+
   if (current?.campaignId === CAMPAIGN_ID && Number(current.originalCount) === TOPICS.length) {
     const schedule = rebuildOfficialSocialSchedule(readSocialStore, writeSocialStore, { nowMs: Date.now() });
     setStatus({
@@ -78,13 +79,16 @@ async function importOnce(readSocialStore, writeSocialStore) {
     const entry = selected.get(topic.file.toUpperCase());
     const image = extractZipEntry(zipBuffer, entry);
     const detected = await validateOriginalImage(image, topic.file);
-    if (!detectImage(image) || detected.mime !== "image/png") throw new Error(`圖片格式驗證失敗：${topic.file}`);
+    if (!detectImage(image) || detected.mime !== "image/png") {
+      throw new Error(`圖片格式驗證失敗：${topic.file}`);
+    }
     extracted.push({ topic, image, detected });
   }
-  setStatus({ state: "uploading", downloaded: extracted.length });
 
+  setStatus({ state: "uploading", downloaded: extracted.length });
   const files = {};
   let uploadedCount = 0;
+
   for (const item of extracted) {
     const uploaded = await uploadToSupabase(item.image, item.detected);
     files[item.topic.file] = uploaded.url;
@@ -123,6 +127,7 @@ function install() {
   if (installed) return;
   installed = true;
   const originalLoad = Module._load;
+
   Module._load = function patchedLoad(request, parent, isMain) {
     const loaded = originalLoad.apply(this, arguments);
     if (request === "./social-server" && parent?.filename?.endsWith("internal-entry.js") && loaded?.app) {
