@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const express = require("express");
 const Module = require("module");
 const {
   CAMPAIGN_ID,
@@ -16,14 +17,18 @@ const {
   validateOriginalImage,
 } = require("./social-approved-zip-import");
 
-const VERSION = "1.1.2";
+const VERSION = "1.2.0";
 const SOURCE_NAME = "社群排程_正式20張_可直接匯入.zip";
 const ZIP_SHA256 = "5d5826a47fee6c3d2af08d4d1926b2b9280b8e8d7a2d2be94c10d0984030b557";
-const ZIP_SOURCE = "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-ceb0-7207-9ce9-0571d4276b8b/raw?se=2026-07-17T12%3A27%3A05Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-17T00%3A30%3A02Z&ske=2026-07-19T00%3A30%3A02Z&sks=b&skv=2026-02-06&sig=QoyMxGQfCbPnVVIoKaMKAH1zB5PJ/Vlv7abqxNSIyzk%3D";
+const IMPORT_PATH = "/internal/api/v2/social/import-approved-once-5d5826a47fee6c3d";
+const rawZip = express.raw({
+  type: ["application/zip", "application/x-zip-compressed", "application/octet-stream"],
+  limit: "100mb",
+});
 
 const status = {
   ok: false,
-  state: "waiting",
+  state: "waiting-for-approved-zip",
   version: VERSION,
   downloaded: 0,
   uploaded: 0,
@@ -34,6 +39,8 @@ const status = {
   updatedAt: new Date().toISOString(),
 };
 
+let runningPromise = null;
+
 function setStatus(change) {
   Object.assign(status, change, { updatedAt: new Date().toISOString() });
 }
@@ -42,35 +49,32 @@ function sha256(buffer) {
   return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
-async function downloadApprovedZip() {
-  const response = await fetch(ZIP_SOURCE, { redirect: "follow" });
-  if (!response.ok) throw new Error(`正式 ZIP 下載失敗（${response.status}）`);
-  const buffer = Buffer.from(await response.arrayBuffer());
-  if (sha256(buffer) !== ZIP_SHA256) throw new Error("正式 ZIP 雜湊驗證失敗");
-  return buffer;
-}
-
-async function importOnce(readSocialStore, writeSocialStore) {
+function finishFromExisting(readSocialStore, writeSocialStore) {
   const existing = readSocialStore();
   const current = existing?.[ASSET_STORE_KEY];
+  if (current?.campaignId !== CAMPAIGN_ID || Number(current.originalCount) !== TOPICS.length) return null;
+  const schedule = rebuildOfficialSocialSchedule(readSocialStore, writeSocialStore, { nowMs: Date.now() });
+  setStatus({
+    ok: true,
+    state: "already-imported",
+    downloaded: TOPICS.length,
+    uploaded: TOPICS.length,
+    pendingReview: schedule.pendingReview,
+    preservedPublished: schedule.preservedPublished,
+    removedUnpublished: schedule.removedUnpublished,
+    error: "",
+  });
+  return { ...status };
+}
 
-  if (current?.campaignId === CAMPAIGN_ID && Number(current.originalCount) === TOPICS.length) {
-    const schedule = rebuildOfficialSocialSchedule(readSocialStore, writeSocialStore, { nowMs: Date.now() });
-    setStatus({
-      ok: true,
-      state: "already-imported",
-      downloaded: TOPICS.length,
-      uploaded: TOPICS.length,
-      pendingReview: schedule.pendingReview,
-      preservedPublished: schedule.preservedPublished,
-      removedUnpublished: schedule.removedUnpublished,
-      error: "",
-    });
-    return;
-  }
+async function importBuffer(zipBuffer, readSocialStore, writeSocialStore) {
+  const existingResult = finishFromExisting(readSocialStore, writeSocialStore);
+  if (existingResult) return existingResult;
 
-  setStatus({ state: "downloading", error: "" });
-  const zipBuffer = await downloadApprovedZip();
+  if (!Buffer.isBuffer(zipBuffer) || !zipBuffer.length) throw new Error("沒有收到正式 ZIP");
+  if (sha256(zipBuffer) !== ZIP_SHA256) throw new Error("ZIP 雜湊不符，已拒絕匯入");
+
+  setStatus({ ok: false, state: "validating", downloaded: 0, uploaded: 0, error: "" });
   const entries = readZipDirectory(zipBuffer);
   const selected = selectApprovedEntries(entries);
   const extracted = [];
@@ -120,6 +124,7 @@ async function importOnce(readSocialStore, writeSocialStore) {
     error: "",
   });
   console.log("Approved social one-time import complete", status);
+  return { ...status };
 }
 
 let installed = false;
@@ -132,18 +137,33 @@ function install() {
     const loaded = originalLoad.apply(this, arguments);
     if (request === "./social-server" && parent?.filename?.endsWith("internal-entry.js") && loaded?.app) {
       loaded.app.get("/internal/approved-social-one-time-healthz", (_req, res) => {
+        finishFromExisting(loaded.readStore, loaded.writeStore);
         res.status(status.state === "failed" ? 503 : 200).json(status);
       });
-      setImmediate(() => {
-        importOnce(loaded.readStore, loaded.writeStore).catch((error) => {
-          setStatus({ ok: false, state: "failed", error: error.message || "one-time import failed" });
+
+      loaded.app.post(IMPORT_PATH, rawZip, async (req, res) => {
+        try {
+          if (String(req.get("X-XJW-Approved-Zip-SHA256") || "") !== ZIP_SHA256) {
+            return res.status(403).json({ ok: false, error: "正式 ZIP 驗證標頭不正確" });
+          }
+          if (!runningPromise) {
+            runningPromise = importBuffer(req.body, loaded.readStore, loaded.writeStore)
+              .finally(() => { runningPromise = null; });
+          }
+          const result = await runningPromise;
+          return res.json(result);
+        } catch (error) {
+          setStatus({ ok: false, state: "failed", error: error.message || "正式 ZIP 匯入失敗" });
           console.error("Approved social one-time import failed", error);
-        });
+          return res.status(400).json({ ok: false, ...status });
+        }
       });
+
+      setImmediate(() => finishFromExisting(loaded.readStore, loaded.writeStore));
     }
     return loaded;
   };
 }
 
 install();
-module.exports = { VERSION, status, importOnce, install };
+module.exports = { VERSION, ZIP_SHA256, IMPORT_PATH, status, importBuffer, install };
