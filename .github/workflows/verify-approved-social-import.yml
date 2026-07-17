@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 20
     env:
       ZIP_SHA256: "5d5826a47fee6c3d2af08d4d1926b2b9280b8e8d7a2d2be94c10d0984030b557"
-      ZIP_URL: "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-84fc-7207-a855-ee8d6789314c/raw?se=2026-07-17T12%3A40%3A05Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-16T22%3A07%3A20Z&ske=2026-07-18T22%3A07%3A20Z&sks=b&skv=2026-02-06&sig=bAJi9xUBIg%2B3w239oz7G/4A5ielFI8jvjI/GRBm3sLQ%3D"
+      ZIP_URL: "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-210c-7207-a770-8af8248559f4/raw?se=2026-07-17T12%3A44%3A04Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-17T00%3A29%3A19Z&ske=2026-07-19T00%3A29%3A19Z&sks=b&skv=2026-02-06&sig=%2BxigVqTafT24Bhiy3fYTaixTS84oKaAD185zYRwNOiE%3D"
       HEALTH_ENDPOINT: "https://ts-line.onrender.com/internal/approved-social-one-time-healthz"
       IMAGE_ENDPOINT: "https://ts-line.onrender.com/internal/api/v2/social/import-approved-image-5d5826a47fee6c3d"
 
@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --location --fail --show-error --retry 3 --max-time 180 "$ZIP_URL" --output /tmp/approved-social.zip
+          curl --location --fail --show-error --retry 4 --retry-delay 2 --max-time 180 "$ZIP_URL" --output /tmp/approved-social.zip
           printf '%s  %s\n' "$ZIP_SHA256" /tmp/approved-social.zip | sha256sum --check --strict
           test "$(stat -c '%s' /tmp/approved-social.zip)" = "66586139"
           mkdir -p /tmp/approved-social
@@ -52,7 +52,7 @@ jobs:
           done
           exit 1
 
-      - name: Upload all 20 exact original PNG files
+      - name: Resume all exact original PNG files with retries
         shell: bash
         run: |
           set -euo pipefail
@@ -62,15 +62,31 @@ jobs:
             image="$(find /tmp/approved-social -type f -iname "$file" -print -quit)"
             test -n "$image"
             hash="$(sha256sum "$image" | awk '{print $1}')"
-            response="$(curl --location --fail-with-body --show-error --max-time 240 \
-              --request POST \
-              --header "Content-Type: image/png" \
-              --header "X-XJW-Image-Name: $file" \
-              --header "X-XJW-Image-SHA256: $hash" \
-              --data-binary "@$image" \
-              "$IMAGE_ENDPOINT")"
+            delivered=false
+            for retry in $(seq 1 5); do
+              set +e
+              http_code="$(curl --location --silent --show-error --max-time 240 \
+                --request POST \
+                --header "Content-Type: image/png" \
+                --header "X-XJW-Image-Name: $file" \
+                --header "X-XJW-Image-SHA256: $hash" \
+                --data-binary "@$image" \
+                --output /tmp/image-response.json \
+                --write-out '%{http_code}' \
+                "$IMAGE_ENDPOINT")"
+              curl_status=$?
+              set -e
+              body="$(cat /tmp/image-response.json 2>/dev/null || true)"
+              echo "${file} retry ${retry}: curl=${curl_status} http=${http_code} body=${body}"
+              if test "$curl_status" = "0" && [[ "$http_code" =~ ^2 ]]; then
+                delivered=true
+                break
+              fi
+              sleep $((retry * 3))
+            done
+            test "$delivered" = "true"
             count=$((count + 1))
-            echo "Uploaded ${count}/20 ${file}: ${response}"
+            echo "Delivered ${count}/20 ${file}"
           done < /tmp/approved-files.txt
           test "$count" = "20"
 
