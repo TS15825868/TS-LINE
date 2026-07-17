@@ -16,10 +16,10 @@ const {
   validateOriginalImage,
 } = require("./social-approved-zip-import");
 
-const VERSION = "1.1.1";
+const VERSION = "1.1.2";
 const SOURCE_NAME = "社群排程_正式20張_可直接匯入.zip";
 const ZIP_SHA256 = "5d5826a47fee6c3d2af08d4d1926b2b9280b8e8d7a2d2be94c10d0984030b557";
-const ZIP_SOURCE = "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-4868-7207-b132-473aa3a7acc0/raw?se=2026-07-17T12%3A23%3A15Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-16T23%3A28%3A47Z&ske=2026-07-18T23%3A28%3A47Z&sks=b&skv=2026-02-06&sig=EsIThhw1naf/9QkufL33IC0ztNBN74McURDQK8wOzzs%3D";
+const ZIP_SOURCE = "https://oaisdmntprseasia.blob.core.windows.net/files/00000000-ceb0-7207-9ce9-0571d4276b8b/raw?se=2026-07-17T12%3A27%3A05Z&sp=r&sv=2026-02-06&sr=b&scid=019f6ff1-c7d3-74d3-b90d-99a4504b8d6e&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-07-17T00%3A30%3A02Z&ske=2026-07-19T00%3A30%3A02Z&sks=b&skv=2026-02-06&sig=QoyMxGQfCbPnVVIoKaMKAH1zB5PJ/Vlv7abqxNSIyzk%3D";
 
 const status = {
   ok: false,
