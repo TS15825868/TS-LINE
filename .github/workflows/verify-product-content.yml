@@ -1,0 +1,80 @@
+name: 驗證產品與品牌社群排程
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "social-product-content-rebuild.js"
+      - "social-product-content-bootstrap.js"
+      - "social-product-content-rebuild.test.js"
+      - "package.json"
+      - ".github/workflows/verify-product-content.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify-product-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Run product content contract test
+        run: node social-product-content-rebuild.test.js
+
+      - name: Wait for Render and verify both campaigns
+        shell: bash
+        run: |
+          set -euo pipefail
+          product_endpoint="https://ts-line.onrender.com/internal/product-content-healthz"
+          mascot_endpoint="https://ts-line.onrender.com/internal/approved-social-one-time-healthz"
+          mkdir -p deploy-status
+
+          for attempt in $(seq 1 50); do
+            product="$(curl --location --silent --show-error --max-time 30 "$product_endpoint" || true)"
+            mascot="$(curl --location --silent --show-error --max-time 30 "$mascot_endpoint" || true)"
+            echo "Attempt ${attempt} product: ${product}"
+            echo "Attempt ${attempt} mascot: ${mascot}"
+
+            product_ok=false
+            mascot_ok=false
+            if printf '%s' "$product" | jq -e '
+              .ok == true and
+              .campaignId == "xjw-product-brand-202607-v1" and
+              ((.activeTotal + .published) == 20) and
+              .validImages == true and
+              .total >= 40
+            ' >/dev/null 2>&1; then product_ok=true; fi
+
+            if printf '%s' "$mascot" | jq -e '
+              .ok == true and
+              .uploaded == 20 and
+              .received == 20 and
+              .preservedPublished >= 1 and
+              .uploadReceiverClosed == true
+            ' >/dev/null 2>&1; then mascot_ok=true; fi
+
+            if [[ "$product_ok" == true && "$mascot_ok" == true ]]; then
+              jq -n --argjson product "$product" --argjson mascot "$mascot" \
+                '{ok:true, verifiedAt:(now|todateiso8601), productCampaign:$product, mascotCampaign:$mascot}' \
+                > deploy-status/product-content.json
+              break
+            fi
+            sleep 15
+          done
+
+          test -s deploy-status/product-content.json
+
+      - name: Record verified result on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy-status/product-content.json
+          git commit -m "chore: record product content verification" || exit 0
+          git push origin HEAD:main
