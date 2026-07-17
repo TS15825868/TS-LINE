@@ -14,6 +14,7 @@ on:
       - "internal-entry.js"
       - "tools/**"
       - "package.json"
+      - "package-lock.json"
       - "catalog.test.js"
       - ".github/workflows/catalog-sync.yml"
 
@@ -41,24 +42,24 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install
-        run: npm ci
+      - name: Install and repair dependency lock
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Sync website catalog
         run: npm run sync:catalog
 
-      - name: Commit synchronized catalog immediately
+      - name: Commit synchronized files immediately
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- data.json; then
-            echo "Catalog already synchronized"
+          if git diff --quiet -- data.json package-lock.json; then
+            echo "Catalog and dependency lock already synchronized"
             exit 0
           fi
           git config user.name "仙加味自動同步"
           git config user.email "actions@users.noreply.github.com"
-          git add data.json
-          git commit -m "chore: auto-sync website catalog"
+          git add data.json package-lock.json
+          git commit -m "chore: auto-sync catalog and dependency lock"
           git pull --rebase origin main
           git push origin main
 
