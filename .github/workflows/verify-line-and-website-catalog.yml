@@ -62,12 +62,17 @@ jobs:
           node function.test.js
           node image-policy.test.js
 
-      - name: Social publishing and approved ZIP importer
-        run: |
-          node facebook-page-token-bridge.test.js
-          node social-platform-status.test.js
-          node social-official-rebuild.test.js
-          node social-approved-zip-import.test.js
+      - name: Facebook token bridge
+        run: node facebook-page-token-bridge.test.js
+
+      - name: Social platform status
+        run: node social-platform-status.test.js
+
+      - name: Official social schedule rebuild
+        run: node social-official-rebuild.test.js
+
+      - name: Approved social ZIP importer
+        run: node social-approved-zip-import.test.js
 
       - name: Internal App core and mobile
         run: |
