@@ -1,0 +1,41 @@
+name: 驗證正式社群圖文自動匯入
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "approved-social-one-time-import.js"
+      - "package.json"
+      - ".github/workflows/verify-approved-social-import.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Wait for Render deployment and verify exact result
+        shell: bash
+        run: |
+          set -uo pipefail
+          endpoint="https://ts-line.onrender.com/internal/approved-social-one-time-healthz"
+          for attempt in $(seq 1 40); do
+            body="$(curl --location --silent --show-error --max-time 25 "$endpoint" || true)"
+            echo "Attempt ${attempt}: ${body}"
+            if printf '%s' "$body" | jq -e '
+              .ok == true and
+              (.state == "complete" or .state == "already-imported") and
+              .uploaded == 20 and
+              .pendingReview == 20 and
+              .preservedPublished >= 1
+            ' >/dev/null 2>&1; then
+              echo "PASS: 20 approved originals imported, 20 pending review, published record preserved."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Render did not report a completed approved social import in time."
+          exit 1
