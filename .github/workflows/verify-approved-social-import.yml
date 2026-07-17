@@ -22,6 +22,7 @@ jobs:
         with:
           ref: main
 
+      # Final read-only verification: no upload route or temporary file is used.
       - name: Verify Render restored the completed import
         shell: bash
         run: |
