@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "verifiedAt": "2026-07-20T03:47:48Z",
+  "verifiedAt": "2026-07-20T13:38:45Z",
   "productCampaign": {
     "ok": true,
     "state": "ready",
@@ -8,14 +8,14 @@
     "campaignId": "xjw-product-brand-202607-v1",
     "activeTotal": 20,
     "published": 0,
-    "pendingReview": 0,
-    "approved": 19,
+    "pendingReview": 20,
+    "approved": 0,
     "rejected": 0,
-    "firstAt": "2026-07-19T12:00:00.000Z",
-    "lastAt": "2026-09-22T12:00:00.000Z",
+    "firstAt": "2026-07-21T12:00:00.000Z",
+    "lastAt": "2026-09-27T12:00:00.000Z",
     "validImages": true,
     "total": 41,
-    "updatedAt": "2026-07-20T03:47:47.984Z"
+    "updatedAt": "2026-07-20T13:38:45.581Z"
   },
   "mascotCampaign": {
     "ok": true,
@@ -28,6 +28,6 @@
     "removedUnpublished": 20,
     "uploadReceiverClosed": true,
     "error": "",
-    "updatedAt": "2026-07-20T03:47:48.050Z"
+    "updatedAt": "2026-07-20T13:38:45.722Z"
   }
 }
