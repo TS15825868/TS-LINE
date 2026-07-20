@@ -68,7 +68,17 @@ assert.ok(!retry.includes("MutationObserver"));
 new vm.Script(retry);
 
 const filter = socialFilterScript();
-["待審核", "已審核", "已發佈", "未發佈", "data-social-filter"].forEach((token) => assert.ok(filter.includes(token)));
+[
+  "待審核",
+  "已排程",
+  "發布失敗",
+  "已發布",
+  "已取消",
+  "全部",
+  "data-social-filter",
+  "搜尋標題或文案",
+  "固定每週 2 篇",
+].forEach((token) => assert.ok(filter.includes(token), `social filter missing ${token}`));
 assert.ok(!filter.includes("MutationObserver"));
 new vm.Script(filter);
 
@@ -93,4 +103,4 @@ assert.ok(!fixed.includes("/old.js"));
 assert.ok(!fixed.includes("/internal/app-order-calculator.js"));
 assert.strictEqual(fixGeneratedHtml("plain response"), "plain response");
 
-console.log("PASS stable internal app shell, core, upload, forms, itemized order entry, social retry, filters and postboot");
+console.log("PASS stable internal app shell, core, upload, forms, itemized order entry, social retry, current review filters and postboot");
