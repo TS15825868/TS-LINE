@@ -46,11 +46,13 @@ const filter = fs.readFileSync(require.resolve("./internal-app-social-filter"), 
   "needsRetryFromCard", "Access Token 已過期", "data-xjw-social-duplicate",
 ].forEach((token) => assert.ok(retry.includes(token), `social retry missing ${token}`));
 
-["全部", "待審核", "已審核", "已發佈", "未發佈", "data-social-filter", "groupFor"]
-  .forEach((token) => assert.ok(filter.includes(token), `social filter missing ${token}`));
+[
+  "全部", "待審核", "已排程", "發布失敗", "已發布", "已取消",
+  "data-social-filter", "groupFor", "搜尋標題或文案", "固定每週 2 篇",
+].forEach((token) => assert.ok(filter.includes(token), `social filter missing ${token}`));
 
 assert.ok(!extras.includes("MutationObserver"), "safe extras must not use MutationObserver");
 assert.ok(!orderEntry.includes("MutationObserver"), "order entry must not use MutationObserver");
 assert.ok(!retry.includes("MutationObserver"), "social retry must not use MutationObserver");
 assert.ok(!filter.includes("MutationObserver"), "social filter must not use MutationObserver");
-console.log("PASS all internal app button contracts including itemized orders, stock linking, pending delivery, refresh and social filters");
+console.log("PASS all internal app button contracts including itemized orders, stock linking, pending delivery, refresh and current social review filters");
