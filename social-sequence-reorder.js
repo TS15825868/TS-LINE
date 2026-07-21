@@ -2,7 +2,7 @@
 
 const Module = require("module");
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const CAMPAIGN_ID = "xjw-approved-zip-202607-v1";
 const SEQUENCE_VERSION = "weekly-care-product-v1";
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -86,13 +86,16 @@ function reorderStore(store, nowMs = Date.now()) {
   if (!store || !Array.isArray(store.posts)) {
     return { store, changed: 0, firstAt: "", lastAt: "", skipped: true };
   }
-  if (store.officialSocialSequenceVersion === SEQUENCE_VERSION) {
-    return { store, changed: 0, firstAt: "", lastAt: "", skipped: true };
-  }
 
   const candidates = store.posts
     .filter((post) => post?.campaignId === CAMPAIGN_ID && REORDERABLE_STATUSES.has(post.status))
     .sort((a, b) => orderIndex(a) - orderIndex(b));
+
+  const alreadyCurrent = store.officialSocialSequenceVersion === SEQUENCE_VERSION
+    && candidates.every((post) => post.sequenceVersion === SEQUENCE_VERSION);
+  if (alreadyCurrent) {
+    return { store, changed: 0, firstAt: "", lastAt: "", skipped: true };
+  }
 
   if (!candidates.length) {
     return {
@@ -115,11 +118,12 @@ function reorderStore(store, nowMs = Date.now()) {
     const scheduledAt = scheduleById.get(post.id);
     if (!scheduledAt) return post;
     if (post.scheduledAt !== scheduledAt) changed += 1;
+    const index = ORDER.indexOf(post.id);
     return {
       ...post,
       scheduledAt,
       sequenceVersion: SEQUENCE_VERSION,
-      sequenceRole: ORDER.indexOf(post.id) % 2 === 0 ? "care" : "product",
+      sequenceRole: index >= 0 && index % 2 === 0 ? "care" : "product",
       updatedAt,
     };
   });
