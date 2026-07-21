@@ -1,6 +1,7 @@
 "use strict";
 
 const Module = require("module");
+require("./internal-social-immediate-ui");
 
 const VERSION = "1.1.0";
 const CAMPAIGN_ID = "xjw-social-first-batch-202607-v2";
