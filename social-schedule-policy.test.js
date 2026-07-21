@@ -26,4 +26,12 @@ const normalized = policy.normalizeStore({ posts: [
 assert.strictEqual(normalized.posts[0].scheduledAt, wed10);
 assert.strictEqual(normalized.posts[1].scheduledAt, wed20);
 
+const replaced = policy.normalizeStore({ posts: [
+  { ...oneTime, id: "weather", status: "approved" },
+  { ...care, id: "weekly-care", status: "approved", scheduledAt: wed10 },
+  { ...product, id: "weekly-product", status: "approved", scheduledAt: wed20 },
+] });
+assert.strictEqual(replaced.posts.find((post) => post.id === "weekly-care").status, "cancelled");
+assert.strictEqual(replaced.posts.find((post) => post.id === "weekly-product").status, "approved");
+
 console.log("social schedule time policy tests passed");
