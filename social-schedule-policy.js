@@ -129,6 +129,10 @@ function installStoreNormalizer() {
 
 function transformSource(filename, source) {
   const base = path.basename(filename);
+  if (base === "today-hot-weather-post.js") {
+    source = source.replace('const VERSION = "1.0.0";', 'const VERSION = "1.0.1";');
+    source = source.replace('const SCHEDULED_AT = "2026-07-21T12:00:00.000Z"; // Asia/Taipei 20:00', 'const SCHEDULED_AT = "2026-07-21T02:00:00.000Z"; // Asia/Taipei 10:00; past due publishes immediately');
+  }
   if (base === "social-server.js") {
     source = source.replace(
       'const { app, VERSION } = require("./server");',
@@ -195,7 +199,7 @@ function transformSource(filename, source) {
 function installSourceTransforms() {
   if (Module._extensions[".js"].__xjwScheduleTimePolicy) return;
   const previousLoader = Module._extensions[".js"];
-  const targets = new Set(["social-server.js", "social-review-center.js", "internal-social-review-safety.js"]);
+  const targets = new Set(["social-server.js", "social-review-center.js", "internal-social-review-safety.js", "today-hot-weather-post.js"]);
   const wrapped = function loadWithScheduleTimePolicy(module, filename) {
     if (!targets.has(path.basename(filename))) return previousLoader(module, filename);
     const source = transformSource(filename, fs.readFileSync(filename, "utf8"));
