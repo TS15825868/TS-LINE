@@ -486,11 +486,12 @@ const CLIENT = String.raw`(() => {
       const weather = data.lastWeather?.type
         ? ({ hot: "炎熱／補水", rain: "降雨", gap: "溫差" }[data.lastWeather.type] || data.lastWeather.type)
         : "目前沒有觸發";
-      panel.innerHTML = `<strong>社群全自動化已啟用</strong><br>
-        關心貼文：上午 10:00｜其他貼文：晚上 20:00<br>
-        待發布庫存：關心 ${data.careReady} 篇｜其他 ${data.productReady} 篇<br>
-        氣候判定：${weather}｜氣候素材待命 ${data.weatherStandby} 篇<br>
-        <small>仍可使用「編輯／改時間」與「立即發文」；手動修改時間會優先採用。</small>`;
+      panel.innerHTML =
+        "<strong>社群全自動化已啟用</strong><br>" +
+        "關心貼文：上午 10:00｜其他貼文：晚上 20:00<br>" +
+        "待發布庫存：關心 " + data.careReady + " 篇｜其他 " + data.productReady + " 篇<br>" +
+        "氣候判定：" + weather + "｜氣候素材待命 " + data.weatherStandby + " 篇<br>" +
+        "<small>仍可使用「編輯／改時間」與「立即發文」；手動修改時間會優先採用。</small>";
     } catch {}
   }
 
