@@ -2,21 +2,38 @@
 
 const Module = require("module");
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const CAMPAIGN_IDS = new Set([
   "xjw-approved-zip-202607-v1",
   "xjw-product-brand-202607-v1",
 ]);
 const NUMBERED_TITLE = /^(小老闆知識|產品與品牌)\s+\d+\s*[｜|]\s*/u;
+const NUMBERED_LINE = /^(\s*)(?:\(?\d+\)?[.．、:：-]|第\s*\d+\s*(?:點|項|則)?[.．、:：-]?)\s*/gmu;
 
 function cleanTitle(value) {
   return String(value || "").replace(NUMBERED_TITLE, "$1｜");
 }
 
+function cleanCaption(value) {
+  return String(value || "").replace(NUMBERED_LINE, "$1• ");
+}
+
 function normalizePost(post) {
   if (!post || typeof post !== "object" || !CAMPAIGN_IDS.has(post.campaignId)) return post;
   const title = cleanTitle(post.title);
-  return title === post.title ? post : { ...post, title };
+  const instagramCaption = cleanCaption(post.instagramCaption);
+  const facebookCaption = cleanCaption(post.facebookCaption);
+  if (
+    title === post.title
+    && instagramCaption === String(post.instagramCaption || "")
+    && facebookCaption === String(post.facebookCaption || "")
+  ) return post;
+  return {
+    ...post,
+    title,
+    instagramCaption,
+    facebookCaption,
+  };
 }
 
 function normalizeStore(store) {
@@ -68,9 +85,9 @@ function install() {
       const run = () => {
         try {
           const changed = normalizeLiveStore(loaded);
-          if (changed) console.log(`Social post display numbers removed: ${changed}`);
+          if (changed) console.log(`Social post and caption display numbers removed: ${changed}`);
         } catch (error) {
-          console.error("Social post title normalization failed", error);
+          console.error("Social title and caption normalization failed", error);
         }
       };
       setImmediate(run);
@@ -87,6 +104,7 @@ module.exports = {
   VERSION,
   CAMPAIGN_IDS,
   cleanTitle,
+  cleanCaption,
   normalizePost,
   normalizeStore,
   normalizeLiveStore,
