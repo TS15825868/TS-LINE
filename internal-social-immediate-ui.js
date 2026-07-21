@@ -1,20 +1,21 @@
 "use strict";
 
+require("./social-first-batch-v2-cleanup");
 const Module = require("module");
 const { requireSignedIn } = require("./internal-app-security-patch");
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 const CLIENT = String.raw`(() => {
   "use strict";
-  const VERSION = "20260721-immediate-social-1";
+  const VERSION = "20260721-immediate-social-2";
   const HEADERS = {
     "Content-Type": "application/json",
     "X-XJW-Requested-With": "internal-app-v2",
   };
 
   function statusAllowsPublish(text = "") {
-    return /已排程|失敗|部分成功/.test(String(text));
+    return /approved|failed|partial|已排程|失敗|部分成功/i.test(String(text));
   }
 
   function scan() {
@@ -24,12 +25,23 @@ const CLIENT = String.raw`(() => {
       if (!id) return;
 
       const edit = card.querySelector("[data-xjw-social-edit]");
-      if (edit) edit.textContent = "編輯／改時間";
+      if (edit) {
+        edit.textContent = "編輯／改時間";
+        edit.title = "修改日期、時間、圖片或文案；儲存後會重新送審";
+      }
 
       const actions = card.querySelector(".actions");
       const status = card.querySelector(".pill")?.textContent || "";
-      if (!actions || !statusAllowsPublish(status) || card.querySelector("[data-xjw-publish-now]")) return;
+      if (!actions) return;
 
+      const builtIn = card.querySelector('[data-social-action="publish"]');
+      if (builtIn) {
+        builtIn.textContent = "立即發文";
+        builtIn.title = "立即同步發布到已勾選的 Facebook／Instagram，不必等待原排程時間";
+        return;
+      }
+
+      if (!statusAllowsPublish(status) || card.querySelector("[data-xjw-publish-now]")) return;
       const button = document.createElement("button");
       button.type = "button";
       button.className = "btn gold xjw-safe-mini";
@@ -116,7 +128,7 @@ function install() {
           const originalSend = res.send.bind(res);
           res.send = (body) => {
             if (typeof body === "string" && body.includes("</body>") && !body.includes("/internal-social-immediate-ui.js")) {
-              body = body.replace("</body>", '<script src="/internal-social-immediate-ui.js?v=20260721-1"></script></body>');
+              body = body.replace("</body>", '<script src="/internal-social-immediate-ui.js?v=20260721-2"></script></body>');
             }
             return originalSend(body);
           };
