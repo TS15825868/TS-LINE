@@ -3,49 +3,53 @@
 const Module = require("module");
 require("./internal-social-immediate-ui");
 
-const VERSION = "1.1.0";
+const VERSION = "2.0.0";
+const CONTENT_VERSION = "first-batch-10-approved-originals-v2";
 const CAMPAIGN_ID = "xjw-social-first-batch-202607-v2";
-const OBSOLETE_CAMPAIGNS = new Set([
+const OBSOLETE_CAMPAIGN_IDS = new Set([
   "xjw-social-first-batch-202607-v1",
   "xjw-approved-zip-202607-v1",
 ]);
-const TS_MASCOT = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
-const SITE_DM = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/dm-final";
+const RAW_BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/social/first-batch";
+const DM_BASE = "https://ts15825868.github.io/xianjiawei/images/dm-final";
 
 const POSTS = [
   {
-    id: "social-v2-product-guilu-gao-20260724",
+    id: "first-batch-v2-product-guilu-gao-20260724",
     sequenceRole: "product",
     category: "產品介紹",
-    title: "龜鹿膏 100g｜依日常節奏安排",
+    title: "龜鹿膏100g｜依日常節奏慢慢安排",
     scheduledAt: "2026-07-24T12:00:00.000Z",
-    imageUrl: `${SITE_DM}/01_guilu-gao-100g-dm.jpg?v=408.7`,
+    imageUrl: `${DM_BASE}/01_guilu-gao-100g-dm.jpg?v=408.7`,
+    sourceImageFile: "01_guilu-gao-100g-dm.jpg",
     instagramCaption: [
-      "龜鹿膏 100g，適合依自己的日常節奏安排。",
+      "龜鹿膏是膏狀型態，規格為100g／罐。",
       "",
-      "每日早上及下午各一小匙，可單吃，也可搭配 100～300 ml 熱水化開後，調整至適口溫度飲用；亦可依需求用於燉煮。",
+      "可以依產品標示取用，也可加入溫熱水化開後慢慢飲用。第一次安排時不必急著一次很多，先從自己容易記得、做得到的節奏開始。",
       "",
-      "開罐後請冷藏，實際使用仍以產品標示為準。",
+      "開罐後請依包裝標示冷藏保存。",
       "補養，是一種節奏。",
       "",
-      "#仙加味 #龜鹿膏 #使用方式 #日常補養",
+      "#仙加味 #龜鹿膏 #100g #使用小提醒 #漢方生活",
     ].join("\n"),
     facebookCaption: [
-      "龜鹿膏 100g，可依自己的日常節奏安排。",
+      "龜鹿膏100g是適合依日常節奏取用的膏狀型態。",
       "",
-      "建議每日早上及下午各一小匙，可單吃，或搭配 100～300 ml 熱水化開後，調整到適口溫度飲用；也可依需求搭配燉煮。開罐後請冷藏，實際使用方式請以產品標示為準。",
+      "可直接依產品標示取用，也可加入溫熱水化開後飲用。把時間安排在自己容易記得的時段，比臨時想到才使用更順手。開罐後請依包裝標示冷藏保存。",
       "",
-      "補養，是一種節奏。",
-      "#仙加味 #龜鹿膏 #日常補養",
+      "產品圖片使用仙加味正式DM與真實產品外觀，不更動包裝與比例。",
+      "",
+      "#仙加味 #龜鹿膏 #使用小提醒",
     ].join("\n"),
   },
   {
-    id: "social-v2-care-work-rest-20260729",
+    id: "first-batch-v2-care-work-rest-20260729",
     sequenceRole: "care",
     category: "日常關心",
     title: "工作再忙，也別忘了休息一下",
     scheduledAt: "2026-07-29T02:00:00.000Z",
-    imageUrl: `${TS_MASCOT}/faq.jpg?v=401.6-20260714`,
+    imageUrl: `${RAW_BASE}/care-work-rest-2026-07-29.jpg?v=first-batch-v2`,
+    sourceImageFile: "care-work-rest-2026-07-29.jpg",
     instagramCaption: [
       "工作一忙，很容易連喝水和休息都忘了。",
       "",
@@ -64,36 +68,38 @@ const POSTS = [
     ].join("\n"),
   },
   {
-    id: "social-v2-product-guilu-yin-30cc-20260731",
+    id: "first-batch-v2-product-guilu-yin-30cc-20260731",
     sequenceRole: "product",
     category: "產品介紹",
-    title: "龜鹿飲 30cc｜輕巧即飲",
+    title: "龜鹿飲30cc｜輕巧瓶裝，外出攜帶方便",
     scheduledAt: "2026-07-31T12:00:00.000Z",
-    imageUrl: `${SITE_DM}/02_guilu-drink-30cc-dm.jpg?v=408.7`,
+    imageUrl: `${DM_BASE}/02_guilu-drink-30cc-dm.jpg?v=408.7`,
+    sourceImageFile: "02_guilu-drink-30cc-dm.jpg",
     instagramCaption: [
-      "龜鹿飲 30cc 玻璃瓶，輕巧、方便攜帶。",
+      "龜鹿飲30cc為矮胖的小玻璃瓶裝，輕巧好攜帶。",
       "",
-      "開瓶即可飲用，也可依個人習慣溫熱後飲用。適合外出、工作或想簡單安排的時候。",
+      "開瓶即可飲用，也可依個人習慣溫熱後再喝；不需要把簡單的日常安排得太複雜。",
       "",
-      "實際保存與飲用方式請以產品標示為準。",
+      "實際保存與飲用方式請以包裝標示為準。",
       "",
-      "#仙加味 #龜鹿飲 #30cc #即開即飲 #日常安排",
+      "#仙加味 #龜鹿飲 #30cc #玻璃瓶 #日常攜帶",
     ].join("\n"),
     facebookCaption: [
-      "龜鹿飲 30cc 玻璃瓶，適合需要輕巧攜帶、簡單安排的日常。",
+      "龜鹿飲30cc是矮胖的小玻璃瓶裝，適合需要輕巧攜帶的日常情境。",
       "",
-      "開瓶即可飲用，也可依個人習慣溫熱後飲用。外出、工作或行程忙碌時，都能依自己的步調安排。實際保存與飲用方式請以產品標示為準。",
+      "可直接飲用，也可依個人習慣溫熱後再喝。產品圖片維持正式真實外觀，不改瓶型、標籤、比例或包裝。實際保存方式請以包裝標示為準。",
       "",
-      "#仙加味 #龜鹿飲 #30cc #日常安排",
+      "#仙加味 #龜鹿飲30cc #日常攜帶",
     ].join("\n"),
   },
   {
-    id: "social-v2-care-family-20260805",
+    id: "first-batch-v2-care-family-20260805",
     sequenceRole: "care",
     category: "日常關心",
     title: "照顧自己，也別忘了關心家人",
     scheduledAt: "2026-08-05T02:00:00.000Z",
-    imageUrl: `${TS_MASCOT}/brand.jpg?v=401.6-20260714`,
+    imageUrl: `${RAW_BASE}/care-family-2026-08-05.jpg?v=first-batch-v2`,
+    sourceImageFile: "care-family-2026-08-05.jpg",
     instagramCaption: [
       "一句問候、一起吃頓飯，都是日常裡很溫柔的陪伴。",
       "",
@@ -112,36 +118,38 @@ const POSTS = [
     ].join("\n"),
   },
   {
-    id: "social-v2-product-lurongfen-75g-20260807",
+    id: "first-batch-v2-product-lurongfen-75g-20260807",
     sequenceRole: "product",
     category: "產品介紹",
-    title: "鹿茸粉 75g｜依習慣搭配飲品",
+    title: "鹿茸粉75g｜依自己的飲食習慣搭配",
     scheduledAt: "2026-08-07T12:00:00.000Z",
-    imageUrl: `${SITE_DM}/04_luerong-fen-75g-dm.jpg?v=408.7`,
+    imageUrl: `${DM_BASE}/04_luerong-fen-75g-dm.jpg?v=408.7`,
+    sourceImageFile: "04_luerong-fen-75g-dm.jpg",
     instagramCaption: [
-      "鹿茸粉 75g，可依個人的飲食習慣搭配。",
+      "鹿茸粉規格為75g／罐，原料為鹿茸。",
       "",
-      "取適量加入溫開水、牛奶、豆漿或其他飲品中，攪拌均勻後飲用。",
+      "可依個人習慣取適量，加入溫開水、牛奶、豆漿或其他飲品中攪拌均勻。初次安排可以少量開始，再依自己的飲食習慣調整。",
       "",
-      "開封後請密封保存並儘早食用完畢，實際使用以產品標示為準。",
+      "開封後請密封保存並儘早食用完畢。",
       "",
-      "#仙加味 #鹿茸粉 #75g #飲品搭配 #使用方式",
+      "#仙加味 #鹿茸粉 #75g #飲品搭配 #使用小提醒",
     ].join("\n"),
     facebookCaption: [
-      "鹿茸粉 75g，可依自己的飲食習慣加入飲品。",
+      "鹿茸粉75g可依自己的飲食習慣，加入溫開水、牛奶、豆漿或其他飲品中攪拌均勻。",
       "",
-      "取適量加入溫開水、牛奶、豆漿或其他飲品中，攪拌均勻後飲用。開封後請密封保存並儘早食用完畢，實際使用方式請以產品標示為準。",
+      "初次安排可從少量開始，再依個人習慣調整。開封後請密封保存並儘早食用完畢；實際使用與保存仍以包裝標示為準。",
       "",
-      "#仙加味 #鹿茸粉 #飲品搭配",
+      "#仙加味 #鹿茸粉 #使用小提醒",
     ].join("\n"),
   },
   {
-    id: "social-v2-care-temperature-gap-20260812",
+    id: "first-batch-v2-care-temperature-gap-20260812",
     sequenceRole: "care",
     category: "氣候關心",
     title: "早晚溫差大，出門多帶一件薄外套",
     scheduledAt: "2026-08-12T02:00:00.000Z",
-    imageUrl: `${TS_MASCOT}/service.jpg?v=401.6-20260714`,
+    imageUrl: `${RAW_BASE}/care-temperature-gap-2026-08-12.jpg?v=first-batch-v2`,
+    sourceImageFile: "care-temperature-gap-2026-08-12.jpg",
     instagramCaption: [
       "早晚、室內外溫差明顯時，出門可以多帶一件薄外套。",
       "",
@@ -160,36 +168,36 @@ const POSTS = [
     ].join("\n"),
   },
   {
-    id: "social-v2-product-guilu-tangkuai-75g-20260814",
+    id: "first-batch-v2-product-tangkuai-75g-20260814",
     sequenceRole: "product",
     category: "產品介紹",
-    title: "龜鹿湯塊 75g｜8 塊裝方便沖泡",
+    title: "龜鹿湯塊75g｜8塊裝，沖泡料理都方便",
     scheduledAt: "2026-08-14T12:00:00.000Z",
-    imageUrl: `${SITE_DM}/05_guilu-tangkuai-75g-dm.jpg?v=408.7`,
+    imageUrl: `${DM_BASE}/05_guilu-tangkuai-75g-dm.jpg?v=408.7`,
+    sourceImageFile: "05_guilu-tangkuai-75g-dm.jpg",
     instagramCaption: [
-      "龜鹿湯塊 75g，每盒 8 塊裝。",
+      "龜鹿湯塊75g為每盒8塊裝，主要成分為龜板萃取物與鹿角萃取物。",
       "",
-      "使用時可加入約 300～500 ml 熱水沖泡。小包裝方便取用，也適合依日常需求慢慢安排。",
+      "可依產品標示加入熱水沖泡，也能搭配雞湯、排骨湯等家常料理。水量與使用方式可依包裝標示及個人口感安排。",
       "",
-      "常溫置於陰涼處，或保存於 5°C 以下冷藏；實際仍以產品標示為準。",
-      "",
-      "#仙加味 #龜鹿湯塊 #75g #熱水沖泡 #使用方式",
+      "#仙加味 #龜鹿湯塊 #75g #8塊裝 #沖泡料理",
     ].join("\n"),
     facebookCaption: [
-      "龜鹿湯塊 75g，每盒 8 塊裝，適合想要方便沖泡與取用的日常。",
+      "龜鹿湯塊75g為8塊裝，適合熱水沖泡或家常料理。",
       "",
-      "使用時可加入約 300～500 ml 熱水。保存可常溫置於陰涼處，或保存於 5°C 以下冷藏；實際使用與保存方式請以產品標示為準。",
+      "可搭配雞湯、排骨湯，也可依產品標示使用熱水沖泡。產品圖片維持正式盒型、塊數與真實外觀，不重畫、不改比例。",
       "",
-      "#仙加味 #龜鹿湯塊 #熱水沖泡",
+      "#仙加味 #龜鹿湯塊 #沖泡料理",
     ].join("\n"),
   },
   {
-    id: "social-v2-care-hydration-20260819",
+    id: "first-batch-v2-care-hydration-20260819",
     sequenceRole: "care",
     category: "氣候關心",
     title: "天氣炎熱，記得分次補充水分",
     scheduledAt: "2026-08-19T02:00:00.000Z",
-    imageUrl: `${TS_MASCOT}/usage.jpg?v=401.6-20260714`,
+    imageUrl: `${RAW_BASE}/care-hydration-2026-08-19.jpg?v=first-batch-v2`,
+    sourceImageFile: "care-hydration-2026-08-19.jpg",
     instagramCaption: [
       "天氣炎熱，水瓶可以放在看得到、拿得到的地方。",
       "",
@@ -208,51 +216,51 @@ const POSTS = [
     ].join("\n"),
   },
   {
-    id: "social-v2-product-guilu-jiao-600g-20260821",
+    id: "first-batch-v2-product-guilu-jiao-600g-20260821",
     sequenceRole: "product",
     category: "產品介紹",
-    title: "龜鹿膠 600g｜家庭大盒規格",
+    title: "龜鹿膠600g｜家庭規格，依日常慢慢安排",
     scheduledAt: "2026-08-21T12:00:00.000Z",
-    imageUrl: `${SITE_DM}/06_guilu-jiao-600g-dm.jpg?v=408.7`,
+    imageUrl: `${DM_BASE}/06_guilu-jiao-600g-dm.jpg?v=408.7`,
+    sourceImageFile: "06_guilu-jiao-600g-dm.jpg",
     instagramCaption: [
-      "龜鹿膠一斤裝，總重 600g，每盒 32 塊。",
+      "龜鹿膠規格為600g／盒（1斤），共32塊，每塊約18.75g。",
       "",
-      "每塊約 18.75g，可加入約 300～500 ml 熱水沖泡。與龜鹿湯塊內容物及製程相同，主要差別在包裝與規格。",
+      "可依產品標示加入熱水化開，也能搭配家常料理。家庭規格適合先確認保存空間與使用節奏，再慢慢安排。",
       "",
-      "常溫置於陰涼處，或保存於 5°C 以下冷藏；實際以產品標示為準。",
-      "",
-      "#仙加味 #龜鹿膠 #600g #家庭規格 #熱水沖泡",
+      "#仙加味 #龜鹿膠 #600g #家庭規格 #使用小提醒",
     ].join("\n"),
     facebookCaption: [
-      "龜鹿膠一斤裝，總重 600g，每盒 32 塊，每塊約 18.75g。",
+      "龜鹿膠600g為一斤裝，盒內共32塊，每塊約18.75g。",
       "",
-      "可加入約 300～500 ml 熱水沖泡。龜鹿膠與龜鹿湯塊的內容物及製程相同，主要差別在包裝與規格。保存可常溫置於陰涼處，或保存於 5°C 以下冷藏；實際請以產品標示為準。",
+      "可依產品標示以熱水化開，也能搭配家常料理。正式DM呈現真實盒型與產品規格，不改包裝、不改比例。",
       "",
-      "#仙加味 #龜鹿膠 #家庭規格",
+      "#仙加味 #龜鹿膠 #600g",
     ].join("\n"),
   },
   {
-    id: "social-v2-care-rainy-day-20260826",
+    id: "first-batch-v2-care-rainy-day-20260826",
     sequenceRole: "care",
     category: "氣候關心",
-    title: "下雨天在家，也別忘了留一點暖暖的時間",
+    title: "下雨天在家，也別忘了留一點暖身時間",
     scheduledAt: "2026-08-26T02:00:00.000Z",
-    imageUrl: `${TS_MASCOT}/welcome.jpg?v=401.6-20260714`,
+    imageUrl: `${RAW_BASE}/care-rainy-day-2026-08-26.jpg?v=first-batch-v2`,
+    sourceImageFile: "care-rainy-day-2026-08-26.jpg",
     instagramCaption: [
       "下雨天待在家，可以替自己留一點慢下來的時間。",
       "",
       "泡一杯溫熱飲品、簡單整理餐桌，或和家人一起坐下來聊聊天，讓日常多一點溫度。",
       "",
-      "天氣有變化，生活節奏也可以慢慢調整。",
+      "天氣有變化，照顧自己也照顧身邊的人。",
       "",
-      "#仙加味 #仙加味小老闆 #日常關心 #下雨天 #溫暖時光",
+      "#仙加味 #日常關心 #下雨天 #溫暖時光",
     ].join("\n"),
     facebookCaption: [
       "下雨天在家，不妨替自己留一點暖暖的時間。",
       "",
       "泡杯溫熱飲品、把步調放慢，或陪家人聊聊天。照顧日常，有時就是從這些簡單的小事開始。",
       "",
-      "#仙加味 #下雨天 #溫暖日常",
+      "#仙加味 #下雨天 #日常關心",
     ].join("\n"),
   },
 ];
@@ -263,62 +271,78 @@ let cleanupTimer = null;
 function cancelObsolete(store, nowIso) {
   let changed = 0;
   store.posts = (store.posts || []).map((post) => {
-    const obsolete = OBSOLETE_CAMPAIGNS.has(post.campaignId) || /^approved-mascot-original-/.test(String(post.id || ""));
+    const obsolete =
+      OBSOLETE_CAMPAIGN_IDS.has(String(post.campaignId || "")) ||
+      /^approved-mascot-original-/.test(String(post.id || ""));
     if (!obsolete || ["published", "cancelled"].includes(post.status)) return post;
     changed += 1;
     return {
       ...post,
       status: "cancelled",
       assetLocked: false,
-      lastError: "已由新版無編號社群貼文取代",
+      lastError: "已由新版10篇無編號社群圖文取代",
       updatedAt: nowIso,
     };
   });
   return changed;
 }
 
+function desiredPost(item, nowIso, createdAt = nowIso) {
+  return {
+    ...item,
+    campaignId: CAMPAIGN_ID,
+    campaignVersion: VERSION,
+    contentVersion: CONTENT_VERSION,
+    publishInstagram: true,
+    publishFacebook: true,
+    assetLocked: false,
+    status: "draft",
+    approvedAt: "",
+    result: {},
+    lastError: "",
+    history: [{
+      id: `batch-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 8)}`,
+      action: "建立新版待審貼文",
+      detail: "5篇關心貼文與5篇正式產品DM已配對，等待檢查通過",
+      createdAt: nowIso,
+    }],
+    createdAt,
+    updatedAt: nowIso,
+  };
+}
+
 function upsertBatch(loaded) {
   const store = loaded.readStore();
+  store.posts = Array.isArray(store.posts) ? store.posts : [];
   const nowIso = new Date().toISOString();
   let changed = cancelObsolete(store, nowIso);
 
   for (const item of POSTS) {
-    const existing = store.posts.find((post) => post.id === item.id);
-    if (existing) continue;
-    store.posts.push({
-      ...item,
-      campaignId: CAMPAIGN_ID,
-      campaignVersion: VERSION,
-      sourceImageFile: item.imageUrl.split("/").pop().split("?")[0],
-      publishInstagram: true,
-      publishFacebook: true,
-      assetLocked: false,
-      status: "draft",
-      result: {},
-      lastError: "",
-      history: [{
-        id: `batch-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 8)}`,
-        action: "建立新版待審貼文",
-        detail: "產品貼文使用官網正式 DM；關心貼文使用固定 Q 版小老闆正式素材",
-        createdAt: nowIso,
-      }],
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    });
+    const index = store.posts.findIndex((post) => post.id === item.id);
+    if (index < 0) {
+      store.posts.push(desiredPost(item, nowIso));
+      changed += 1;
+      continue;
+    }
+
+    const existing = store.posts[index];
+    if (existing.status === "published" || existing.contentVersion === CONTENT_VERSION) continue;
+    store.posts[index] = desiredPost(item, nowIso, existing.createdAt || nowIso);
     changed += 1;
   }
 
   store.socialFirstBatchVersion = VERSION;
+  store.socialFirstBatchContentVersion = CONTENT_VERSION;
   store.socialFirstBatchCampaignId = CAMPAIGN_ID;
   store.socialFirstBatchUpdatedAt = nowIso;
   if (changed) loaded.writeStore(store);
 
-  console.log("First social batch reconciled", {
+  console.log("First social batch v2 reconciled", {
     campaignId: CAMPAIGN_ID,
-    createdOrCancelled: changed,
-    futureDrafts: POSTS.length,
-    carePosts: POSTS.filter((post) => post.sequenceRole === "care").length,
-    productPosts: POSTS.filter((post) => post.sequenceRole !== "care").length,
+    changed,
+    total: POSTS.length,
+    care: POSTS.filter((post) => post.sequenceRole === "care").length,
+    other: POSTS.filter((post) => post.sequenceRole !== "care").length,
     firstAt: POSTS[0].scheduledAt,
     lastAt: POSTS.at(-1).scheduledAt,
   });
@@ -340,11 +364,8 @@ function install() {
     const loaded = originalLoad.apply(this, arguments);
     if (request === "./social-server" && parent?.filename?.endsWith("internal-entry.js") && loaded?.readStore && loaded?.writeStore) {
       setTimeout(() => {
-        try {
-          upsertBatch(loaded);
-        } catch (error) {
-          console.error("First social batch setup failed", error);
-        }
+        try { upsertBatch(loaded); }
+        catch (error) { console.error("First social batch v2 setup failed", error); }
       }, 500).unref?.();
 
       if (!cleanupTimer) {
@@ -367,9 +388,11 @@ install();
 
 module.exports = {
   VERSION,
+  CONTENT_VERSION,
   CAMPAIGN_ID,
   POSTS,
   cancelObsolete,
+  desiredPost,
   upsertBatch,
   cleanupObsolete,
   install,
