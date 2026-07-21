@@ -32,6 +32,15 @@ function taipeiParts(value) {
   );
 }
 
+function weekKey(value) {
+  const parts = taipeiParts(value);
+  if (!parts) return "";
+  const date = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - day + 1);
+  return date.toISOString().slice(0, 10);
+}
+
 function isCarePost(post = {}) {
   if (post.oneTimeWeatherPost === true) return true;
   if (String(post.sequenceRole || "").toLowerCase() === "care") return true;
@@ -94,11 +103,39 @@ function normalizePostSchedule(post) {
 function normalizeStore(store) {
   if (!store || !Array.isArray(store.posts)) return store;
   let changed = false;
-  const posts = store.posts.map((post) => {
+  let posts = store.posts.map((post) => {
     const next = normalizePostSchedule(post);
     if (next !== post) changed = true;
     return next;
   });
+
+  const weatherWeeks = new Set(
+    posts
+      .filter((post) => post?.oneTimeWeatherPost === true && post.status !== "cancelled")
+      .map((post) => weekKey(post.scheduledAt))
+      .filter(Boolean)
+  );
+  if (weatherWeeks.size) {
+    posts = posts.map((post) => {
+      if (
+        !post ||
+        post.oneTimeWeatherPost === true ||
+        ["published", "cancelled"].includes(post.status) ||
+        !isCarePost(post) ||
+        !weatherWeeks.has(weekKey(post.scheduledAt))
+      ) return post;
+      changed = true;
+      return {
+        ...post,
+        status: "cancelled",
+        assetLocked: false,
+        lastError: "已由本週即時氣候關心貼文替換",
+        scheduleTimePolicy: "replaced-by-weather",
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }
+
   if (!changed && store.socialScheduleTimePolicyVersion === VERSION) return store;
   return {
     ...store,
@@ -237,6 +274,7 @@ module.exports = {
   CARE_HOUR,
   STANDARD_HOUR,
   taipeiParts,
+  weekKey,
   isCarePost,
   expectedHour,
   validScheduledAt,
