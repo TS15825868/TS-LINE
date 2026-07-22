@@ -1,16 +1,19 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260720-social-review-2";
+  const VERSION = "20260722-social-review-3";
   const H = { "Content-Type": "application/json", "X-XJW-Requested-With": "internal-app-v2" };
   const PAGE_SIZE = 8;
+  const ACTIVE_STATUSES = new Set(["draft", "rejected", "approved", "paused", "publishing", "failed", "partial"]);
+  const FIXED_ACTIVE_STATUSES = new Set(["approved", "paused", "publishing", "failed", "partial"]);
   const GROUPS = {
-    review: { label: "待審核", statuses: ["draft", "rejected"] },
-    scheduled: { label: "已排程", statuses: ["approved", "paused", "publishing"] },
-    failed: { label: "發布失敗", statuses: ["failed", "partial"] },
-    published: { label: "已發布", statuses: ["published"] },
-    cancelled: { label: "已取消", statuses: ["cancelled"] },
-    all: { label: "全部", statuses: null },
+    review: { label: "待審核", test: (post) => ["draft", "rejected"].includes(post.status) },
+    scheduled: { label: "固定排程", test: (post) => FIXED_ACTIVE_STATUSES.has(post.status) && !isWeatherPost(post) },
+    weather: { label: "氣候例外", test: (post) => isWeatherPost(post) && !["published", "cancelled"].includes(post.status) },
+    failed: { label: "發布失敗", test: (post) => ["failed", "partial"].includes(post.status) },
+    published: { label: "已發布", test: (post) => post.status === "published" },
+    cancelled: { label: "已取消", test: (post) => post.status === "cancelled" },
+    all: { label: "全部", test: () => true },
   };
   const STATUS_LABELS = {
     draft: "待審核",
@@ -46,19 +49,6 @@
       || "";
   }
 
-  function groupFor(post) {
-    if (!post) return "all";
-    for (const [key, group] of Object.entries(GROUPS)) {
-      if (group.statuses?.includes(post.status)) return key;
-    }
-    return "all";
-  }
-
-  function countFor(key) {
-    if (key === "all") return posts.length;
-    return posts.filter((post) => groupFor(post) === key).length;
-  }
-
   function taipeiParts(value) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return null;
@@ -74,9 +64,45 @@
     }).formatToParts(date).filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
   }
 
-  function targetSlot(post) {
-    const parts = taipeiParts(post?.scheduledAt);
-    return Boolean(parts && ["Wed", "Fri"].includes(parts.weekday) && parts.hour === "20" && parts.minute === "00");
+  function isWeatherPost(post = {}) {
+    return post.oneTimeWeatherPost === true
+      || post.conditionalWeather === true
+      || post.automationStandby === true
+      || Boolean(post.weatherTrigger);
+  }
+
+  function isWeatherStandby(post = {}) {
+    return isWeatherPost(post)
+      && post.automationStandby === true
+      && post.status === "paused"
+      && !post.scheduledAt;
+  }
+
+  function isRegularCare(post = {}) {
+    if (isWeatherPost(post)) return false;
+    if (String(post.sequenceRole || "").toLowerCase() === "care") return true;
+    return /(?:日常關心|生活關心|節氣關心)/.test(String(post.category || ""));
+  }
+
+  function validTargetSlot(post = {}) {
+    if (isWeatherStandby(post)) return true;
+    const parts = taipeiParts(post.scheduledAt);
+    if (!parts) return false;
+    if (isWeatherPost(post)) return parts.hour === "10" && parts.minute === "00";
+    if (isRegularCare(post)) return parts.weekday === "Wed" && parts.hour === "19" && parts.minute === "30";
+    return parts.weekday === "Fri" && parts.hour === "20" && parts.minute === "00";
+  }
+
+  function groupFor(post) {
+    if (!post) return "all";
+    for (const [key, group] of Object.entries(GROUPS)) {
+      if (key !== "all" && group.test(post)) return key;
+    }
+    return "all";
+  }
+
+  function countFor(key) {
+    return posts.filter((post) => GROUPS[key]?.test(post)).length;
   }
 
   function localMonth(value) {
@@ -85,16 +111,18 @@
   }
 
   function nextTargetInput() {
-    const earliest = Date.now() + 24 * 60 * 60 * 1000;
-    const parts = taipeiParts(earliest);
-    if (!parts) return "";
-    for (let offset = 0; offset < 14; offset += 1) {
-      const localDate = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + offset));
+    const earliest = Date.now() + 60 * 60 * 1000;
+    const nowParts = taipeiParts(earliest);
+    if (!nowParts) return "";
+    for (let offset = 0; offset < 21; offset += 1) {
+      const localDate = new Date(Date.UTC(Number(nowParts.year), Number(nowParts.month) - 1, Number(nowParts.day) + offset));
       const day = localDate.getUTCDay();
       if (day !== 3 && day !== 5) continue;
-      const candidate = Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 12, 0, 0);
-      if (candidate < earliest) continue;
-      return `${localDate.getUTCFullYear()}-${String(localDate.getUTCMonth() + 1).padStart(2, "0")}-${String(localDate.getUTCDate()).padStart(2, "0")}T20:00`;
+      const hour = day === 3 ? 19 : 20;
+      const minute = day === 3 ? 30 : 0;
+      const utcCandidate = Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), hour - 8, minute, 0);
+      if (utcCandidate < earliest) continue;
+      return `${localDate.getUTCFullYear()}-${String(localDate.getUTCMonth() + 1).padStart(2, "0")}-${String(localDate.getUTCDate()).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
     }
     return "";
   }
@@ -111,8 +139,9 @@
     if (!field.value) applyDefault();
     form.addEventListener("reset", () => setTimeout(applyDefault, 0));
     const hint = document.createElement("div");
+    hint.id = "xjwSocialScheduleHint";
     hint.className = "meta";
-    hint.textContent = "固定排程：每週三、週五晚上 20:00";
+    hint.textContent = "固定排程：週三 19:30 關心文、週五 20:00 產品文；氣候符合時當日上午 10:00 例外加發。";
     field.closest("label")?.appendChild(hint);
   }
 
@@ -131,6 +160,7 @@
       #socialList>.item[hidden]{display:none!important}
       #socialList>.item{scroll-margin-top:190px}
       .xjw-social-warning{border-color:#d59678!important;background:#fff9f2!important}
+      .xjw-weather-standby{border-color:#b8a777!important;background:#fffdf4!important}
       @media(max-width:760px){#xjwSocialReviewTools{top:0}#xjwSocialReviewTools input{max-width:none;flex:1 1 100%}}
     `;
     document.head.appendChild(style);
@@ -188,47 +218,59 @@
     const search = String(document.getElementById("xjwSocialSearch")?.value || "").trim().toLowerCase();
     const month = document.getElementById("xjwSocialMonth")?.value || "";
     const filtered = posts.filter((post) => {
-      if (active !== "all" && groupFor(post) !== active) return false;
+      if (!GROUPS[active]?.test(post)) return false;
       if (month && localMonth(post.scheduledAt) !== month) return false;
       if (search && ![post.title, post.instagramCaption, post.facebookCaption, post.status].join(" ").toLowerCase().includes(search)) return false;
       return true;
     });
     const newestFirst = ["published", "cancelled"].includes(active);
-    return filtered.sort((a, b) => newestFirst
-      ? new Date(b.publishedAt || b.updatedAt || b.createdAt) - new Date(a.publishedAt || a.updatedAt || a.createdAt)
-      : new Date(a.scheduledAt) - new Date(b.scheduledAt));
+    return filtered.sort((a, b) => {
+      if (newestFirst) return new Date(b.publishedAt || b.updatedAt || b.createdAt) - new Date(a.publishedAt || a.updatedAt || a.createdAt);
+      if (!a.scheduledAt && !b.scheduledAt) return String(a.title || "").localeCompare(String(b.title || ""), "zh-Hant");
+      if (!a.scheduledAt) return 1;
+      if (!b.scheduledAt) return -1;
+      return new Date(a.scheduledAt) - new Date(b.scheduledAt);
+    });
   }
 
   function decorateCard(card, post) {
     card.dataset.socialGroup = groupFor(post);
-    card.classList.toggle("xjw-social-warning", !targetSlot(post) && post.status !== "cancelled" && post.status !== "published");
+    const invalid = ACTIVE_STATUSES.has(post.status) && !validTargetSlot(post);
+    card.classList.toggle("xjw-social-warning", invalid);
+    card.classList.toggle("xjw-weather-standby", isWeatherStandby(post));
     const pill = card.querySelector(".pill");
-    if (pill) pill.textContent = STATUS_LABELS[post.status] || post.status || "未知";
+    if (pill) {
+      if (isWeatherStandby(post)) pill.textContent = "氣候待命";
+      else if (post.oneTimeWeatherPost === true && post.status === "approved") pill.textContent = "氣候例外／等待發布";
+      else pill.textContent = STATUS_LABELS[post.status] || post.status || "未知";
+    }
     const actions = card.querySelector(".actions");
     if (!actions) return;
-
     actions.querySelectorAll('[data-social-action="delete"]').forEach((button) => {
       button.hidden = !["draft", "rejected", "cancelled", "failed"].includes(post.status);
     });
     actions.querySelectorAll("[data-xjw-social-edit]").forEach((button) => {
-      button.hidden = ["published", "publishing"].includes(post.status);
+      button.hidden = ["published", "publishing"].includes(post.status) || isWeatherStandby(post);
     });
     if (["approved", "failed", "partial"].includes(post.status) && !actions.querySelector('[data-social-action="pause"]')) {
       actions.insertAdjacentHTML("beforeend", `<button class="btn gold" data-social-action="pause" data-id="${post.id}">暫停</button>`);
     }
-    if (post.status === "paused" && !actions.querySelector('[data-social-action="resume"]')) {
+    if (post.status === "paused" && !isWeatherStandby(post) && !actions.querySelector('[data-social-action="resume"]')) {
       actions.insertAdjacentHTML("afterbegin", `<button class="btn success" data-social-action="resume" data-id="${post.id}">重新檢查並恢復</button>`);
     }
   }
 
   function updateSummary() {
-    const activePosts = posts.filter((post) => !["published", "cancelled"].includes(post.status));
-    const scheduled = activePosts.filter((post) => ["approved", "paused", "publishing", "failed", "partial"].includes(post.status));
-    const future = activePosts.filter((post) => new Date(post.scheduledAt).getTime() >= Date.now()).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
-    const invalid = activePosts.filter((post) => !targetSlot(post)).length;
+    const current = posts.filter((post) => !["published", "cancelled"].includes(post.status));
+    const fixedScheduled = current.filter((post) => FIXED_ACTIVE_STATUSES.has(post.status) && !isWeatherPost(post));
+    const weatherStandby = current.filter(isWeatherStandby);
+    const weatherActive = current.filter((post) => isWeatherPost(post) && !isWeatherStandby(post) && FIXED_ACTIVE_STATUSES.has(post.status));
+    const future = current.filter((post) => post.scheduledAt && new Date(post.scheduledAt).getTime() >= Date.now()).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+    const invalid = current.filter((post) => ACTIVE_STATUSES.has(post.status) && !validTargetSlot(post)).length;
     const slots = new Map();
     let duplicates = 0;
-    activePosts.forEach((post) => {
+    current.forEach((post) => {
+      if (!post.scheduledAt) return;
       const date = new Date(post.scheduledAt);
       if (Number.isNaN(date.getTime())) return;
       const key = date.toISOString().slice(0, 16);
@@ -240,7 +282,10 @@
     const summary = document.getElementById("xjwSocialSummary");
     if (!summary) return;
     summary.className = `notice ${invalid || duplicates ? "error" : "ok"}`;
-    summary.textContent = `固定每週 2 篇｜週三、週五 20:00｜待審 ${countFor("review")} 篇｜排程／暫停 ${scheduled.length} 篇｜排至 ${lastText}${invalid ? `｜${invalid} 篇日期不合規` : ""}${duplicates ? `｜${duplicates} 個重複時段` : ""}`;
+    const healthText = invalid || duplicates
+      ? `${invalid ? `｜${invalid} 篇時間不合規` : ""}${duplicates ? `｜${duplicates} 個重複時段` : ""}`
+      : "｜排程檢查正常";
+    summary.textContent = `固定每週 2 篇｜週三 19:30 關心文｜週五 20:00 產品文｜氣候文符合萬華實際天氣時，當日上午 10:00 額外發布，不占固定篇數｜待審 ${countFor("review")} 篇｜固定排程 ${fixedScheduled.length} 篇｜氣候待命 ${weatherStandby.length} 篇${weatherActive.length ? `｜氣候已啟用 ${weatherActive.length} 篇` : ""}｜共 ${posts.length} 篇｜排至 ${lastText}${healthText}`;
   }
 
   function apply() {
@@ -299,7 +344,14 @@
     timer = setInterval(refresh, 5000);
     window.addEventListener("beforeunload", () => clearInterval(timer), { once: true });
     window.addEventListener("xjw:app-refreshed", refresh);
-    window.xjwSocialFilter = { version: VERSION, refresh, apply, get active() { return active; } };
+    window.xjwSocialFilter = {
+      version: VERSION,
+      refresh,
+      apply,
+      validTargetSlot,
+      isWeatherPost,
+      get active() { return active; },
+    };
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
