@@ -1,18 +1,18 @@
-commit=9ada5e21f26b8122da4c39db6fca03d66a7917d9
-recorded_at=2026-07-22T15:19:03Z
+commit=abb2b083d5b886e5a4a6b7ca69906f608bde2453
+recorded_at=2026-07-22T16:48:00Z
 
 
 > xianjiawei-lineoa@6.0.2 test
 > node --check social-server.js && node --check social-publish-guard.js && node --check social-publish-guard.test.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-clear-republish-policy.test.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-app-client-fix.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node social-publish-guard.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js social-clear-republish-policy.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js social-final-approved-batch.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js social-schedule-policy.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js tools/release_check.js
 
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
-Error: Input buffer contains unsupported image format
+Error: Input buffer has corrupt header: glib: XML parse error: Error domain 8 code 81 on line 14 column 254 of data: Invalid bytes in character encoding
     at Sharp.metadata (/home/runner/work/TS-LINE/TS-LINE/node_modules/sharp/lib/input.js:637:17)
     at /home/runner/work/TS-LINE/TS-LINE/social-final-approved-batch.js:75:36
     at assetBuffer (/home/runner/work/TS-LINE/TS-LINE/social-final-approved-batch.js:86:7)
     at Object.assetInfo (/home/runner/work/TS-LINE/TS-LINE/social-final-approved-batch.js:92:24)
-    at /home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:16:28
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:27:3)
+    at /home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:18:28
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:29:3)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at node:internal/modules/cjs/loader:1913:10
     at Object.loadRecommendedSocialSchedule [as .js] (/home/runner/work/TS-LINE/TS-LINE/social-recommended-schedule.js:44:12)
