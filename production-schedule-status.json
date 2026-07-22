@@ -1,17 +1,18 @@
 {
   "ok": true,
-  "version": "2026-07-22-v2",
-  "checkedAt": "2026-07-22T09:23:42.025Z",
-  "repairVersion": "2026-07-22-v2",
+  "version": "2026-07-22-v3",
+  "checkedAt": "2026-07-22T09:27:18.602Z",
+  "repairVersion": "2026-07-22-v3",
   "rule": {
     "regularCare": "每週三 19:30",
     "product": "每週五 20:00",
-    "weatherException": "符合萬華實際氣候時，當日上午 10:00 額外發布，不占固定篇數"
+    "weatherException": "符合萬華實際氣候時，當日上午 10:00 額外發布，不占固定篇數",
+    "guiluDrink": "30cc與180cc分開發文"
   },
-  "canonicalCount": 10,
-  "activeCount": 8,
+  "canonicalCount": 11,
+  "activeCount": 9,
   "publishedCount": 0,
-  "approvedCount": 8,
+  "approvedCount": 9,
   "standbyCount": 2,
   "issues": [],
   "posts": [
@@ -73,7 +74,7 @@
     },
     {
       "id": "first-batch-v2-product-guilu-yin-30cc-20260731",
-      "title": "龜鹿飲｜30cc與180cc，依使用情境選擇",
+      "title": "龜鹿飲30cc｜小瓶即飲，外出攜帶更方便",
       "sequenceRole": "product",
       "status": "approved",
       "scheduledAt": "2026-07-31T12:00:00.000Z",
@@ -128,6 +129,20 @@
       "publishedAt": ""
     },
     {
+      "id": "first-batch-v2-product-guilu-yin-180cc-20260828",
+      "title": "龜鹿飲180cc｜鋁袋包裝，完整份量好安排",
+      "sequenceRole": "product",
+      "status": "approved",
+      "scheduledAt": "2026-08-28T12:00:00.000Z",
+      "conditionalWeather": false,
+      "automationStandby": false,
+      "oneTimeWeatherPost": false,
+      "manualScheduleOverride": false,
+      "manualContentOverride": false,
+      "scheduleTimePolicy": "product-fri-20:00",
+      "publishedAt": ""
+    },
+    {
       "id": "first-batch-v2-care-hydration-20260819",
       "title": "天氣炎熱，記得分次補充水分",
       "sequenceRole": "care",
@@ -156,6 +171,6 @@
       "publishedAt": ""
     }
   ],
-  "verifiedCommit": "fead75271afcaa8d214fc50c42ad2f2ad207abaa",
+  "verifiedCommit": "ab8adee96b576651b797f060f857378886b04f25",
   "productionUrl": "https://ts-line.onrender.com/social/schedule-status"
 }
