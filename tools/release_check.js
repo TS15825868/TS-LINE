@@ -83,14 +83,14 @@ function verifyCatalogAndRuntime() {
 
 function verifySchedule() {
   const posts = batch.POSTS;
-  assert.strictEqual(posts.length, 10, "正式貼文必須剛好 10 篇");
+  assert.strictEqual(posts.length, 11, "正式貼文必須剛好 11 篇");
   assert.strictEqual(posts.filter((post) => post.sequenceRole === "care").length, 5, "關心貼文必須剛好 5 篇");
-  assert.strictEqual(posts.filter((post) => post.sequenceRole !== "care").length, 5, "產品／其他貼文必須剛好 5 篇");
-  assert.strictEqual(new Set(posts.map((post) => post.id)).size, 10, "貼文 ID 不可重複");
+  assert.strictEqual(posts.filter((post) => post.sequenceRole !== "care").length, 6, "產品貼文必須剛好 6 篇");
+  assert.strictEqual(new Set(posts.map((post) => post.id)).size, 11, "貼文 ID 不可重複");
 
   const fixed = posts.filter((post) => !post.conditionalWeather);
   const weather = posts.filter((post) => post.conditionalWeather);
-  assert.strictEqual(fixed.length, 7, "固定排程應為 7 篇");
+  assert.strictEqual(fixed.length, 8, "固定排程應為 8 篇");
   assert.strictEqual(weather.length, 3, "氣候待命素材應為 3 篇");
   assert.ok(weather.every((post) => !post.scheduledAt), "氣候待命素材不可預先占用日期");
 
@@ -101,6 +101,14 @@ function verifySchedule() {
   const family = posts.find((post) => post.id === "first-batch-v2-care-family-20260805");
   assert.strictEqual(workRest.scheduledAt, "2026-07-22T11:30:00.000Z", "今天關心文必須改為台灣時間 19:30");
   assert.strictEqual(family.scheduledAt, "2026-07-29T11:30:00.000Z", "下週關心文必須改為台灣時間 19:30");
+
+  const drink30 = posts.find((post) => post.id === "first-batch-v2-product-guilu-yin-30cc-20260731");
+  const drink180 = posts.find((post) => post.id === "first-batch-v2-product-guilu-yin-180cc-20260828");
+  assert(drink30 && drink180, "龜鹿飲30cc與180cc必須各有一篇");
+  assert.strictEqual(drink30.scheduledAt, "2026-07-31T12:00:00.000Z", "30cc應安排7/31晚上20:00");
+  assert.strictEqual(drink180.scheduledAt, "2026-08-28T12:00:00.000Z", "180cc應安排8/28晚上20:00");
+  assert(!drink30.title.includes("180cc"), "30cc標題不可混入180cc");
+  assert(!drink180.title.includes("30cc"), "180cc標題不可混入30cc");
 }
 
 function verifyWeatherIsExtra() {
@@ -144,7 +152,7 @@ try {
   verifyWeatherIsExtra();
   verifyCopySafety();
   console.log(
-    `PASS 仙加味正式版 ${pkg.version}：固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發，不取消也不占固定篇數。`
+    `PASS 仙加味正式版 ${pkg.version}：龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發。`
   );
 } catch (error) {
   console.error(`仙加味正式上線檢查失敗：${error.message}`);
