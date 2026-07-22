@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 const RECOMMENDED = Object.freeze({
   regularCare: "每週三 19:30（Asia/Taipei）",
   product: "每週五 20:00（Asia/Taipei）",
@@ -37,12 +37,12 @@ function transformBatch(source) {
     `function exactOriginalAvifBuffer(name) {
   if (String(name || "") !== "care-work-rest-clear.jpg") return null;
   if (!fs.existsSync(ORIGINAL_CLEAR_DIR)) return null;
-  const prefix = "care-work-rest-original.avif.";
+  const chunkPattern = /^care-work-rest-original\\.avif\\.\\d{3}\\.b64$/;
   const chunks = fs.readdirSync(ORIGINAL_CLEAR_DIR)
-    .filter((file) => file.startsWith(prefix) && file.endsWith(".b64"))
+    .filter((file) => chunkPattern.test(file))
     .sort();
-  if (chunks.length !== 5) return null;
-  const encoded = chunks
+  if (chunks.length < 5) return null;
+  const encoded = chunks.slice(0, 5)
     .map((file) => fs.readFileSync(path.join(ORIGINAL_CLEAR_DIR, file), "utf8").replace(/\\s+/g, ""))
     .join("");
   if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) return null;
