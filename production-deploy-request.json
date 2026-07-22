@@ -1,15 +1,18 @@
 {
-  "requestedAt": "2026-07-22T07:10:00.000Z",
+  "requestedAt": "2026-07-22T09:28:00.000Z",
   "requestedBy": "ChatGPT",
   "mode": "automatic-production-deploy",
   "target": "main",
   "service": "TS-LINE",
   "expectedVersion": "6.0.2",
+  "socialPostCount": 11,
+  "change": "龜鹿飲30cc與180cc分開發文",
   "checks": [
     "GitHub Actions",
     "Render auto deploy",
     "LINE OA health",
     "internal app health",
-    "social scheduler health"
+    "social scheduler health",
+    "30cc and 180cc separate schedule"
   ]
 }
