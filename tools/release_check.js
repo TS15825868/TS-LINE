@@ -9,39 +9,26 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const exists = (file) => fs.existsSync(path.join(root, file));
 const data = JSON.parse(read("data.json"));
 const pkg = JSON.parse(read("package.json"));
+const lock = JSON.parse(read("package-lock.json"));
 const server = read("server.js");
-const {
-  CAMPAIGN_ID,
-  ASSET_STORE_KEY,
-  TOPICS,
-  nextScheduleSlots,
-  rebuildOfficialSocialSchedule,
-} = require("../social-official-rebuild");
-const { selectApprovedEntries } = require("../social-approved-zip-import");
+const schedulePolicy = require("../social-schedule-policy");
+const approvedAssets = require("../social-approved-originals");
+const finalSocial = require("../social-final-reconcile");
 
-function fail(message) {
-  throw new Error(message);
-}
+function fail(message) { throw new Error(message); }
 
 function verifyRequiredFiles() {
   for (const file of [
-    "internal-entry.js",
-    "internal-app.js",
-    "social-server.js",
-    "social-official-rebuild.js",
-    "social-approved-zip-import.js",
-    "social-approved-zip-import.test.js",
-    "internal-social-upload-approved-patch.js",
-    "disable-auto-knowledge-cards.js",
-    "supabase-state-bridge.js",
-    "persistence-auto-save.js",
-    "supabase/schema.sql",
-    ".github/workflows/catalog-sync.yml",
-    ".github/workflows/ci.yml",
+    "internal-entry.js", "internal-app.js", "social-server.js",
+    "social-approved-originals.js", "social-final-reconcile.js",
+    "social-approved-originals.test.js", "social-final-reconcile.test.js",
+    "social-schedule-policy.js", "social-review-center.js",
+    "internal-social-review-safety.js", "internal-social-upload-approved-patch.js",
+    "disable-auto-knowledge-cards.js", "supabase-state-bridge.js",
+    "persistence-auto-save.js", "supabase/schema.sql",
+    ".github/workflows/catalog-sync.yml", ".github/workflows/ci.yml",
     ".github/workflows/verify-line-and-website-catalog.yml",
-  ]) {
-    if (!exists(file)) fail(`缺少正式檔案：${file}`);
-  }
+  ]) if (!exists(file)) fail(`缺少正式檔案：${file}`);
 }
 
 function verifyCatalogAndRuntime() {
@@ -49,17 +36,10 @@ function verifyCatalogAndRuntime() {
   assert.strictEqual(data.catalogVersion, "408.7", "官網產品目錄版本不正確");
   assert.ok(Array.isArray(data.products), "products 必須是陣列");
   assert.strictEqual(data.products.length, 6, "正式產品規格必須為六項");
-
-  const expectedIds = [
-    "guilu-gao",
-    "guilu-drink-30",
-    "guilu-drink-180",
-    "guilu-tangkuai",
-    "guilu-jiao",
-    "luerong-fen",
-  ];
-  assert.deepStrictEqual(data.products.map((item) => item.id), expectedIds, "產品順序或品項不正確");
-
+  assert.deepStrictEqual(data.products.map((item) => item.id), [
+    "guilu-gao", "guilu-drink-30", "guilu-drink-180",
+    "guilu-tangkuai", "guilu-jiao", "luerong-fen",
+  ], "產品順序或品項不正確");
   for (const product of data.products) {
     for (const field of ["name", "displayName", "spec", "price", "unit", "image", "dmImage", "page", "usage", "ingredients"]) {
       assert.notStrictEqual(product[field], undefined, `${product.id} 缺少 ${field}`);
@@ -70,140 +50,113 @@ function verifyCatalogAndRuntime() {
     assert.ok(String(product.dmImage).startsWith("images/dm-final/"), `${product.id} 未使用正式 DM`);
     assert.ok(String(product.page).endsWith(".html"), `${product.id} 產品頁連結不正確`);
   }
-
   assert.strictEqual(pkg.version, "5.9.2", "package.json 版本必須為 5.9.2");
+  assert.strictEqual(lock.version, pkg.version, "package-lock.json 與 package.json 版本不一致");
+  assert.strictEqual(lock.packages?.[""]?.version, pkg.version, "package-lock 根套件版本不一致");
+
   const start = String(pkg.scripts?.start || "");
   for (const token of [
-    "disable-auto-knowledge-cards.js",
-    "internal-social-upload-approved-patch.js",
-    "line-image-safety.js",
-    "internal-entry.js",
-  ]) {
-    assert.ok(start.includes(token), `正式啟動程式缺少：${token}`);
-  }
+    "social-approved-originals.js", "social-final-reconcile.js", "social-schedule-policy.js",
+    "social-review-center.js", "internal-social-review-safety.js",
+    "disable-auto-knowledge-cards.js", "internal-social-upload-approved-patch.js",
+    "line-image-safety.js", "internal-entry.js",
+  ]) assert.ok(start.includes(token), `正式啟動程式缺少：${token}`);
+  for (const token of [
+    "social-first-batch-assets.js", "social-approved-mascot-assets.js",
+    "approved-social-one-time-import.js", "social-product-content-bootstrap.js",
+    "social-first-batch-202607.js", "social-official-asset-reconciler.js",
+    "social-automation-engine.js",
+  ]) assert.ok(!start.includes(token), `正式啟動不可再載入舊自動產生流程：${token}`);
+
   const test = String(pkg.scripts?.test || "");
   for (const token of [
-    "social-official-rebuild.test.js",
-    "social-approved-zip-import.test.js",
-    "internal-app.test.js",
-    "supabase-state-bridge.test.js",
-    "persistence-auto-save.test.js",
-  ]) {
-    assert.ok(test.includes(token), `npm test 缺少：${token}`);
-  }
-
+    "tools/release_check.js", "social-approved-originals.test.js",
+    "social-final-reconcile.test.js", "internal-app.test.js",
+    "supabase-state-bridge.test.js", "persistence-auto-save.test.js",
+  ]) assert.ok(test.includes(token), `npm test 缺少：${token}`);
   if (/channelAccessToken\s*:\s*["'][^"']{20,}/.test(server)) fail("server.js 疑似含硬編碼 access token");
   if (/channelSecret\s*:\s*["'][^"']{10,}/.test(server)) fail("server.js 疑似含硬編碼 channel secret");
 }
 
-function verifyApprovedZipContract() {
-  assert.strictEqual(TOPICS.length, 20, "正式社群圖片必須剛好 20 張");
-  assert.strictEqual(new Set(TOPICS.map((topic) => topic.file.toUpperCase())).size, 20, "正式圖片檔名不可重複");
-  assert.strictEqual(new Set(TOPICS.map((topic) => topic.number)).size, 20, "正式貼文編號不可重複");
-  assert.ok(TOPICS.every((topic) => /^[A-F0-9-]+\.PNG$/i.test(topic.file)), "正式圖片必須使用核准 PNG 檔名");
-
-  const entries = TOPICS.map((topic) => ({ name: `社群排程/${topic.file}` }));
-  const selected = selectApprovedEntries(entries);
-  assert.strictEqual(selected.size, 20, "ZIP 必須一一選出 20 張正式圖片");
-
-  assert.throws(
-    () => selectApprovedEntries([...entries, { name: "社群排程/extra.png" }]),
-    /非正式圖片/,
-    "ZIP 含額外圖片時必須拒絕"
-  );
-  assert.throws(
-    () => selectApprovedEntries(entries.slice(1)),
-    /缺少 1 張正式圖片/,
-    "ZIP 缺圖時必須拒絕"
-  );
+function verifyApprovedAssets() {
+  const entries = Object.entries(approvedAssets.ASSETS);
+  assert.strictEqual(entries.length, 13, "正式社群素材必須是 10 張固定排程＋3 張氣候替換，共 13 張");
+  assert.strictEqual(new Set(entries.map(([key]) => key)).size, 13, "正式素材代號不可重複");
+  assert.strictEqual(entries.filter(([key]) => key.startsWith("care-")).length, 5, "一般關心素材必須剛好 5 張");
+  assert.strictEqual(entries.filter(([key]) => key.startsWith("product-")).length, 5, "產品素材必須剛好 5 張");
+  assert.strictEqual(entries.filter(([key]) => key.startsWith("weather-")).length, 3, "氣候替換素材必須剛好 3 張");
+  for (const [key, item] of entries) {
+    assert.ok(String(item.sourceFile || "").trim(), `${key} 缺少來源檔名`);
+    assert.match(approvedAssets.assetUrl(key), /^https:\/\//, `${key} 必須產生公開 HTTPS 圖片網址`);
+    if (key.startsWith("product-")) {
+      assert.match(approvedAssets.assetUrl(key), /ts15825868\.github\.io\/xianjiawei\/images\/dm-final\//, `${key} 必須使用正式產品 DM`);
+    } else {
+      assert.match(approvedAssets.assetUrl(key), /raw\.githubusercontent\.com\/TS15825868\/TS-LINE\/main\/public\/mascot\//, `${key} 必須使用核准小老闆素材`);
+    }
+  }
 }
 
-function makePublishedPost() {
-  return {
-    id: "published-keep-1",
-    title: "龜鹿膏只能冬天吃嗎？",
-    status: "published",
-    scheduledAt: "2026-07-15T20:25:00.000Z",
-    result: { instagram: { ok: true }, facebook: { ok: true } },
-  };
+function verifyFinalSchedule() {
+  const entries = [...finalSocial.CANONICAL.entries()];
+  assert.strictEqual(entries.length, 10, "正式排程必須剛好 10 篇");
+  assert.strictEqual(entries.filter(([, item]) => item.sequenceRole === "care").length, 5, "關心貼文必須剛好 5 篇");
+  assert.strictEqual(entries.filter(([, item]) => item.sequenceRole === "product").length, 5, "產品貼文必須剛好 5 篇");
+  assert.strictEqual(new Set(entries.map(([, item]) => item.scheduledAt)).size, 10, "正式排程時間不可重複");
+  assert.strictEqual(new Set(entries.map(([, item]) => item.assetKey)).size, 10, "固定排程圖片不可重複");
+  for (const [id, item] of entries) {
+    assert.ok(approvedAssets.ASSETS[item.assetKey], `${id} 找不到核准圖片 ${item.assetKey}`);
+    const post = finalSocial.buildCanonicalPost(id, item, null, "2026-07-21T00:00:00.000Z");
+    assert.strictEqual(post.status, "approved", `${id} 必須可排程發布`);
+    assert.strictEqual(post.assetLocked, true, `${id} 正式素材必須鎖定`);
+    assert.strictEqual(post.publishInstagram, true, `${id} 必須發布 Instagram`);
+    assert.strictEqual(post.publishFacebook, true, `${id} 必須發布 Facebook`);
+    assert.ok(schedulePolicy.validScheduledAt(post.scheduledAt, post), `${id} 排程時間不符合關心 10:00／產品 20:00 規則`);
+  }
+  assert.strictEqual(Object.keys(finalSocial.WEATHER_REPLACEMENTS).length, 3, "氣候替換素材必須剛好 3 張");
 }
 
-function verifyRebuildBehavior() {
-  const published = makePublishedPost();
-  const wrongDrafts = Array.from({ length: 30 }, (_, index) => ({
-    id: `wrong-auto-${index + 1}`,
-    title: `錯誤自動圖卡 ${index + 1}`,
-    status: "draft",
-  }));
+function verifyReconciliation() {
+  const source = { posts: [
+    { id: "published-keep", status: "published", title: "既有已發布紀錄" },
+    { id: "duplicate-old", campaignId: "xjw-approved-zip-202607-v1", status: "paused" },
+    { id: "first-batch-v2-care-work-rest-20260729", status: "paused", scheduledAt: "2026-07-29T02:00:00.000Z" },
+  ] };
+  const result = finalSocial.reconcileStore(source, "2026-07-21T00:00:00.000Z");
+  const active = result.store.posts.filter((post) => post.status !== "published");
+  assert.strictEqual(result.store.posts.filter((post) => post.status === "published").length, 1, "已發布紀錄必須保留");
+  assert.strictEqual(active.length, 10, "清理重複資料後必須只剩 10 篇固定排程");
+  assert.strictEqual(result.removedUnpublished, 1, "舊重複未發布資料必須移除");
+  assert.ok(active.every((post) => finalSocial.CANONICAL.has(post.id)), "不可保留非正式未發布貼文");
+  assert.ok(active.every((post) => post.assetLocked === true), "所有正式素材必須鎖定");
+  const care = active.find((post) => post.sequenceRole === "care");
+  const beforeCount = result.store.posts.length;
+  assert.strictEqual(finalSocial.updateWeatherReplacement(result.store, care.id, { trigger: "rain", summary: "測試降雨" }, "2026-07-21T01:00:00.000Z"), true);
+  const replaced = result.store.posts.find((post) => post.id === care.id);
+  assert.strictEqual(result.store.posts.length, beforeCount, "氣候內容只能替換，不可額外增加貼文");
+  assert.strictEqual(replaced.scheduledAt, care.scheduledAt, "氣候替換不可改變固定排程時段");
+  assert.strictEqual(replaced.weatherTrigger, "rain", "下雨條件未套用氣候替換");
+  assert.match(replaced.imageUrl, /public\/mascot\/welcome\.jpg/, "下雨條件未使用核准待命素材");
+}
 
-  let writtenWithoutAssets = null;
-  const awaiting = rebuildOfficialSocialSchedule(
-    () => ({ posts: [published, ...wrongDrafts] }),
-    (store) => { writtenWithoutAssets = store; },
-    { nowMs: Date.UTC(2026, 6, 17, 12, 30, 0) }
-  );
-  assert.strictEqual(awaiting.awaitingApprovedZip, true, "尚未匯入 ZIP 時必須等待正式圖");
-  assert.strictEqual(awaiting.preservedPublished, 1, "必須保留 1 篇已發布紀錄");
-  assert.strictEqual(awaiting.removedUnpublished, 30, "必須清除 30 篇錯誤未發布草稿");
-  assert.strictEqual(writtenWithoutAssets.posts.length, 1, "等待 ZIP 時只能留下已發布紀錄");
-  assert.strictEqual(writtenWithoutAssets.posts[0].id, published.id, "已發布紀錄不可被替換");
-
-  const files = {};
-  for (const topic of TOPICS) {
-    const url = `https://approved.example/${topic.file}`;
-    files[topic.file] = url;
-    files[topic.slug] = url;
+function verifyCopySafety() {
+  const blocked = /改善|治療|關節|卡卡|疲勞|精神不濟|補氣|生津|膠原蛋白|鈣質/;
+  for (const [id, config] of finalSocial.CANONICAL) {
+    const post = finalSocial.buildCanonicalPost(id, config, null, "2026-07-21T00:00:00.000Z");
+    assert.ok(String(post.title || "").trim(), `${id} 缺少標題`);
+    assert.ok(String(post.instagramCaption || "").trim(), `${id} 缺少 Instagram 文案`);
+    assert.ok(String(post.facebookCaption || "").trim(), `${id} 缺少 Facebook 文案`);
+    assert.ok(!blocked.test(`${post.title}\n${post.instagramCaption}\n${post.facebookCaption}`), `${id} 含社群禁用字詞`);
   }
-  const source = {
-    posts: [published, ...wrongDrafts],
-    [ASSET_STORE_KEY]: {
-      campaignId: CAMPAIGN_ID,
-      sourceName: "社群排程.zip",
-      originalCount: 20,
-      files,
-    },
-  };
-  let writtenWithAssets = null;
-  const result = rebuildOfficialSocialSchedule(
-    () => source,
-    (store) => { writtenWithAssets = store; },
-    { nowMs: Date.UTC(2026, 6, 17, 12, 30, 0) }
-  );
-
-  assert.strictEqual(result.awaitingApprovedZip, false, "正式 ZIP 資產齊全後必須建立排程");
-  assert.strictEqual(result.preservedPublished, 1, "重建後仍須保留已發布紀錄");
-  assert.strictEqual(result.pendingReview, 20, "必須建立 20 篇待審貼文");
-  assert.strictEqual(result.activeTotal, 20, "正式活動貼文必須剛好 20 篇");
-  assert.strictEqual(writtenWithAssets.posts.length, 21, "總數必須是 1 篇已發布＋20 篇待審");
-
-  const drafts = writtenWithAssets.posts.filter((post) => post.status === "draft");
-  assert.strictEqual(drafts.length, 20, "待審草稿必須剛好 20 篇");
-  assert.strictEqual(new Set(drafts.map((post) => post.sourceImageFile)).size, 20, "圖片與貼文必須一一對應");
-
-  for (const draft of drafts) {
-    const topic = TOPICS.find((item) => item.file === draft.sourceImageFile);
-    assert.ok(topic, `出現非核准圖片：${draft.sourceImageFile}`);
-    assert.strictEqual(draft.imageUrl, files[topic.file], `${topic.file} 必須使用原圖網址`);
-    assert.strictEqual(draft.publishInstagram, true, "IG 必須納入待審");
-    assert.strictEqual(draft.publishFacebook, true, "FB 必須納入待審");
-    const taipei = new Date(Date.parse(draft.scheduledAt) + 8 * 60 * 60 * 1000);
-    assert.ok([3, 5].includes(taipei.getUTCDay()), "排程必須是週三或週五");
-    assert.strictEqual(taipei.getUTCHours(), 20, "排程必須是台北時間晚上 8:00");
-    assert.strictEqual(taipei.getUTCMinutes(), 0, "排程分鐘必須為 00");
-  }
-
-  const slots = nextScheduleSlots(20, Date.UTC(2026, 6, 17, 12, 30, 0));
-  assert.deepStrictEqual(drafts.map((post) => post.scheduledAt), slots, "20 篇排程順序必須固定");
 }
 
 try {
   verifyRequiredFiles();
   verifyCatalogAndRuntime();
-  verifyApprovedZipContract();
-  verifyRebuildBehavior();
-  console.log(
-    "PASS 仙加味正式版 v5.9.2：核准 ZIP 20 張原始 PNG、一圖一文、保留 1 篇已發布、清除 30 篇錯誤未發布、重建 20 篇週三週五 20:00 待審排程，且不啟用自動替代圖流程。"
-  );
+  verifyApprovedAssets();
+  verifyFinalSchedule();
+  verifyReconciliation();
+  verifyCopySafety();
+  console.log(`PASS 仙加味正式版 ${pkg.version}：13 張正式核准素材、10 篇固定排程（關心 10:00／產品 20:00）、3 張氣候條件同篇替換、保留已發布紀錄並清除舊重複未發布資料。`);
 } catch (error) {
   console.error(`仙加味正式上線檢查失敗：${error.message}`);
   process.exit(1);
