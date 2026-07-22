@@ -9,9 +9,12 @@ on:
       - "package-lock.json"
       - "server.js"
       - "social-server.js"
+      - "social-recommended-schedule.js"
       - "social-final-posts.js"
       - "social-final-approved-batch.js"
       - "social-final-approved-batch.test.js"
+      - "social-schedule-repair-20260722.js"
+      - "social-schedule-repair-20260722.test.js"
       - "social-schedule-policy.js"
       - "social-schedule-policy.test.js"
       - "social-manual-schedule-override.js"
@@ -87,7 +90,7 @@ jobs:
           if (root.ok !== true || root.service !== '仙加味 LINE OA') throw new Error('LINE OA root failed');
           if (health.ok !== true || health.version !== 'v401.6' || health.productCount !== 6) throw new Error('LINE OA health failed');
           if (social.ok !== true) throw new Error('Social service health failed');
-          if (Number(social.postCount) !== 10) throw new Error(`Social post count must be 10, received ${social.postCount}`);
+          if (Number(social.postCount) !== 11) throw new Error(`Social post count must be 11, received ${social.postCount}`);
           if (social.instagramConfigured !== true) throw new Error('Instagram is not configured');
           if (social.facebookConfigured !== true) throw new Error('Facebook is not configured');
           if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal App health failed');
