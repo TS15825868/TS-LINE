@@ -1,7 +1,7 @@
 {
   "ok": true,
   "version": "2026-07-22-v1",
-  "checkedAt": "2026-07-22T09:09:32.615Z",
+  "checkedAt": "2026-07-22T09:09:54.651Z",
   "repairVersion": "2026-07-22-v1",
   "canonicalCount": 10,
   "activeCount": 7,
@@ -141,6 +141,6 @@
       "publishedAt": ""
     }
   ],
-  "verifiedCommit": "c38517ad0bd775b0db2808e25a37cefb1a86872b",
+  "verifiedCommit": "2eb3539fcf47303cfe9a01e180c17ec559eeefba",
   "productionUrl": "https://ts-line.onrender.com/social/schedule-status"
 }
