@@ -1,7 +1,7 @@
 {
   "ok": true,
-  "checkedAt": "2026-07-22T13:15:57.594Z",
-  "commit": "866fbcba878b51a17ceb03274da4f4eab3b8ee0b",
+  "checkedAt": "2026-07-22T13:20:28.982Z",
+  "commit": "a497412f8e6831642f0a50a38f11a61536342f5e",
   "productionUrl": "https://ts-line.onrender.com",
   "lineVersion": "v401.6",
   "productCount": 6,
@@ -27,7 +27,7 @@
   "facebookTokenUsable": true,
   "facebookTokenExpired": false,
   "facebookTokenSource": "META_PAGE_ACCESS_TOKEN",
-  "facebookTokenCheckedAt": "2026-07-22T13:15:57.238Z",
+  "facebookTokenCheckedAt": "2026-07-22T13:20:28.602Z",
   "facebookTokenError": "",
   "warning": "",
   "internalApp": "仙加味內部管理 App",
