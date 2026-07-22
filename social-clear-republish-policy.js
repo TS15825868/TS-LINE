@@ -1,16 +1,17 @@
 "use strict";
 
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const { POSTS } = require("./social-final-posts");
 
 const ORIGINAL_POST_ID = "first-batch-v2-care-work-rest-20260729";
 const REPUBLISH_POST_ID = "clear-republish-care-work-rest-20260723";
-const SOURCE_IMAGE_FILE = "care-work-rest-clear-vector-1254.svg";
-const REFERENCE_IMAGE_FILE = "D558F584-DEE1-45BB-B243-6166E118617C.PNG";
+const SOURCE_IMAGE_FILE = "634CBEF9-5A29-44EE-BFFC-AA5DDB8C049B.PNG";
+const REFERENCE_IMAGE_FILE = SOURCE_IMAGE_FILE;
 const SCHEDULED_AT = "2026-07-23T11:30:00.000Z"; // 台灣時間 2026/7/23 19:30
 
 function applyClearRepublishPolicy(posts = POSTS) {
-  const post = posts.find((item) => [ORIGINAL_POST_ID, REPUBLISH_POST_ID].includes(String(item?.id || "")));
+  const matches = posts.filter((item) => [ORIGINAL_POST_ID, REPUBLISH_POST_ID].includes(String(item?.id || "")));
+  const post = matches[0];
   if (!post) throw new Error("找不到要重新發布的日常關心貼文");
 
   Object.assign(post, {
@@ -22,9 +23,16 @@ function applyClearRepublishPolicy(posts = POSTS) {
     referenceImageFile: REFERENCE_IMAGE_FILE,
     correctedClearRepublish: true,
     clearOriginalRequired: true,
+    approvedOriginalAsset: true,
+    originalCompositionLocked: true,
+    originalCharacterLayoutLocked: true,
+    originalSourceWidth: 1254,
+    originalSourceHeight: 1254,
+    originalSourceDimensions: "1254x1254",
     minimumSourceWidth: 1200,
     minimumSourceHeight: 1200,
-    republishReason: "取代已刪除的模糊重複貼文；依使用者上傳核准圖內容製作1254×1254向量清晰版",
+    oneTimeCorrectedRepublish: true,
+    republishReason: "取代已刪除的模糊重複貼文；使用使用者提供、先前完成的1254×1254正式清晰原圖，原本配置、Q版小老闆與夥伴完全不變",
   });
 
   post.instagramCaption = [
@@ -44,6 +52,12 @@ function applyClearRepublishPolicy(posts = POSTS) {
     "",
     "#仙加味 #日常關心 #記得休息",
   ].join("\n");
+
+  for (const duplicate of matches.slice(1)) {
+    duplicate.status = "cancelled";
+    duplicate.assetLocked = false;
+    duplicate.lastError = "已由單一正式清晰原圖重發排程取代";
+  }
 
   return post;
 }
