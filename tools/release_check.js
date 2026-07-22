@@ -12,6 +12,7 @@ const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 const server = read("server.js");
 const clientFix = read("internal-app-client-fix.js");
+const formController = read("internal-app-form-controller.js");
 const socialFilter = read("internal-app-social-filter.js");
 require("../social-recommended-schedule");
 const schedulePolicy = require("../social-schedule-policy");
@@ -26,6 +27,7 @@ function verifyRequiredFiles() {
     "internal-entry.js",
     "internal-app.js",
     "internal-app-client-fix.js",
+    "internal-app-form-controller.js",
     "internal-app-social-filter.js",
     "social-server.js",
     "social-recommended-schedule.js",
@@ -76,6 +78,7 @@ function verifyCatalogAndRuntime() {
     "social-manual-schedule-override.js",
     "social-review-center.js",
     "internal-app-client-fix.js",
+    "internal-app-form-controller.js",
     "internal-app-social-filter.js",
     "internal-entry.js",
   ]) assert.ok(start.includes(token), `正式啟動程式缺少：${token}`);
@@ -89,8 +92,13 @@ function verifyCatalogAndRuntime() {
 }
 
 function verifyInternalAppScheduleUi() {
-  assert.ok(clientFix.includes('RUNTIME_VERSION = "20260722-social-4"'), "內部 App 快取版本尚未更新");
+  assert.ok(clientFix.includes('RUNTIME_VERSION = "20260722-social-5"'), "內部 App 快取版本尚未更新");
+  assert.ok(clientFix.includes("/internal/app-form-controller.js"), "內部 App 未載入表單排程控制器");
   assert.ok(clientFix.includes("/internal/app-social-filter.js"), "內部 App 未載入社群排程介面");
+  assert.ok(formController.includes('VERSION = "20260722-form-stable-3"'), "社群表單控制器版本不正確");
+  assert.ok(formController.includes("day === 3 ? 19 : 20"), "社群表單未區分週三與週五時間");
+  assert.ok(formController.includes("day === 3 ? 30 : 0"), "社群表單未設定週三19:30");
+  assert.ok(!formController.includes("Date.now() + 24 * 60 * 60 * 1000"), "社群表單仍使用任意明天時間");
   assert.ok(socialFilter.includes('VERSION = "20260722-social-review-3"'), "社群排程介面版本不正確");
   for (const text of [
     "週三 19:30 關心文",
@@ -183,7 +191,7 @@ try {
   verifyWeatherIsExtra();
   verifyCopySafety();
   console.log(
-    `PASS 仙加味正式版 ${pkg.version}：內部App摘要與驗證已同步；龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發。`
+    `PASS 仙加味正式版 ${pkg.version}：內部App摘要、表單預設與驗證已同步；龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發。`
   );
 } catch (error) {
   console.error(`仙加味正式上線檢查失敗：${error.message}`);
