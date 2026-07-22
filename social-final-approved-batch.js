@@ -3,21 +3,23 @@
 const fs = require("fs");
 const path = require("path");
 const Module = require("module");
+const sharp = require("sharp");
 
-const VERSION = "4.0.0";
-const CONTENT_VERSION = "approved-complete-graphics-v4";
-const CAMPAIGN_ID = "xjw-social-final-10-v4";
+const VERSION = "5.0.0";
+const CONTENT_VERSION = "approved-highres-1080-v5";
+const CAMPAIGN_ID = "xjw-social-final-11-v5";
 const PUBLIC_BASE = String(process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const ROUTE_PREFIX = "/social-approved-assets";
 const ASSET_DIR = path.join(__dirname, "assets", "social-approved");
+const HIGHRES_DIR = path.join(ASSET_DIR, "care-highres");
 const CARE_CHUNK_DIR = path.join(ASSET_DIR, "care-chunks");
 const WEATHER_INTERVAL_MS = Number(process.env.SOCIAL_WEATHER_CHECK_INTERVAL_MS || 60 * 60 * 1000);
 const WEATHER_LATITUDE = Number(process.env.SOCIAL_WEATHER_LATITUDE || 25.038);
 const WEATHER_LONGITUDE = Number(process.env.SOCIAL_WEATHER_LONGITUDE || 121.499);
+const TARGET_IMAGE_SIZE = 1080;
 
 const nowIso = () => new Date().toISOString();
 const assetUrl = (name) => `${PUBLIC_BASE}${ROUTE_PREFIX}/${encodeURIComponent(name)}?v=${CONTENT_VERSION}`;
-
 const { POSTS } = require("./social-final-posts");
 const CANONICAL_IDS = new Set(POSTS.map((post) => post.id));
 const IMAGE_CACHE = new Map();
@@ -27,23 +29,40 @@ let weatherChecking = false;
 function addApprovedHost() {
   const hosts = new Set(
     String(process.env.SOCIAL_APPROVED_IMAGE_HOSTS || "raw.githubusercontent.com,ts15825868.github.io,ts-line.onrender.com")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean)
+      .split(",").map((value) => value.trim()).filter(Boolean)
   );
   try { hosts.add(new URL(PUBLIC_BASE).hostname); } catch {}
   process.env.SOCIAL_APPROVED_IMAGE_HOSTS = [...hosts].join(",");
 }
 
-function careAvifBuffer(name) {
+function decodeBase64File(file) {
+  if (!fs.existsSync(file)) return null;
+  const encoded = fs.readFileSync(file, "utf8").replace(/\s+/g, "");
+  if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) return null;
+  const buffer = Buffer.from(encoded, "base64");
+  return buffer.length > 1000 ? buffer : null;
+}
+
+function highresAvifBuffer(name) {
+  const stem = path.basename(String(name || ""), ".jpg");
+  return decodeBase64File(path.join(HIGHRES_DIR, `${stem}.avif.b64`));
+}
+
+function legacyAvifBuffer(name) {
   const stem = path.basename(String(name || ""), ".jpg");
   const prefix = `${stem}.avif.`;
+  if (!fs.existsSync(CARE_CHUNK_DIR)) return null;
   const chunks = fs.readdirSync(CARE_CHUNK_DIR)
     .filter((file) => file.startsWith(prefix) && file.endsWith(".b64"))
     .sort();
   if (!chunks.length) return null;
   const encoded = chunks.map((file) => fs.readFileSync(path.join(CARE_CHUNK_DIR, file), "utf8").trim()).join("");
-  return Buffer.from(encoded, "base64");
+  const buffer = Buffer.from(encoded, "base64");
+  return buffer.length > 1000 ? buffer : null;
+}
+
+function careAvifBuffer(name) {
+  return highresAvifBuffer(name) || legacyAvifBuffer(name);
 }
 
 async function assetBuffer(name) {
@@ -51,9 +70,36 @@ async function assetBuffer(name) {
   if (!IMAGE_CACHE.has(name)) {
     const avif = careAvifBuffer(name);
     if (!avif) return null;
-    IMAGE_CACHE.set(name, require("sharp")(avif).jpeg({ quality: 91, chromaSubsampling: "4:4:4" }).toBuffer());
+    IMAGE_CACHE.set(name, (async () => {
+      const image = sharp(avif, { failOn: "none" });
+      const metadata = await image.metadata();
+      let pipeline = image;
+      if ((metadata.width || 0) < TARGET_IMAGE_SIZE || (metadata.height || 0) < TARGET_IMAGE_SIZE) {
+        pipeline = pipeline.resize(TARGET_IMAGE_SIZE, TARGET_IMAGE_SIZE, {
+          fit: "fill",
+          kernel: sharp.kernel.lanczos3,
+        }).sharpen({ sigma: 0.8, m1: 0.8, m2: 1.4, x1: 2, y2: 10, y3: 20 });
+      }
+      return pipeline
+        .jpeg({ quality: 96, chromaSubsampling: "4:4:4", mozjpeg: true })
+        .toBuffer();
+    })());
   }
   return IMAGE_CACHE.get(name);
+}
+
+async function assetInfo(name) {
+  const buffer = await assetBuffer(name);
+  if (!buffer) return { name, ok: false, width: 0, height: 0, bytes: 0 };
+  const metadata = await sharp(buffer).metadata();
+  return {
+    name,
+    ok: metadata.width >= TARGET_IMAGE_SIZE && metadata.height >= TARGET_IMAGE_SIZE,
+    width: metadata.width || 0,
+    height: metadata.height || 0,
+    bytes: buffer.length,
+    highresSource: Boolean(highresAvifBuffer(name)),
+  };
 }
 
 function mount(app) {
@@ -61,15 +107,27 @@ function mount(app) {
   Object.defineProperty(app, "__xjwFinalApprovedAssetsMounted", { value: true });
   app.get(`${ROUTE_PREFIX}/healthz`, async (_req, res) => {
     const names = POSTS.filter((post) => post.imageName).map((post) => post.imageName);
-    const buffers = await Promise.all(names.map((name) => assetBuffer(name)));
-    res.json({ ok: buffers.every(Boolean), version: VERSION, careCount: names.length, totalPosts: POSTS.length, names });
+    const assets = await Promise.all(names.map(assetInfo));
+    res.json({
+      ok: assets.every((item) => item.ok),
+      version: VERSION,
+      contentVersion: CONTENT_VERSION,
+      targetSize: TARGET_IMAGE_SIZE,
+      careCount: names.length,
+      totalPosts: POSTS.length,
+      highresSourceCount: assets.filter((item) => item.highresSource).length,
+      assets,
+    });
   });
   app.get(`${ROUTE_PREFIX}/:name`, async (req, res) => {
     try {
       const name = path.basename(String(req.params.name || ""));
       const buffer = await assetBuffer(name);
       if (!buffer) return res.status(404).send("not found");
-      return res.type("image/jpeg").set("Cache-Control", "public, max-age=604800, immutable").send(buffer);
+      return res.type("image/jpeg")
+        .set("Cache-Control", "public, max-age=604800, immutable")
+        .set("X-XJW-Asset-Version", CONTENT_VERSION)
+        .send(buffer);
     } catch (error) {
       console.error("approved social asset failed", error.message);
       return res.status(500).send("asset failed");
@@ -82,24 +140,22 @@ function historyEntry(action, detail, createdAt = nowIso()) {
 }
 
 function desiredPost(template, previous = {}, updatedAt = nowIso()) {
-  const isWeatherStandby = Boolean(template.conditionalWeather);
-  const weatherActivated = isWeatherStandby && previous.oneTimeWeatherPost === true && ["approved", "publishing", "failed", "partial"].includes(previous.status);
+  const weatherTemplate = Boolean(template.conditionalWeather);
+  const weatherActivated = weatherTemplate
+    && previous.oneTimeWeatherPost === true
+    && ["approved", "publishing", "failed", "partial", "published"].includes(previous.status);
   const preserveManual = previous.manualContentOverride === true;
   const preserveTime = previous.manualScheduleOverride === true;
   const preserveReview = ["draft", "rejected"].includes(previous.status) && previous.manualReviewPending === true;
-
-  const content = preserveManual
-    ? {}
-    : {
-        title: template.title,
-        category: template.category,
-        sequenceRole: template.sequenceRole,
-        instagramCaption: template.instagramCaption,
-        facebookCaption: template.facebookCaption,
-        imageUrl: template.imageUrl || assetUrl(template.imageName),
-        sourceImageFile: template.sourceImageFile || template.imageName,
-      };
-
+  const content = preserveManual ? {} : {
+    title: template.title,
+    category: template.category,
+    sequenceRole: template.sequenceRole,
+    instagramCaption: template.instagramCaption,
+    facebookCaption: template.facebookCaption,
+    imageUrl: template.imageUrl || assetUrl(template.imageName),
+    sourceImageFile: template.sourceImageFile || template.imageName,
+  };
   const next = {
     ...previous,
     ...template,
@@ -108,16 +164,16 @@ function desiredPost(template, previous = {}, updatedAt = nowIso()) {
     campaignId: CAMPAIGN_ID,
     campaignVersion: VERSION,
     contentVersion: CONTENT_VERSION,
-    ...(template.imageName ? { imageName: template.imageName } : {}),
     publishInstagram: true,
     publishFacebook: true,
     autoManaged: true,
     result: previous.result || {},
+    platformStatus: previous.platformStatus || {},
     createdAt: previous.createdAt || updatedAt,
     updatedAt: previous.updatedAt || updatedAt,
   };
 
-  if (isWeatherStandby && !weatherActivated) {
+  if (weatherTemplate && !weatherActivated) {
     Object.assign(next, {
       scheduledAt: "",
       conditionalWeather: true,
@@ -126,7 +182,7 @@ function desiredPost(template, previous = {}, updatedAt = nowIso()) {
       status: "paused",
       assetLocked: true,
       approvedAt: previous.approvedAt || updatedAt,
-      lastError: "等待符合萬華實際氣候後，自動安排上午10:00發文",
+      lastError: "等待符合萬華實際氣候後，自動安排上午10:00例外加發",
     });
   } else if (preserveReview) {
     Object.assign(next, {
@@ -139,7 +195,7 @@ function desiredPost(template, previous = {}, updatedAt = nowIso()) {
   } else {
     Object.assign(next, {
       scheduledAt: preserveTime ? previous.scheduledAt : (weatherActivated ? previous.scheduledAt : template.scheduledAt),
-      conditionalWeather: isWeatherStandby,
+      conditionalWeather: weatherTemplate,
       automationStandby: false,
       status: ["publishing", "failed", "partial"].includes(previous.status) ? previous.status : "approved",
       assetLocked: true,
@@ -147,9 +203,8 @@ function desiredPost(template, previous = {}, updatedAt = nowIso()) {
       lastError: ["failed", "partial"].includes(previous.status) ? previous.lastError : "",
     });
   }
-
   const history = Array.isArray(previous.history) ? previous.history.slice(-49) : [];
-  if (!previous.id) history.push(historyEntry("建立正式社群貼文", "使用已核准完整成品圖，未經程式拼湊", updatedAt));
+  if (!previous.id) history.push(historyEntry("建立正式社群貼文", "使用1080×1080以上已核准完整成品圖", updatedAt));
   next.history = history;
   const previousComparable = { ...previous };
   const nextComparable = { ...next };
@@ -164,7 +219,6 @@ function reconcileStore(store, updatedAt = nowIso()) {
   const byId = new Map(original.map((post) => [String(post.id || ""), post]));
   let changed = 0;
   const posts = [];
-
   for (const post of original) {
     if (post.status === "published") {
       posts.push(post);
@@ -176,13 +230,12 @@ function reconcileStore(store, updatedAt = nowIso()) {
         status: "cancelled",
         assetLocked: false,
         approvedAt: "",
-        lastError: "已由正式5篇關心＋5篇其他社群圖文取代",
+        lastError: "已由正式5篇關心＋6篇產品社群圖文取代",
         updatedAt,
       });
       changed += 1;
     }
   }
-
   for (const template of POSTS) {
     const previous = byId.get(template.id) || {};
     if (previous.status === "published") continue;
@@ -192,15 +245,17 @@ function reconcileStore(store, updatedAt = nowIso()) {
     else posts.push(next);
     if (JSON.stringify(next) !== JSON.stringify(previous)) changed += 1;
   }
-
-  const nextStore = {
-    ...store,
-    posts,
-    socialFinalApprovedBatchVersion: VERSION,
-    socialFinalApprovedContentVersion: CONTENT_VERSION,
-    socialFinalApprovedUpdatedAt: updatedAt,
+  return {
+    store: {
+      ...store,
+      posts,
+      publicationLedger: store.publicationLedger || {},
+      socialFinalApprovedBatchVersion: VERSION,
+      socialFinalApprovedContentVersion: CONTENT_VERSION,
+      socialFinalApprovedUpdatedAt: updatedAt,
+    },
+    changed,
   };
-  return { store: nextStore, changed };
 }
 
 function reconcile(readStore, writeStore) {
@@ -210,6 +265,7 @@ function reconcile(readStore, writeStore) {
   const active = result.store.posts.filter((post) => CANONICAL_IDS.has(String(post.id || "")) && post.status !== "cancelled");
   return {
     version: VERSION,
+    contentVersion: CONTENT_VERSION,
     changed: result.changed,
     active: active.length,
     approved: active.filter((post) => post.status === "approved").length,
@@ -298,21 +354,11 @@ function activateWeatherPost(store, selection, publishDate, checkedAt) {
   const schedule = tenAt(publishDate);
   const week = weekKey(schedule);
   const activeStatuses = new Set(["approved", "publishing", "published", "failed", "partial"]);
-  const weekPosts = store.posts.filter((post) => activeStatuses.has(post.status) && weekKey(post.scheduledAt) === week);
-  const alreadyWeather = weekPosts.some((post) => post.oneTimeWeatherPost === true);
-  if (alreadyWeather) return { activated: false, reason: "本週已有氣候關心貼文" };
-
-  const replaceableCare = weekPosts.find((post) => post.sequenceRole === "care" && post.status !== "published");
-  if (replaceableCare) {
-    replaceableCare.status = "cancelled";
-    replaceableCare.assetLocked = false;
-    replaceableCare.lastError = "已由本週實際氣候關心貼文替換";
-    replaceableCare.updatedAt = checkedAt;
-  } else if (weekPosts.length >= 2) {
-    return { activated: false, reason: "本週已有2篇貼文，未額外增加" };
+  const weekPosts = (store.posts || []).filter((post) => activeStatuses.has(post.status) && weekKey(post.scheduledAt) === week);
+  if (weekPosts.some((post) => post.oneTimeWeatherPost === true)) {
+    return { activated: false, reason: "本週已有氣候例外貼文" };
   }
-
-  const target = store.posts.find((post) => post.automationStandby === true && post.weatherTrigger === selection.trigger && post.status === "paused");
+  const target = (store.posts || []).find((post) => post.automationStandby === true && post.weatherTrigger === selection.trigger && post.status === "paused");
   if (!target) return { activated: false, reason: "找不到尚未使用的對應氣候素材" };
   Object.assign(target, {
     status: "approved",
@@ -326,8 +372,8 @@ function activateWeatherPost(store, selection, publishDate, checkedAt) {
     lastError: "",
     updatedAt: checkedAt,
   });
-  target.history = [...(target.history || []).slice(-49), historyEntry("依實際氣候啟用", selection.summary, checkedAt)];
-  return { activated: true, id: target.id, scheduledAt: schedule };
+  target.history = [...(target.history || []).slice(-49), historyEntry("依實際氣候例外加發", selection.summary, checkedAt)];
+  return { activated: true, id: target.id, scheduledAt: schedule, fixedPostsPreserved: true };
 }
 
 async function checkWeather(readStore, writeStore) {
@@ -370,7 +416,6 @@ function startWeatherAutomation(readStore, writeStore) {
 }
 
 addApprovedHost();
-
 let installed = false;
 let socialHookAttached = false;
 let reconcileTimer = null;
@@ -412,10 +457,16 @@ module.exports = {
   CONTENT_VERSION,
   CAMPAIGN_ID,
   ROUTE_PREFIX,
+  TARGET_IMAGE_SIZE,
   POSTS,
   CANONICAL_IDS,
   addApprovedHost,
+  decodeBase64File,
+  highresAvifBuffer,
+  legacyAvifBuffer,
+  careAvifBuffer,
   assetBuffer,
+  assetInfo,
   mount,
   desiredPost,
   reconcileStore,
@@ -427,6 +478,7 @@ module.exports = {
   nextWeatherDate,
   weatherUrl,
   selectWeather,
+  weekKey,
   activateWeatherPost,
   checkWeather,
   startWeatherAutomation,
