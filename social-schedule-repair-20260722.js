@@ -4,7 +4,7 @@ const Module = require("module");
 const batch = require("./social-final-approved-batch");
 const schedulePolicy = require("./social-schedule-policy");
 
-const VERSION = "2026-07-22-v2";
+const VERSION = "2026-07-22-v3";
 const ACTIVE_STATUSES = new Set(["approved", "publishing", "published", "failed", "partial"]);
 let installed = false;
 let socialApi = null;
@@ -53,7 +53,7 @@ function repairStore(inputStore, updatedAt = nowIso()) {
   store.posts = [...published, ...canonical].slice(-500);
   store.socialScheduleRepairVersion = VERSION;
   store.socialScheduleRepairAt = updatedAt;
-  store.socialScheduleRepairReason = "重新安排建議發布時間：固定關心週三19:30、產品週五20:00；氣候符合時10:00例外加發";
+  store.socialScheduleRepairReason = "龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；氣候符合時10:00例外加發";
   return { store, changed: true, repaired, removed };
 }
 
@@ -96,7 +96,8 @@ function scheduleStatus(store = {}) {
     }));
 
   const issues = [];
-  if (canonical.length !== 10) issues.push(`正式貼文數量應為10，目前為${canonical.length}`);
+  const expectedCount = batch.POSTS.length;
+  if (canonical.length !== expectedCount) issues.push(`正式貼文數量應為${expectedCount}，目前為${canonical.length}`);
 
   const active = canonical.filter((post) => ACTIVE_STATUSES.has(post.status));
   const timeMap = new Map();
@@ -144,6 +145,7 @@ function scheduleStatus(store = {}) {
       regularCare: "每週三 19:30",
       product: "每週五 20:00",
       weatherException: "符合萬華實際氣候時，當日上午 10:00 額外發布，不占固定篇數",
+      guiluDrink: "30cc與180cc分開發文",
     },
     canonicalCount: canonical.length,
     activeCount: active.length,
@@ -183,9 +185,9 @@ function install() {
       socialApi = loaded;
       setImmediate(() => {
         try {
-          console.log("Social schedule recommended-time repair", repair(loaded.readStore, loaded.writeStore));
+          console.log("Social schedule drink-split repair", repair(loaded.readStore, loaded.writeStore));
         } catch (error) {
-          console.error("Social schedule recommended-time repair failed", error.message);
+          console.error("Social schedule drink-split repair failed", error.message);
         }
       });
     }
