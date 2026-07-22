@@ -4,6 +4,8 @@ const assert = require("assert");
 const batch = require("./social-final-approved-batch");
 
 (async () => {
+  assert.strictEqual(batch.VERSION, "5.0.0");
+  assert.strictEqual(batch.CONTENT_VERSION, "approved-highres-1080-v5");
   assert.strictEqual(batch.POSTS.length, 11);
   assert.strictEqual(batch.POSTS.filter((post) => post.sequenceRole === "care").length, 5);
   assert.strictEqual(batch.POSTS.filter((post) => post.sequenceRole !== "care").length, 6);
@@ -26,9 +28,12 @@ const batch = require("./social-final-approved-batch");
 
   for (const post of care) {
     const image = await batch.assetBuffer(post.imageName);
+    const info = await batch.assetInfo(post.imageName);
     assert(image && image.length > 100000, `missing image ${post.imageName}`);
     assert.strictEqual(image[0], 0xff);
     assert.strictEqual(image[1], 0xd8);
+    assert.strictEqual(info.ok, true, `${post.imageName} must pass quality check`);
+    assert(info.width >= 1080 && info.height >= 1080, `${post.imageName} must be at least 1080x1080`);
     assert(!String(post.imageName).includes("mascot"));
   }
   for (const post of product) {
@@ -41,6 +46,7 @@ const batch = require("./social-final-approved-batch");
       { id: "old-stitch-card", title: "舊拼湊圖", status: "approved", imageUrl: "https://example.com/mascot/faq.jpg" },
       { id: batch.POSTS[0].id, title: "舊標題", status: "paused", imageUrl: "https://example.com/old.jpg" },
     ],
+    publicationLedger: { instagram: { keep: { postId: "published-history" } } },
   };
   const result = batch.reconcileStore(legacy, "2026-07-21T12:00:00.000Z");
   const active = result.store.posts.filter((post) => post.status !== "cancelled");
@@ -48,7 +54,25 @@ const batch = require("./social-final-approved-batch");
   assert.strictEqual(result.store.posts.find((post) => post.id === "old-stitch-card").status, "cancelled");
   assert(active.every((post) => !String(post.imageUrl).includes("/mascot/")));
   assert.strictEqual(active.filter((post) => post.automationStandby).length, 3);
-  console.log("PASS final 11 approved social posts with separate 30cc and 180cc Guilu drink posts");
+  assert.strictEqual(result.store.publicationLedger.instagram.keep.postId, "published-history");
+
+  const weatherStore = batch.reconcileStore({ posts: [] }, "2026-07-21T12:00:00.000Z").store;
+  const fixedBefore = weatherStore.posts.filter((post) => !post.conditionalWeather && post.status === "approved").map((post) => post.id);
+  const activation = batch.activateWeatherPost(
+    weatherStore,
+    { trigger: "hot", summary: "最高33°C／體感最高36°C" },
+    "2026-07-22",
+    "2026-07-22T00:30:00.000Z"
+  );
+  assert.strictEqual(activation.activated, true);
+  assert.strictEqual(activation.fixedPostsPreserved, true);
+  assert.deepStrictEqual(
+    weatherStore.posts.filter((post) => !post.conditionalWeather && post.status === "approved").map((post) => post.id),
+    fixedBefore,
+    "weather exception must not cancel fixed posts"
+  );
+
+  console.log("PASS final 11 social posts use 1080 assets and weather exceptions preserve fixed posts");
 })().catch((error) => {
   console.error(error);
   process.exit(1);
