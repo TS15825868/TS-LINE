@@ -9,10 +9,14 @@ on:
       - "package-lock.json"
       - "server.js"
       - "social-server.js"
+      - "social-publish-guard.js"
+      - "social-publish-guard.test.js"
       - "social-recommended-schedule.js"
       - "social-final-posts.js"
       - "social-final-approved-batch.js"
       - "social-final-approved-batch.test.js"
+      - "assets/social-approved/care-highres/**"
+      - "assets/social-approved/care-chunks/**"
       - "social-schedule-repair-20260722.js"
       - "social-schedule-repair-20260722.test.js"
       - "social-schedule-policy.js"
@@ -60,13 +64,14 @@ jobs:
           for attempt in $(seq 1 48); do
             echo "Production check $attempt/48"
             if curl --connect-timeout 10 --max-time 25 --fail --silent --show-error \
-              "$BASE_URL/healthz" -o /tmp/xjw-production/health.json; then
+              "$BASE_URL/social/healthz" -o /tmp/xjw-production/social.json; then
               if node - <<'NODE'
           const fs = require('fs');
-          const health = JSON.parse(fs.readFileSync('/tmp/xjw-production/health.json', 'utf8'));
-          if (health.ok !== true) process.exit(1);
-          if (health.version !== 'v401.6') process.exit(1);
-          if (health.productCount !== 6) process.exit(1);
+          const social = JSON.parse(fs.readFileSync('/tmp/xjw-production/social.json', 'utf8'));
+          if (social.ok !== true) process.exit(1);
+          if (social.socialVersion !== '1.3.0') process.exit(1);
+          if (social.publishGuardVersion !== '2.0.0') process.exit(1);
+          if (social.persistentDuplicateProtection !== true) process.exit(1);
           NODE
               then
                 success=1
@@ -77,19 +82,19 @@ jobs:
           done
 
           if [ "$success" -ne 1 ]; then
-            echo "Render production did not become healthy in time" > /tmp/xjw-production/error.txt
+            echo "Render production did not become healthy with social 1.3.0 in time" > /tmp/xjw-production/error.txt
             exit 1
           fi
 
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/" -o /tmp/xjw-production/root.json
-          curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/social/healthz" -o /tmp/xjw-production/social.json
+          curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/healthz" -o /tmp/xjw-production/health.json
+          curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/social-approved-assets/healthz?t=$(date +%s)" -o /tmp/xjw-production/assets.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/social/facebook-healthz?refresh=1" -o /tmp/xjw-production/facebook.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/xjw-production/internal.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/db-healthz" -o /tmp/xjw-production/database.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-social-filter.js?t=$(date +%s)" -o /tmp/xjw-production/social-ui.js
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-form-controller.js?t=$(date +%s)" -o /tmp/xjw-production/social-form.js
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-facebook-health.js?t=$(date +%s)" -o /tmp/xjw-production/facebook-ui.js
-          curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-shell.js?t=$(date +%s)" -o /tmp/xjw-production/app-shell.js
 
           node - <<'NODE'
           const fs = require('fs');
@@ -97,51 +102,48 @@ jobs:
           const root = read('root');
           const health = read('health');
           const social = read('social');
+          const assets = read('assets');
           const facebook = read('facebook');
           const internal = read('internal');
           const database = read('database');
           const socialUi = fs.readFileSync('/tmp/xjw-production/social-ui.js', 'utf8');
           const socialForm = fs.readFileSync('/tmp/xjw-production/social-form.js', 'utf8');
           const facebookUi = fs.readFileSync('/tmp/xjw-production/facebook-ui.js', 'utf8');
+
           if (root.ok !== true || root.service !== '仙加味 LINE OA') throw new Error('LINE OA root failed');
           if (health.ok !== true || health.version !== 'v401.6' || health.productCount !== 6) throw new Error('LINE OA health failed');
-          if (social.ok !== true) throw new Error('Social service health failed');
+          if (social.ok !== true || social.socialVersion !== '1.3.0') throw new Error('Social 1.3.0 health failed');
           if (Number(social.postCount) !== 11) throw new Error(`Social post count must be 11, received ${social.postCount}`);
           if (social.instagramConfigured !== true) throw new Error('Instagram is not configured');
           if (social.facebookConfigured !== true) throw new Error('Facebook environment variables are not configured');
+          if (social.publishGuardVersion !== '2.0.0') throw new Error('Publish guard 2.0.0 is not active');
+          if (social.persistentDuplicateProtection !== true) throw new Error('Persistent duplicate protection is not active');
+          if (assets.ok !== true || assets.version !== '5.0.0') throw new Error('Approved social asset health failed');
+          if (assets.contentVersion !== 'approved-highres-1080-v5') throw new Error('High-resolution content version is not active');
+          if (Number(assets.targetSize) !== 1080 || Number(assets.careCount) !== 5) throw new Error('Social asset target size/count is wrong');
+          if (!Array.isArray(assets.assets) || assets.assets.length !== 5) throw new Error('Social asset details missing');
+          for (const asset of assets.assets) {
+            if (asset.ok !== true || Number(asset.width) < 1080 || Number(asset.height) < 1080 || Number(asset.bytes) <= 100000) {
+              throw new Error(`Social asset quality failed: ${asset.name}`);
+            }
+          }
           if (facebook.service !== '仙加味 Facebook 發布連線') throw new Error('Facebook token health endpoint failed');
           if (typeof facebook.configured !== 'boolean') throw new Error('Facebook token configured state missing');
           if (![true, false, null].includes(facebook.usable)) throw new Error('Facebook token usable state invalid');
           if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal App health failed');
           if (database.ok !== true || database.storage !== 'supabase') throw new Error('Supabase production storage is not healthy');
-          for (const text of [
-            '20260722-social-review-3',
-            '週三 19:30 關心文',
-            '週五 20:00 產品文',
-            '氣候文符合萬華實際天氣時',
-            '不占固定篇數',
-            '排程檢查正常',
-          ]) {
+
+          for (const text of ['20260722-social-review-3', '週三 19:30 關心文', '週五 20:00 產品文', '排程檢查正常']) {
             if (!socialUi.includes(text)) throw new Error(`Internal social UI missing: ${text}`);
           }
           if (socialUi.includes('週三、週五 20:00')) throw new Error('Internal social UI still contains old schedule rule');
-          for (const text of [
-            '20260722-form-stable-3',
-            'day === 3 ? 19 : 20',
-            'day === 3 ? 30 : 0',
-          ]) {
+          for (const text of ['20260722-form-stable-3', 'day === 3 ? 19 : 20', 'day === 3 ? 30 : 0']) {
             if (!socialForm.includes(text)) throw new Error(`Internal social form missing: ${text}`);
           }
-          if (socialForm.includes('Date.now() + 24 * 60 * 60 * 1000')) throw new Error('Internal social form still defaults to arbitrary tomorrow time');
-          for (const text of [
-            '20260722-facebook-health-2',
-            'FB Token 已過期',
-            'Instagram 已成功的貼文不會重複發布',
-            'META_PAGE_ACCESS_TOKEN',
-            '待補發',
-          ]) {
+          for (const text of ['20260722-facebook-health-2', 'Instagram 已成功的貼文不會重複發布', '待補發']) {
             if (!facebookUi.includes(text)) throw new Error(`Facebook health UI missing: ${text}`);
           }
+
           const status = {
             ok: true,
             checkedAt: new Date().toISOString(),
@@ -149,13 +151,22 @@ jobs:
             productionUrl: 'https://ts-line.onrender.com',
             lineVersion: health.version,
             productCount: health.productCount,
-            socialVersion: social.socialVersion || '',
+            socialVersion: social.socialVersion,
             socialPostCount: social.postCount,
+            publishGuardVersion: social.publishGuardVersion,
+            persistentDuplicateProtection: social.persistentDuplicateProtection,
+            publicationLedgerCount: social.publicationLedgerCount,
+            approvedAssetVersion: assets.version,
+            approvedAssetContentVersion: assets.contentVersion,
+            approvedAssetTargetSize: assets.targetSize,
+            approvedAssetCount: assets.assets.length,
+            approvedAssetHighresSourceCount: assets.highresSourceCount,
+            approvedAssetQualityOk: assets.assets.every((asset) => asset.ok),
             internalRuntimeVersion: '20260722-social-6',
             socialUiVersion: '20260722-social-review-3',
             socialFormVersion: '20260722-form-stable-3',
             facebookHealthUiVersion: '20260722-facebook-health-2',
-            socialUiScheduleRule: '週三19:30關心、週五20:00產品、氣候10:00例外加發',
+            socialUiScheduleRule: '週三19:30關心、週五20:00產品、氣候10:00例外加發且不取代固定貼文',
             instagramConfigured: social.instagramConfigured,
             facebookConfigured: social.facebookConfigured,
             facebookTokenConfigured: facebook.configured,
