@@ -1,12 +1,17 @@
 {
   "ok": true,
-  "version": "2026-07-22-v1",
-  "checkedAt": "2026-07-22T09:09:54.651Z",
-  "repairVersion": "2026-07-22-v1",
+  "version": "2026-07-22-v2",
+  "checkedAt": "2026-07-22T09:12:34.907Z",
+  "repairVersion": "2026-07-22-v2",
+  "rule": {
+    "regularCare": "每週三 19:30",
+    "product": "每週五 20:00",
+    "weatherException": "符合萬華實際氣候時，當日上午 10:00 額外發布，不占固定篇數"
+  },
   "canonicalCount": 10,
-  "activeCount": 7,
+  "activeCount": 8,
   "publishedCount": 0,
-  "approvedCount": 7,
+  "approvedCount": 8,
   "standbyCount": 2,
   "issues": [],
   "posts": [
@@ -14,13 +19,14 @@
       "id": "first-batch-v2-care-work-rest-20260729",
       "title": "工作再忙，也別忘了休息一下",
       "sequenceRole": "care",
-      "status": "cancelled",
+      "status": "approved",
       "scheduledAt": "2026-07-22T11:30:00.000Z",
       "conditionalWeather": false,
       "automationStandby": false,
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "regular-care-wed-19:30",
       "publishedAt": ""
     },
     {
@@ -34,6 +40,7 @@
       "oneTimeWeatherPost": true,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "weather-exception-10:00",
       "publishedAt": ""
     },
     {
@@ -47,6 +54,7 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "product-fri-20:00",
       "publishedAt": ""
     },
     {
@@ -60,6 +68,7 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "regular-care-wed-19:30",
       "publishedAt": ""
     },
     {
@@ -73,6 +82,7 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "product-fri-20:00",
       "publishedAt": ""
     },
     {
@@ -86,6 +96,7 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "product-fri-20:00",
       "publishedAt": ""
     },
     {
@@ -99,6 +110,7 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "product-fri-20:00",
       "publishedAt": ""
     },
     {
@@ -112,6 +124,7 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "product-fri-20:00",
       "publishedAt": ""
     },
     {
@@ -125,6 +138,7 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "",
       "publishedAt": ""
     },
     {
@@ -138,9 +152,10 @@
       "oneTimeWeatherPost": false,
       "manualScheduleOverride": false,
       "manualContentOverride": false,
+      "scheduleTimePolicy": "",
       "publishedAt": ""
     }
   ],
-  "verifiedCommit": "2eb3539fcf47303cfe9a01e180c17ec559eeefba",
+  "verifiedCommit": "6a6fe5730c8a1280bd75b379ce3c762e8b5676c5",
   "productionUrl": "https://ts-line.onrender.com/social/schedule-status"
 }
