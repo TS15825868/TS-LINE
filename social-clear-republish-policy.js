@@ -1,11 +1,12 @@
 "use strict";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const { POSTS } = require("./social-final-posts");
 
 const ORIGINAL_POST_ID = "first-batch-v2-care-work-rest-20260729";
 const REPUBLISH_POST_ID = "clear-republish-care-work-rest-20260723";
-const SOURCE_IMAGE_FILE = "D558F584-DEE1-45BB-B243-6166E118617C.PNG";
+const SOURCE_IMAGE_FILE = "care-work-rest-clear-vector-1254.svg";
+const REFERENCE_IMAGE_FILE = "D558F584-DEE1-45BB-B243-6166E118617C.PNG";
 const SCHEDULED_AT = "2026-07-23T11:30:00.000Z"; // 台灣時間 2026/7/23 19:30
 
 function applyClearRepublishPolicy(posts = POSTS) {
@@ -16,13 +17,14 @@ function applyClearRepublishPolicy(posts = POSTS) {
     id: REPUBLISH_POST_ID,
     title: "工作再忙，也別忘了休息一下",
     scheduledAt: SCHEDULED_AT,
-    imageName: "care-work-rest.jpg",
+    imageName: "care-work-rest-clear.jpg",
     sourceImageFile: SOURCE_IMAGE_FILE,
+    referenceImageFile: REFERENCE_IMAGE_FILE,
     correctedClearRepublish: true,
     clearOriginalRequired: true,
     minimumSourceWidth: 1200,
     minimumSourceHeight: 1200,
-    republishReason: "取代已刪除的模糊重複貼文；改用使用者上傳之1254×1254清晰正式圖",
+    republishReason: "取代已刪除的模糊重複貼文；依使用者上傳核准圖內容製作1254×1254向量清晰版",
   });
 
   post.instagramCaption = [
@@ -53,6 +55,7 @@ module.exports = {
   ORIGINAL_POST_ID,
   REPUBLISH_POST_ID,
   SOURCE_IMAGE_FILE,
+  REFERENCE_IMAGE_FILE,
   SCHEDULED_AT,
   applyClearRepublishPolicy,
   appliedPost,
