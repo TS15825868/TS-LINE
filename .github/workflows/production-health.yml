@@ -19,6 +19,8 @@ on:
       - "social-schedule-policy.test.js"
       - "social-manual-schedule-override.js"
       - "social-review-center.js"
+      - "internal-app-client-fix.js"
+      - "internal-app-social-filter.js"
       - "internal-entry.js"
       - "tools/release_check.js"
       - "production-deploy-request.json"
@@ -78,6 +80,7 @@ jobs:
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/social/healthz" -o /tmp/xjw-production/social.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/xjw-production/internal.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/db-healthz" -o /tmp/xjw-production/database.json
+          curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-social-filter.js?t=$(date +%s)" -o /tmp/xjw-production/social-ui.js
 
           node - <<'NODE'
           const fs = require('fs');
@@ -87,6 +90,7 @@ jobs:
           const social = read('social');
           const internal = read('internal');
           const database = read('database');
+          const socialUi = fs.readFileSync('/tmp/xjw-production/social-ui.js', 'utf8');
           if (root.ok !== true || root.service !== '仙加味 LINE OA') throw new Error('LINE OA root failed');
           if (health.ok !== true || health.version !== 'v401.6' || health.productCount !== 6) throw new Error('LINE OA health failed');
           if (social.ok !== true) throw new Error('Social service health failed');
@@ -95,6 +99,17 @@ jobs:
           if (social.facebookConfigured !== true) throw new Error('Facebook is not configured');
           if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal App health failed');
           if (database.ok !== true || database.storage !== 'supabase') throw new Error('Supabase production storage is not healthy');
+          for (const text of [
+            '20260722-social-review-3',
+            '週三 19:30 關心文',
+            '週五 20:00 產品文',
+            '氣候文符合萬華實際天氣時',
+            '不占固定篇數',
+            '排程檢查正常',
+          ]) {
+            if (!socialUi.includes(text)) throw new Error(`Internal social UI missing: ${text}`);
+          }
+          if (socialUi.includes('週三、週五 20:00')) throw new Error('Internal social UI still contains old schedule rule');
           const status = {
             ok: true,
             checkedAt: new Date().toISOString(),
@@ -104,6 +119,8 @@ jobs:
             productCount: health.productCount,
             socialVersion: social.socialVersion || '',
             socialPostCount: social.postCount,
+            socialUiVersion: '20260722-social-review-3',
+            socialUiScheduleRule: '週三19:30關心、週五20:00產品、氣候10:00例外加發',
             instagramConfigured: social.instagramConfigured,
             facebookConfigured: social.facebookConfigured,
             internalApp: internal.app,
