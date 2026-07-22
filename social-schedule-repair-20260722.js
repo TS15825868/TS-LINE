@@ -4,7 +4,7 @@ const Module = require("module");
 const batch = require("./social-final-approved-batch");
 const schedulePolicy = require("./social-schedule-policy");
 
-const VERSION = "2026-07-22-v1";
+const VERSION = "2026-07-22-v2";
 const ACTIVE_STATUSES = new Set(["approved", "publishing", "published", "failed", "partial"]);
 let installed = false;
 let socialApi = null;
@@ -18,7 +18,7 @@ function canonicalPrevious(previous = {}) {
   delete next.manualReviewPending;
   delete next.manualScheduleUpdatedAt;
   delete next.manualContentUpdatedAt;
-  if (["draft", "rejected", "paused"].includes(String(next.status || ""))) delete next.status;
+  if (["draft", "rejected", "paused", "cancelled"].includes(String(next.status || ""))) delete next.status;
   return next;
 }
 
@@ -53,7 +53,7 @@ function repairStore(inputStore, updatedAt = nowIso()) {
   store.posts = [...published, ...canonical].slice(-500);
   store.socialScheduleRepairVersion = VERSION;
   store.socialScheduleRepairAt = updatedAt;
-  store.socialScheduleRepairReason = "恢復正式10篇排程，清除誤按造成的手動時間與審核覆寫";
+  store.socialScheduleRepairReason = "重新安排建議發布時間：固定關心週三19:30、產品週五20:00；氣候符合時10:00例外加發";
   return { store, changed: true, repaired, removed };
 }
 
@@ -91,6 +91,7 @@ function scheduleStatus(store = {}) {
       oneTimeWeatherPost: post.oneTimeWeatherPost === true,
       manualScheduleOverride: post.manualScheduleOverride === true,
       manualContentOverride: post.manualContentOverride === true,
+      scheduleTimePolicy: post.scheduleTimePolicy || "",
       publishedAt: post.publishedAt || "",
     }));
 
@@ -116,14 +117,22 @@ function scheduleStatus(store = {}) {
     if (titles.length > 1) issues.push(`${time} 有${titles.length}篇重複排程：${titles.join("、")}`);
   }
 
-  const weekCounts = new Map();
+  const regularWeekCounts = new Map();
+  const weatherWeekCounts = new Map();
   for (const post of active) {
     const week = weekKey(post.scheduledAt);
     if (!week) continue;
-    weekCounts.set(week, (weekCounts.get(week) || 0) + 1);
+    if (post.oneTimeWeatherPost || post.conditionalWeather) {
+      weatherWeekCounts.set(week, (weatherWeekCounts.get(week) || 0) + 1);
+    } else {
+      regularWeekCounts.set(week, (regularWeekCounts.get(week) || 0) + 1);
+    }
   }
-  for (const [week, count] of weekCounts) {
-    if (count > 2) issues.push(`${week} 這週共有${count}篇，超過每週2篇`);
+  for (const [week, count] of regularWeekCounts) {
+    if (count > 2) issues.push(`${week} 這週固定貼文共有${count}篇，超過每週2篇`);
+  }
+  for (const [week, count] of weatherWeekCounts) {
+    if (count > 1) issues.push(`${week} 這週氣候例外貼文共有${count}篇，應最多1篇`);
   }
 
   return {
@@ -131,6 +140,11 @@ function scheduleStatus(store = {}) {
     version: VERSION,
     checkedAt: nowIso(),
     repairVersion: store.socialScheduleRepairVersion || "",
+    rule: {
+      regularCare: "每週三 19:30",
+      product: "每週五 20:00",
+      weatherException: "符合萬華實際氣候時，當日上午 10:00 額外發布，不占固定篇數",
+    },
     canonicalCount: canonical.length,
     activeCount: active.length,
     publishedCount: canonical.filter((post) => post.status === "published").length,
@@ -169,9 +183,9 @@ function install() {
       socialApi = loaded;
       setImmediate(() => {
         try {
-          console.log("Social schedule one-time repair", repair(loaded.readStore, loaded.writeStore));
+          console.log("Social schedule recommended-time repair", repair(loaded.readStore, loaded.writeStore));
         } catch (error) {
-          console.error("Social schedule one-time repair failed", error.message);
+          console.error("Social schedule recommended-time repair failed", error.message);
         }
       });
     }
