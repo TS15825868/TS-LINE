@@ -1,0 +1,11 @@
+commit=1369e5c4cb98dbd9f598c5f15351962c0b558d99
+recorded_at=2026-07-22T10:57:24Z
+
+
+> xianjiawei-lineoa@6.0.2 test
+> node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-review-center.js && node --check internal-app-client-fix.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-entry.js && node -r ./social-recommended-schedule.js social-final-approved-batch.test.js && node -r ./social-recommended-schedule.js social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js social-schedule-policy.test.js && node tools/release_check.js
+
+PASS final 11 approved social posts with separate 30cc and 180cc Guilu drink posts
+PASS schedule repair restores 11 posts and keeps 30cc and 180cc separate
+PASS recommended schedule: care Wed 19:30, product Fri 20:00, weather exception 10:00
+仙加味正式上線檢查失敗：內部 App 快取版本尚未更新
