@@ -2,10 +2,28 @@
 
 const GRAPH_VERSION = String(process.env.META_GRAPH_VERSION || "v25.0").replace(/^\/?/, "");
 const PAGE_ID = String(process.env.META_PAGE_ID || "").trim();
-const CONFIGURED_TOKEN = String(process.env.META_PAGE_ACCESS_TOKEN || "").trim();
+const TOKEN_CANDIDATES = [
+  ["META_PAGE_ACCESS_TOKEN_NEXT", process.env.META_PAGE_ACCESS_TOKEN_NEXT],
+  ["META_PAGE_ACCESS_TOKEN", process.env.META_PAGE_ACCESS_TOKEN],
+  ["META_USER_ACCESS_TOKEN", process.env.META_USER_ACCESS_TOKEN],
+  ["FACEBOOK_PAGE_ACCESS_TOKEN", process.env.FACEBOOK_PAGE_ACCESS_TOKEN],
+  ["FACEBOOK_USER_ACCESS_TOKEN", process.env.FACEBOOK_USER_ACCESS_TOKEN],
+]
+  .map(([name, value]) => ({ name, token: String(value || "").trim() }))
+  .filter((item, index, rows) => item.token && rows.findIndex((row) => row.token === item.token) === index);
 const originalFetch = global.fetch;
 let cachedPageAuth = null;
 let resolving = null;
+let lastHealth = {
+  checkedAt: "",
+  configured: Boolean(PAGE_ID && TOKEN_CANDIDATES.length),
+  usable: null,
+  expired: false,
+  source: "",
+  pageId: PAGE_ID,
+  pageName: "",
+  error: "",
+};
 
 function graphUrl(pathname, params = {}) {
   const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${pathname.replace(/^\//, "")}`);
@@ -17,6 +35,16 @@ async function readJson(response) {
   const text = await response.text();
   try { return JSON.parse(text); }
   catch { return { error: { message: text || `HTTP ${response.status}` } }; }
+}
+
+function tokenExpired(message) {
+  return /session has expired|access token has expired|token.*expired|error validating access token/i.test(String(message || ""));
+}
+
+function sanitizeError(message) {
+  return String(message || "")
+    .replace(/access token\s+[A-Za-z0-9._-]+/gi, "access token")
+    .slice(0, 1200);
 }
 
 async function graphGet(pathname, token, params = {}) {
@@ -51,44 +79,79 @@ async function resolveFromAccounts(userToken) {
   return null;
 }
 
-async function resolveFacebookPageAuth() {
+async function resolveCandidate(candidate) {
+  const identity = await graphGet("me", candidate.token, { fields: "id,name" });
+  if (String(identity.id) === PAGE_ID) {
+    return {
+      pageId: PAGE_ID,
+      pageName: identity.name || "Facebook 粉絲專頁",
+      token: candidate.token,
+      source: candidate.name,
+      tasks: [],
+    };
+  }
+
+  const pageAuth = await resolveFromAccounts(candidate.token);
+  if (!pageAuth) {
+    throw new Error(`Token 不是指定粉絲專頁的 Page Token，且管理清單中找不到 META_PAGE_ID=${PAGE_ID}`);
+  }
+  if (pageAuth.tasks.length && !pageAuth.tasks.includes("CREATE_CONTENT") && !pageAuth.tasks.includes("MANAGE")) {
+    throw new Error(`目前帳號對「${pageAuth.pageName}」沒有建立內容權限`);
+  }
+  return { ...pageAuth, source: candidate.name };
+}
+
+async function resolveFacebookPageAuth(options = {}) {
+  const force = options === true || options?.force === true;
+  if (force) cachedPageAuth = null;
   if (cachedPageAuth) return cachedPageAuth;
   if (resolving) return resolving;
-  if (!PAGE_ID || !CONFIGURED_TOKEN) throw new Error("請先在 Render 設定 META_PAGE_ID 與 META_PAGE_ACCESS_TOKEN");
+  if (!PAGE_ID || !TOKEN_CANDIDATES.length) throw new Error("請先在 Render 設定 META_PAGE_ID 與 META_PAGE_ACCESS_TOKEN");
 
   resolving = (async () => {
-    let identity;
-    try {
-      identity = await graphGet("me", CONFIGURED_TOKEN, { fields: "id,name" });
-    } catch (error) {
-      throw new Error(`Facebook Token 無法使用：${error.message}`);
+    const failures = [];
+    for (const candidate of TOKEN_CANDIDATES) {
+      try {
+        const pageAuth = await resolveCandidate(candidate);
+        cachedPageAuth = pageAuth;
+        lastHealth = {
+          checkedAt: new Date().toISOString(),
+          configured: true,
+          usable: true,
+          expired: false,
+          source: pageAuth.source,
+          pageId: pageAuth.pageId,
+          pageName: pageAuth.pageName,
+          error: "",
+        };
+        return cachedPageAuth;
+      } catch (error) {
+        failures.push(`${candidate.name}：${sanitizeError(error.message)}`);
+      }
     }
-
-    if (String(identity.id) === PAGE_ID) {
-      cachedPageAuth = { pageId: PAGE_ID, pageName: identity.name || "Facebook 粉絲專頁", token: CONFIGURED_TOKEN, source: "page-token", tasks: [] };
-      return cachedPageAuth;
-    }
-
-    let pageAuth;
-    try {
-      pageAuth = await resolveFromAccounts(CONFIGURED_TOKEN);
-    } catch (error) {
-      throw new Error(`目前是個人 Token，但無法取得粉絲專頁權限：${error.message}。請重新產生包含 pages_show_list、pages_read_engagement、pages_manage_posts 的 Token。`);
-    }
-
-    if (!pageAuth) {
-      throw new Error(`目前 META_PAGE_ACCESS_TOKEN 不是仙加味粉絲專頁的 Page Token，且在此帳號管理的粉專中找不到 META_PAGE_ID=${PAGE_ID}。請確認粉專 ID，並使用具 pages_show_list、pages_read_engagement、pages_manage_posts 權限的帳號重新取得 Token。`);
-    }
-
-    if (pageAuth.tasks.length && !pageAuth.tasks.includes("CREATE_CONTENT") && !pageAuth.tasks.includes("MANAGE")) {
-      throw new Error(`目前帳號對「${pageAuth.pageName}」沒有建立內容權限，請在粉絲專頁存取權限中授予可建立內容的完整控制權。`);
-    }
-
-    cachedPageAuth = pageAuth;
-    return cachedPageAuth;
+    const message = failures.join("｜") || "Facebook Token 無法使用";
+    lastHealth = {
+      checkedAt: new Date().toISOString(),
+      configured: true,
+      usable: false,
+      expired: tokenExpired(message),
+      source: "",
+      pageId: PAGE_ID,
+      pageName: "",
+      error: message,
+    };
+    throw new Error(`Facebook Token 無法使用：${message}`);
   })().finally(() => { resolving = null; });
 
   return resolving;
+}
+
+async function facebookAuthHealth(options = {}) {
+  const force = options === true || options?.force === true;
+  try {
+    await resolveFacebookPageAuth({ force });
+  } catch {}
+  return { ...lastHealth, graphVersion: GRAPH_VERSION };
 }
 
 function isFacebookPublishRequest(input, init = {}) {
@@ -118,13 +181,27 @@ function replaceAccessToken(body, token) {
 
 function friendlyFacebookError(message) {
   const text = String(message || "");
+  if (tokenExpired(text)) {
+    cachedPageAuth = null;
+    lastHealth = {
+      checkedAt: new Date().toISOString(),
+      configured: true,
+      usable: false,
+      expired: true,
+      source: "",
+      pageId: PAGE_ID,
+      pageName: "",
+      error: sanitizeError(text),
+    };
+    return "Facebook Page Token 已過期。Instagram 已成功的貼文不會重複發布；更新 Render 的 META_PAGE_ACCESS_TOKEN 後，再按「重試失敗平台」。";
+  }
   if (/publish_actions/i.test(text)) {
     return "Facebook 使用到個人 Token 或錯誤的粉絲專頁 ID。系統已嘗試轉換 Page Token，但目前帳號缺少 pages_show_list／pages_manage_posts，或 META_PAGE_ID 不是仙加味粉專 ID。";
   }
   if (/permissions?|OAuthException|access token/i.test(text)) {
-    return `Facebook 權限或 Token 錯誤：${text}`;
+    return `Facebook 權限或 Token 錯誤：${sanitizeError(text)}`;
   }
-  return text;
+  return sanitizeError(text);
 }
 
 if (typeof originalFetch === "function" && !global.__xjwFacebookPageTokenBridge) {
@@ -145,7 +222,7 @@ if (typeof originalFetch === "function" && !global.__xjwFacebookPageTokenBridge)
     const friendly = friendlyFacebookError(originalMessage);
     if (friendly === originalMessage) return response;
 
-    return new Response(JSON.stringify({ error: { ...(data.error || {}), message: friendly, original_message: originalMessage } }), {
+    return new Response(JSON.stringify({ error: { ...(data.error || {}), message: friendly, original_message: sanitizeError(originalMessage) } }), {
       status: response.status,
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
@@ -153,9 +230,14 @@ if (typeof originalFetch === "function" && !global.__xjwFacebookPageTokenBridge)
 }
 
 module.exports = {
+  GRAPH_VERSION,
+  PAGE_ID,
+  TOKEN_CANDIDATES,
   graphUrl,
   resolveFacebookPageAuth,
+  facebookAuthHealth,
   isFacebookPublishRequest,
   replaceAccessToken,
+  tokenExpired,
   friendlyFacebookError,
 };
