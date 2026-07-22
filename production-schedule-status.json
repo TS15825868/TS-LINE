@@ -1,7 +1,7 @@
 {
   "ok": true,
   "version": "2026-07-22-v2",
-  "checkedAt": "2026-07-22T09:23:15.944Z",
+  "checkedAt": "2026-07-22T09:23:42.025Z",
   "repairVersion": "2026-07-22-v2",
   "rule": {
     "regularCare": "每週三 19:30",
@@ -156,6 +156,6 @@
       "publishedAt": ""
     }
   ],
-  "verifiedCommit": "bd84fd27a1c46c12d102abd1e7aa94be104cf2d2",
+  "verifiedCommit": "fead75271afcaa8d214fc50c42ad2f2ad207abaa",
   "productionUrl": "https://ts-line.onrender.com/social/schedule-status"
 }
