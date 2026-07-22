@@ -19,9 +19,13 @@ on:
       - "social-schedule-policy.test.js"
       - "social-manual-schedule-override.js"
       - "social-review-center.js"
+      - "facebook-page-token-bridge.js"
+      - "facebook-token-health-route.js"
       - "internal-app-client-fix.js"
       - "internal-app-form-controller.js"
       - "internal-app-social-filter.js"
+      - "internal-app-social-retry.js"
+      - "internal-app-facebook-health.js"
       - "internal-entry.js"
       - "tools/release_check.js"
       - "production-deploy-request.json"
@@ -79,10 +83,13 @@ jobs:
 
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/" -o /tmp/xjw-production/root.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/social/healthz" -o /tmp/xjw-production/social.json
+          curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/social/facebook-healthz?refresh=1" -o /tmp/xjw-production/facebook.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/xjw-production/internal.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/db-healthz" -o /tmp/xjw-production/database.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-social-filter.js?t=$(date +%s)" -o /tmp/xjw-production/social-ui.js
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-form-controller.js?t=$(date +%s)" -o /tmp/xjw-production/social-form.js
+          curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-facebook-health.js?t=$(date +%s)" -o /tmp/xjw-production/facebook-ui.js
+          curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/app-shell.js?t=$(date +%s)" -o /tmp/xjw-production/app-shell.js
 
           node - <<'NODE'
           const fs = require('fs');
@@ -90,16 +97,21 @@ jobs:
           const root = read('root');
           const health = read('health');
           const social = read('social');
+          const facebook = read('facebook');
           const internal = read('internal');
           const database = read('database');
           const socialUi = fs.readFileSync('/tmp/xjw-production/social-ui.js', 'utf8');
           const socialForm = fs.readFileSync('/tmp/xjw-production/social-form.js', 'utf8');
+          const facebookUi = fs.readFileSync('/tmp/xjw-production/facebook-ui.js', 'utf8');
           if (root.ok !== true || root.service !== '仙加味 LINE OA') throw new Error('LINE OA root failed');
           if (health.ok !== true || health.version !== 'v401.6' || health.productCount !== 6) throw new Error('LINE OA health failed');
           if (social.ok !== true) throw new Error('Social service health failed');
           if (Number(social.postCount) !== 11) throw new Error(`Social post count must be 11, received ${social.postCount}`);
           if (social.instagramConfigured !== true) throw new Error('Instagram is not configured');
-          if (social.facebookConfigured !== true) throw new Error('Facebook is not configured');
+          if (social.facebookConfigured !== true) throw new Error('Facebook environment variables are not configured');
+          if (facebook.service !== '仙加味 Facebook 發布連線') throw new Error('Facebook token health endpoint failed');
+          if (typeof facebook.configured !== 'boolean') throw new Error('Facebook token configured state missing');
+          if (![true, false, null].includes(facebook.usable)) throw new Error('Facebook token usable state invalid');
           if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal App health failed');
           if (database.ok !== true || database.storage !== 'supabase') throw new Error('Supabase production storage is not healthy');
           for (const text of [
@@ -121,6 +133,15 @@ jobs:
             if (!socialForm.includes(text)) throw new Error(`Internal social form missing: ${text}`);
           }
           if (socialForm.includes('Date.now() + 24 * 60 * 60 * 1000')) throw new Error('Internal social form still defaults to arbitrary tomorrow time');
+          for (const text of [
+            '20260722-facebook-health-2',
+            'FB Token 已過期',
+            'Instagram 已成功的貼文不會重複發布',
+            'META_PAGE_ACCESS_TOKEN',
+            '待補發',
+          ]) {
+            if (!facebookUi.includes(text)) throw new Error(`Facebook health UI missing: ${text}`);
+          }
           const status = {
             ok: true,
             checkedAt: new Date().toISOString(),
@@ -130,12 +151,20 @@ jobs:
             productCount: health.productCount,
             socialVersion: social.socialVersion || '',
             socialPostCount: social.postCount,
-            internalRuntimeVersion: '20260722-social-5',
+            internalRuntimeVersion: '20260722-social-6',
             socialUiVersion: '20260722-social-review-3',
             socialFormVersion: '20260722-form-stable-3',
+            facebookHealthUiVersion: '20260722-facebook-health-2',
             socialUiScheduleRule: '週三19:30關心、週五20:00產品、氣候10:00例外加發',
             instagramConfigured: social.instagramConfigured,
             facebookConfigured: social.facebookConfigured,
+            facebookTokenConfigured: facebook.configured,
+            facebookTokenUsable: facebook.usable,
+            facebookTokenExpired: facebook.expired === true,
+            facebookTokenSource: facebook.source || '',
+            facebookTokenCheckedAt: facebook.checkedAt || '',
+            facebookTokenError: facebook.error || '',
+            warning: facebook.expired === true ? 'facebook-token-expired' : (facebook.usable === false ? 'facebook-token-unusable' : ''),
             internalApp: internal.app,
             storage: database.storage,
           };
