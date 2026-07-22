@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const RECOMMENDED = Object.freeze({
   regularCare: "每週三 19:30（Asia/Taipei）",
   product: "每週五 20:00（Asia/Taipei）",
@@ -20,9 +20,9 @@ function transformPosts(source) {
 
 function transformBatch(source) {
   return String(source)
-    .replace('const VERSION = "4.0.0";', 'const VERSION = "4.1.0";')
-    .replace('const CONTENT_VERSION = "approved-complete-graphics-v4";', 'const CONTENT_VERSION = "approved-complete-graphics-v5-recommended-time";')
-    .replace('const CAMPAIGN_ID = "xjw-social-final-10-v4";', 'const CAMPAIGN_ID = "xjw-social-final-10-v5";')
+    .replace('const VERSION = "4.0.0";', 'const VERSION = "4.2.0";')
+    .replace('const CONTENT_VERSION = "approved-complete-graphics-v4";', 'const CONTENT_VERSION = "approved-complete-graphics-v6-drink-split";')
+    .replace('const CAMPAIGN_ID = "xjw-social-final-10-v4";', 'const CAMPAIGN_ID = "xjw-social-final-11-v6";')
     .replace(
       /\n\s*const replaceableCare = weekPosts\.find\([\s\S]*?\n\s*}\s*else if \(weekPosts\.length >= 2\) \{[\s\S]*?\n\s*}\n\n\s*const target =/,
       '\n\n  // 氣候貼文是例外加發，不取消固定貼文，也不占每週固定兩篇。\n  const target ='
