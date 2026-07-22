@@ -1,0 +1,73 @@
+commit=abbf26eba49ce696263c28134e51aecde7cdffd8
+recorded_at=2026-07-22T04:05:36Z
+
+
+> xianjiawei-lineoa@5.9.2 test
+> node tools/release_check.js && node test.js && node catalog.test.js && node security.test.js && node function.test.js && node image-policy.test.js && node internal-app.test.js && node internal-app-pro.test.js && node facebook-page-token-bridge.test.js && node social-platform-status.test.js && node social-title-normalizer.test.js && node social-sequence-reorder.test.js && node social-official-rebuild.test.js && node social-approved-zip-import.test.js && node social-product-content-rebuild.test.js && node internal-social-review-safety.test.js && node internal-app-mobile.test.js && node internal-order-pricing.test.js && node internal-app-client-fix.test.js && node internal-app-button-contract.test.js && node internal-social-upload.test.js && node internal-app-upload-controller.test.js && node internal-app-form-controller.test.js && node internal-line-order-sync.test.js && node internal-reservation-rebuild.test.js && node line-order-cart.test.js && node internal-operations-suite.test.js && node supabase-state-bridge.test.js && node persistence-auto-save.test.js && node social-schedule-policy.test.js && node social-first-batch-202607.test.js && node social-first-batch-assets.test.js && node social-approved-mascot-assets.test.js && node social-approved-mascot-integration.test.js && node social-official-asset-reconciler.test.js && node social-manual-schedule-override.test.js && node social-automation-engine.test.js && node social-approved-originals.test.js && node social-final-reconcile.test.js
+
+PASS 仙加味正式版 5.9.2：13 張正式核准素材、10 篇固定排程（關心 10:00／產品 20:00）、3 張氣候條件同篇替換、保留已發布紀錄並清除舊重複未發布資料。
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS LINE OA v401.6: products, prices, cart, cards, usage, classics and referral
+PASS LINE OA catalog 408.7: website fields, sales fields, assets and combo wording
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS security and UX v401.6
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS full LINE OA function matrix v401.6
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS LINE OA image policy: real product photos retained; legacy stitched mascot images blocked until approved independent artwork is installed
+PASS internal management app v2 storage, security, social and metrics
+PASS internal management app v2 helpers
+PASS Facebook user token to Page token resolution and friendly permission errors
+PASS social platform status reconciliation after successful publish
+PASS social post titles and captions omit internal sequence numbers while IDs, images and status remain unchanged
+PASS reorder all unpublished mascot posts into weekly care/product pairs; preserve published history and two posts per week
+PASS preserve published history, clear wrong unpublished posts, and rebuild 20 approved ZIP originals as pending review
+PASS exact 20 approved ZIP originals and executable internal App import button
+PASS 20篇正式產品文案安全檢查；舊自動產品排程保持停用，保留已發布紀錄與正式小老闆待審內容。
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+internal social review safety tests passed
+PASS complete mobile navigation, safe-area spacing and non-blocking connection status
+PASS order unit price, quantity, subtotal and automatic total normalization
+PASS stable internal app shell, core, upload, forms, itemized order entry, social retry, current review filters and postboot
+PASS all internal app button contracts including itemized orders, stock linking, pending delivery, refresh and current social review filters
+PASS internal social image upload helpers
+PASS direct social upload controller
+PASS Safari-safe unified internal app forms
+PASS priced order totals, payment balance, reservation, pending delivery, shipment and cancellation lifecycle
+PASS reserved stock rebuild
+PASS LINE combo inventory expansion
+PASS complete internal operations analytics
+PASS Supabase persistence bridge, schema, fallback and project routing
+PASS automatic persistence installation and atomic-write interception
+social schedule time policy tests passed
+First social batch v2 reconciled {
+  campaignId: 'xjw-social-first-batch-202607-v2',
+  changed: 12,
+  total: 10,
+  care: 5,
+  other: 5,
+  firstAt: '2026-07-24T12:00:00.000Z',
+  lastAt: '2026-08-26T02:00:00.000Z'
+}
+First social batch v2 reconciled {
+  campaignId: 'xjw-social-first-batch-202607-v2',
+  changed: 0,
+  total: 10,
+  care: 5,
+  other: 5,
+  firstAt: '2026-07-24T12:00:00.000Z',
+  lastAt: '2026-08-26T02:00:00.000Z'
+}
+PASS first batch v2 creates 10 drafts: 5 themed care posts at 10:00 and 5 official-product-DM posts at 20:00
+Error: Input file has corrupt header: VipsJpeg: Corrupt JPEG data: 16 extraneous bytes before marker 0xc4
+VipsJpeg: Invalid JPEG file structure: SOS before SOF
+    at Sharp.toBuffer (/home/runner/work/TS-LINE/TS-LINE/node_modules/sharp/lib/output.js:163:17)
+    at Object.imageBuffer (/home/runner/work/TS-LINE/TS-LINE/social-first-batch-assets.js:71:10)
+    at /home/runner/work/TS-LINE/TS-LINE/social-first-batch-assets.test.js:11:33
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-first-batch-assets.test.js:20:3)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object.<anonymous> (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
