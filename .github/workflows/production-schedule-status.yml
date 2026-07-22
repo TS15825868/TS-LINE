@@ -6,11 +6,14 @@ on:
     branches: [main]
     paths:
       - "package.json"
+      - "social-recommended-schedule.js"
       - "social-final-posts.js"
       - "social-final-approved-batch.js"
       - "social-schedule-repair-20260722.js"
       - "social-schedule-repair-20260722.test.js"
       - "social-schedule-policy.js"
+      - "social-schedule-policy.test.js"
+      - "tools/release_check.js"
       - ".github/workflows/production-schedule-status.yml"
 
 permissions:
@@ -47,11 +50,17 @@ jobs:
           const fs = require('fs');
           const data = JSON.parse(fs.readFileSync('/tmp/production-schedule.json', 'utf8'));
           if (data.ok !== true) process.exit(1);
-          if (data.repairVersion !== '2026-07-22-v1') process.exit(1);
+          if (data.repairVersion !== '2026-07-22-v2') process.exit(1);
           if (data.canonicalCount !== 10) process.exit(1);
           if (!Array.isArray(data.issues) || data.issues.length !== 0) process.exit(1);
           if (!Array.isArray(data.posts) || data.posts.length !== 10) process.exit(1);
           if (data.posts.some((post) => post.manualScheduleOverride || post.manualContentOverride)) process.exit(1);
+          const work = data.posts.find((post) => post.id === 'first-batch-v2-care-work-rest-20260729');
+          const family = data.posts.find((post) => post.id === 'first-batch-v2-care-family-20260805');
+          if (!work || work.scheduledAt !== '2026-07-22T11:30:00.000Z' || work.status !== 'approved') process.exit(1);
+          if (!family || family.scheduledAt !== '2026-07-29T11:30:00.000Z') process.exit(1);
+          const weather = data.posts.filter((post) => post.oneTimeWeatherPost === true && post.status === 'approved');
+          if (weather.some((post) => !String(post.scheduledAt).endsWith('T02:00:00.000Z'))) process.exit(1);
           NODE
               then
                 success=1
