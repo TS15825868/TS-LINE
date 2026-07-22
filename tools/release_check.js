@@ -11,6 +11,8 @@ const data = JSON.parse(read("data.json"));
 const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 const server = read("server.js");
+const clientFix = read("internal-app-client-fix.js");
+const socialFilter = read("internal-app-social-filter.js");
 require("../social-recommended-schedule");
 const schedulePolicy = require("../social-schedule-policy");
 const batch = require("../social-final-approved-batch");
@@ -23,6 +25,8 @@ function verifyRequiredFiles() {
   for (const file of [
     "internal-entry.js",
     "internal-app.js",
+    "internal-app-client-fix.js",
+    "internal-app-social-filter.js",
     "social-server.js",
     "social-recommended-schedule.js",
     "social-final-posts.js",
@@ -71,14 +75,40 @@ function verifyCatalogAndRuntime() {
     "social-schedule-policy.js",
     "social-manual-schedule-override.js",
     "social-review-center.js",
+    "internal-app-client-fix.js",
+    "internal-app-social-filter.js",
     "internal-entry.js",
   ]) assert.ok(start.includes(token), `正式啟動程式缺少：${token}`);
   assert.ok(
     start.indexOf("social-recommended-schedule.js") < start.indexOf("social-final-approved-batch.js"),
     "建議排程模組必須先於正式貼文模組載入"
   );
+  assert.ok(String(pkg.scripts?.test || "").includes("tools/release_check.js"), "npm test 必須包含完整上線檢查");
   if (/channelAccessToken\s*:\s*["'][^"']{20,}/.test(server)) fail("server.js 疑似含硬編碼 access token");
   if (/channelSecret\s*:\s*["'][^"']{10,}/.test(server)) fail("server.js 疑似含硬編碼 channel secret");
+}
+
+function verifyInternalAppScheduleUi() {
+  assert.ok(clientFix.includes('RUNTIME_VERSION = "20260722-social-4"'), "內部 App 快取版本尚未更新");
+  assert.ok(clientFix.includes("/internal/app-social-filter.js"), "內部 App 未載入社群排程介面");
+  assert.ok(socialFilter.includes('VERSION = "20260722-social-review-3"'), "社群排程介面版本不正確");
+  for (const text of [
+    "週三 19:30 關心文",
+    "週五 20:00 產品文",
+    "氣候文符合萬華實際天氣時",
+    "不占固定篇數",
+    "固定排程",
+    "氣候例外",
+    "氣候待命",
+    "排程檢查正常",
+  ]) {
+    assert.ok(socialFilter.includes(text), `內部 App 排程介面缺少：${text}`);
+  }
+  assert.ok(!socialFilter.includes("週三、週五 20:00"), "內部 App 仍含舊的週三、週五20:00說明");
+  assert.ok(!socialFilter.includes("5 篇日期不合規"), "內部 App 仍寫死舊的日期錯誤數量");
+  assert.ok(socialFilter.includes('parts.weekday === "Wed" && parts.hour === "19" && parts.minute === "30"'), "週三19:30驗證未實作");
+  assert.ok(socialFilter.includes('parts.weekday === "Fri" && parts.hour === "20" && parts.minute === "00"'), "週五20:00驗證未實作");
+  assert.ok(socialFilter.includes('parts.hour === "10" && parts.minute === "00"'), "氣候文10:00驗證未實作");
 }
 
 function verifySchedule() {
@@ -148,11 +178,12 @@ function verifyCopySafety() {
 try {
   verifyRequiredFiles();
   verifyCatalogAndRuntime();
+  verifyInternalAppScheduleUi();
   verifySchedule();
   verifyWeatherIsExtra();
   verifyCopySafety();
   console.log(
-    `PASS 仙加味正式版 ${pkg.version}：龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發。`
+    `PASS 仙加味正式版 ${pkg.version}：內部App摘要與驗證已同步；龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發。`
   );
 } catch (error) {
   console.error(`仙加味正式上線檢查失敗：${error.message}`);
