@@ -3,8 +3,9 @@
 const fs = require("fs");
 const path = require("path");
 const { app, VERSION } = require("./server");
+const publishGuard = require("./social-publish-guard");
 
-const SOCIAL_VERSION = "1.2.0";
+const SOCIAL_VERSION = "1.2.1";
 const GRAPH_VERSION = String(process.env.META_GRAPH_VERSION || "v25.0").replace(/^\/?/, "");
 const IG_USER_ID = String(process.env.INSTAGRAM_USER_ID || "").trim();
 const IG_TOKEN = String(process.env.INSTAGRAM_ACCESS_TOKEN || "").trim();
@@ -198,10 +199,15 @@ async function publishFacebook(post) {
   );
 }
 
-async function execute(postId) {
+function mergePlatformStatus(post = {}, change = {}) {
+  return { ...(post.platformStatus || {}), ...change };
+}
+
+async function executeOnce(postId) {
   const current = readStore().posts.find((post) => post.id === postId);
   if (!current) return null;
-  if (!["approved", "failed", "partial"].includes(current.status)) {
+  if (!['approved', 'failed', 'partial'].includes(current.status)) {
+    if (current.status === "publishing") return current;
     return updatePost(postId, {
       status: "paused",
       assetLocked: false,
@@ -218,30 +224,97 @@ async function execute(postId) {
     });
   }
 
-  let post = updatePost(postId, { status: "publishing", lastError: "" });
+  const attemptId = `${Date.now()}-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  let post = updatePost(postId, {
+    status: "publishing",
+    lastError: "",
+    publishAttemptId: attemptId,
+    publishAttemptStartedAt: now(),
+  });
   const result = { ...(post.result || {}) };
+  let platformStatus = { ...(post.platformStatus || {}) };
   const errors = [];
-  if (post.publishInstagram && !result.instagram) {
+
+  if (post.publishInstagram && !publishGuard.platformDone({ ...post, result, platformStatus }, "instagram")) {
+    platformStatus = mergePlatformStatus(post, { ...platformStatus, instagram: "發布中" });
+    post = updatePost(postId, {
+      platformStatus,
+      instagramPublishAttemptAt: now(),
+      publishAttemptId: attemptId,
+    });
     try {
       result.instagram = await publishInstagram(post);
+      platformStatus = mergePlatformStatus(post, { instagram: "成功" });
+      post = updatePost(postId, {
+        result: { ...(post.result || {}), instagram: result.instagram },
+        platformStatus,
+        instagramPublishedAt: now(),
+        status: "publishing",
+        lastError: "",
+        publishAttemptId: attemptId,
+      });
     } catch (error) {
+      platformStatus = mergePlatformStatus(post, { instagram: "失敗" });
       errors.push(`Instagram：${error.message}`);
+      post = updatePost(postId, {
+        result: { ...(post.result || {}), ...result },
+        platformStatus,
+        lastError: errors.join("｜"),
+        publishAttemptId: attemptId,
+      });
     }
   }
-  if (post.publishFacebook && !result.facebook) {
+
+  if (post.publishFacebook && !publishGuard.platformDone({ ...post, result, platformStatus }, "facebook")) {
+    platformStatus = mergePlatformStatus(post, { ...platformStatus, facebook: "發布中" });
+    post = updatePost(postId, {
+      platformStatus,
+      facebookPublishAttemptAt: now(),
+      publishAttemptId: attemptId,
+    });
     try {
       result.facebook = await publishFacebook(post);
+      platformStatus = mergePlatformStatus(post, { facebook: "成功" });
+      post = updatePost(postId, {
+        result: { ...(post.result || {}), facebook: result.facebook },
+        platformStatus,
+        facebookPublishedAt: now(),
+        status: "publishing",
+        lastError: errors.join("｜"),
+        publishAttemptId: attemptId,
+      });
     } catch (error) {
+      platformStatus = mergePlatformStatus(post, { facebook: "失敗" });
       errors.push(`Facebook：${error.message}`);
+      post = updatePost(postId, {
+        result: { ...(post.result || {}), ...result },
+        platformStatus,
+        lastError: errors.join("｜"),
+        publishAttemptId: attemptId,
+      });
     }
   }
-  post = updatePost(postId, {
-    result,
-    status: errors.length ? "failed" : "published",
+
+  post = readStore().posts.find((item) => item.id === postId) || post;
+  const finalPost = {
+    ...post,
+    result: { ...(post.result || {}), ...result },
+    platformStatus: { ...(post.platformStatus || {}), ...platformStatus },
+  };
+  const outcome = publishGuard.publishOutcome(finalPost);
+  return updatePost(postId, {
+    result: finalPost.result,
+    platformStatus: finalPost.platformStatus,
+    status: outcome.status,
     lastError: errors.join("｜"),
-    publishedAt: errors.length ? "" : now(),
+    publishedAt: outcome.allDone ? (post.publishedAt || now()) : "",
+    publishAttemptCompletedAt: now(),
+    publishAttemptId: attemptId,
   });
-  return post;
+}
+
+function execute(postId) {
+  return publishGuard.withPostLock(postId, () => executeOnce(postId));
 }
 
 async function scheduler() {
@@ -287,6 +360,8 @@ function healthPayload() {
     persistentStoreConfigured: true,
     graphVersion: GRAPH_VERSION,
     schedulerRunning: running,
+    publishGuardVersion: publishGuard.VERSION,
+    publishGuardInFlight: publishGuard.inFlightCount(),
     postCount: readStore().posts.length,
     scheduleRule: "每週三、週五 20:00（Asia/Taipei）",
     assetLockRequired: true,
@@ -316,6 +391,7 @@ module.exports = {
   publishInstagram,
   publishFacebook,
   execute,
+  executeOnce,
   scheduler,
   healthPayload,
   readStore,
