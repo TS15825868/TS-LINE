@@ -1,14 +1,13 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260722-facebook-health-1";
+  const VERSION = "20260722-facebook-health-2";
   let health = null;
   let timer = null;
 
   async function loadHealth(force = false) {
-    const response = await fetch(`/social/facebook-healthz${force ? "?refresh=1" : ""}&t=${Date.now()}`.replace("z&", "z?"), {
-      cache: "no-store",
-    });
+    const separator = force ? "?refresh=1&" : "?";
+    const response = await fetch(`/social/facebook-healthz${separator}t=${Date.now()}`, { cache: "no-store" });
     const data = await response.json().catch(() => ({}));
     health = data;
     apply();
@@ -22,6 +21,10 @@
     });
   }
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
   function applyConfig() {
     const node = document.getElementById("socialConfig");
     if (!node) return;
@@ -32,9 +35,10 @@
     else if (health?.usable === true) fb = "FB 已連線";
     else if (health?.configured === false) fb = "FB 未設定";
     else if (health?.usable === false) fb = "FB 連線異常";
-    node.textContent = `${ig}／${fb}`;
-    node.style.color = health?.expired || health?.usable === false ? "#8d2024" : "";
-    node.style.fontWeight = health?.expired || health?.usable === false ? "800" : "";
+    setText(node, `${ig}／${fb}`);
+    const warning = health?.expired || health?.usable === false;
+    node.style.color = warning ? "#8d2024" : "";
+    node.style.fontWeight = warning ? "800" : "";
   }
 
   function applySummary() {
@@ -48,28 +52,22 @@
       warning.style.margin = "0 0 9px";
       summary.insertAdjacentElement("afterend", warning);
     }
+    let message = "";
     if (health?.expired) {
-      warning.hidden = false;
-      warning.textContent = "Facebook Page Token 已過期。Instagram 已成功的貼文不會重複發布；更新 Render 的 META_PAGE_ACCESS_TOKEN 後，再按「重試失敗平台」。";
+      message = "Facebook Page Token 已過期。Instagram 已成功的貼文不會重複發布；更新 Render 的 META_PAGE_ACCESS_TOKEN 後，再按「重試失敗平台」。";
     } else if (health?.usable === false) {
-      warning.hidden = false;
-      warning.textContent = `Facebook 連線異常：${health.error || "請檢查 Page Token 與粉絲專頁權限。"}`;
-    } else {
-      warning.hidden = true;
-      warning.textContent = "";
+      message = `Facebook 連線異常：${health.error || "請檢查 Page Token 與粉絲專頁權限。"}`;
     }
+    warning.hidden = !message;
+    setText(warning, message);
   }
 
   function applyFailureFilter() {
     const button = document.querySelector('[data-social-filter="failed"]');
     if (!button) return;
-    const count = button.querySelector('[data-filter-count="failed"]')?.textContent || "";
-    button.childNodes.forEach((node) => {
-      if (node.nodeType === Node.TEXT_NODE) node.textContent = `待補發 `;
-    });
-    if (!button.textContent.includes("待補發")) button.insertAdjacentText("afterbegin", "待補發 ");
-    const countNode = button.querySelector('[data-filter-count="failed"]');
-    if (countNode) countNode.textContent = count;
+    const textNode = [...button.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
+    if (textNode && textNode.textContent !== "待補發 ") textNode.textContent = "待補發 ";
+    if (!textNode && !button.textContent.includes("待補發")) button.insertAdjacentText("afterbegin", "待補發 ");
   }
 
   function applyRetryButtons() {
@@ -79,7 +77,7 @@
       if (!button) return;
       button.disabled = expired;
       button.title = expired ? "先更新 Facebook Page Token，再重新整理後補發 Facebook" : "";
-      button.textContent = expired ? "Facebook Token 已過期" : "重試失敗平台";
+      setText(button, expired ? "Facebook Token 已過期" : "重試失敗平台");
     });
   }
 
