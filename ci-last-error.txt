@@ -1,5 +1,5 @@
-commit=6e5f8ad3b180ba0009aa06478324933622ce0a8e
-recorded_at=2026-07-22T13:10:08Z
+commit=019bb8927fbe78d80b381a0102f9fe5cc2854d47
+recorded_at=2026-07-22T13:10:34Z
 
 
 > xianjiawei-lineoa@6.0.2 test
