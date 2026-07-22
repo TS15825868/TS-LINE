@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260715-form-stable-2";
+  const VERSION = "20260722-form-stable-3";
   const HEADERS = {
     "Content-Type": "application/json",
     "X-XJW-Requested-With": "internal-app-v2",
@@ -36,10 +36,36 @@
     if (note) note.textContent = "";
   }
 
+  function taipeiParts(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date).filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  }
+
   function nextSocialTime() {
-    const date = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-    return date.toISOString().slice(0, 16);
+    const earliest = Date.now() + 60 * 60 * 1000;
+    const parts = taipeiParts(earliest);
+    if (!parts) return "";
+    for (let offset = 0; offset < 21; offset += 1) {
+      const localDate = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + offset));
+      const day = localDate.getUTCDay();
+      if (day !== 3 && day !== 5) continue;
+      const hour = day === 3 ? 19 : 20;
+      const minute = day === 3 ? 30 : 0;
+      const utcCandidate = Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), hour - 8, minute, 0);
+      if (utcCandidate < earliest) continue;
+      return `${localDate.getUTCFullYear()}-${String(localDate.getUTCMonth() + 1).padStart(2, "0")}-${String(localDate.getUTCDate()).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    }
+    return "";
   }
 
   function resetSocial(form) {
@@ -184,5 +210,5 @@
       });
   }, true);
 
-  window.xjwFormController = { version: VERSION, resetSocial };
+  window.xjwFormController = { version: VERSION, resetSocial, nextSocialTime };
 })();
