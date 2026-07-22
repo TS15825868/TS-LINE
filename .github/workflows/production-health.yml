@@ -11,6 +11,7 @@ on:
       - "social-server.js"
       - "social-publish-guard.js"
       - "social-publish-guard.test.js"
+      - "social-publication-ledger-backfill.js"
       - "social-recommended-schedule.js"
       - "social-final-posts.js"
       - "social-final-approved-batch.js"
