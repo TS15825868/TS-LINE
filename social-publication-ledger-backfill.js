@@ -3,7 +3,7 @@
 const Module = require("module");
 const guard = require("./social-publish-guard");
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 let installed = false;
 let timer = null;
 
@@ -27,6 +27,11 @@ function backfill(readStore, writeStore) {
   return { version: VERSION, before, after, added: after - before };
 }
 
+function safeBackfill(readStore, writeStore, label) {
+  try { console.log(label, backfill(readStore, writeStore)); }
+  catch (error) { console.error(`${label} failed`, error.message); }
+}
+
 function install() {
   if (installed) return;
   installed = true;
@@ -35,15 +40,19 @@ function install() {
     const loaded = originalLoad.apply(this, arguments);
     if (request === "./social-server" && loaded?.readStore && loaded?.writeStore && !loaded.__xjwPublicationLedgerBackfill) {
       Object.defineProperty(loaded, "__xjwPublicationLedgerBackfill", { value: true });
-      setImmediate(() => {
-        try { console.log("Publication ledger backfill", backfill(loaded.readStore, loaded.writeStore)); }
-        catch (error) { console.error("Publication ledger backfill failed", error.message); }
-      });
+      setImmediate(() => safeBackfill(loaded.readStore, loaded.writeStore, "Publication ledger initial backfill"));
+      for (const delay of [15000, 60000]) {
+        const delayed = setTimeout(
+          () => safeBackfill(loaded.readStore, loaded.writeStore, `Publication ledger delayed backfill ${delay}ms`),
+          delay
+        );
+        delayed.unref?.();
+      }
       if (!timer) {
-        timer = setInterval(() => {
-          try { backfill(loaded.readStore, loaded.writeStore); }
-          catch (error) { console.error("Publication ledger refresh failed", error.message); }
-        }, 30 * 60 * 1000);
+        timer = setInterval(
+          () => safeBackfill(loaded.readStore, loaded.writeStore, "Publication ledger periodic refresh"),
+          30 * 60 * 1000
+        );
         timer.unref?.();
       }
     }
@@ -53,4 +62,4 @@ function install() {
 
 install();
 
-module.exports = { VERSION, countEntries, backfill, install };
+module.exports = { VERSION, countEntries, backfill, safeBackfill, install };
