@@ -14,6 +14,9 @@ const server = read("server.js");
 const clientFix = read("internal-app-client-fix.js");
 const formController = read("internal-app-form-controller.js");
 const socialFilter = read("internal-app-social-filter.js");
+const facebookHealthUi = read("internal-app-facebook-health.js");
+const facebookBridge = read("facebook-page-token-bridge.js");
+const facebookHealthRoute = read("facebook-token-health-route.js");
 require("../social-recommended-schedule");
 const schedulePolicy = require("../social-schedule-policy");
 const batch = require("../social-final-approved-batch");
@@ -29,6 +32,8 @@ function verifyRequiredFiles() {
     "internal-app-client-fix.js",
     "internal-app-form-controller.js",
     "internal-app-social-filter.js",
+    "internal-app-social-retry.js",
+    "internal-app-facebook-health.js",
     "social-server.js",
     "social-recommended-schedule.js",
     "social-final-posts.js",
@@ -43,6 +48,7 @@ function verifyRequiredFiles() {
     "disable-auto-knowledge-cards.js",
     "internal-social-upload-approved-patch.js",
     "facebook-page-token-bridge.js",
+    "facebook-token-health-route.js",
     "line-image-safety.js",
     "supabase-state-bridge.js",
     "persistence-auto-save.js",
@@ -77,14 +83,22 @@ function verifyCatalogAndRuntime() {
     "social-schedule-policy.js",
     "social-manual-schedule-override.js",
     "social-review-center.js",
+    "facebook-page-token-bridge.js",
+    "facebook-token-health-route.js",
     "internal-app-client-fix.js",
     "internal-app-form-controller.js",
     "internal-app-social-filter.js",
+    "internal-app-social-retry.js",
+    "internal-app-facebook-health.js",
     "internal-entry.js",
   ]) assert.ok(start.includes(token), `正式啟動程式缺少：${token}`);
   assert.ok(
     start.indexOf("social-recommended-schedule.js") < start.indexOf("social-final-approved-batch.js"),
     "建議排程模組必須先於正式貼文模組載入"
+  );
+  assert.ok(
+    start.indexOf("facebook-page-token-bridge.js") < start.indexOf("facebook-token-health-route.js"),
+    "Facebook Token 橋接必須先於健康檢查路由載入"
   );
   assert.ok(String(pkg.scripts?.test || "").includes("tools/release_check.js"), "npm test 必須包含完整上線檢查");
   if (/channelAccessToken\s*:\s*["'][^"']{20,}/.test(server)) fail("server.js 疑似含硬編碼 access token");
@@ -92,9 +106,10 @@ function verifyCatalogAndRuntime() {
 }
 
 function verifyInternalAppScheduleUi() {
-  assert.ok(clientFix.includes('RUNTIME_VERSION = "20260722-social-5"'), "內部 App 快取版本尚未更新");
+  assert.ok(clientFix.includes('RUNTIME_VERSION = "20260722-social-6"'), "內部 App 快取版本尚未更新");
   assert.ok(clientFix.includes("/internal/app-form-controller.js"), "內部 App 未載入表單排程控制器");
   assert.ok(clientFix.includes("/internal/app-social-filter.js"), "內部 App 未載入社群排程介面");
+  assert.ok(clientFix.includes("/internal/app-facebook-health.js"), "內部 App 未載入 Facebook Token 健康提示");
   assert.ok(formController.includes('VERSION = "20260722-form-stable-3"'), "社群表單控制器版本不正確");
   assert.ok(formController.includes("day === 3 ? 19 : 20"), "社群表單未區分週三與週五時間");
   assert.ok(formController.includes("day === 3 ? 30 : 0"), "社群表單未設定週三19:30");
@@ -117,6 +132,21 @@ function verifyInternalAppScheduleUi() {
   assert.ok(socialFilter.includes('parts.weekday === "Wed" && parts.hour === "19" && parts.minute === "30"'), "週三19:30驗證未實作");
   assert.ok(socialFilter.includes('parts.weekday === "Fri" && parts.hour === "20" && parts.minute === "00"'), "週五20:00驗證未實作");
   assert.ok(socialFilter.includes('parts.hour === "10" && parts.minute === "00"'), "氣候文10:00驗證未實作");
+}
+
+function verifyFacebookTokenHealth() {
+  assert.ok(facebookHealthUi.includes('VERSION = "20260722-facebook-health-2"'), "Facebook 健康提示版本不正確");
+  assert.ok(facebookHealthUi.includes("FB Token 已過期"), "內部 App 未顯示 Facebook Token 過期狀態");
+  assert.ok(facebookHealthUi.includes("Instagram 已成功的貼文不會重複發布"), "內部 App 未說明 Instagram 不會重複發布");
+  assert.ok(facebookHealthUi.includes("META_PAGE_ACCESS_TOKEN"), "內部 App 未標示需更新的 Render 環境變數");
+  assert.ok(facebookHealthUi.includes("待補發"), "發布失敗篩選尚未改為待補發");
+  assert.ok(facebookHealthUi.includes("button.disabled = expired"), "Token 過期時仍可能重複重試");
+  assert.ok(facebookBridge.includes("META_PAGE_ACCESS_TOKEN_NEXT"), "Facebook Token 不支援無中斷輪替");
+  assert.ok(facebookBridge.includes("META_USER_ACCESS_TOKEN"), "Facebook Token 不支援由使用者 Token 轉換 Page Token");
+  assert.ok(facebookBridge.includes("function tokenExpired"), "Facebook Token 過期辨識未實作");
+  assert.ok(facebookBridge.includes("facebookAuthHealth"), "Facebook Token 健康檢查未實作");
+  assert.ok(facebookHealthRoute.includes('/social/facebook-healthz'), "Facebook Token 健康路由不存在");
+  assert.ok(!/EA[A-Za-z0-9]{40,}/.test(facebookBridge), "Facebook Token 檔案疑似含硬編碼 Token");
 }
 
 function verifySchedule() {
@@ -187,11 +217,12 @@ try {
   verifyRequiredFiles();
   verifyCatalogAndRuntime();
   verifyInternalAppScheduleUi();
+  verifyFacebookTokenHealth();
   verifySchedule();
   verifyWeatherIsExtra();
   verifyCopySafety();
   console.log(
-    `PASS 仙加味正式版 ${pkg.version}：內部App摘要、表單預設與驗證已同步；龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發。`
+    `PASS 仙加味正式版 ${pkg.version}：內部App摘要、表單預設、Facebook Token 健康提示與驗證已同步；龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；萬華氣候符合時上午10:00例外加發。`
   );
 } catch (error) {
   console.error(`仙加味正式上線檢查失敗：${error.message}`);
