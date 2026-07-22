@@ -19,6 +19,8 @@ const facebookHealthUi = read("internal-app-facebook-health.js");
 const facebookBridge = read("facebook-page-token-bridge.js");
 const facebookHealthRoute = read("facebook-token-health-route.js");
 require("../social-recommended-schedule");
+require("../social-corrected-republish-schedule");
+const clearPolicy = require("../social-clear-republish-policy");
 const schedulePolicy = require("../social-schedule-policy");
 const batch = require("../social-final-approved-batch");
 const guard = require("../social-publish-guard");
@@ -35,8 +37,12 @@ function requiredFiles() {
     "social-server.js",
     "social-publish-guard.js",
     "social-publish-guard.test.js",
+    "social-publication-ledger-backfill.js",
     "social-recommended-schedule.js",
     "social-final-posts.js",
+    "social-clear-republish-policy.js",
+    "social-clear-republish-policy.test.js",
+    "social-corrected-republish-schedule.js",
     "social-final-approved-batch.js",
     "social-final-approved-batch.test.js",
     "social-schedule-repair-20260722.js",
@@ -47,9 +53,11 @@ function requiredFiles() {
     "social-review-center.js",
     "facebook-page-token-bridge.js",
     "facebook-token-health-route.js",
-    "assets/social-approved/care-highres/care-work-rest.avif.b64",
-    "assets/social-approved/care-highres/care-family.avif.b64",
-    "assets/social-approved/care-highres/care-temperature-gap.avif.b64",
+    "assets/social-approved/original-clear/care-work-rest-original.avif.000.b64",
+    "assets/social-approved/original-clear/care-work-rest-original.avif.001.b64",
+    "assets/social-approved/original-clear/care-work-rest-original.avif.002.b64",
+    "assets/social-approved/original-clear/care-work-rest-original.avif.003.b64",
+    "assets/social-approved/original-clear/care-work-rest-original.avif.004.b64",
     "supabase-state-bridge.js",
     "persistence-auto-save.js",
     "supabase/schema.sql",
@@ -76,14 +84,19 @@ function verifyCatalogAndRuntime() {
   const start = String(pkg.scripts?.start || "");
   for (const token of [
     "social-recommended-schedule.js",
+    "social-clear-republish-policy.js",
+    "social-corrected-republish-schedule.js",
     "social-final-approved-batch.js",
     "social-schedule-policy.js",
+    "social-publication-ledger-backfill.js",
     "facebook-page-token-bridge.js",
     "facebook-token-health-route.js",
     "internal-entry.js",
   ]) assert(start.includes(token), `正式啟動程式缺少：${token}`);
   assert(start.indexOf("social-recommended-schedule.js") < start.indexOf("social-final-approved-batch.js"));
+  assert(start.indexOf("social-corrected-republish-schedule.js") < start.indexOf("social-schedule-policy.js"));
   assert(start.indexOf("facebook-page-token-bridge.js") < start.indexOf("facebook-token-health-route.js"));
+  assert(String(pkg.scripts?.test || "").includes("social-clear-republish-policy.test.js"));
   assert(String(pkg.scripts?.test || "").includes("social-publish-guard.test.js"));
   assert(String(pkg.scripts?.test || "").includes("tools/release_check.js"));
   assert(!/channelAccessToken\s*:\s*["'][^"']{20,}/.test(server));
@@ -109,11 +122,12 @@ function verifyInternalApp() {
   assert(!/EA[A-Za-z0-9]{40,}/.test(facebookBridge));
 }
 
-async function verifyImageQuality() {
-  assert.strictEqual(batch.VERSION, "5.0.0");
-  assert.strictEqual(batch.CONTENT_VERSION, "approved-highres-1080-v5");
-  assert.strictEqual(batch.CAMPAIGN_ID, "xjw-social-final-11-v5");
+async function verifyExactOriginalImage() {
+  assert.strictEqual(batch.VERSION, "5.1.0");
+  assert.strictEqual(batch.CONTENT_VERSION, "approved-exact-original-1254-v6");
+  assert.strictEqual(batch.CAMPAIGN_ID, "xjw-social-final-11-v6");
   assert.strictEqual(batch.TARGET_IMAGE_SIZE, 1080);
+
   const care = batch.POSTS.filter((post) => post.imageName);
   assert.strictEqual(care.length, 5);
   for (const post of care) {
@@ -122,6 +136,26 @@ async function verifyImageQuality() {
     assert(info.width >= 1080 && info.height >= 1080, `${post.imageName} 未達1080×1080`);
     assert(info.bytes > 100000, `${post.imageName} 壓縮過度`);
   }
+
+  assert.strictEqual(clearPolicy.VERSION, "1.2.0");
+  assert.strictEqual(clearPolicy.SOURCE_IMAGE_FILE, "634CBEF9-5A29-44EE-BFFC-AA5DDB8C049B.PNG");
+  assert.strictEqual(clearPolicy.SCHEDULED_AT, "2026-07-23T11:30:00.000Z");
+  const post = batch.POSTS.find((item) => item.id === clearPolicy.REPUBLISH_POST_ID);
+  assert(post, "正式排程缺少清晰原圖重發貼文");
+  assert.strictEqual(post.sourceImageFile, clearPolicy.SOURCE_IMAGE_FILE);
+  assert.strictEqual(post.originalCompositionLocked, true);
+  assert.strictEqual(post.originalCharacterLayoutLocked, true);
+  assert.strictEqual(post.oneTimeCorrectedRepublish, true);
+  assert(!/vector|向量|生成/i.test(post.sourceImageFile));
+
+  const source = batch.exactOriginalAvifBuffer(post.imageName);
+  assert(source && source.length > 40000, "原始清晰圖分段內容不完整");
+  const info = await batch.assetInfo(post.imageName);
+  assert.strictEqual(info.exactOriginalSource, true);
+  assert.strictEqual(info.originalSourceFile, clearPolicy.SOURCE_IMAGE_FILE);
+  assert.strictEqual(info.originalSourceDimensions, "1254x1254");
+  assert(info.width >= 1254 && info.height >= 1254, `原圖尺寸不足：${info.width}×${info.height}`);
+  assert(info.bytes > 100000, "原圖輸出壓縮過度");
 }
 
 function verifyPersistentDuplicateProtection() {
@@ -158,6 +192,9 @@ function verifyScheduleAndWeather() {
   assert.strictEqual(weather.length, 3);
   assert(weather.every((post) => !post.scheduledAt));
   for (const post of fixed) assert(schedulePolicy.validScheduledAt(post.scheduledAt, post), `${post.id} 排程不合規`);
+  const corrected = posts.find((post) => post.id === clearPolicy.REPUBLISH_POST_ID);
+  assert(corrected);
+  assert.strictEqual(schedulePolicy.expectedTime(corrected).policy, "corrected-clear-republish-thu-19:30");
   const drink30 = posts.find((post) => post.id.includes("guilu-yin-30cc"));
   const drink180 = posts.find((post) => post.id.includes("guilu-yin-180cc"));
   assert(drink30 && drink180);
@@ -187,11 +224,11 @@ function verifyCopySafety() {
     verifyRequiredFiles();
     verifyCatalogAndRuntime();
     verifyInternalApp();
-    await verifyImageQuality();
+    await verifyExactOriginalImage();
     verifyPersistentDuplicateProtection();
     verifyScheduleAndWeather();
     verifyCopySafety();
-    console.log("PASS 仙加味正式版：1080社群圖片、持久化防重複、固定排程與氣候例外全部通過");
+    console.log("PASS 仙加味正式版：1254×1254正式清晰原圖、原配置與角色鎖定、單次重發、防重複與排程全部通過");
   } catch (error) {
     console.error(`仙加味正式上線檢查失敗：${error.message}`);
     process.exit(1);
