@@ -1,0 +1,92 @@
+name: 仙加味正式排程狀態驗收
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "social-final-posts.js"
+      - "social-final-approved-batch.js"
+      - "social-schedule-repair-20260722.js"
+      - "social-schedule-repair-20260722.test.js"
+      - "social-schedule-policy.js"
+      - ".github/workflows/production-schedule-status.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-production-schedule-status
+  cancel-in-progress: true
+
+jobs:
+  verify-schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Wait for Render and read actual production schedule
+        shell: bash
+        env:
+          STATUS_URL: https://ts-line.onrender.com/social/schedule-status
+        run: |
+          set -euo pipefail
+          success=0
+          for attempt in $(seq 1 48); do
+            echo "Schedule check $attempt/48"
+            code=$(curl --connect-timeout 10 --max-time 25 --silent --show-error \
+              -o /tmp/production-schedule.json -w "%{http_code}" "$STATUS_URL" || true)
+            if [ "$code" = "200" ]; then
+              if node - <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('/tmp/production-schedule.json', 'utf8'));
+          if (data.ok !== true) process.exit(1);
+          if (data.repairVersion !== '2026-07-22-v1') process.exit(1);
+          if (data.canonicalCount !== 10) process.exit(1);
+          if (!Array.isArray(data.issues) || data.issues.length !== 0) process.exit(1);
+          if (!Array.isArray(data.posts) || data.posts.length !== 10) process.exit(1);
+          if (data.posts.some((post) => post.manualScheduleOverride || post.manualContentOverride)) process.exit(1);
+          NODE
+              then
+                success=1
+                break
+              fi
+            fi
+            sleep 15
+          done
+
+          if [ "$success" -ne 1 ]; then
+            echo "Production schedule did not become healthy in time"
+            cat /tmp/production-schedule.json 2>/dev/null || true
+            exit 1
+          fi
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('/tmp/production-schedule.json', 'utf8'));
+          data.verifiedCommit = process.env.GITHUB_SHA;
+          data.productionUrl = 'https://ts-line.onrender.com/social/schedule-status';
+          fs.writeFileSync('production-schedule-status.json', JSON.stringify(data, null, 2) + '\n');
+          console.log(data);
+          NODE
+
+      - name: Save production schedule proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "仙加味排程驗收"
+          git config user.email "actions@users.noreply.github.com"
+          git add production-schedule-status.json
+          if git diff --cached --quiet; then
+            echo "Production schedule proof already current"
+            exit 0
+          fi
+          git commit -m "chore: record healthy production social schedule"
+          git pull --rebase origin main
+          git push origin main
