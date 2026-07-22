@@ -1,0 +1,35 @@
+commit=2eb3539fcf47303cfe9a01e180c17ec559eeefba
+recorded_at=2026-07-22T09:10:01Z
+
+
+> xianjiawei-lineoa@6.0.2 test
+> node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-review-center.js && node --check internal-entry.js && node -r ./social-recommended-schedule.js social-final-approved-batch.test.js && node -r ./social-recommended-schedule.js social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js social-schedule-policy.test.js
+
+PASS final 10 approved complete social graphics
+PASS one-time schedule repair restores canonical 10-post schedule and clears accidental overrides
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+false !== true
+
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-schedule-policy.test.js:16:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.loadRecommendedSocialSchedule (/home/runner/work/TS-LINE/TS-LINE/social-recommended-schedule.js:44:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
