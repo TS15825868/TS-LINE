@@ -14,8 +14,12 @@ on:
       - "social-publication-ledger-backfill.js"
       - "social-recommended-schedule.js"
       - "social-final-posts.js"
+      - "social-clear-republish-policy.js"
+      - "social-clear-republish-policy.test.js"
+      - "social-corrected-republish-schedule.js"
       - "social-final-approved-batch.js"
       - "social-final-approved-batch.test.js"
+      - "assets/social-approved/original-clear/**"
       - "assets/social-approved/care-highres/**"
       - "assets/social-approved/care-chunks/**"
       - "social-schedule-repair-20260722.js"
@@ -75,21 +79,35 @@ jobs:
           if (social.persistentDuplicateProtection !== true) process.exit(1);
           NODE
               then
-                success=1
-                break
+                if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error \
+                  "$BASE_URL/social-approved-assets/healthz?t=$(date +%s)" -o /tmp/xjw-production/assets-wait.json; then
+                  if node - <<'NODE'
+          const fs = require('fs');
+          const assets = JSON.parse(fs.readFileSync('/tmp/xjw-production/assets-wait.json', 'utf8'));
+          const clear = Array.isArray(assets.assets) ? assets.assets.find((item) => item.name === 'care-work-rest-clear.jpg') : null;
+          if (assets.ok !== true) process.exit(1);
+          if (assets.version !== '5.1.0') process.exit(1);
+          if (assets.contentVersion !== 'approved-exact-original-1254-v6') process.exit(1);
+          if (!clear || clear.exactOriginalSource !== true) process.exit(1);
+          NODE
+                  then
+                    success=1
+                    break
+                  fi
+                fi
               fi
             fi
             sleep 15
           done
 
           if [ "$success" -ne 1 ]; then
-            echo "Render production did not become healthy with social 1.3.0 in time" > /tmp/xjw-production/error.txt
+            echo "Render production did not become healthy with exact original clear artwork in time" > /tmp/xjw-production/error.txt
             exit 1
           fi
 
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/" -o /tmp/xjw-production/root.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/healthz" -o /tmp/xjw-production/health.json
-          curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/social-approved-assets/healthz?t=$(date +%s)" -o /tmp/xjw-production/assets.json
+          cp /tmp/xjw-production/assets-wait.json /tmp/xjw-production/assets.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/social/facebook-healthz?refresh=1" -o /tmp/xjw-production/facebook.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/xjw-production/internal.json
           curl --connect-timeout 10 --max-time 25 --fail --silent --show-error "$BASE_URL/internal/db-healthz" -o /tmp/xjw-production/database.json
@@ -119,8 +137,9 @@ jobs:
           if (social.facebookConfigured !== true) throw new Error('Facebook environment variables are not configured');
           if (social.publishGuardVersion !== '2.0.0') throw new Error('Publish guard 2.0.0 is not active');
           if (social.persistentDuplicateProtection !== true) throw new Error('Persistent duplicate protection is not active');
-          if (assets.ok !== true || assets.version !== '5.0.0') throw new Error('Approved social asset health failed');
-          if (assets.contentVersion !== 'approved-highres-1080-v5') throw new Error('High-resolution content version is not active');
+
+          if (assets.ok !== true || assets.version !== '5.1.0') throw new Error('Exact original social asset health failed');
+          if (assets.contentVersion !== 'approved-exact-original-1254-v6') throw new Error('Exact original content version is not active');
           if (Number(assets.targetSize) !== 1080 || Number(assets.careCount) !== 5) throw new Error('Social asset target size/count is wrong');
           if (!Array.isArray(assets.assets) || assets.assets.length !== 5) throw new Error('Social asset details missing');
           for (const asset of assets.assets) {
@@ -128,6 +147,14 @@ jobs:
               throw new Error(`Social asset quality failed: ${asset.name}`);
             }
           }
+          const clear = assets.assets.find((asset) => asset.name === 'care-work-rest-clear.jpg');
+          if (!clear) throw new Error('Clear work-rest asset missing');
+          if (clear.exactOriginalSource !== true) throw new Error('Clear work-rest asset is not using exact original source');
+          if (clear.originalSourceFile !== '634CBEF9-5A29-44EE-BFFC-AA5DDB8C049B.PNG') throw new Error('Clear work-rest original file mismatch');
+          if (clear.originalSourceDimensions !== '1254x1254') throw new Error('Clear work-rest original dimensions mismatch');
+          if (Number(clear.width) < 1254 || Number(clear.height) < 1254) throw new Error('Clear work-rest output is below 1254x1254');
+          if (Number(assets.exactOriginalSourceCount) < 1) throw new Error('Exact original source count missing');
+
           if (facebook.service !== '仙加味 Facebook 發布連線') throw new Error('Facebook token health endpoint failed');
           if (typeof facebook.configured !== 'boolean') throw new Error('Facebook token configured state missing');
           if (![true, false, null].includes(facebook.usable)) throw new Error('Facebook token usable state invalid');
@@ -162,12 +189,20 @@ jobs:
             approvedAssetTargetSize: assets.targetSize,
             approvedAssetCount: assets.assets.length,
             approvedAssetHighresSourceCount: assets.highresSourceCount,
+            approvedAssetExactOriginalSourceCount: assets.exactOriginalSourceCount,
             approvedAssetQualityOk: assets.assets.every((asset) => asset.ok),
+            clearRepublishExactOriginal: true,
+            clearRepublishSourceFile: clear.originalSourceFile,
+            clearRepublishSourceDimensions: clear.originalSourceDimensions,
+            clearRepublishOutputDimensions: `${clear.width}x${clear.height}`,
+            clearRepublishScheduledAtTaipei: '2026-07-23 19:30',
+            clearRepublishOriginalCompositionLocked: true,
+            clearRepublishOriginalCharactersLocked: true,
             internalRuntimeVersion: '20260722-social-6',
             socialUiVersion: '20260722-social-review-3',
             socialFormVersion: '20260722-form-stable-3',
             facebookHealthUiVersion: '20260722-facebook-health-2',
-            socialUiScheduleRule: '週三19:30關心、週五20:00產品、氣候10:00例外加發且不取代固定貼文',
+            socialUiScheduleRule: '週三19:30關心、週五20:00產品、氣候10:00例外加發且不取代固定貼文；本次清晰原圖於7/23 19:30單次重發',
             instagramConfigured: social.instagramConfigured,
             facebookConfigured: social.facebookConfigured,
             facebookTokenConfigured: facebook.configured,
@@ -195,6 +230,6 @@ jobs:
             echo "Production proof already current"
             exit 0
           fi
-          git commit -m "chore: record healthy production deployment"
+          git commit -m "chore: record healthy exact-original social deployment"
           git pull --rebase origin main
           git push origin main
