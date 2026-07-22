@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "checkedAt": "2026-07-22T04:10:03.138Z",
+  "commit": "d099f3ed6476f89e0b2b3c0d9389ef9ce396f1b5",
+  "productionUrl": "https://ts-line.onrender.com",
+  "lineVersion": "v401.6",
+  "productCount": 6,
+  "socialVersion": "1.2.0",
+  "socialPostCount": 10,
+  "instagramConfigured": true,
+  "facebookConfigured": true,
+  "internalApp": "仙加味內部管理 App",
+  "storage": "supabase"
+}
