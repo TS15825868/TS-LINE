@@ -10,6 +10,8 @@ on:
       - "data.json"
       - "server.js"
       - "social-server.js"
+      - "social-approved-originals.js"
+      - "social-final-reconcile.js"
       - "internal-app.js"
       - "internal-entry.js"
       - "tools/**"
@@ -63,5 +65,34 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Run complete approved ZIP release checks
-        run: npm test
+      - name: Run complete release checks and retain failure details
+        shell: bash
+        run: |
+          set +e
+          npm test 2>&1 | tee /tmp/xjw-test.log
+          status=${PIPESTATUS[0]}
+          set -e
+
+          git config user.name "仙加味自動驗收"
+          git config user.email "actions@users.noreply.github.com"
+
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "commit=$(git rev-parse HEAD)"
+              echo "recorded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo
+              tail -n 160 /tmp/xjw-test.log
+            } > ci-last-error.txt
+            git add ci-last-error.txt
+            git commit -m "chore: record latest CI failure" || true
+            git pull --rebase origin main
+            git push origin main
+            exit "$status"
+          fi
+
+          if [ -f ci-last-error.txt ]; then
+            git rm ci-last-error.txt
+            git commit -m "chore: clear resolved CI failure"
+            git pull --rebase origin main
+            git push origin main
+          fi
