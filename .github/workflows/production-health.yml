@@ -10,30 +10,23 @@ on:
       - "server.js"
       - "social-server.js"
       - "social-publish-guard.js"
-      - "social-publish-guard.test.js"
       - "social-publication-ledger-backfill.js"
-      - "social-recommended-schedule.js"
       - "social-final-posts.js"
       - "social-clear-republish-policy.js"
-      - "social-corrected-republish-schedule.js"
       - "social-original-asset-override.js"
       - "social-manual-immediate-publish.js"
       - "social-manual-immediate-publish.test.js"
       - "social-final-approved-batch.js"
-      - "social-schedule-repair-20260722.js"
       - "social-schedule-policy.js"
       - "social-manual-schedule-override.js"
-      - "social-review-center.js"
       - "assets/social-approved/v7-original/**"
       - "facebook-page-token-bridge.js"
       - "facebook-token-health-route.js"
       - "internal-app-client-fix.js"
-      - "internal-app-form-controller.js"
       - "internal-app-social-filter.js"
       - "internal-app-social-retry.js"
       - "internal-app-facebook-health.js"
       - "internal-entry.js"
-      - "production-deploy-request.json"
       - ".github/workflows/production-health.yml"
 
 permissions:
@@ -65,7 +58,7 @@ jobs:
           npm ci
           npm test
 
-      - name: Wait for Render deployment and verify public health
+      - name: Wait for Render and verify
         shell: bash
         env:
           BASE_URL: https://ts-line.onrender.com
@@ -81,13 +74,9 @@ jobs:
             if curl --connect-timeout 10 --max-time 25 --fail --silent --show-error \
               "$BASE_URL/social/healthz?t=$(date +%s)" -o /tmp/xjw-production/social.json; then
               if node - <<'NODE'
-          const fs = require('fs');
-          const social = JSON.parse(fs.readFileSync('/tmp/xjw-production/social.json', 'utf8'));
-          if (social.ok !== true) process.exit(1);
-          if (social.socialVersion !== '1.3.0') process.exit(1);
-          if (Number(social.postCount) !== 11) process.exit(1);
-          if (social.publishGuardVersion !== '2.0.0') process.exit(1);
-          if (social.persistentDuplicateProtection !== true) process.exit(1);
+          const s = require('/tmp/xjw-production/social.json');
+          if (s.ok !== true || s.socialVersion !== '1.3.0' || Number(s.postCount) !== 11) process.exit(1);
+          if (s.publishGuardVersion !== '2.0.0' || s.persistentDuplicateProtection !== true) process.exit(1);
           NODE
               then social_ok=1; fi
             fi
@@ -95,16 +84,12 @@ jobs:
             if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error \
               "$BASE_URL/social-approved-assets/healthz?t=$(date +%s)" -o /tmp/xjw-production/assets.json; then
               if node - <<'NODE'
-          const fs = require('fs');
-          const assets = JSON.parse(fs.readFileSync('/tmp/xjw-production/assets.json', 'utf8'));
-          const clear = Array.isArray(assets.assets) ? assets.assets.find((item) => item.name === 'care-work-rest-clear.jpg') : null;
-          if (assets.ok !== true) process.exit(1);
-          if (assets.version !== '1.2.0') process.exit(1);
-          if (assets.contentVersion !== 'approved-original-1254-v10') process.exit(1);
-          if (Number(assets.targetSize) !== 1254) process.exit(1);
-          if (!Array.isArray(assets.assets) || assets.assets.length !== 6) process.exit(1);
-          if (!clear || clear.ok !== true || Number(clear.width) !== 1254 || Number(clear.height) !== 1254) process.exit(1);
-          if (clear.exactOriginalSource !== true) process.exit(1);
+          const a = require('/tmp/xjw-production/assets.json');
+          const clear = Array.isArray(a.assets) ? a.assets.find((x) => x.name === 'care-work-rest-clear.jpg') : null;
+          if (a.ok !== true || a.version !== '1.2.0' || a.contentVersion !== 'approved-original-1254-v10') process.exit(1);
+          if (Number(a.targetSize) !== 1254 || !Array.isArray(a.assets) || a.assets.length !== 6) process.exit(1);
+          if (!clear || clear.ok !== true || clear.exactOriginalSource !== true) process.exit(1);
+          if (Number(clear.width) !== 1254 || Number(clear.height) !== 1254) process.exit(1);
           NODE
               then assets_ok=1; fi
             fi
@@ -117,7 +102,7 @@ jobs:
           done
 
           if [ "$success" -ne 1 ]; then
-            echo "Render production did not become healthy with the clear 1254 artwork in time" > /tmp/xjw-production/error.txt
+            echo "Render production did not become healthy with clear 1254 artwork" >&2
             exit 1
           fi
 
@@ -144,29 +129,27 @@ jobs:
           const socialUi = fs.readFileSync('/tmp/xjw-production/social-ui.js', 'utf8');
           const socialRetry = fs.readFileSync('/tmp/xjw-production/social-retry.js', 'utf8');
 
-          if (root.ok !== true || root.service !== '仙加味 LINE OA') throw new Error('LINE OA root failed');
-          if (health.ok !== true || health.version !== 'v401.6' || health.productCount !== 6) throw new Error('LINE OA health failed');
-          if (social.ok !== true || social.socialVersion !== '1.3.0' || Number(social.postCount) !== 11) throw new Error('Social health failed');
-          if (social.instagramConfigured !== true || social.facebookConfigured !== true) throw new Error('Social platforms are not configured');
-          if (social.publishGuardVersion !== '2.0.0' || social.persistentDuplicateProtection !== true) throw new Error('Duplicate protection is not active');
+          if (root.ok !== true || root.service !== '仙加味 LINE OA') throw new Error('root failed');
+          if (health.ok !== true || health.version !== 'v401.6' || health.productCount !== 6) throw new Error('health failed');
+          if (social.ok !== true || social.socialVersion !== '1.3.0' || Number(social.postCount) !== 11) throw new Error('social failed');
+          if (social.instagramConfigured !== true || social.facebookConfigured !== true) throw new Error('platform configuration failed');
+          if (social.publishGuardVersion !== '2.0.0' || social.persistentDuplicateProtection !== true) throw new Error('duplicate guard failed');
 
-          if (assets.ok !== true || assets.version !== '1.2.0') throw new Error('Clear social asset health failed');
-          if (assets.contentVersion !== 'approved-original-1254-v10' || Number(assets.targetSize) !== 1254) throw new Error('Clear asset version or target size is wrong');
-          if (!Array.isArray(assets.assets) || assets.assets.length !== 6) throw new Error('Social asset details missing');
+          if (assets.ok !== true || assets.version !== '1.2.0' || assets.contentVersion !== 'approved-original-1254-v10') throw new Error('asset version failed');
+          if (Number(assets.targetSize) !== 1254 || !Array.isArray(assets.assets) || assets.assets.length !== 6) throw new Error('asset count failed');
           for (const asset of assets.assets) {
-            if (asset.ok !== true || Number(asset.width) !== 1254 || Number(asset.height) !== 1254 || Number(asset.bytes) <= 40000) {
-              throw new Error(`Social asset quality failed: ${asset.name}`);
-            }
+            if (asset.ok !== true || Number(asset.width) !== 1254 || Number(asset.height) !== 1254 || Number(asset.bytes) <= 40000) throw new Error(`asset quality failed: ${asset.name}`);
           }
           const clear = assets.assets.find((asset) => asset.name === 'care-work-rest-clear.jpg');
-          if (!clear || clear.exactOriginalSource !== true) throw new Error('Work-rest post is not using the verified clear original');
+          if (!clear || clear.exactOriginalSource !== true) throw new Error('clear original missing');
 
-          if (facebook.service !== '仙加味 Facebook 發布連線') throw new Error('Facebook token health endpoint failed');
-          if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal App health failed');
-          if (database.ok !== true || database.storage !== 'supabase') throw new Error('Supabase storage is not healthy');
-          if (!appRuntime.includes('data-social-action')) throw new Error('Internal App social button runtime missing');
-          if (!socialUi.includes('20260722-social-review-3')) throw new Error('Social review UI missing');
-          if (!socialRetry.includes('20260722-social-retry-4')) throw new Error('Social image/button repair script missing');
+          if (facebook.service !== '仙加味 Facebook 發布連線') throw new Error('facebook health failed');
+          if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('internal app failed');
+          if (database.ok !== true || database.storage !== 'supabase') throw new Error('database failed');
+          if (!appRuntime.includes('data-social-action')) throw new Error('button runtime missing');
+          if (!socialUi.includes('20260722-social-review-3')) throw new Error('review UI missing');
+          if (!socialRetry.includes('20260723-social-ui-fix-2')) throw new Error('image/button repair missing');
+          if (!socialRetry.includes('approved-original-1254-v10')) throw new Error('clear asset cache version missing');
 
           const status = {
             ok: true,
@@ -195,7 +178,7 @@ jobs:
             manualImmediatePublishUnlocked: true,
             internalRuntimeVersion: '20260723-social-8',
             socialUiVersion: '20260722-social-review-3',
-            socialRetryVersion: '20260722-social-retry-4',
+            socialRetryVersion: '20260723-social-ui-fix-2',
             socialUiScheduleRule: '清晰原圖於2026/7/24 19:30單次重發；後續週三19:30關心、週五20:00產品、氣候10:00例外加發',
             instagramConfigured: social.instagramConfigured,
             facebookConfigured: social.facebookConfigured,
