@@ -14,7 +14,7 @@ const clearPolicy = require("./social-clear-republish-policy");
   assert.match(wrapper, /post\.manualScheduleOverride = true/);
   assert.match(wrapper, /已成功的平台不重複發布/);
   assert.match(assetSource, /TARGET_SIZE = 1254/);
-  assert.match(assetSource, /approved-original-1254-v9/);
+  assert.match(assetSource, /approved-original-1254-v10/);
   assert.match(assetSource, /exactOriginalSourceCount/);
   assert.match(assetSource, /X-XJW-Image-Size/);
   assert.strictEqual(clearPolicy.SCHEDULED_AT, "2026-07-24T11:30:00.000Z");
