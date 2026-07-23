@@ -1,0 +1,175 @@
+name: Install Q Boss Social Batch 1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/install-qboss-social-batch1.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: install-qboss-social-batch1
+  cancel-in-progress: false
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Install image tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick
+
+      - name: Download approved first batch
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 4 --retry-delay 3 --max-time 240 \
+            -o /tmp/qboss-batch1.zip \
+            'https://drive.usercontent.google.com/download?id=16iyZrlwrz46zeg0mw9MfBV8rarA7PBF5&export=download&confirm=t'
+          echo '568b5b0435bd515da5525a0da221b6d8d5576f5ceea4ac648a10ab4d6d64a0d0  /tmp/qboss-batch1.zip' | sha256sum -c -
+          unzip -t /tmp/qboss-batch1.zip
+          rm -rf /tmp/qboss-batch1
+          mkdir -p /tmp/qboss-batch1
+          unzip -q /tmp/qboss-batch1.zip -d /tmp/qboss-batch1
+
+      - name: Validate exact approved images
+        run: |
+          set -euo pipefail
+          cat > /tmp/qboss-sha256.txt <<'EOF'
+          6551d536e4a8c49e684dcb42b28cf41d1b670772563436568614564b9370d803  /tmp/qboss-batch1/care-family.jpg
+          26f9a150d6cde00873d1eeb789f3624de6997d2e545d650951458fa8fff610c2  /tmp/qboss-batch1/care-hot-hydration.jpg
+          c23a266c3a8d8fcd1281fe8b92a9002cad050f91eebed4130854d5377363d04b  /tmp/qboss-batch1/care-rainy-day.jpg
+          e5901e696b9415ac8ece409ef32e63fb531bb1218682be207a687e62e5f393ee  /tmp/qboss-batch1/care-temperature-gap.jpg
+          b9a8b3a71bbe40e75ae5c00ab6233fd2853bbd1cd19ee6843624facdf7521a0c  /tmp/qboss-batch1/care-work-rest.jpg
+          1d2a07182ea4aee8f029e3be215262d9f5bd82343e5309aa188ce7ea47d02a78  /tmp/qboss-batch1/product-guilu-drink-30cc.jpg
+          0c8e2eb86210eb53bcf0a407e5861ba8e1ba234284092102f793185d24a3fe52  /tmp/qboss-batch1/product-guilu-gao-100g.jpg
+          b9c0125d245b6b96844ed877f7364989b911783fb87ba9da17cefe56113dae33  /tmp/qboss-batch1/product-guilu-jiao-600g.jpg
+          28f3e6819fd2d1825e30bd3a0b62b4615945a28bdb0a3d156702633afe9cd634  /tmp/qboss-batch1/product-lurongfen-75g.jpg
+          5cc1bcd96505daca7dddf1a06fdac48fc13ea3229fb227a0689ca9d19b151889  /tmp/qboss-batch1/product-tangkuai-75g.jpg
+          EOF
+          sha256sum -c /tmp/qboss-sha256.txt
+          test "$(find /tmp/qboss-batch1 -maxdepth 1 -name '*.jpg' | wc -l)" -eq 10
+          for image in /tmp/qboss-batch1/*.jpg; do
+            test "$(identify -format '%w %h' "$image")" = '1254 1254'
+            test "$(stat -c '%s' "$image")" -gt 500000
+          done
+
+      - name: Install images and update first ten posts
+        run: |
+          set -euo pipefail
+          rm -rf public/social/qboss-batch1
+          mkdir -p public/social/qboss-batch1
+          cp /tmp/qboss-batch1/*.jpg public/social/qboss-batch1/
+          cp /tmp/qboss-batch1/manifest.json public/social/qboss-batch1/manifest.json
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, json
+
+          path = Path('social-final-posts.js')
+          text = path.read_text(encoding='utf-8')
+          version = 'qboss-batch1-20260724-v1'
+          base = 'https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/social/qboss-batch1'
+          if 'const QBOSS_BASE' not in text:
+              text = text.replace(
+                  'const DM_BASE = "https://ts15825868.github.io/xianjiawei/images/dm-final";\n',
+                  'const DM_BASE = "https://ts15825868.github.io/xianjiawei/images/dm-final";\n'
+                  f'const QBOSS_BASE = "{base}";\n'
+                  f'const QBOSS_VERSION = "{version}";\n'
+              )
+
+          mapping = {
+              'first-batch-v2-care-work-rest-20260729': 'care-work-rest.jpg',
+              'first-batch-v2-product-guilu-gao-20260724': 'product-guilu-gao-100g.jpg',
+              'first-batch-v2-care-family-20260805': 'care-family.jpg',
+              'first-batch-v2-product-guilu-yin-30cc-20260731': 'product-guilu-drink-30cc.jpg',
+              'first-batch-v2-care-temperature-gap-20260812': 'care-temperature-gap.jpg',
+              'first-batch-v2-product-lurongfen-75g-20260807': 'product-lurongfen-75g.jpg',
+              'first-batch-v2-care-hydration-20260819': 'care-hot-hydration.jpg',
+              'first-batch-v2-product-tangkuai-75g-20260814': 'product-tangkuai-75g.jpg',
+              'first-batch-v2-care-rainy-day-20260826': 'care-rainy-day.jpg',
+              'first-batch-v2-product-guilu-jiao-600g-20260821': 'product-guilu-jiao-600g.jpg',
+          }
+
+          for post_id, filename in mapping.items():
+              pattern = re.compile(r'(  \{\n    id: "' + re.escape(post_id) + r'",\n)(.*?)(\n  \},)', re.S)
+              match = pattern.search(text)
+              if not match:
+                  raise SystemExit(f'Post not found: {post_id}')
+              body = match.group(2)
+              body = re.sub(r'^    imageUrl:.*\n', '', body, flags=re.M)
+              for key in ('qBossMascotLocked', 'deerPartnerPresent', 'turtlePartnerPresent', 'productPresentationLocked', 'productSpecLocked', 'qBossAssetVersion'):
+                  body = re.sub(r'^    ' + key + r':.*\n', '', body, flags=re.M)
+              body, count = re.subn(
+                  r'(    title: .*?,\n)',
+                  r'\1    imageUrl: `${QBOSS_BASE}/' + filename + r'?v=${QBOSS_VERSION}`,\n',
+                  body,
+                  count=1,
+              )
+              if count != 1:
+                  raise SystemExit(f'Title line not found: {post_id}')
+              metadata = (
+                  '    qBossMascotLocked: true,\n'
+                  '    deerPartnerPresent: true,\n'
+                  '    turtlePartnerPresent: true,\n'
+                  '    productPresentationLocked: true,\n'
+                  '    productSpecLocked: true,\n'
+                  '    qBossAssetVersion: QBOSS_VERSION,\n'
+              )
+              if '    instagramCaption: [' not in body:
+                  raise SystemExit(f'Caption marker not found: {post_id}')
+              body = body.replace('    instagramCaption: [', metadata + '    instagramCaption: [', 1)
+              text = text[:match.start()] + match.group(1) + body + match.group(3) + text[match.end():]
+
+          path.write_text(text, encoding='utf-8')
+          Path('public/social/qboss-batch1/release.json').write_text(json.dumps({
+              'version': version,
+              'count': 10,
+              'mascot': 'approved-website-qboss',
+              'companions': ['deer', 'turtle'],
+              'productPresentationLocked': True,
+              'productSpecLocked': True,
+              'captionsChanged': False,
+              'appButtonCodeChanged': False,
+          }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
+      - name: Verify post mapping without touching App controls
+        run: |
+          set -euo pipefail
+          node --check social-final-posts.js
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('social-final-posts.js').read_text(encoding='utf-8')
+          assert text.count('qBossMascotLocked: true') == 10
+          assert text.count('deerPartnerPresent: true') == 10
+          assert text.count('turtlePartnerPresent: true') == 10
+          assert text.count('productPresentationLocked: true') == 10
+          assert text.count('productSpecLocked: true') == 10
+          assert text.count('raw.githubusercontent.com/TS15825868/TS-LINE/main/public/social/qboss-batch1') == 1
+          assert 'first-batch-v2-product-guilu-yin-180cc-20260828' in text
+          PY
+          git diff --name-only | tee /tmp/changed-files.txt
+          grep -qx 'social-final-posts.js' /tmp/changed-files.txt
+          test "$(grep -c '^public/social/qboss-batch1/' /tmp/changed-files.txt)" -ge 11
+          if grep -E '^(internal-app|internal-entry|package|server\.js)' /tmp/changed-files.txt; then
+            echo 'Unsafe App/runtime file changed' >&2
+            exit 1
+          fi
+
+      - name: Commit approved first batch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add social-final-posts.js public/social/qboss-batch1
+          git commit -m 'feat: install first 10 approved Q-boss social posts'
+          git pull --rebase origin main
+          git push origin HEAD:main
