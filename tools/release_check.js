@@ -31,6 +31,7 @@ const required = [
   "social-final-posts.js",
   "social-clear-republish-policy.js",
   "social-original-asset-override.js",
+  "social-approved-clear-extension.js",
   "social-manual-immediate-publish.js",
   "social-schedule-repair-20260722.js",
   "social-schedule-policy.js",
@@ -41,6 +42,8 @@ const required = [
   "assets/social-approved/v7-original/care-work-rest.avif.003.b64",
   "assets/social-approved/v7-original/care-work-rest.avif.004.b64",
   "assets/social-approved/v7-original/care-work-rest.avif.005.b64",
+  "assets/social-approved/clear-20260723/care-work-rest-fixed.avif.000.b64",
+  "assets/social-approved/clear-20260723/care-work-rest-fixed.avif.001.b64",
   "supabase-state-bridge.js",
   "persistence-auto-save.js",
   ".github/workflows/production-health.yml",
@@ -55,7 +58,7 @@ function verifyFilesAndCatalog() {
   assert.deepStrictEqual(data.products.map((item) => item.id), [
     "guilu-gao", "guilu-drink-30", "guilu-drink-180", "guilu-tangkuai", "guilu-jiao", "luerong-fen",
   ]);
-  assert.strictEqual(pkg.version, "6.0.3");
+  assert.strictEqual(pkg.version, "6.0.4");
   assert.strictEqual(lock.version, pkg.version);
   assert.strictEqual(lock.packages?.[""]?.version, pkg.version);
 }
@@ -65,6 +68,7 @@ function verifyRuntimeContract() {
   for (const token of [
     "social-clear-republish-policy.js",
     "social-original-asset-override.js",
+    "social-approved-clear-extension.js",
     "social-final-approved-batch.js",
     "social-schedule-repair-20260722.js",
     "social-schedule-policy.js",
@@ -74,6 +78,7 @@ function verifyRuntimeContract() {
     "internal-entry.js",
   ]) assert(start.includes(token), `正式啟動程式缺少：${token}`);
   assert(start.indexOf("social-original-asset-override.js") < start.indexOf("social-final-approved-batch.js"));
+  assert(start.indexOf("social-approved-clear-extension.js") < start.indexOf("social-final-approved-batch.js"));
   assert(start.indexOf("social-manual-immediate-publish.js") < start.indexOf("internal-entry.js"));
 
   const clientFix = read("internal-app-client-fix.js");
@@ -93,8 +98,8 @@ function verifyRuntimeContract() {
 }
 
 async function verifyAssetsAndSchedule() {
-  assert.strictEqual(assets.VERSION, "1.2.0");
-  assert.strictEqual(assets.CONTENT_VERSION, "approved-original-1254-v10");
+  assert.strictEqual(assets.VERSION, "1.3.0");
+  assert.strictEqual(assets.CONTENT_VERSION, "approved-original-1254-v11-direct");
   assert.strictEqual(assets.TARGET_SIZE, 1254);
   const names = Object.keys(assets.THEMES);
   assert.strictEqual(names.length, 6);
