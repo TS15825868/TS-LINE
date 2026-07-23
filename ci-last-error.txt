@@ -1,0 +1,27 @@
+commit=4fd84b899fb3ea0928463a932e45ccf2db7e66f6
+recorded_at=2026-07-23T17:45:53Z
+
+
+> xianjiawei-lineoa@6.0.3 test
+> node --check server.js && node --check social-server.js && node --check social-publish-guard.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-corrected-republish-schedule.js && node --check social-original-asset-override.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-manual-immediate-publish.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-app-client-fix.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node social-clear-republish-policy.test.js && node social-final-approved-batch.test.js && node social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js -r ./social-corrected-republish-schedule.js social-schedule-policy.test.js && node social-manual-schedule-override.test.js && node social-publish-guard.test.js && node social-manual-immediate-publish.test.js && node tools/release_check.js
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+'2.0.0' !== '1.3.0'
+
+    at /home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:8:10
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:27:3)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '2.0.0',
+  expected: '1.3.0',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
