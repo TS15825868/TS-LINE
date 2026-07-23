@@ -1,26 +1,27 @@
-commit=395e25d28d2dfc5e124b2410c514e59b312c8f3b
-recorded_at=2026-07-23T03:45:52Z
+commit=6092ebe2017cc8085ea03d81c3274b10bdd1adc5
+recorded_at=2026-07-23T07:29:33Z
 
 
-> xianjiawei-lineoa@6.0.2 test
-> node --check social-server.js && node --check social-publish-guard.js && node --check social-publish-guard.test.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-clear-republish-policy.test.js && node --check social-corrected-republish-schedule.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-app-client-fix.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node social-publish-guard.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js social-clear-republish-policy.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js social-final-approved-batch.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js -r ./social-corrected-republish-schedule.js social-schedule-policy.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js -r ./social-corrected-republish-schedule.js tools/release_check.js
+> xianjiawei-lineoa@6.0.3 test
+> node --check server.js && node --check social-server.js && node --check social-publish-guard.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-corrected-republish-schedule.js && node --check social-original-asset-override.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-manual-immediate-publish.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-app-client-fix.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node social-manual-immediate-publish.test.js && node social-publish-guard.test.js && node social-manual-schedule-override.test.js
 
-PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
-AssertionError [ERR_ASSERTION]: 正式清晰原圖來源遺失或不完整
-    at /home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:25:3
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:42:3)
-    at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at node:internal/modules/cjs/loader:1913:10
-    at Object.loadRecommendedSocialSchedule [as .js] (/home/runner/work/TS-LINE/TS-LINE/social-recommended-schedule.js:97:12)
-    at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
+AssertionError [ERR_ASSERTION]: source: bad seek to 69842
+source: bad seek to 68754
+source: bad seek to 68210
+source: bad seek to 68074
+source: bad seek to 68069
+source: bad seek to 68068
+source: bad seek to 69810
+heif: Invalid input: Unexpected end of file: Extent in iloc box references data outside of file bounds (points to file position 250)
+ (2.100)
+
+false !== true
+
+    at /home/runner/work/TS-LINE/TS-LINE/social-manual-immediate-publish.test.js:24:10 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
-  actual: null,
+  actual: false,
   expected: true,
-  operator: '==',
+  operator: 'strictEqual',
   diff: 'simple'
 }
