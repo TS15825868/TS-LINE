@@ -41,6 +41,8 @@ const required = [
   "assets/social-approved/v7-original/care-work-rest.avif.003.b64",
   "assets/social-approved/v7-original/care-work-rest.avif.004.b64",
   "assets/social-approved/v7-original/care-work-rest.avif.005.b64",
+  "assets/social-approved/clear-20260723/care-work-rest-fixed.avif.000.b64",
+  "assets/social-approved/clear-20260723/care-work-rest-fixed.avif.001.b64",
   "supabase-state-bridge.js",
   "persistence-auto-save.js",
   ".github/workflows/production-health.yml",
@@ -93,8 +95,8 @@ function verifyRuntimeContract() {
 }
 
 async function verifyAssetsAndSchedule() {
-  assert.strictEqual(assets.VERSION, "1.2.0");
-  assert.strictEqual(assets.CONTENT_VERSION, "approved-original-1254-v10");
+  assert.strictEqual(assets.VERSION, "1.3.0");
+  assert.strictEqual(assets.CONTENT_VERSION, "approved-original-1254-v11-direct");
   assert.strictEqual(assets.TARGET_SIZE, 1254);
   const names = Object.keys(assets.THEMES);
   assert.strictEqual(names.length, 6);
