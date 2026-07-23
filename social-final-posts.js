@@ -7,8 +7,9 @@ const POSTS = [
     id: "first-batch-v2-care-work-rest-20260729",
     sequenceRole: "care",
     category: "日常關心",
-    title: "工作再忙，也記得替自己留一點休息時間",
-    scheduledAt: "2026-07-23T11:30:00.000Z",
+    title: "工作再忙，也別忘了休息一下",
+    scheduledAt: "2026-07-24T11:30:00.000Z",
+    manualScheduleOverride: true,
     imageName: "care-work-rest.jpg",
     sourceImageFile: "care-work-rest-clear-original-20260723.jpg",
     correctedClearRepublish: true,
@@ -34,7 +35,7 @@ const POSTS = [
     sequenceRole: "product",
     category: "產品介紹",
     title: "龜鹿膏100g｜依日常節奏慢慢安排",
-    scheduledAt: "2026-07-24T12:00:00.000Z",
+    scheduledAt: "2026-07-31T12:00:00.000Z",
     imageUrl: `${DM_BASE}/01_guilu-gao-100g-dm.jpg?v=408.7`,
     sourceImageFile: "01_guilu-gao-100g-dm.jpg",
     instagramCaption: [
@@ -62,7 +63,7 @@ const POSTS = [
     sequenceRole: "care",
     category: "日常關心",
     title: "照顧自己，也別忘了關心家人",
-    scheduledAt: "2026-07-29T02:00:00.000Z",
+    scheduledAt: "2026-08-05T11:30:00.000Z",
     imageName: "care-family.jpg",
     instagramCaption: [
       "一句問候、一起吃頓飯，都是日常裡很溫柔的陪伴。",
@@ -86,7 +87,7 @@ const POSTS = [
     sequenceRole: "product",
     category: "產品介紹",
     title: "龜鹿飲30cc｜小瓶即飲，外出攜帶更方便",
-    scheduledAt: "2026-07-31T12:00:00.000Z",
+    scheduledAt: "2026-08-07T12:00:00.000Z",
     imageUrl: `${DM_BASE}/02_guilu-drink-30cc-dm.jpg?v=408.7`,
     sourceImageFile: "02_guilu-drink-30cc-dm.jpg",
     instagramCaption: [
@@ -138,7 +139,7 @@ const POSTS = [
     sequenceRole: "product",
     category: "產品介紹",
     title: "鹿茸粉75g｜依自己的飲食習慣搭配",
-    scheduledAt: "2026-08-07T12:00:00.000Z",
+    scheduledAt: "2026-08-14T12:00:00.000Z",
     imageUrl: `${DM_BASE}/04_luerong-fen-75g-dm.jpg?v=408.7`,
     sourceImageFile: "04_luerong-fen-75g-dm.jpg",
     instagramCaption: [
@@ -190,7 +191,7 @@ const POSTS = [
     sequenceRole: "product",
     category: "產品介紹",
     title: "龜鹿湯塊75g｜8塊裝，沖泡料理都方便",
-    scheduledAt: "2026-08-14T12:00:00.000Z",
+    scheduledAt: "2026-08-21T12:00:00.000Z",
     imageUrl: `${DM_BASE}/05_guilu-tangkuai-75g-dm.jpg?v=408.7`,
     sourceImageFile: "05_guilu-tangkuai-75g-dm.jpg",
     instagramCaption: [
@@ -240,7 +241,7 @@ const POSTS = [
     sequenceRole: "product",
     category: "產品介紹",
     title: "龜鹿膠600g｜家庭規格，依日常慢慢安排",
-    scheduledAt: "2026-08-21T12:00:00.000Z",
+    scheduledAt: "2026-08-28T12:00:00.000Z",
     imageUrl: `${DM_BASE}/06_guilu-jiao-600g-dm.jpg?v=408.7`,
     sourceImageFile: "06_guilu-jiao-600g-dm.jpg",
     instagramCaption: [
@@ -263,7 +264,7 @@ const POSTS = [
     sequenceRole: "product",
     category: "產品介紹",
     title: "龜鹿飲180cc｜鋁袋包裝，完整份量好安排",
-    scheduledAt: "2026-08-28T12:00:00.000Z",
+    scheduledAt: "2026-09-04T12:00:00.000Z",
     imageUrl: `${DM_BASE}/03_guilu-drink-180cc-dm.jpg?v=408.7`,
     sourceImageFile: "03_guilu-drink-180cc-dm.jpg",
     instagramCaption: [
