@@ -4,17 +4,18 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "2.0.0";
+const VERSION = "3.0.0";
 const STORE_PATH = path.resolve(process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json");
-const REGULAR_CARE_DAY = "Wed";
-const PRODUCT_DAY = "Fri";
-const REGULAR_CARE_HOUR = "19";
-const REGULAR_CARE_MINUTE = "30";
+const FIXED_DAYS = Object.freeze(["Wed", "Fri"]);
+const FIXED_HOUR = "10";
+const FIXED_MINUTE = "00";
 const WEATHER_HOUR = "10";
 const WEATHER_MINUTE = "00";
-const STANDARD_HOUR = "20";
-const STANDARD_MINUTE = "00";
-const CARE_HOUR = REGULAR_CARE_HOUR;
+const CARE_HOUR = FIXED_HOUR;
+const STANDARD_HOUR = FIXED_HOUR;
+const REGULAR_CARE_HOUR = FIXED_HOUR;
+const REGULAR_CARE_MINUTE = FIXED_MINUTE;
+const STANDARD_MINUTE = FIXED_MINUTE;
 const CARE_CATEGORY = /(?:氣候關心|節氣關心|生活關心|日常關心)/;
 const CARE_TITLE = /(?:天氣|節氣|高溫|悶熱|寒流|豪雨|颱風|防曬|補水|保暖|日常提醒|關心客人)/;
 
@@ -55,14 +56,18 @@ function isCarePost(post = {}) {
   if (isWeatherPost(post)) return true;
   if (String(post.sequenceRole || "").toLowerCase() === "care") return true;
   if (CARE_CATEGORY.test(String(post.category || ""))) return true;
-  const subject = `${post.knowledgeTopic || ""}\n${post.title || ""}`;
-  return CARE_TITLE.test(subject);
+  return CARE_TITLE.test(`${post.knowledgeTopic || ""}\n${post.title || ""}`);
+}
+
+function isFixedDay(weekday) {
+  return FIXED_DAYS.includes(String(weekday || ""));
 }
 
 function expectedTime(post = {}) {
-  if (isWeatherPost(post)) return { weekday: "", hour: WEATHER_HOUR, minute: WEATHER_MINUTE, policy: "weather-exception-10:00" };
-  if (isCarePost(post)) return { weekday: REGULAR_CARE_DAY, hour: REGULAR_CARE_HOUR, minute: REGULAR_CARE_MINUTE, policy: "regular-care-wed-19:30" };
-  return { weekday: PRODUCT_DAY, hour: STANDARD_HOUR, minute: STANDARD_MINUTE, policy: "product-fri-20:00" };
+  if (isWeatherPost(post)) {
+    return { weekday: "non-fixed", hour: WEATHER_HOUR, minute: WEATHER_MINUTE, policy: "weather-condition-non-wed-fri-10:00" };
+  }
+  return { weekday: "Wed/Fri", hour: FIXED_HOUR, minute: FIXED_MINUTE, policy: "fixed-wed-fri-10:00" };
 }
 
 function expectedHour(post = {}) {
@@ -72,29 +77,22 @@ function expectedHour(post = {}) {
 function validScheduledAt(value, post = {}) {
   const parts = taipeiParts(value);
   if (!parts) return false;
-  const hasPostContext = Boolean(post && Object.keys(post).length);
-  if (!hasPostContext) {
-    return (
-      (parts.weekday === REGULAR_CARE_DAY && parts.hour === REGULAR_CARE_HOUR && parts.minute === REGULAR_CARE_MINUTE) ||
-      (parts.weekday === PRODUCT_DAY && parts.hour === STANDARD_HOUR && parts.minute === STANDARD_MINUTE) ||
-      (parts.hour === WEATHER_HOUR && parts.minute === WEATHER_MINUTE)
-    );
-  }
-  const expected = expectedTime(post);
-  if (isWeatherPost(post)) return parts.hour === expected.hour && parts.minute === expected.minute;
-  return parts.weekday === expected.weekday && parts.hour === expected.hour && parts.minute === expected.minute;
+  const timeMatches = parts.hour === FIXED_HOUR && parts.minute === FIXED_MINUTE;
+  if (!timeMatches) return false;
+  if (!post || !Object.keys(post).length) return true;
+  if (isWeatherPost(post)) return !isFixedDay(parts.weekday);
+  return isFixedDay(parts.weekday);
 }
 
 function scheduleError(post = {}) {
-  if (isWeatherPost(post)) return "氣候例外貼文必須安排於台灣時間上午 10:00，可在符合萬華實際氣候的當日額外發布";
-  if (isCarePost(post)) return "固定關心貼文建議安排於每週三台灣時間晚上 19:30";
-  return "產品、使用方式、品牌與其他貼文建議安排於每週五台灣時間晚上 20:00";
+  if (isWeatherPost(post)) return "氣候條件貼文必須依實際氣候安排於非週三、週五的台灣時間上午10:00，且每週最多加發1篇";
+  return "固定貼文必須安排於每週三或週五台灣時間上午10:00";
 }
 
 function setTaipeiTime(value, hour, minute = "00") {
   const parts = taipeiParts(value);
   if (!parts) return value;
-  const utc = Date.UTC(
+  return new Date(Date.UTC(
     Number(parts.year),
     Number(parts.month) - 1,
     Number(parts.day),
@@ -102,8 +100,7 @@ function setTaipeiTime(value, hour, minute = "00") {
     Number(minute),
     0,
     0
-  );
-  return new Date(utc).toISOString();
+  )).toISOString();
 }
 
 function setTaipeiHour(value, hour) {
@@ -115,12 +112,7 @@ function normalizePostSchedule(post) {
   const expected = expectedTime(post);
   const target = setTaipeiTime(post.scheduledAt, expected.hour, expected.minute);
   if (target === post.scheduledAt && post.scheduleTimePolicy === expected.policy) return post;
-  return {
-    ...post,
-    scheduledAt: target,
-    scheduleTimePolicy: expected.policy,
-    updatedAt: new Date().toISOString(),
-  };
+  return { ...post, scheduledAt: target, scheduleTimePolicy: expected.policy, updatedAt: new Date().toISOString() };
 }
 
 function normalizeStore(store) {
@@ -137,7 +129,7 @@ function normalizeStore(store) {
     posts,
     socialScheduleTimePolicyVersion: VERSION,
     socialScheduleTimePolicyUpdatedAt: new Date().toISOString(),
-    socialScheduleRule: "固定關心週三19:30；產品週五20:00；氣候符合時10:00例外加發",
+    socialScheduleRule: "固定貼文每週三、週五10:00；氣候與補水依條件於非週三、週五10:00例外加發，每週最多1篇",
   };
 }
 
@@ -148,8 +140,7 @@ function installStoreNormalizer() {
     try {
       if (path.resolve(String(destination)) === STORE_PATH && fs.existsSync(source)) {
         const parsed = JSON.parse(fs.readFileSync(source, "utf8"));
-        const normalized = normalizeStore(parsed);
-        fs.writeFileSync(source, JSON.stringify(normalized, null, 2), { mode: 0o600 });
+        fs.writeFileSync(source, JSON.stringify(normalizeStore(parsed), null, 2), { mode: 0o600 });
       }
     } catch (error) {
       console.error("social schedule time normalization failed", error.message);
@@ -176,11 +167,10 @@ function transformSource(filename, source) {
       'if (!validOfficialSchedule(post.scheduledAt, post)) errors.push(schedulePolicy.scheduleError(post));'
     );
     source = source.replace(
-      'scheduleRule: "每週三、週五 20:00（Asia/Taipei）",',
-      'scheduleRule: "固定關心週三19:30；產品週五20:00；氣候符合時10:00例外加發（Asia/Taipei）",'
+      /scheduleRule: "[^"]*",/,
+      'scheduleRule: "固定貼文週三、週五10:00；氣候條件於非週三、週五10:00例外加發（Asia/Taipei）",'
     );
   }
-
   if (base === "social-review-center.js") {
     source = source.replace(
       'const { app } = require("./server");',
@@ -191,19 +181,12 @@ function transformSource(filename, source) {
       'function validSchedule(value, post = {}) {\n  return schedulePolicy.validScheduledAt(value, post);\n}'
     );
     source = source.replace(
-      'if (!validSchedule(post?.scheduledAt)) {\n    errors.push("排程固定為每週三或週五晚上 20:00。");',
+      /if \(!validSchedule\(post\?\.scheduledAt\)\) \{\n    errors\.push\("[^"]*"\);/,
       'if (!validSchedule(post?.scheduledAt, post)) {\n    errors.push(schedulePolicy.scheduleError(post));'
     );
-    source = source.replaceAll(
-      "固定每週 2 篇：週三、週五 20:00。",
-      "固定貼文：週三19:30關心、週五20:00產品；氣候符合時上午10:00例外加發。"
-    );
-    source = source.replaceAll(
-      "固定排程為週三、週五晚上 20:00；",
-      "固定排程：週三19:30關心、週五20:00產品；氣候符合時上午10:00例外加發；"
-    );
+    source = source.replaceAll("固定每週 2 篇：週三、週五 20:00。", "固定每週2篇：週三、週五上午10:00。");
+    source = source.replaceAll("固定排程為週三、週五晚上 20:00；", "固定排程為週三、週五上午10:00；");
   }
-
   if (base === "internal-social-review-safety.js") {
     source = source.replace(
       'const review = require("./social-review-center");',
@@ -214,11 +197,11 @@ function transformSource(filename, source) {
       'function validSchedule(value, post = {}) {\n  return schedulePolicy.validScheduledAt(value, post);\n}'
     );
     source = source.replace(
-      'if (!validSchedule(candidate.scheduledAt)) {\n    errors.push("社群排程固定為每週三、週五晚上 20:00");',
+      /if \(!validSchedule\(candidate\.scheduledAt\)\) \{\n    errors\.push\("[^"]*"\);/,
       'if (!validSchedule(candidate.scheduledAt, candidate)) {\n    errors.push(schedulePolicy.scheduleError(candidate));'
     );
     source = source.replace(
-      'if (!validSchedule(post.scheduledAt)) errors.push("排程不是週三或週五 20:00");',
+      /if \(!validSchedule\(post\.scheduledAt\)\) errors\.push\("[^"]*"\);/,
       'if (!validSchedule(post.scheduledAt, post)) errors.push(schedulePolicy.scheduleError(post));'
     );
   }
@@ -231,8 +214,7 @@ function installSourceTransforms() {
   const targets = new Set(["social-server.js", "social-review-center.js", "internal-social-review-safety.js"]);
   const wrapped = function loadWithScheduleTimePolicy(module, filename) {
     if (!targets.has(path.basename(filename))) return previousLoader(module, filename);
-    const source = transformSource(filename, fs.readFileSync(filename, "utf8"));
-    return module._compile(source, filename);
+    return module._compile(transformSource(filename, fs.readFileSync(filename, "utf8")), filename);
   };
   Object.defineProperty(wrapped, "__xjwScheduleTimePolicy", { value: true });
   Module._extensions[".js"] = wrapped;
@@ -263,6 +245,9 @@ installLiveMigrationHook();
 
 module.exports = {
   VERSION,
+  FIXED_DAYS,
+  FIXED_HOUR,
+  FIXED_MINUTE,
   CARE_HOUR,
   STANDARD_HOUR,
   REGULAR_CARE_HOUR,
@@ -274,6 +259,7 @@ module.exports = {
   weekKey,
   isWeatherPost,
   isCarePost,
+  isFixedDay,
   expectedTime,
   expectedHour,
   validScheduledAt,
