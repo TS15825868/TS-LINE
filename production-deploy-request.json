@@ -1,20 +1,21 @@
 {
-  "requestedAt": "2026-07-22T12:30:00.000Z",
+  "requestedAt": "2026-07-23T07:45:00.000Z",
   "requestedBy": "ChatGPT",
   "mode": "automatic-production-deploy",
   "target": "main",
   "service": "TS-LINE",
-  "expectedVersion": "6.0.2",
+  "expectedVersion": "6.0.3",
   "socialPostCount": 11,
-  "change": "重新載入已更新的 Facebook Page Access Token，驗證 FB 連線並保留 Instagram 成功紀錄",
+  "change": "修復社群管理按鈕與圖片顯示；立即發布不受固定排程鎖定；使用1254×1254清晰原圖；2026/7/24 19:30重新發布；保留跨平台防重複",
   "checks": [
-    "GitHub Actions",
+    "GitHub Actions npm test",
     "Render auto deploy",
-    "LINE OA health",
-    "internal app health",
-    "social scheduler health",
-    "Facebook token health",
-    "Instagram no-duplicate guard",
-    "Facebook retry only"
+    "1254x1254 clear original asset health",
+    "internal app social buttons",
+    "manual immediate publishing",
+    "Instagram and Facebook configuration",
+    "persistent no-duplicate guard",
+    "Supabase persistence",
+    "2026/7/24 19:30 republish schedule"
   ]
 }
