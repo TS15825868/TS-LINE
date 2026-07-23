@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "3.0.0";
+const VERSION = "3.0.1";
 const STORE_PATH = path.resolve(process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json");
 const FIXED_DAYS = Object.freeze(["Wed", "Fri"]);
 const FIXED_HOUR = "10";
@@ -64,9 +64,7 @@ function isFixedDay(weekday) {
 }
 
 function expectedTime(post = {}) {
-  if (isWeatherPost(post)) {
-    return { weekday: "non-fixed", hour: WEATHER_HOUR, minute: WEATHER_MINUTE, policy: "weather-condition-non-wed-fri-10:00" };
-  }
+  if (isWeatherPost(post)) return { weekday: "non-fixed", hour: WEATHER_HOUR, minute: WEATHER_MINUTE, policy: "weather-condition-non-wed-fri-10:00" };
   return { weekday: "Wed/Fri", hour: FIXED_HOUR, minute: FIXED_MINUTE, policy: "fixed-wed-fri-10:00" };
 }
 
@@ -77,11 +75,9 @@ function expectedHour(post = {}) {
 function validScheduledAt(value, post = {}) {
   const parts = taipeiParts(value);
   if (!parts) return false;
-  const timeMatches = parts.hour === FIXED_HOUR && parts.minute === FIXED_MINUTE;
-  if (!timeMatches) return false;
+  if (parts.hour !== FIXED_HOUR || parts.minute !== FIXED_MINUTE) return false;
   if (!post || !Object.keys(post).length) return true;
-  if (isWeatherPost(post)) return !isFixedDay(parts.weekday);
-  return isFixedDay(parts.weekday);
+  return isWeatherPost(post) ? !isFixedDay(parts.weekday) : isFixedDay(parts.weekday);
 }
 
 function scheduleError(post = {}) {
@@ -92,15 +88,7 @@ function scheduleError(post = {}) {
 function setTaipeiTime(value, hour, minute = "00") {
   const parts = taipeiParts(value);
   if (!parts) return value;
-  return new Date(Date.UTC(
-    Number(parts.year),
-    Number(parts.month) - 1,
-    Number(parts.day),
-    Number(hour) - 8,
-    Number(minute),
-    0,
-    0
-  )).toISOString();
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(hour) - 8, Number(minute), 0, 0)).toISOString();
 }
 
 function setTaipeiHour(value, hour) {
@@ -124,13 +112,7 @@ function normalizeStore(store) {
     return next;
   });
   if (!changed && store.socialScheduleTimePolicyVersion === VERSION) return store;
-  return {
-    ...store,
-    posts,
-    socialScheduleTimePolicyVersion: VERSION,
-    socialScheduleTimePolicyUpdatedAt: new Date().toISOString(),
-    socialScheduleRule: "固定貼文每週三、週五10:00；氣候與補水依條件於非週三、週五10:00例外加發，每週最多1篇",
-  };
+  return { ...store, posts, socialScheduleTimePolicyVersion: VERSION, socialScheduleTimePolicyUpdatedAt: new Date().toISOString(), socialScheduleRule: "固定貼文每週三、週五10:00；氣候與補水依條件於非週三、週五10:00例外加發，每週最多1篇" };
 }
 
 function installStoreNormalizer() {
@@ -159,17 +141,14 @@ function transformSource(filename, source) {
       'const { app, VERSION } = require("./server");\nconst schedulePolicy = require("./social-schedule-policy");'
     );
     source = source.replace(
-      /function validOfficialSchedule\(value\) \{[\s\S]*?\n\}/,
+      /function validOfficialSchedule\(value(?:,\s*post\s*=\s*\{\})?\)\s*\{[\s\S]*?\n\}/,
       'function validOfficialSchedule(value, post = {}) {\n  return schedulePolicy.validScheduledAt(value, post);\n}'
     );
     source = source.replace(
-      'if (!validOfficialSchedule(post.scheduledAt)) errors.push("排程必須是週三或週五 20:00");',
+      /if \(!validOfficialSchedule\(post\.scheduledAt(?:,\s*post)?\)\) errors\.push\("[^"]*"\);/,
       'if (!validOfficialSchedule(post.scheduledAt, post)) errors.push(schedulePolicy.scheduleError(post));'
     );
-    source = source.replace(
-      /scheduleRule: "[^"]*",/,
-      'scheduleRule: "固定貼文週三、週五10:00；氣候條件於非週三、週五10:00例外加發（Asia/Taipei）",'
-    );
+    source = source.replace(/scheduleRule: "[^"]*",/, 'scheduleRule: "固定貼文週三、週五10:00；氣候條件於非週三、週五10:00例外加發（Asia/Taipei）",');
   }
   if (base === "social-review-center.js") {
     source = source.replace(
@@ -177,11 +156,11 @@ function transformSource(filename, source) {
       'const { app } = require("./server");\nconst schedulePolicy = require("./social-schedule-policy");'
     );
     source = source.replace(
-      /function validSchedule\(value\) \{[\s\S]*?\n\}/,
+      /function validSchedule\(value(?:,\s*post\s*=\s*\{\})?\)\s*\{[\s\S]*?\n\}/,
       'function validSchedule(value, post = {}) {\n  return schedulePolicy.validScheduledAt(value, post);\n}'
     );
     source = source.replace(
-      /if \(!validSchedule\(post\?\.scheduledAt\)\) \{\n    errors\.push\("[^"]*"\);/,
+      /if \(!validSchedule\(post\?\.scheduledAt(?:,\s*post)?\)\) \{\n\s*errors\.push\("[^"]*"\);/,
       'if (!validSchedule(post?.scheduledAt, post)) {\n    errors.push(schedulePolicy.scheduleError(post));'
     );
     source = source.replaceAll("固定每週 2 篇：週三、週五 20:00。", "固定每週2篇：週三、週五上午10:00。");
@@ -193,15 +172,15 @@ function transformSource(filename, source) {
       'const review = require("./social-review-center");\nconst schedulePolicy = require("./social-schedule-policy");'
     );
     source = source.replace(
-      /function validSchedule\(value\) \{[\s\S]*?\n\}/,
+      /function validSchedule\(value(?:,\s*post\s*=\s*\{\})?\)\s*\{[\s\S]*?\n\}/,
       'function validSchedule(value, post = {}) {\n  return schedulePolicy.validScheduledAt(value, post);\n}'
     );
     source = source.replace(
-      /if \(!validSchedule\(candidate\.scheduledAt\)\) \{\n    errors\.push\("[^"]*"\);/,
+      /if \(!validSchedule\(candidate\.scheduledAt(?:,\s*candidate)?\)\) \{\n\s*errors\.push\("[^"]*"\);/,
       'if (!validSchedule(candidate.scheduledAt, candidate)) {\n    errors.push(schedulePolicy.scheduleError(candidate));'
     );
     source = source.replace(
-      /if \(!validSchedule\(post\.scheduledAt\)\) errors\.push\("[^"]*"\);/,
+      /if \(!validSchedule\(post\.scheduledAt(?:,\s*post)?\)\) errors\.push\("[^"]*"\);/,
       'if (!validSchedule(post.scheduledAt, post)) errors.push(schedulePolicy.scheduleError(post));'
     );
   }
@@ -243,30 +222,4 @@ installStoreNormalizer();
 installSourceTransforms();
 installLiveMigrationHook();
 
-module.exports = {
-  VERSION,
-  FIXED_DAYS,
-  FIXED_HOUR,
-  FIXED_MINUTE,
-  CARE_HOUR,
-  STANDARD_HOUR,
-  REGULAR_CARE_HOUR,
-  REGULAR_CARE_MINUTE,
-  WEATHER_HOUR,
-  WEATHER_MINUTE,
-  STANDARD_MINUTE,
-  taipeiParts,
-  weekKey,
-  isWeatherPost,
-  isCarePost,
-  isFixedDay,
-  expectedTime,
-  expectedHour,
-  validScheduledAt,
-  scheduleError,
-  setTaipeiTime,
-  setTaipeiHour,
-  normalizePostSchedule,
-  normalizeStore,
-  transformSource,
-};
+module.exports = { VERSION, FIXED_DAYS, FIXED_HOUR, FIXED_MINUTE, CARE_HOUR, STANDARD_HOUR, REGULAR_CARE_HOUR, REGULAR_CARE_MINUTE, WEATHER_HOUR, WEATHER_MINUTE, STANDARD_MINUTE, taipeiParts, weekKey, isWeatherPost, isCarePost, isFixedDay, expectedTime, expectedHour, validScheduledAt, scheduleError, setTaipeiTime, setTaipeiHour, normalizePostSchedule, normalizeStore, transformSource };
