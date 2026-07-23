@@ -1,21 +1,23 @@
 {
-  "requestedAt": "2026-07-23T07:45:00.000Z",
+  "requestedAt": "2026-07-23T08:05:00.000Z",
   "requestedBy": "ChatGPT",
   "mode": "automatic-production-deploy",
   "target": "main",
   "service": "TS-LINE",
   "expectedVersion": "6.0.3",
   "socialPostCount": 11,
-  "change": "修復社群管理按鈕與圖片顯示；立即發布不受固定排程鎖定；使用1254×1254清晰原圖；2026/7/24 19:30重新發布；保留跨平台防重複",
+  "change": "完成社群管理 App 按鈕、圖片、立即發布、1254×1254清晰原圖、防重複與2026/7/24 19:30重新發布排程的最終修正與上線驗收",
   "checks": [
-    "GitHub Actions npm test",
+    "full npm test suite",
+    "GitHub Actions",
     "Render auto deploy",
-    "1254x1254 clear original asset health",
-    "internal app social buttons",
-    "manual immediate publishing",
+    "1254x1254 exact clear original asset",
+    "social card image display",
+    "all social action buttons",
+    "manual immediate publishing without schedule lock",
     "Instagram and Facebook configuration",
-    "persistent no-duplicate guard",
+    "persistent cross-platform no-duplicate guard",
     "Supabase persistence",
-    "2026/7/24 19:30 republish schedule"
+    "2026/7/24 19:30 clear repost schedule"
   ]
 }
