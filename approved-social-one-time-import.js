@@ -11,7 +11,7 @@ const {
   TOPICS,
 } = officialSocial;
 
-const VERSION = "1.5.0";
+const VERSION = "1.4.0";
 const STORE_PATH = path.resolve(process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json");
 const DEFAULT_SUPABASE_URL = "https://iphexhvjhsmelbgwzhhr.supabase.co";
 const nativeWriteFileSync = fs.writeFileSync.bind(fs);
@@ -172,14 +172,17 @@ function scheduleSummary(posts) {
 function rebuildOfficialSocialSchedule(readStore, writeStore, options = {}) {
   const before = readStore();
   const beforePosts = Array.isArray(before.posts) ? before.posts : [];
-  const removedUnpublished = beforePosts.filter(
-    (post) => !["published", "cancelled"].includes(post.status)
-  ).length;
+  const preservedExisting = beforePosts.filter(
+    (post) => post.campaignId !== CAMPAIGN_ID && !["published", "cancelled"].includes(post.status)
+  );
   let finalStore = null;
 
   const safeWrite = (nextStore) => {
     const generated = Array.isArray(nextStore.posts) ? nextStore.posts : [];
-    const merged = uniquePosts(generated.map(normalizeOfficialPost)).slice(-500);
+    const merged = uniquePosts([
+      ...generated.map(normalizeOfficialPost),
+      ...preservedExisting,
+    ]).slice(-500);
     finalStore = { ...nextStore, posts: merged };
     writeStore(finalStore);
   };
@@ -192,8 +195,8 @@ function rebuildOfficialSocialSchedule(readStore, writeStore, options = {}) {
   return {
     ...result,
     ...summary,
-    preservedExistingUnpublished: 0,
-    removedUnpublished,
+    preservedExistingUnpublished: preservedExisting.length,
+    removedUnpublished: 0,
   };
 }
 
