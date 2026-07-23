@@ -1,6 +1,7 @@
 name: Install Q Boss Social Batch 1
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
