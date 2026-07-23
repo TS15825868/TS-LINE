@@ -1,12 +1,12 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260723-social-ui-fix-1";
+  const VERSION = "20260723-social-ui-fix-2";
   const HEADERS = {
     "Content-Type": "application/json",
     "X-XJW-Requested-With": "internal-app-v2",
   };
-  const ASSET_VERSION = "approved-original-1254-v6";
+  const ASSET_VERSION = "approved-original-1254-v10";
   const ACTION_LABELS = {
     approve: "通過排程",
     reject: "退回",
@@ -53,9 +53,11 @@
     if (post.imageUrl) return post.imageUrl;
     const name = post.imageName || ({
       "first-batch-v2-care-work-rest-20260729": "care-work-rest.jpg",
+      "clear-republish-care-work-rest-20260724": "care-work-rest-clear.jpg",
       "first-batch-v2-care-hydration-20260819": "care-hot-hydration.jpg",
       "first-batch-v2-care-family-20260805": "care-family.jpg",
       "first-batch-v2-care-temperature-gap-20260812": "care-temperature-gap.jpg",
+      "first-batch-v2-care-rainy-day-20260826": "care-rainy-day.jpg",
     }[post.id] || "");
     return name ? `/social-approved-assets/${encodeURIComponent(name)}?v=${ASSET_VERSION}` : "";
   }
@@ -105,6 +107,7 @@
     button.type = "button";
     button.disabled = false;
     button.removeAttribute("aria-disabled");
+    button.style.pointerEvents = "auto";
     const retry = post.status === "partial" || post.status === "failed"
       || Boolean(post.result?.instagram) || Boolean(post.result?.facebook)
       || post.platformStatus?.instagram === "成功" || post.platformStatus?.facebook === "成功";
@@ -135,12 +138,13 @@
   }
 
   function showProgress(card, message, bad = false) {
-    let notice = card.querySelector(".xjw-social-action-status");
-    if (!notice) {
+    let notice = card?.querySelector(".xjw-social-action-status");
+    if (!notice && card) {
       notice = document.createElement("div");
       notice.className = "notice xjw-social-action-status";
       card.querySelector(".actions")?.insertAdjacentElement("beforebegin", notice);
     }
+    if (!notice) return;
     notice.className = `notice ${bad ? "error" : "ok"} xjw-social-action-status`;
     notice.textContent = message;
     notice.hidden = false;
@@ -182,8 +186,8 @@
   }
 
   function installCaptureHandler() {
-    if (document.documentElement.dataset.xjwSocialActionsFixed === "1") return;
-    document.documentElement.dataset.xjwSocialActionsFixed = "1";
+    if (document.documentElement.dataset.xjwSocialActionsFixed === "2") return;
+    document.documentElement.dataset.xjwSocialActionsFixed = "2";
     document.addEventListener("click", (event) => {
       const button = event.target.closest("#socialList [data-social-action]");
       if (!button) return;
