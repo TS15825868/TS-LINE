@@ -6,7 +6,7 @@ const Module = require("module");
 const { requireSignedIn, requireAdmin } = require("./internal-app-security-patch");
 const review = require("./social-review-center");
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const json = express.json({ limit: "5mb" });
 const ACTIVE_STATUSES = new Set([
   "draft",
@@ -304,10 +304,31 @@ function mountSafetyRoutes(app, legacy) {
       post.updatedAt = now();
       social.writeStore(store);
     } else if (action === "publish") {
-      const errors = validationErrors(store.posts, post, post.id);
-      if (post.assetLocked !== true) errors.push("正式素材尚未鎖定");
-      if (!["approved", "failed", "partial"].includes(post.status)) errors.push("貼文尚未通過審核");
+      if (["published", "publishing", "cancelled"].includes(post.status)) {
+        return res.status(409).json({ ok: false, error: post.status === "published" ? "這篇已經發布" : "這篇目前無法立即發布" });
+      }
+
+      const errors = [];
+      if (!post.title) errors.push("標題不可空白");
+      if (!post.publishInstagram && !post.publishFacebook) errors.push("至少選擇一個發布平台");
+      if (post.publishInstagram) {
+        if (!/^https:\/\//i.test(String(post.imageUrl || ""))) errors.push("Instagram 必須有公開 HTTPS 圖片");
+        if (!String(post.instagramCaption || "").trim()) errors.push("Instagram 文案不可空白");
+      }
+      if (post.publishFacebook && !String(post.facebookCaption || post.instagramCaption || "").trim()) {
+        errors.push("Facebook 文案不可空白");
+      }
       if (errors.length) return res.status(400).json({ ok: false, error: [...new Set(errors)].join("；") });
+
+      post.status = "approved";
+      post.assetLocked = true;
+      post.approvedAt = post.approvedAt || now();
+      post.manualImmediatePublish = true;
+      post.lastError = "";
+      post.history = appendHistory(post, "手動立即發布", "略過固定排程時間，立即送往已勾選平台");
+      post.updatedAt = now();
+      social.writeStore(store);
+
       const result = await social.execute(post.id);
       logActivity(legacy, req.internalUser.user, "立即發布社群貼文", post.title);
       return res.json({ ok: true, post: result });
