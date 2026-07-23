@@ -1,9 +1,9 @@
-commit=6092ebe2017cc8085ea03d81c3274b10bdd1adc5
-recorded_at=2026-07-23T07:29:33Z
+commit=ba4ba1a54021313bce37baf839963ca375ee78ba
+recorded_at=2026-07-23T08:22:11Z
 
 
 > xianjiawei-lineoa@6.0.3 test
-> node --check server.js && node --check social-server.js && node --check social-publish-guard.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-corrected-republish-schedule.js && node --check social-original-asset-override.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-manual-immediate-publish.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-app-client-fix.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node social-manual-immediate-publish.test.js && node social-publish-guard.test.js && node social-manual-schedule-override.test.js
+> node --check server.js && node --check social-server.js && node --check social-publish-guard.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-corrected-republish-schedule.js && node --check social-original-asset-override.js && node --check social-final-approved-batch.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-manual-immediate-publish.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-app-client-fix.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node social-clear-republish-policy.test.js && node social-final-approved-batch.test.js && node social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js -r ./social-corrected-republish-schedule.js social-schedule-policy.test.js && node social-manual-schedule-override.test.js && node social-publish-guard.test.js && node social-manual-immediate-publish.test.js && node tools/release_check.js
 
 AssertionError [ERR_ASSERTION]: source: bad seek to 69842
 source: bad seek to 68754
@@ -17,7 +17,7 @@ heif: Invalid input: Unexpected end of file: Extent in iloc box references data 
 
 false !== true
 
-    at /home/runner/work/TS-LINE/TS-LINE/social-manual-immediate-publish.test.js:24:10 {
+    at /home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.test.js:21:10 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
   actual: false,
