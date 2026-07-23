@@ -4,7 +4,7 @@ const Module = require("module");
 const batch = require("./social-final-approved-batch");
 const schedulePolicy = require("./social-schedule-policy");
 
-const VERSION = "2026-07-22-v3";
+const VERSION = "2026-07-23-v4";
 const ACTIVE_STATUSES = new Set(["approved", "publishing", "published", "failed", "partial"]);
 let installed = false;
 let socialApi = null;
@@ -39,7 +39,6 @@ function repairStore(inputStore, updatedAt = nowIso()) {
     if (publishedIds.has(template.id)) continue;
     const previous = canonicalPrevious(byId.get(template.id) || {});
     const desired = batch.desiredPost(template, previous, updatedAt);
-    delete desired.manualScheduleOverride;
     delete desired.manualContentOverride;
     delete desired.manualReviewPending;
     canonical.push(desired);
@@ -53,7 +52,7 @@ function repairStore(inputStore, updatedAt = nowIso()) {
   store.posts = [...published, ...canonical].slice(-500);
   store.socialScheduleRepairVersion = VERSION;
   store.socialScheduleRepairAt = updatedAt;
-  store.socialScheduleRepairReason = "龜鹿飲30cc與180cc分開發文；固定關心週三19:30、產品週五20:00；氣候符合時10:00例外加發";
+  store.socialScheduleRepairReason = "龜鹿飲30cc與180cc分開發文；清晰原圖於2026/7/24 19:30單次重發；後續固定關心週三19:30、產品週五20:00；氣候符合時10:00例外加發";
   return { store, changed: true, repaired, removed };
 }
 
@@ -112,7 +111,6 @@ function scheduleStatus(store = {}) {
     const list = timeMap.get(post.scheduledAt) || [];
     list.push(post.title);
     timeMap.set(post.scheduledAt, list);
-    if (post.manualScheduleOverride) issues.push(`${post.title} 仍有手動時間覆寫`);
   }
   for (const [time, titles] of timeMap) {
     if (titles.length > 1) issues.push(`${time} 有${titles.length}篇重複排程：${titles.join("、")}`);
