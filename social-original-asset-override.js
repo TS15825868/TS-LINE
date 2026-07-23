@@ -5,11 +5,16 @@ const path = require("path");
 const Module = require("module");
 const sharp = require("sharp");
 
-const VERSION = "1.2.0";
-const CONTENT_VERSION = "approved-original-1254-v10";
+const VERSION = "1.3.0";
+const CONTENT_VERSION = "approved-original-1254-v11-direct";
 const ROUTE_PREFIX = "/social-approved-assets";
 const TARGET_SIZE = 1254;
 const ORIGINAL_DIR = path.join(__dirname, "assets", "social-approved", "v7-original");
+const DIRECT_DIR = path.join(__dirname, "assets", "social-approved", "clear-20260723");
+const DIRECT_ORIGINALS = {
+  "care-work-rest.jpg": "care-work-rest-fixed.avif",
+  "care-work-rest-clear.jpg": "care-work-rest-fixed.avif",
+};
 const ORIGINAL_BASES = {
   "care-work-rest.jpg": "care-work-rest.avif",
   "care-work-rest-clear.jpg": "care-work-rest.avif",
@@ -33,6 +38,25 @@ function esc(value) {
   return String(value || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
 }
 
+function directOriginalChunks(name) {
+  const base = DIRECT_ORIGINALS[name];
+  if (!base || !fs.existsSync(DIRECT_DIR)) return [];
+  const pattern = new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\.\\d{3}\\.b64$`);
+  return fs.readdirSync(DIRECT_DIR).filter((file) => pattern.test(file)).sort().map((file) => path.join(DIRECT_DIR, file));
+}
+
+function directOriginalFile(name) {
+  return directOriginalChunks(name)[0] || "";
+}
+
+function directOriginalBuffer(name) {
+  const chunks = directOriginalChunks(name);
+  if (!chunks.length) return null;
+  const encoded = chunks.map((file) => fs.readFileSync(file, "utf8").trim()).join("");
+  if (!encoded || /[^A-Za-z0-9+/=]/.test(encoded)) return null;
+  return Buffer.from(encoded, "base64");
+}
+
 function originalChunks(name) {
   const base = ORIGINAL_BASES[name];
   if (!base || !fs.existsSync(ORIGINAL_DIR)) return [];
@@ -44,11 +68,17 @@ async function exactOriginal(name) {
   if (!ORIGINAL_CACHE.has(name)) {
     ORIGINAL_CACHE.set(name, (async () => {
       try {
-        const files = originalChunks(name);
-        if (!files.length) return null;
-        const encoded = files.map((file) => fs.readFileSync(file, "utf8").trim()).join("");
-        if (!encoded || /[^A-Za-z0-9+/=]/.test(encoded)) return null;
-        const input = Buffer.from(encoded, "base64");
+        const direct = directOriginalBuffer(name);
+        let input = null;
+        if (direct) {
+          input = direct;
+        } else {
+          const files = originalChunks(name);
+          if (!files.length) return null;
+          const encoded = files.map((file) => fs.readFileSync(file, "utf8").trim()).join("");
+          if (!encoded || /[^A-Za-z0-9+/=]/.test(encoded)) return null;
+          input = Buffer.from(encoded, "base64");
+        }
         const meta = await sharp(input).metadata();
         if (meta.width !== TARGET_SIZE || meta.height !== TARGET_SIZE) return null;
         return sharp(input).jpeg({ quality: 96, chromaSubsampling: "4:4:4", mozjpeg: true }).toBuffer();
@@ -88,7 +118,7 @@ async function info(name) {
     const buffer = await imageBuffer(name);
     if (!buffer) return { name, ok: false, width: 0, height: 0, bytes: 0 };
     const meta = await sharp(buffer).metadata();
-    return { name, ok: meta.width === TARGET_SIZE && meta.height === TARGET_SIZE, width: meta.width || 0, height: meta.height || 0, bytes: buffer.length, exactOriginalSource: Boolean(original), crispVectorFallback: !original };
+    return { name, ok: meta.width === TARGET_SIZE && meta.height === TARGET_SIZE, width: meta.width || 0, height: meta.height || 0, bytes: buffer.length, exactOriginalSource: Boolean(original), directOriginalSource: Boolean(directOriginalFile(name)), crispVectorFallback: !original };
   } catch (error) {
     return { name, ok: false, width: 0, height: 0, bytes: 0, error: error.message };
   }
@@ -99,7 +129,7 @@ function mount(app) {
   Object.defineProperty(app, "__xjwCrispCareAssetsMounted", { value: true });
   app.get(`${ROUTE_PREFIX}/healthz`, async (_req, res) => {
     const assets = await Promise.all(Object.keys(THEMES).map(info));
-    res.json({ ok: assets.every((item) => item.ok), version: VERSION, contentVersion: CONTENT_VERSION, targetSize: TARGET_SIZE, exactOriginalSourceCount: assets.filter((item) => item.exactOriginalSource).length, crispVectorFallbackCount: assets.filter((item) => item.crispVectorFallback).length, assets });
+    res.json({ ok: assets.every((item) => item.ok), version: VERSION, contentVersion: CONTENT_VERSION, targetSize: TARGET_SIZE, exactOriginalSourceCount: assets.filter((item) => item.exactOriginalSource).length, directOriginalSourceCount: assets.filter((item) => item.directOriginalSource).length, crispVectorFallbackCount: assets.filter((item) => item.crispVectorFallback).length, assets });
   });
   app.get(`${ROUTE_PREFIX}/:name`, async (req, res, next) => {
     const name = path.basename(String(req.params.name || ""));
@@ -126,4 +156,4 @@ function install() {
   };
 }
 install();
-module.exports = { VERSION, CONTENT_VERSION, TARGET_SIZE, THEMES, ORIGINAL_DIR, ORIGINAL_BASES, originalChunks, exactOriginal, fallbackSvg, imageBuffer, info, mount, install };
+module.exports = { VERSION, CONTENT_VERSION, TARGET_SIZE, THEMES, ORIGINAL_DIR, DIRECT_DIR, DIRECT_ORIGINALS, ORIGINAL_BASES, directOriginalChunks, directOriginalFile, directOriginalBuffer, originalChunks, exactOriginal, fallbackSvg, imageBuffer, info, mount, install };
