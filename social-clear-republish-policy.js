@@ -1,13 +1,13 @@
 "use strict";
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const { POSTS } = require("./social-final-posts");
 
 const ORIGINAL_POST_ID = "first-batch-v2-care-work-rest-20260729";
-const REPUBLISH_POST_ID = "clear-republish-care-work-rest-20260723";
+const REPUBLISH_POST_ID = "clear-republish-care-work-rest-20260724";
 const SOURCE_IMAGE_FILE = "634CBEF9-5A29-44EE-BFFC-AA5DDB8C049B.PNG";
 const REFERENCE_IMAGE_FILE = SOURCE_IMAGE_FILE;
-const SCHEDULED_AT = "2026-07-23T11:30:00.000Z"; // 台灣時間 2026/7/23 19:30
+const SCHEDULED_AT = "2026-07-24T11:30:00.000Z"; // 台灣時間 2026/7/24 19:30
 
 function applyClearRepublishPolicy(posts = POSTS) {
   const matches = posts.filter((item) => [ORIGINAL_POST_ID, REPUBLISH_POST_ID].includes(String(item?.id || "")));
@@ -22,6 +22,8 @@ function applyClearRepublishPolicy(posts = POSTS) {
     sourceImageFile: SOURCE_IMAGE_FILE,
     referenceImageFile: REFERENCE_IMAGE_FILE,
     correctedClearRepublish: true,
+    manualScheduleOverride: true,
+    scheduleTimePolicy: "manual-override",
     clearOriginalRequired: true,
     approvedOriginalAsset: true,
     originalCompositionLocked: true,
