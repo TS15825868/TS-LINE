@@ -6,7 +6,7 @@ const Module = require("module");
 const { mountInternalSocialSite } = require("./internal-social-site");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260724-ipad-touch-4";
+const RUNTIME_VERSION = "20260724-inventory-split-1";
 const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
@@ -55,14 +55,11 @@ function fixGeneratedHtml(body) {
     `/internal/app-form-controller.js?v=${RUNTIME_VERSION}`,
     `/internal/app-safe-extras.js?v=${RUNTIME_VERSION}`,
     `/internal/order-entry-controller.js?v=${RUNTIME_VERSION}`,
-    `/internal/app-review-only.js?v=${RUNTIME_VERSION}`,
-    `/internal/app-social-retry.js?v=${RUNTIME_VERSION}`,
-    `/internal/app-social-filter.js?v=${RUNTIME_VERSION}`,
-    `/internal/app-facebook-health.js?v=${RUNTIME_VERSION}`,
     `/internal/app-mobile.js?v=${RUNTIME_VERSION}`,
     `/internal/app-postboot.js?v=${RUNTIME_VERSION}`,
   ].map((src) => `<script src="${src}"></script>`).join("");
-  return cleanHtml.replace("</body>", `${orderStyle}${recoveryScript}${scripts}</body>`);
+  const splitScript = `<script>(function(){function split(){var tab=document.querySelector('nav.tabs [data-view="social"]');if(tab){var link=document.createElement('a');link.className=tab.className;link.href='/internal/social-center';link.textContent='社群網站';link.setAttribute('aria-label','開啟獨立社群管理網站');tab.replaceWith(link);}var socialSection=document.getElementById('social');if(socialSection)socialSection.remove();var metric=document.getElementById('mSocial');var card=metric&&metric.closest('.metric');if(card){card.setAttribute('role','link');card.setAttribute('tabindex','0');card.style.cursor='pointer';var label=card.querySelector('span');if(label)label.textContent='社群網站';card.onclick=function(){location.href='/internal/social-center'};card.onkeydown=function(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='/internal/social-center'}};}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',split,{once:true});else split();}());</script>`;
+  return cleanHtml.replace("</body>", `${orderStyle}${recoveryScript}${scripts}${splitScript}</body>`);
 }
 
 function sendScript(res, source) {
