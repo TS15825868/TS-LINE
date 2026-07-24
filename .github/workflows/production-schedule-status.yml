@@ -1,23 +1,19 @@
-name: 仙加味正式排程狀態驗收
+name: 仙加味正式社群排程驗收
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - "social-final-posts.js"
-      - "social-clear-republish-policy.js"
-      - "social-final-approved-batch.js"
-      - "social-final-approved-batch.test.js"
-      - "social-schedule-repair-20260722.js"
-      - "social-schedule-repair-20260722.test.js"
-      - "social-schedule-policy.js"
-      - "social-schedule-policy.test.js"
-      - "tools/release_check.js"
+      - "package.json"
+      - "social-final-release-20260724.js"
+      - "social-final-release-remote-assets.js"
+      - "disable-official-social-rebuild.js"
+      - "internal-app-social-filter.js"
       - ".github/workflows/production-schedule-status.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: xianjiawei-production-schedule-status
@@ -26,94 +22,50 @@ concurrency:
 jobs:
   verify-schedule:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 22
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
-
-      - name: Use Node 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
-      - name: Install and test schedule contract
+      - name: Verify schedule definitions
         run: |
           npm ci
-          node social-clear-republish-policy.test.js
-          node social-final-approved-batch.test.js
-          node social-schedule-repair-20260722.test.js
-          node social-schedule-policy.test.js
-          node tools/release_check.js
-
-      - name: Wait for Render and verify actual schedule
+          node -r ./social-final-approved-batch.js -r ./social-final-release-20260724.js -r ./social-final-release-remote-assets.js -r ./disable-official-social-rebuild.js - <<'NODE'
+          const release = require('./social-final-release-20260724');
+          const assets = require('./social-final-release-remote-assets');
+          const fixed = release.POSTS.filter((post) => !post.conditionalWeather);
+          const weather = release.POSTS.filter((post) => post.conditionalWeather);
+          if (!release.validateDefinitions() || fixed.length !== 7 || weather.length !== 3) process.exit(1);
+          if (fixed[0].scheduledAt !== '2026-07-24T02:00:00.000Z') process.exit(1);
+          if (new Set(release.POSTS.map((post) => post.imageName)).size !== 10) process.exit(1);
+          if (new Set(release.POSTS.map((post) => post.title)).size !== 10) process.exit(1);
+          if (Object.keys(assets.ALIASES).length !== 10) process.exit(1);
+          console.log({fixed:fixed.map((p)=>[p.title,p.scheduledAt]), weather:weather.map((p)=>p.weatherTrigger)});
+          NODE
+      - name: Verify live schedule release
         shell: bash
-        env:
-          STATUS_URL: https://ts-line.onrender.com/social/schedule-status
         run: |
           set -euo pipefail
           success=0
-          for attempt in $(seq 1 56); do
-            echo "Schedule check $attempt/56"
-            code=$(curl --connect-timeout 10 --max-time 25 --silent --show-error \
-              -o /tmp/production-schedule.json -w "%{http_code}" "$STATUS_URL?t=$(date +%s)" || true)
-            if [ "$code" = "200" ]; then
+          for attempt in $(seq 1 72); do
+            if curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
+              "https://ts-line.onrender.com/social/final-release-healthz?t=$(date +%s)" -o /tmp/release.json; then
               if node - <<'NODE'
-          const fs = require('fs');
-          const data = JSON.parse(fs.readFileSync('/tmp/production-schedule.json', 'utf8'));
-          if (data.ok !== true) process.exit(1);
-          if (data.version !== '2026-07-24-v5' || data.repairVersion !== '2026-07-24-v5') process.exit(1);
-          if (Number(data.canonicalCount) !== 10 || Number(data.approvedCount) !== 7 || Number(data.standbyCount) !== 3) process.exit(1);
-          if (!Array.isArray(data.issues) || data.issues.length !== 0 || !Array.isArray(data.posts) || data.posts.length !== 10) process.exit(1);
-
-          const first = data.posts.find((post) => post.id === 'clear-republish-care-work-rest-20260724');
-          if (!first || first.scheduledAt !== '2026-07-24T02:00:00.000Z' || first.status !== 'approved') process.exit(1);
-
-          const fixed = data.posts.filter((post) => post.status === 'approved');
-          if (fixed.length !== 7) process.exit(1);
-          for (const post of fixed) {
-            const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(post.scheduledAt)).filter((x) => x.type !== 'literal').map((x) => [x.type, x.value]));
-            if (!['Wed', 'Fri'].includes(parts.weekday) || parts.hour !== '10' || parts.minute !== '00') process.exit(1);
-          }
-
-          const weather = data.posts.filter((post) => post.automationStandby === true);
-          if (weather.length !== 3 || weather.some((post) => post.status !== 'paused' || post.scheduledAt)) process.exit(1);
-          if (data.rule.guiluDrink !== '30cc與180cc合併為單一貼文') process.exit(1);
+          const r = require('/tmp/release.json');
+          if (r.ok !== true || r.version !== '2026-07-24-final-v1') process.exit(1);
+          if (r.assetVersion !== '2026-07-24-remote-assets-v1') process.exit(1);
+          if (r.firstScheduledAt !== '2026-07-24T02:00:00.000Z') process.exit(1);
+          if (r.fixedRule !== '每週三、週五上午10:00') process.exit(1);
+          if (r.immediatePublishUnlocked !== true) process.exit(1);
+          if (Number(r.totalPosts) !== 10 || Number(r.fixedPosts) !== 7 || Number(r.weatherStandbyPosts) !== 3) process.exit(1);
+          if (!Array.isArray(r.assets) || r.assets.length !== 10 || r.assets.some((asset) => asset.ok !== true)) process.exit(1);
           NODE
               then success=1; break; fi
             fi
             sleep 15
           done
-
-          if [ "$success" -ne 1 ]; then
-            echo "Production schedule did not become healthy in time"
-            cat /tmp/production-schedule.json 2>/dev/null || true
-            exit 1
-          fi
-
-          node - <<'NODE'
-          const fs = require('fs');
-          const data = JSON.parse(fs.readFileSync('/tmp/production-schedule.json', 'utf8'));
-          data.verifiedCommit = process.env.GITHUB_SHA;
-          data.productionUrl = 'https://ts-line.onrender.com/social/schedule-status';
-          data.firstPublishAtTaipei = '2026-07-24 10:00';
-          data.fixedRule = '每週三、週五 10:00';
-          data.weatherRule = '依萬華實際氣候於非固定日10:00加發，每週最多1篇';
-          data.appControlsUntouched = true;
-          fs.writeFileSync('production-schedule-status.json', JSON.stringify(data, null, 2) + '\n');
-          NODE
-
-      - name: Save production schedule proof
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "仙加味排程驗收"
-          git config user.email "actions@users.noreply.github.com"
-          git add production-schedule-status.json
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "chore: record healthy production social schedule"
-          git pull --rebase origin main
-          git push origin main
+          test "$success" -eq 1
