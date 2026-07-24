@@ -2,17 +2,19 @@
 
 const fs = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 
 const VERSION = "2026-07-24-social-site-v1";
 const ROOT = path.join(__dirname, "internal-social-site");
 const FILES = {
-  html: path.join(ROOT, "index.html"),
-  css: path.join(ROOT, "site.css"),
-  js: path.join(ROOT, "site.js"),
+  html: path.join(ROOT, "index.html.gz.b64"),
+  css: path.join(ROOT, "site.css.gz.b64"),
+  js: path.join(ROOT, "site.js.gz.b64"),
 };
 
 function read(file) {
-  return fs.readFileSync(file, "utf8");
+  const encoded = fs.readFileSync(file, "utf8").replace(/\s+/g, "");
+  return zlib.gunzipSync(Buffer.from(encoded, "base64")).toString("utf8");
 }
 
 function noCache(res, type) {
