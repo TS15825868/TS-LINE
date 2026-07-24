@@ -1,5 +1,5 @@
-commit=bca4b9ed9c9dad52e6ec6193a7a28d2d6327ab05
-recorded_at=2026-07-24T11:36:49Z
+commit=3dc8a362067253318adb3bc304fe7781b459caf4
+recorded_at=2026-07-24T11:41:14Z
 
 
 > xianjiawei-lineoa@6.0.5 test
@@ -21,7 +21,7 @@ AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
 
   assert(socialJs.includes("審核通過"))
 
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:95:1)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:99:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
