@@ -1,8 +1,9 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260715-shell-2";
+  const VERSION = "20260724-shell-ipad-touch-3";
   let refreshing = false;
+  let touchState = null;
 
   function showView(id) {
     document.querySelectorAll(".view").forEach((node) => node.classList.toggle("active", node.id === id));
@@ -70,6 +71,48 @@
     }
   }
 
+  function controlFrom(target) {
+    return target?.closest?.("button,a[href],[data-view],summary,[role='button']") || null;
+  }
+
+  function installTouchFallback() {
+    const touchDevice = Number(navigator.maxTouchPoints || 0) > 0
+      || window.matchMedia?.("(pointer: coarse)")?.matches;
+    if (!touchDevice || document.documentElement.dataset.xjwTouchFallback === "1") return;
+    document.documentElement.dataset.xjwTouchFallback = "1";
+
+    const style = document.createElement("style");
+    style.id = "xjwTouchFallbackStyle";
+    style.textContent = "button,a[href],[data-view],summary,[role='button']{touch-action:manipulation!important;-webkit-tap-highlight-color:rgba(11,31,59,.14);pointer-events:auto!important}#xjwMobileBackdrop:not(.open),#xjwMobileSheet:not(.open){pointer-events:none!important}";
+    document.head.appendChild(style);
+
+    document.addEventListener("touchstart", (event) => {
+      if (event.touches?.length !== 1) { touchState = null; return; }
+      const control = controlFrom(event.target);
+      if (!control) { touchState = null; return; }
+      const point = event.touches[0];
+      touchState = { control, x: point.clientX, y: point.clientY, moved: false };
+    }, { capture: true, passive: true });
+
+    document.addEventListener("touchmove", (event) => {
+      if (!touchState || !event.touches?.length) return;
+      const point = event.touches[0];
+      if (Math.hypot(point.clientX - touchState.x, point.clientY - touchState.y) > 14) touchState.moved = true;
+    }, { capture: true, passive: true });
+
+    document.addEventListener("touchend", (event) => {
+      const state = touchState;
+      touchState = null;
+      if (!state || state.moved || state.control.disabled || state.control.getAttribute("aria-disabled") === "true") return;
+      const point = event.changedTouches?.[0];
+      if (point && Math.hypot(point.clientX - state.x, point.clientY - state.y) > 14) return;
+      event.preventDefault();
+      state.control.click();
+    }, { capture: true, passive: false });
+
+    document.addEventListener("touchcancel", () => { touchState = null; }, { capture: true, passive: true });
+  }
+
   function bind() {
     document.querySelectorAll("button").forEach((button) => {
       if (String(button.textContent || "").trim() === "重新整理") {
@@ -77,6 +120,8 @@
         button.type = "button";
       }
     });
+
+    installTouchFallback();
 
     document.addEventListener("click", (event) => {
       const refreshButton = event.target.closest("button[data-refresh-app='true']");
@@ -106,7 +151,7 @@
 
   window.showView = showView;
   window.xjwRefreshApp = refreshApp;
-  window.xjwShell = { version: VERSION, showView, refreshApp };
+  window.xjwShell = { version: VERSION, showView, refreshApp, installTouchFallback };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind, { once: true });
   else bind();
 })();
