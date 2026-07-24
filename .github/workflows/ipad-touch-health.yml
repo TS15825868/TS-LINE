@@ -5,8 +5,11 @@ on:
   push:
     branches: [main]
     paths:
+      - "internal-app-shell.js"
       - "internal-app-review-only.js"
+      - "internal-app-facebook-health.js"
       - "internal-app-client-fix.js"
+      - "tools/release_check.js"
       - ".github/workflows/ipad-touch-health.yml"
 
 permissions:
@@ -29,11 +32,17 @@ jobs:
       - name: Verify touch-safe source
         run: |
           npm ci
+          node --check internal-app-shell.js
           node --check internal-app-review-only.js
-          grep -q '20260724-review-gate-v4-touch-fix' internal-app-review-only.js
-          grep -q 'function setText' internal-app-review-only.js
-          grep -q 'new MutationObserver(scheduleDecorate)' internal-app-review-only.js
-          ! grep -q 'new MutationObserver(decorate)' internal-app-review-only.js
+          node --check internal-app-facebook-health.js
+          grep -q '20260724-shell-ipad-touch-3' internal-app-shell.js
+          grep -q 'installTouchFallback' internal-app-shell.js
+          grep -q 'state.control.click()' internal-app-shell.js
+          grep -q '20260724-review-gate-v5-polling' internal-app-review-only.js
+          ! grep -q 'new MutationObserver' internal-app-review-only.js
+          grep -q '20260724-facebook-health-polling-2' internal-app-facebook-health.js
+          ! grep -q 'new MutationObserver' internal-app-facebook-health.js
+          grep -q '20260724-ipad-touch-3' internal-app-client-fix.js
           npm test
       - name: Wait for Render and verify live touch fix
         shell: bash
@@ -45,23 +54,32 @@ jobs:
           for attempt in $(seq 1 72); do
             echo "Live touch check $attempt/72"
             if curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
+              "$BASE_URL/internal/app-shell.js?t=$(date +%s)" -o /tmp/shell.js \
+              && curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
               "$BASE_URL/internal/app-review-only.js?t=$(date +%s)" -o /tmp/review.js \
-              && grep -q '20260724-review-gate-v4-touch-fix' /tmp/review.js \
-              && grep -q 'new MutationObserver(scheduleDecorate)' /tmp/review.js \
-              && ! grep -q 'new MutationObserver(decorate)' /tmp/review.js; then
+              && curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
+              "$BASE_URL/internal/app-facebook-health.js?t=$(date +%s)" -o /tmp/facebook.js \
+              && grep -q '20260724-shell-ipad-touch-3' /tmp/shell.js \
+              && grep -q 'state.control.click()' /tmp/shell.js \
+              && grep -q '20260724-review-gate-v5-polling' /tmp/review.js \
+              && ! grep -q 'new MutationObserver' /tmp/review.js \
+              && grep -q '20260724-facebook-health-polling-2' /tmp/facebook.js \
+              && ! grep -q 'new MutationObserver' /tmp/facebook.js; then
               success=1
               break
             fi
             sleep 15
           done
           if [ "$success" -ne 1 ]; then
-            echo "Render did not deploy the iPad touch fix" >&2
-            head -40 /tmp/review.js 2>/dev/null || true
+            echo "Render did not deploy the direct iPad touch fix" >&2
+            head -20 /tmp/shell.js 2>/dev/null || true
+            head -20 /tmp/review.js 2>/dev/null || true
+            head -20 /tmp/facebook.js 2>/dev/null || true
             exit 1
           fi
           curl --connect-timeout 10 --max-time 30 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/internal.json
           node - <<'NODE'
           const health = require('/tmp/internal.json');
           if (health.ok !== true || health.app !== '仙加味內部管理 App') throw new Error('internal App health failed');
-          console.log({ ok: true, app: health.app, touchFix: '20260724-review-gate-v4-touch-fix' });
+          console.log({ ok: true, app: health.app, touchFix: '20260724-shell-ipad-touch-3' });
           NODE
