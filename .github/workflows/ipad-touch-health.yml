@@ -1,0 +1,67 @@
+name: 仙加味 App iPad 觸控驗收
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "internal-app-review-only.js"
+      - "internal-app-client-fix.js"
+      - ".github/workflows/ipad-touch-health.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xjw-ipad-touch-health
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify touch-safe source
+        run: |
+          npm ci
+          node --check internal-app-review-only.js
+          grep -q '20260724-review-gate-v4-touch-fix' internal-app-review-only.js
+          grep -q 'function setText' internal-app-review-only.js
+          grep -q 'new MutationObserver(scheduleDecorate)' internal-app-review-only.js
+          ! grep -q 'new MutationObserver(decorate)' internal-app-review-only.js
+          npm test
+      - name: Wait for Render and verify live touch fix
+        shell: bash
+        env:
+          BASE_URL: https://ts-line.onrender.com
+        run: |
+          set -euo pipefail
+          success=0
+          for attempt in $(seq 1 72); do
+            echo "Live touch check $attempt/72"
+            if curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
+              "$BASE_URL/internal/app-review-only.js?t=$(date +%s)" -o /tmp/review.js \
+              && grep -q '20260724-review-gate-v4-touch-fix' /tmp/review.js \
+              && grep -q 'new MutationObserver(scheduleDecorate)' /tmp/review.js \
+              && ! grep -q 'new MutationObserver(decorate)' /tmp/review.js; then
+              success=1
+              break
+            fi
+            sleep 15
+          done
+          if [ "$success" -ne 1 ]; then
+            echo "Render did not deploy the iPad touch fix" >&2
+            head -40 /tmp/review.js 2>/dev/null || true
+            exit 1
+          fi
+          curl --connect-timeout 10 --max-time 30 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/internal.json
+          node - <<'NODE'
+          const health = require('/tmp/internal.json');
+          if (health.ok !== true || health.app !== '仙加味內部管理 App') throw new Error('internal App health failed');
+          console.log({ ok: true, app: health.app, touchFix: '20260724-review-gate-v4-touch-fix' });
+          NODE
