@@ -59,14 +59,16 @@ for (const token of [
 ]) assert(start.includes(token), `正式啟動程式缺少：${token}`);
 
 const gate = read("social-review-only-mode.js");
-assert(gate.includes('VERSION = "2026-07-24-review-gate-v2"'));
+assert(gate.includes('VERSION = "2026-07-24-review-gate-v3"'));
 assert(gate.includes("只有從內部 App 明確按下 approve"));
 assert(gate.includes("reviewApprovedAt"));
 assert(gate.includes("automaticSchedulingEnabled: true"));
 assert(gate.includes("automaticSchedulingRequiresReview: true"));
 assert(gate.includes("automaticRetryEnabled: false"));
 assert(gate.includes("這篇尚未通過人工審核，不能發布"));
-assert(gate.includes("未審核直接按發布"));
+assert(gate.includes("請先按『審核通過・啟用自動發布』"));
+assert(gate.includes("nextAvailableFixedSlot"));
+assert(gate.includes("move-to-next-free-wed-fri-10:00"));
 
 const clientFix = read("internal-app-client-fix.js");
 const reviewUi = read("internal-app-review-only.js");
@@ -74,12 +76,13 @@ const retry = read("internal-app-social-retry.js");
 const filter = read("internal-app-social-filter.js");
 const facebookHealth = read("internal-app-facebook-health.js");
 const immediate = read("social-manual-immediate-publish.js");
-assert(clientFix.includes('RUNTIME_VERSION = "20260724-review-gate-2"'));
+assert(clientFix.includes('RUNTIME_VERSION = "20260724-review-gate-3"'));
 assert(clientFix.indexOf("/internal/app-review-only.js") < clientFix.indexOf("/internal/app-social-retry.js"));
 assert(reviewUi.includes("人工審核閘門已開啟"));
 assert(reviewUi.includes("審核通過・啟用自動發布"));
 assert(reviewUi.includes("未審核內容不會發布"));
 assert(reviewUi.includes("等待萬華實際氣候"));
+assert(reviewUi.includes("自動改排下一個空白的週三／週五上午10:00"));
 assert(retry.includes("立即發布"));
 assert(retry.includes("已成功的平台不會重複發布"));
 assert(filter.includes("週三、週五上午 10:00"));
@@ -111,4 +114,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；未審核與失敗平台不自動補發；防止重複發布");
+console.log("仙加味正式檢查通過：10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；過期排程改至下一個安全時段；未審核與失敗平台不自動補發；防止重複發布");
