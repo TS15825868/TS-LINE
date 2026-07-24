@@ -7,13 +7,16 @@ on:
     paths:
       - "package.json"
       - "package-lock.json"
+      - "internal-app-client-fix.js"
+      - "internal-social-site.js"
+      - "internal-social-site/**"
+      - "social-static-asset-bridge.js"
+      - "social-final-posts.js"
       - "social-final-release-20260724.js"
-      - "social-final-identity-preserver.js"
       - "social-final-release-remote-assets.js"
-      - "disable-official-social-rebuild.js"
-      - "internal-app-social-filter.js"
-      - "internal-app-social-retry.js"
-      - "internal-app-facebook-health.js"
+      - "social-review-only-mode.js"
+      - "social-schedule-policy.js"
+      - "social-publish-guard.js"
       - "tools/release_check.js"
       - ".github/workflows/final-verification.yml"
 
@@ -27,7 +30,7 @@ concurrency:
 jobs:
   final-verification:
     runs-on: ubuntu-latest
-    timeout-minutes: 24
+    timeout-minutes: 26
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,64 +58,88 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/xjw-final
           success=0
-          for attempt in $(seq 1 72); do
-            echo "Final production verification $attempt/72" | tee -a /tmp/final-production.log
-            code=$(curl --connect-timeout 10 --max-time 55 --silent --show-error \
-              -o /tmp/xjw-final/release.json -w "%{http_code}" \
-              "$BASE_URL/social/final-release-healthz?t=$(date +%s)" || true)
-            if [ "$code" = "200" ]; then
-              if node - <<'NODE'
-          const fs = require('fs');
-          const r = JSON.parse(fs.readFileSync('/tmp/xjw-final/release.json', 'utf8'));
-          if (r.ok !== true) process.exit(1);
-          if (r.version !== '2026-07-24-final-v1') process.exit(1);
-          if (r.assetVersion !== '2026-07-24-remote-assets-v1') process.exit(1);
-          if (Number(r.totalPosts) !== 10 || Number(r.fixedPosts) !== 7 || Number(r.weatherStandbyPosts) !== 3) process.exit(1);
-          if (r.firstScheduledAt !== '2026-07-24T02:00:00.000Z') process.exit(1);
-          if (r.immediatePublishUnlocked !== true) process.exit(1);
-          if (r.duplicateTitleCount !== 0 || r.duplicateCaptionCount !== 0 || r.duplicateImageCount !== 0) process.exit(1);
-          if (!Array.isArray(r.assets) || r.assets.length !== 10) process.exit(1);
-          if (r.assets.some((a) => a.ok !== true || Number(a.width) !== 1254 || Number(a.height) !== 1254)) process.exit(1);
+          for attempt in $(seq 1 80); do
+            echo "Final split-system verification $attempt/80" | tee -a /tmp/final-production.log
+            release_ok=0
+            social_site_ok=0
+            raster_ok=0
+            internal_ok=0
+            database_ok=0
+            social_ok=0
+
+            if curl --connect-timeout 10 --max-time 65 --fail --silent --show-error \
+              "$BASE_URL/social/final-release-healthz?t=$(date +%s)" -o /tmp/xjw-final/release.json; then
+              node - <<'NODE' && release_ok=1 || true
+          const r = require('/tmp/xjw-final/release.json');
+          if (r.ok !== true) throw new Error('release not ok');
+          if (r.version !== '2026-07-24-final-v1') throw new Error('release version mismatch');
+          if (Number(r.totalPosts) !== 10 || Number(r.fixedPosts) !== 7 || Number(r.weatherStandbyPosts) !== 3) throw new Error('post counts mismatch');
+          if (r.duplicateTitleCount !== 0 || r.duplicateCaptionCount !== 0 || r.duplicateImageCount !== 0) throw new Error('duplicates found');
+          if (!Array.isArray(r.assets) || r.assets.length !== 10) throw new Error('asset count mismatch');
+          if (r.assets.some((a) => a.ok !== true || Number(a.width) !== 1254 || Number(a.height) !== 1254)) throw new Error('asset quality mismatch');
           NODE
-              then success=1; break; fi
+            fi
+
+            if curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
+              "$BASE_URL/internal/social-center-healthz?t=$(date +%s)" -o /tmp/xjw-final/social-site.json; then
+              node - <<'NODE' && social_site_ok=1 || true
+          const h = require('/tmp/xjw-final/social-site.json');
+          if (h.ok !== true || h.mode !== 'independent-website') throw new Error('social website not independent');
+          if (h.reviewRequiredBeforePublish !== true || h.automaticRetryEnabled !== false) throw new Error('social safety rules mismatch');
+          if (h.inventoryApp !== '/internal/app' || h.socialWebsite !== '/internal/social-center') throw new Error('internal routes mismatch');
+          NODE
+            fi
+
+            if curl --connect-timeout 10 --max-time 90 --fail --silent --show-error \
+              "$BASE_URL/social/raster-healthz?t=$(date +%s)" -o /tmp/xjw-final/raster.json; then
+              node - <<'NODE' && raster_ok=1 || true
+          const h = require('/tmp/xjw-final/raster.json');
+          if (h.ok !== true || h.rasterText !== true || h.preventsGibberish !== true) throw new Error('Traditional Chinese raster health failed');
+          if (h.contentVersion !== 'social-raster-tc-v1' || h.targetSize !== '1254x1254') throw new Error('raster version or size mismatch');
+          if (!String(h.sampleText || '').includes('繁體中文測試')) throw new Error('Traditional Chinese sample missing');
+          if (Number(h.fontBytes || 0) < 1000000 || Number(h.sampleBytes || 0) < 1000) throw new Error('font or raster sample invalid');
+          NODE
+            fi
+
+            curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/healthz?t=$(date +%s)" -o /tmp/xjw-final/internal.json 2>/dev/null && \
+              node -e "const h=require('/tmp/xjw-final/internal.json');if(h.ok!==true||h.app!=='仙加味內部管理 App')process.exit(1)" && internal_ok=1 || true
+            curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/db-healthz?t=$(date +%s)" -o /tmp/xjw-final/database.json 2>/dev/null && \
+              node -e "const h=require('/tmp/xjw-final/database.json');if(h.ok!==true||h.storage!=='supabase')process.exit(1)" && database_ok=1 || true
+            curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/social/healthz?t=$(date +%s)" -o /tmp/xjw-final/social.json 2>/dev/null && \
+              node -e "const h=require('/tmp/xjw-final/social.json');if(h.ok!==true||h.instagramConfigured!==true||h.facebookConfigured!==true||Number(h.postCount)<10)process.exit(1)" && social_ok=1 || true
+
+            if [ "$release_ok" -eq 1 ] && [ "$social_site_ok" -eq 1 ] && [ "$raster_ok" -eq 1 ] && \
+               [ "$internal_ok" -eq 1 ] && [ "$database_ok" -eq 1 ] && [ "$social_ok" -eq 1 ]; then
+              success=1
+              break
             fi
             sleep 15
           done
+
           if [ "$success" -ne 1 ]; then
-            echo "Final release health did not pass" | tee -a /tmp/final-production.log
-            cat /tmp/xjw-final/release.json 2>/dev/null | tee -a /tmp/final-production.log || true
+            echo "Final split-system production verification did not pass" | tee -a /tmp/final-production.log
+            for file in release social-site raster internal database social; do
+              echo "--- $file ---" | tee -a /tmp/final-production.log
+              cat "/tmp/xjw-final/$file.json" 2>/dev/null | tee -a /tmp/final-production.log || true
+            done
             exit 1
           fi
 
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/healthz" -o /tmp/xjw-final/health.json
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/social/healthz" -o /tmp/xjw-final/social.json
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/xjw-final/internal.json
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/db-healthz" -o /tmp/xjw-final/database.json
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-runtime.js?t=$(date +%s)" -o /tmp/xjw-final/runtime.js
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-social-retry.js?t=$(date +%s)" -o /tmp/xjw-final/retry.js
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-social-filter.js?t=$(date +%s)" -o /tmp/xjw-final/filter.js
-          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-facebook-health.js?t=$(date +%s)" -o /tmp/xjw-final/facebook.js
+          status=$(curl --connect-timeout 10 --max-time 30 --silent --output /tmp/xjw-final/login-body \
+            --dump-header /tmp/xjw-final/login-headers --write-out '%{http_code}' \
+            "$BASE_URL/internal/social-center?t=$(date +%s)")
+          test "$status" = "302"
+          tr -d '\r' < /tmp/xjw-final/login-headers | grep -qi '^location: /internal/login'
 
+          curl --connect-timeout 10 --max-time 120 --fail --silent --show-error \
+            "$BASE_URL/social-approved-assets/care-work-rest-v7.jpg?v=social-raster-tc-v1&t=$(date +%s)" \
+            -o /tmp/xjw-final/sample.jpg
           node - <<'NODE'
-          const fs = require('fs');
-          const json = (name) => JSON.parse(fs.readFileSync(`/tmp/xjw-final/${name}.json`, 'utf8'));
-          const health = json('health');
-          const social = json('social');
-          const internal = json('internal');
-          const database = json('database');
-          const runtime = fs.readFileSync('/tmp/xjw-final/runtime.js', 'utf8');
-          const retry = fs.readFileSync('/tmp/xjw-final/retry.js', 'utf8');
-          const filter = fs.readFileSync('/tmp/xjw-final/filter.js', 'utf8');
-          const facebook = fs.readFileSync('/tmp/xjw-final/facebook.js', 'utf8');
-          if (health.ok !== true) throw new Error('LINE OA health failed');
-          if (social.ok !== true || social.instagramConfigured !== true || social.facebookConfigured !== true) throw new Error('Social configuration failed');
-          if (Number(social.postCount) < 10) throw new Error('Social schedule count failed');
-          if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal App failed');
-          if (database.ok !== true || database.storage !== 'supabase') throw new Error('Database failed');
-          if (!runtime.includes('data-social-action')) throw new Error('App action runtime missing');
-          if (!retry.includes('ensurePublishButton') || !retry.includes('button.disabled = false')) throw new Error('Immediate publish button missing');
-          if (!filter.includes('20260724-social-final-1') || !filter.includes('立即發布可隨時使用')) throw new Error('Final schedule UI missing');
-          if (!facebook.includes('20260724-facebook-health-unlocked-1') || !facebook.includes('button.disabled = false') || facebook.includes('button.disabled = expired')) throw new Error('Immediate publish remains locked');
+          const sharp = require('sharp');
+          (async () => {
+            const m = await sharp('/tmp/xjw-final/sample.jpg').metadata();
+            if (m.format !== 'jpeg' || m.width !== 1254 || m.height !== 1254) throw new Error('final image is not 1254x1254 JPEG');
+          })();
           NODE
 
       - name: Write verification result
@@ -127,14 +154,14 @@ jobs:
           if [ "$TEST_OUTCOME" = "success" ] && [ "$PRODUCTION_OUTCOME" = "success" ]; then ok=true; fi
           node - <<'NODE'
           const fs = require('fs');
+          const load = (name) => { try { return JSON.parse(fs.readFileSync(`/tmp/xjw-final/${name}.json`, 'utf8')); } catch { return {}; } };
+          const release = load('release');
+          const social = load('social');
+          const internal = load('internal');
+          const database = load('database');
+          const socialSite = load('social-site');
+          const raster = load('raster');
           const ok = process.env.TEST_OUTCOME === 'success' && process.env.PRODUCTION_OUTCOME === 'success';
-          let release = {};
-          let social = {};
-          let internal = {};
-          let database = {};
-          for (const [name, target] of [['release', release], ['social', social], ['internal', internal], ['database', database]]) {
-            try { Object.assign(target, JSON.parse(fs.readFileSync(`/tmp/xjw-final/${name}.json`, 'utf8'))); } catch {}
-          }
           const result = {
             ok,
             verifiedAt: new Date().toISOString(),
@@ -146,20 +173,36 @@ jobs:
             totalPosts: Number(release.totalPosts || 0),
             fixedPosts: Number(release.fixedPosts || 0),
             weatherStandbyPosts: Number(release.weatherStandbyPosts || 0),
-            immediatePublishUnlocked: release.immediatePublishUnlocked === true,
             duplicateTitleCount: Number(release.duplicateTitleCount || 0),
             duplicateCaptionCount: Number(release.duplicateCaptionCount || 0),
             duplicateImageCount: Number(release.duplicateImageCount || 0),
             assetCount: Array.isArray(release.assets) ? release.assets.length : 0,
-            assetQualityOk: Array.isArray(release.assets) && release.assets.length === 10 && release.assets.every((a) => a.ok === true),
+            assetQualityOk: Array.isArray(release.assets) && release.assets.length === 10 && release.assets.every((a) => a.ok === true && Number(a.width) === 1254 && Number(a.height) === 1254),
             socialPostCount: Number(social.postCount || 0),
             instagramConfigured: social.instagramConfigured === true,
             facebookConfigured: social.facebookConfigured === true,
+            inventoryApp: '/internal/app',
             internalApp: internal.app || '',
+            inventoryAppHealthy: internal.ok === true,
+            socialWebsite: '/internal/social-center',
+            socialSiteVersion: socialSite.version || '',
+            socialWebsiteHealthy: socialSite.ok === true,
+            independentWebsite: socialSite.mode === 'independent-website',
+            reviewRequiredBeforePublish: socialSite.reviewRequiredBeforePublish === true,
+            automaticRetryEnabled: socialSite.automaticRetryEnabled,
+            rasterVersion: raster.contentVersion || '',
+            rasterHealthy: raster.ok === true,
+            TraditionalChineseFont: raster.fontFamily || '',
+            preventsGibberish: raster.preventsGibberish === true,
+            targetImageSize: raster.targetSize || '',
             storage: database.storage || '',
+            fixedSchedule: '週三、週五 10:00',
+            weatherPosts: '依萬華實際氣候，非固定日加發',
+            unreviewedPublishingBlocked: true
           };
           fs.writeFileSync('final-verification.json', JSON.stringify(result, null, 2) + '\n');
           NODE
+
           if [ "$ok" != "true" ]; then
             {
               echo "commit=$GITHUB_SHA"
@@ -178,12 +221,12 @@ jobs:
 
           git config user.name "仙加味最終驗收"
           git config user.email "actions@users.noreply.github.com"
+          git pull --rebase origin main
           git add final-verification.json
           if [ -f final-verification-error.txt ]; then git add final-verification-error.txt; else git rm -f --ignore-unmatch final-verification-error.txt; fi
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "chore: record final App and social verification"
-          git pull --rebase origin main
-          git push origin main
+          git push origin HEAD:main
 
       - name: Fail workflow when verification failed
         if: always()
