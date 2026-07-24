@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260724-review-gate-v2";
+  const VERSION = "20260724-review-gate-v3";
   const H = { "Content-Type": "application/json", "X-XJW-Requested-With": "internal-app-v2" };
   let posts = [];
   let timer = null;
@@ -31,7 +31,7 @@
     notice.id = "xjwReviewGateNotice";
     notice.className = "notice ok";
     notice.style.margin = "0 0 12px";
-    notice.innerHTML = "<strong>人工審核閘門已開啟</strong><br>圖片與文案先放在 App 草稿區。只有你按下「審核通過・啟用自動發布」後，固定貼文才會依排程自動發布；氣候貼文才會開始等待實際氣候。未審核內容不會發布，也不會自動補發。";
+    notice.innerHTML = "<strong>人工審核閘門已開啟</strong><br>圖片與文案先放在 App 草稿區。只有你按下「審核通過・啟用自動發布」後，固定貼文才會依排程自動發布；氣候貼文才會開始等待實際氣候。未審核內容不會發布，也不會自動補發。已過期的時間會自動改排下一個空白的週三／週五上午10:00，不會突然補發。";
     list.insertAdjacentElement("beforebegin", notice);
   }
 
@@ -45,14 +45,19 @@
     }
     if (!meta) return;
     if (!post.reviewApprovedAt) {
-      meta.textContent = "尚未審核：請先核對圖片、文案、發布平台與時間。";
+      const expired = post.scheduledAt && new Date(post.scheduledAt).getTime() <= Date.now();
+      meta.textContent = expired
+        ? "尚未審核：原時間已過。審核通過後會自動改排下一個空白的週三／週五上午10:00，不會立刻發布。"
+        : "尚未審核：請先核對圖片、文案、發布平台與時間。";
       meta.style.color = "#8d2024";
     } else if (post.conditionalWeather && post.status === "paused") {
-      meta.textContent = `已審核：等待萬華實際氣候符合後，由系統安排非週三、週五上午10:00發布。`;
+      meta.textContent = "已審核：等待萬華實際氣候符合後，由系統安排非週三、週五上午10:00發布。";
       meta.style.color = "#315c45";
     } else {
       const time = post.scheduledAt ? new Date(post.scheduledAt).toLocaleString("zh-TW", { hour12: false, timeZone: "Asia/Taipei" }) : "尚未設定時間";
-      meta.textContent = `已審核：預定 ${time} 自動發布。排程時間已過時，審核通過後會在下一次排程檢查時發布。`;
+      meta.textContent = post.reviewScheduleNote
+        ? `已審核：${post.reviewScheduleNote}。預定 ${time} 自動發布。`
+        : `已審核：預定 ${time} 自動發布。`;
       meta.style.color = "#315c45";
     }
   }
@@ -117,9 +122,12 @@
       if (!button) return;
       const card = button.closest(".item");
       const post = posts.find((item) => item.id === postId(card));
+      const expired = post?.scheduledAt && new Date(post.scheduledAt).getTime() <= Date.now();
       const schedule = post?.conditionalWeather
         ? "通過後會等待實際氣候，不會立刻發布。"
-        : `通過後會依排程自動發布${post?.scheduledAt && new Date(post.scheduledAt).getTime() <= Date.now() ? "；此排程時間已過，系統可能很快發布" : ""}。`;
+        : expired
+          ? "原排程已過；通過後會自動改排下一個沒有衝突的週三／週五上午10:00，不會立刻發布。"
+          : "通過後會依畫面上的排程時間自動發布。";
       if (!confirm(`確定圖片、文案、平台與時間都正確嗎？\n\n${schedule}`)) {
         event.preventDefault();
         event.stopPropagation();
