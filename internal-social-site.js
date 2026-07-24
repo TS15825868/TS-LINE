@@ -3,8 +3,9 @@
 const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
+const { session } = require("./internal-app-security-patch");
 
-const VERSION = "2026-07-24-social-site-v1";
+const VERSION = "2026-07-24-social-site-v2";
 const ROOT = path.join(__dirname, "internal-social-site");
 const FILES = {
   html: path.join(ROOT, "index.html.gz.b64"),
@@ -27,24 +28,38 @@ function noCache(res, type) {
   return res;
 }
 
+function requirePage(req, res, next) {
+  const user = session(req);
+  if (!user) return res.redirect(302, "/internal/login");
+  req.internalUser = user;
+  return next();
+}
+
+function requireAsset(req, res, next) {
+  const user = session(req);
+  if (!user) return res.status(401).type("text/plain").send("請重新登入");
+  req.internalUser = user;
+  return next();
+}
+
 function mountInternalSocialSite(app) {
   if (!app || app.locals?.xjwInternalSocialSiteMounted) return;
   app.locals.xjwInternalSocialSiteMounted = true;
 
-  app.get("/internal/social-center", (_req, res) => {
+  app.get("/internal/social-center", requirePage, (_req, res) => {
     noCache(res, "text/html; charset=utf-8").send(
       read(FILES.html).replaceAll("__SOCIAL_SITE_VERSION__", VERSION)
     );
   });
-  app.get("/internal/social-center/site.css", (_req, res) => {
+  app.get("/internal/social-center/site.css", requireAsset, (_req, res) => {
     noCache(res, "text/css; charset=utf-8").send(read(FILES.css));
   });
-  app.get("/internal/social-center/site.js", (_req, res) => {
+  app.get("/internal/social-center/site.js", requireAsset, (_req, res) => {
     noCache(res, "application/javascript; charset=utf-8").send(
       read(FILES.js).replaceAll("__SOCIAL_SITE_VERSION__", VERSION)
     );
   });
-  app.get("/internal/social", (_req, res) => res.redirect(302, "/internal/social-center"));
+  app.get("/internal/social", requirePage, (_req, res) => res.redirect(302, "/internal/social-center"));
 }
 
-module.exports = { VERSION, mountInternalSocialSite };
+module.exports = { VERSION, requirePage, requireAsset, mountInternalSocialSite };
