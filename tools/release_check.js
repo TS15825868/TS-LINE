@@ -41,13 +41,14 @@ for (const file of required) assert(exists(file), `缺少正式檔案：${file}`
 assert.strictEqual(data.lineId, "@762jybnm");
 assert.strictEqual(data.catalogVersion, "408.7");
 assert.strictEqual(data.products.length, 6);
-assert.strictEqual(pkg.version, "6.0.4");
+assert.strictEqual(pkg.version, "6.0.5");
 assert.strictEqual(lock.version, pkg.version);
 assert.strictEqual(lock.packages?.[""]?.version, pkg.version);
 
 const start = String(pkg.scripts?.start || "");
 assert(start.includes("node -r ./social-review-only-mode.js"), "審核閘門必須是正式啟動的第一個 preload");
 assert(!start.includes("-r ./social-incomplete-auto-retry.js"), "不可載入失敗平台自動補發模組");
+assert(!start.includes("line-approved-mascot-runtime.js"), "損壞的 LINE 小老闆圖片流程不可載入");
 for (const token of [
   "social-review-only-mode.js",
   "social-final-approved-batch.js",
@@ -76,7 +77,9 @@ const retry = read("internal-app-social-retry.js");
 const filter = read("internal-app-social-filter.js");
 const facebookHealth = read("internal-app-facebook-health.js");
 const immediate = read("social-manual-immediate-publish.js");
-assert(clientFix.includes('RUNTIME_VERSION = "20260724-review-gate-3"'));
+assert(clientFix.includes('RUNTIME_VERSION = "20260724-app-recovery-1"'));
+assert(clientFix.includes("internal/app-recovery"));
+assert(clientFix.includes("no-store, no-cache, must-revalidate"));
 assert(clientFix.indexOf("/internal/app-review-only.js") < clientFix.indexOf("/internal/app-social-retry.js"));
 assert(reviewUi.includes("人工審核閘門已開啟"));
 assert(reviewUi.includes("審核通過・啟用自動發布"));
@@ -96,7 +99,7 @@ assert.strictEqual(new Set(postIds).size, 10, "正式貼文 ID 不可重複");
 assert(postSource.includes("validatePosts();"));
 assert(postSource.includes('assertUnique(posts, "instagramCaption", "Instagram文案"'));
 assert(postSource.includes('assertUnique(posts, "facebookCaption", "Facebook文案"'));
-assert(postSource.includes('assertUnique(posts, "imageName", "圖片")'));
+assert(postSource.includes('assertUnique(posts, "imageName", "圖片"'));
 
 const schedule = read("social-schedule-policy.js");
 assert(schedule.includes('FIXED_DAYS = Object.freeze(["Wed", "Fri"])'));
@@ -114,4 +117,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；過期排程改至下一個安全時段；未審核與失敗平台不自動補發；防止重複發布");
+console.log("仙加味正式檢查通過：App 空白頁復原與禁止快取已啟用；10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；過期排程改至下一個安全時段；未審核與失敗平台不自動補發；防止重複發布");
