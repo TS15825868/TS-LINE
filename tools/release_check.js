@@ -60,7 +60,7 @@ for (const token of [
 
 const gate = read("social-review-only-mode.js");
 assert(gate.includes('VERSION = "2026-07-24-review-gate-v3"'));
-assert(gate.includes("只有從內部 App 明確按下 approve"));
+assert(gate.includes('!previouslyReviewed && fromApp && incoming.status === "approved"'));
 assert(gate.includes("reviewApprovedAt"));
 assert(gate.includes("automaticSchedulingEnabled: true"));
 assert(gate.includes("automaticSchedulingRequiresReview: true"));
