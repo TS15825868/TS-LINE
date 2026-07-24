@@ -1,0 +1,16 @@
+commit=0ce7581f8da585f131443a4120f3b4730c9899f7
+testOutcome=failure
+productionOutcome=skipped
+
+--- tests ---
+
+> xianjiawei-lineoa@6.0.4 test
+> node --check social-review-only-mode.js && node --check server.js && node --check line-image-safety.js && node --check line-approved-mascot-runtime.js && node --check line-mascot-approved.test.js && node --check social-server.js && node --check instagram-content-publishing-endpoint-fix.js && node --check social-publish-guard.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-corrected-republish-schedule.js && node --check social-original-asset-override.js && node --check social-final-approved-batch.js && node --check social-final-release-20260724.js && node --check social-final-identity-preserver.js && node --check social-final-release-remote-assets.js && node --check disable-official-social-rebuild.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-manual-immediate-publish.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-app-client-fix.js && node --check internal-app-review-only.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node line-mascot-approved.test.js && node social-review-only-mode.test.js && node social-clear-republish-policy.test.js && node social-final-approved-batch.test.js && node social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js -r ./social-corrected-republish-schedule.js social-schedule-policy.test.js && node social-manual-schedule-override.test.js && node social-publish-guard.test.js && node social-manual-immediate-publish.test.js && node tools/release_check.js
+
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+Error: Input file has corrupt header: VipsJpeg: Corrupt JPEG data: 16 extraneous bytes before marker 0xc4
+VipsJpeg: Invalid JPEG file structure: SOS before SOF
+    at Sharp.metadata (/home/runner/work/TS-LINE/TS-LINE/node_modules/sharp/lib/input.js:637:17)
+    at /home/runner/work/TS-LINE/TS-LINE/line-mascot-approved.test.js:29:36
+
+--- production ---
