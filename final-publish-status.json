@@ -1,8 +1,8 @@
 {
   "ok": false,
-  "verifiedAt": "2026-07-24T06:12:01.354Z",
-  "commit": "0ce7581f8da585f131443a4120f3b4730c9899f7",
-  "checkOutcome": "cancelled",
+  "verifiedAt": "2026-07-24T06:26:14.120Z",
+  "commit": "cdbc534bf900054f4a375dadadb12c16c5acff94",
+  "checkOutcome": "failure",
   "version": "",
   "canonicalCount": 0,
   "incompleteCount": 0,
