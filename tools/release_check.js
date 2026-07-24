@@ -75,10 +75,14 @@ for (const legacySocialUi of ["app-review-only.js", "app-social-retry.js", "app-
 }
 
 const socialSiteServer = read("internal-social-site.js");
-assert(socialSiteServer.includes('VERSION = "2026-07-24-social-site-v2"'));
+assert(socialSiteServer.includes('VERSION = "2026-07-24-social-site-v3"'));
 assert(socialSiteServer.includes('require("./internal-app-security-patch")'));
 assert(socialSiteServer.includes("requirePage"));
 assert(socialSiteServer.includes("/internal/social-center"));
+assert(socialSiteServer.includes("/internal/social-center-healthz"));
+assert(socialSiteServer.includes('mode: "independent-website"'));
+assert(socialSiteServer.includes("reviewRequiredBeforePublish: true"));
+assert(socialSiteServer.includes("automaticRetryEnabled: false"));
 
 const socialHtml = decodeBundle("internal-social-site/index.html.gz.b64");
 const socialCss = decodeBundle("internal-social-site/site.css.gz.b64");
@@ -104,6 +108,10 @@ assert(raster.includes("sharp({"));
 assert(raster.includes("無法載入繁體中文字型，已停止產生貼文圖片以避免亂碼"));
 assert(raster.includes("patchBatch"));
 assert(raster.includes("patchSocialServer"));
+assert(raster.includes("mountHealth"));
+assert(raster.includes("/social/raster-healthz"));
+assert(raster.includes("繁體中文測試｜龜鹿膏100g｜30cc／180cc"));
+assert(raster.includes("preventsGibberish: true"));
 
 const immediate = read("social-manual-immediate-publish.js");
 assert(immediate.includes("post.manualImmediatePublish = true"));
