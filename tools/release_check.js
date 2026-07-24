@@ -91,9 +91,9 @@ const postIds = [...postSource.matchAll(/id:\s*"(first-batch-[^"]+)"/g)].map((ma
 assert.strictEqual(postIds.length, 10, `正式貼文應為10篇，目前找到${postIds.length}篇`);
 assert.strictEqual(new Set(postIds).size, 10, "正式貼文 ID 不可重複");
 assert(postSource.includes("validatePosts();"));
-assert(postSource.includes("Instagram文案重複"));
-assert(postSource.includes("Facebook文案重複"));
-assert(postSource.includes("圖片重複"));
+assert(postSource.includes('assertUnique(posts, "instagramCaption", "Instagram文案"'));
+assert(postSource.includes('assertUnique(posts, "facebookCaption", "Facebook文案"'));
+assert(postSource.includes('assertUnique(posts, "imageName", "圖片")'));
 
 const schedule = read("social-schedule-policy.js");
 assert(schedule.includes('FIXED_DAYS = Object.freeze(["Wed", "Fri"])'));
