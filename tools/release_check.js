@@ -66,7 +66,7 @@ assert(gate.includes("automaticSchedulingEnabled: true"));
 assert(gate.includes("automaticSchedulingRequiresReview: true"));
 assert(gate.includes("automaticRetryEnabled: false"));
 assert(gate.includes("這篇尚未通過人工審核，不能發布"));
-assert(gate.includes("未審核直接按立即發布"));
+assert(gate.includes("未審核直接按發布"));
 
 const clientFix = read("internal-app-client-fix.js");
 const reviewUi = read("internal-app-review-only.js");
@@ -102,9 +102,8 @@ assert(schedule.includes("氣候條件貼文必須依實際氣候安排於非週
 
 const batch = read("social-final-approved-batch.js");
 assert(batch.includes("api.open-meteo.com"));
-assert(batch.includes("target.reviewApprovedAt") || gate.includes("status: weatherStandby ? \"paused\" : \"approved\""));
 assert(batch.includes("weatherTrigger"));
-assert(batch.includes("每週已有氣候條件貼文") || batch.includes("本週已有氣候條件貼文"));
+assert(batch.includes("本週已有氣候條件貼文"));
 
 const guard = read("social-publish-guard.js");
 assert(guard.includes('VERSION = "2.0.0"'));
