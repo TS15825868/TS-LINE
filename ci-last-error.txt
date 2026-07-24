@@ -1,5 +1,5 @@
-commit=771b10919a21b326985d0905ad4bd1c5dc03c455
-recorded_at=2026-07-24T05:07:55Z
+commit=c52c3e3e256518d49c7de701f7bc470243f02414
+recorded_at=2026-07-24T05:09:46Z
 
 
 > xianjiawei-lineoa@6.0.4 test
@@ -19,9 +19,9 @@ node:internal/assert/utils:77
 
 AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
 
-  assert(gate.includes("未審核直接按立即發布"))
+  assert(postSource.includes("Instagram文案重複"))
 
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:69:1)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:94:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
