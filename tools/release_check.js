@@ -98,25 +98,22 @@ function verifyAppControls() {
 
 function verifyReviewGate() {
   assert.strictEqual(reviewGate.VERSION, "2026-07-24-review-gate-v2");
-  const reset = reviewGate.initialReset({ posts: batch.POSTS.map((post) => ({ ...post, status: "approved", assetLocked: true })), publicationLedger: {} });
-  assert.strictEqual(reset.posts.length, 10);
-  assert(reset.posts.every((post) => post.status === "draft"));
-  assert(reset.posts.every((post) => !post.reviewApprovedAt));
+  const template = batch.POSTS.find((post) => !post.conditionalWeather);
+  assert(template && reviewGate.CANONICAL_IDS.has(template.id));
+  const draft = reviewGate.clearPublishState({ ...template, status: "approved", assetLocked: true });
+  assert.strictEqual(draft.status, "draft");
+  assert.strictEqual(draft.assetLocked, false);
+  assert.strictEqual(draft.reviewApprovedAt, "");
 
-  const fixedIndex = reset.posts.findIndex((post) => !post.conditionalWeather);
-  const appApproved = reviewGate.protectStore({
-    ...reset,
-    posts: reset.posts.map((post, index) => index === fixedIndex ? { ...post, status: "approved" } : post),
-  }, reset, true);
-  assert.strictEqual(appApproved.posts[fixedIndex].status, "approved");
-  assert(appApproved.posts[fixedIndex].reviewApprovedAt);
-  assert.strictEqual(appApproved.posts[fixedIndex].autoPublishAfterReview, true);
+  const reset = { posts: [draft], publicationLedger: {}, socialReviewGateVersion: reviewGate.VERSION };
+  const appApproved = reviewGate.protectStore({ ...reset, posts: [{ ...draft, status: "approved" }] }, reset, true);
+  assert.strictEqual(appApproved.posts[0].status, "approved");
+  assert(appApproved.posts[0].reviewApprovedAt);
+  assert.strictEqual(appApproved.posts[0].autoPublishAfterReview, true);
 
-  const backgroundApproved = reviewGate.protectStore({
-    ...reset,
-    posts: reset.posts.map((post, index) => index === fixedIndex ? { ...post, status: "approved" } : post),
-  }, reset, false);
-  assert.strictEqual(backgroundApproved.posts[fixedIndex].status, "draft");
+  const backgroundApproved = reviewGate.protectStore({ ...reset, posts: [{ ...draft, status: "approved" }] }, reset, false);
+  assert.strictEqual(backgroundApproved.posts[0].status, "draft");
+  assert.strictEqual(backgroundApproved.posts[0].reviewApprovedAt, "");
 }
 
 function verifySocialContent() {
