@@ -1,9 +1,10 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260724-facebook-health-unlocked-1";
+  const VERSION = "20260724-facebook-health-polling-2";
   let health = null;
-  let timer = null;
+  let healthTimer = null;
+  let uiTimer = null;
 
   async function loadHealth(force = false) {
     const separator = force ? "?refresh=1&" : "?";
@@ -25,6 +26,14 @@
     if (node && node.textContent !== value) node.textContent = value;
   }
 
+  function setStyle(node, key, value) {
+    if (node && node.style[key] !== value) node.style[key] = value;
+  }
+
+  function setBoolean(node, key, value) {
+    if (node && node[key] !== value) node[key] = value;
+  }
+
   function applyConfig() {
     const node = document.getElementById("socialConfig");
     if (!node) return;
@@ -37,8 +46,8 @@
     else if (health?.usable === false) fb = "FB 連線異常";
     setText(node, `${ig}／${fb}`);
     const warning = health?.expired || health?.usable === false;
-    node.style.color = warning ? "#8d2024" : "";
-    node.style.fontWeight = warning ? "800" : "";
+    setStyle(node, "color", warning ? "#8d2024" : "");
+    setStyle(node, "fontWeight", warning ? "800" : "");
   }
 
   function applySummary() {
@@ -58,7 +67,7 @@
     } else if (health?.usable === false) {
       message = `Facebook 連線異常，但立即發布仍可操作：${health.error || "請檢查 Page Token 與粉絲專頁權限。"}`;
     }
-    warning.hidden = !message;
+    setBoolean(warning, "hidden", !message);
     setText(warning, message);
   }
 
@@ -75,12 +84,13 @@
     failurePosts().forEach((card) => {
       const button = card.querySelector('[data-social-action="publish"]');
       if (!button) return;
-      button.disabled = false;
+      setBoolean(button, "disabled", false);
       button.removeAttribute("aria-disabled");
-      button.style.pointerEvents = "auto";
-      button.title = expired
+      setStyle(button, "pointerEvents", "auto");
+      const title = expired
         ? "立即發布仍可使用；Instagram 可先發布，Facebook 若失敗會保留為待補發。"
         : "立即重試尚未成功的平台。";
+      if (button.title !== title) button.title = title;
       setText(button, "重試失敗平台");
     });
   }
@@ -94,12 +104,11 @@
 
   function start() {
     loadHealth(true).catch(() => {});
-    timer = setInterval(() => loadHealth(false).catch(() => {}), 30000);
-    const observer = new MutationObserver(apply);
-    observer.observe(document.body, { childList: true, subtree: true });
+    healthTimer = setInterval(() => loadHealth(false).catch(() => {}), 30000);
+    uiTimer = setInterval(apply, 2500);
     window.addEventListener("beforeunload", () => {
-      clearInterval(timer);
-      observer.disconnect();
+      clearInterval(healthTimer);
+      clearInterval(uiTimer);
     }, { once: true });
     window.addEventListener("xjw:app-refreshed", () => loadHealth(true).catch(() => {}));
     window.xjwFacebookHealth = { version: VERSION, refresh: () => loadHealth(true), get health() { return health; } };
