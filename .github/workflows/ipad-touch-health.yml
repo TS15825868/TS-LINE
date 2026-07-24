@@ -36,14 +36,16 @@ jobs:
           node --check internal-app-shell.js
           node --check internal-app-review-only.js
           node --check internal-app-facebook-health.js
-          grep -q '20260724-shell-ipad-touch-3' internal-app-shell.js
-          grep -q 'installTouchFallback' internal-app-shell.js
-          grep -q 'state.control.click()' internal-app-shell.js
+          grep -q '20260724-shell-ipad-touch-4' internal-app-shell.js
+          grep -q 'installTapRecovery' internal-app-shell.js
+          grep -q 'document.elementsFromPoint' internal-app-shell.js
+          grep -q 'lastClickControl' internal-app-shell.js
+          grep -q 'if (!nativeClickArrived) activateFallback(control)' internal-app-shell.js
           grep -q '20260724-review-gate-v5-polling' internal-app-review-only.js
           ! grep -q 'new MutationObserver' internal-app-review-only.js
           grep -q '20260724-facebook-health-polling-2' internal-app-facebook-health.js
           ! grep -q 'new MutationObserver' internal-app-facebook-health.js
-          grep -q '20260724-ipad-touch-3' internal-app-client-fix.js
+          grep -q '20260724-ipad-touch-4' internal-app-client-fix.js
           npm test
       - name: Wait for Render and verify live touch fix
         id: production
@@ -61,8 +63,10 @@ jobs:
               "$BASE_URL/internal/app-review-only.js?t=$(date +%s)" -o /tmp/review.js \
               && curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
               "$BASE_URL/internal/app-facebook-health.js?t=$(date +%s)" -o /tmp/facebook.js \
-              && grep -q '20260724-shell-ipad-touch-3' /tmp/shell.js \
-              && grep -q 'state.control.click()' /tmp/shell.js \
+              && grep -q '20260724-shell-ipad-touch-4' /tmp/shell.js \
+              && grep -q 'installTapRecovery' /tmp/shell.js \
+              && grep -q 'document.elementsFromPoint' /tmp/shell.js \
+              && grep -q 'if (!nativeClickArrived) activateFallback(control)' /tmp/shell.js \
               && grep -q '20260724-review-gate-v5-polling' /tmp/review.js \
               && ! grep -q 'new MutationObserver' /tmp/review.js \
               && grep -q '20260724-facebook-health-polling-2' /tmp/facebook.js \
@@ -73,8 +77,8 @@ jobs:
             sleep 15
           done
           if [ "$success" -ne 1 ]; then
-            echo "Render did not deploy the direct iPad touch fix" >&2
-            head -20 /tmp/shell.js 2>/dev/null || true
+            echo "Render did not deploy the delayed iPad tap recovery" >&2
+            head -30 /tmp/shell.js 2>/dev/null || true
             head -20 /tmp/review.js 2>/dev/null || true
             head -20 /tmp/facebook.js 2>/dev/null || true
             exit 1
@@ -83,7 +87,7 @@ jobs:
           node - <<'NODE'
           const health = require('/tmp/internal.json');
           if (health.ok !== true || health.app !== '仙加味內部管理 App') throw new Error('internal App health failed');
-          console.log({ ok: true, app: health.app, touchFix: '20260724-shell-ipad-touch-3' });
+          console.log({ ok: true, app: health.app, touchFix: '20260724-shell-ipad-touch-4' });
           NODE
       - name: Record verification result
         if: always()
@@ -102,10 +106,13 @@ jobs:
             commit: process.env.COMMIT_SHA,
             sourceOutcome: source,
             productionOutcome: production,
-            shellVersion: '20260724-shell-ipad-touch-3',
+            shellVersion: '20260724-shell-ipad-touch-4',
             reviewVersion: '20260724-review-gate-v5-polling',
             facebookVersion: '20260724-facebook-health-polling-2',
-            directTouchFallback: true,
+            nativeClickFirst: true,
+            delayedTapRecovery: true,
+            touchMoveTolerancePx: 28,
+            elementsFromPointRecovery: true,
             bodyWideMutationObserversRemoved: true,
             socialReviewRequiredBeforePublish: true
           }, null, 2) + '\n');
