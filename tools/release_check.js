@@ -11,17 +11,18 @@ const data = JSON.parse(read("data.json"));
 const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 
-require("../social-recommended-schedule");
-require("../social-corrected-republish-schedule");
-const reviewGate = require("../social-review-only-mode");
-const clearPolicy = require("../social-clear-republish-policy");
+// 先載入正式10篇與審核閘門，避免舊排程相容層改寫測試資料。
 const batch = require("../social-final-approved-batch");
+const reviewGate = require("../social-review-only-mode");
 const release = require("../social-final-release-20260724");
 const remoteAssets = require("../social-final-release-remote-assets");
 const schedulePolicy = require("../social-schedule-policy");
 const repair = require("../social-schedule-repair-20260722");
+const clearPolicy = require("../social-clear-republish-policy");
 const legacyAssets = require("../social-original-asset-override");
 const guard = require("../social-publish-guard");
+require("../social-recommended-schedule");
+require("../social-corrected-republish-schedule");
 
 const required = [
   "internal-entry.js",
