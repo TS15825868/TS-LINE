@@ -19,12 +19,12 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Capture production publish status
+      - name: Capture production publish status after Instagram endpoint repair
         shell: bash
         run: |
           set -euo pipefail
           success=0
-          for attempt in $(seq 1 20); do
+          for attempt in $(seq 1 24); do
             code=$(curl --connect-timeout 10 --max-time 35 --silent --show-error \
               -o /tmp/publish.json -w "%{http_code}" \
               "https://ts-line.onrender.com/social/publish-status?t=$(date +%s)" || true)
@@ -37,11 +37,12 @@ jobs:
           const source = JSON.parse(fs.readFileSync('/tmp/publish.json', 'utf8'));
           source.capturedAt = new Date().toISOString();
           source.commit = process.env.GITHUB_SHA;
+          source.snapshotVersion = 'after-instagram-endpoint-repair-v1';
           fs.writeFileSync('current-publish-status.json', JSON.stringify(source, null, 2) + '\n');
           NODE
           git config user.name "仙加味社群狀態"
           git config user.email "actions@users.noreply.github.com"
           git add current-publish-status.json
-          git commit -m "chore: capture current social platform status" || exit 0
+          git commit -m "chore: capture repaired social platform status" || exit 0
           git pull --rebase origin main
           git push origin main
