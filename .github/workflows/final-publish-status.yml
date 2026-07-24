@@ -1,0 +1,96 @@
+name: 仙加味社群補發狀態驗收
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "social-incomplete-auto-retry.js"
+      - ".github/workflows/final-publish-status.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-final-publish-status
+  cancel-in-progress: true
+
+jobs:
+  verify-publish-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Wait for production auto-retry
+        id: check
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/xjw-publish
+          endpoint_ready=0
+          complete=0
+          for attempt in $(seq 1 56); do
+            echo "Publish-status check $attempt/56"
+            code=$(curl --connect-timeout 10 --max-time 35 --silent --show-error \
+              -o /tmp/xjw-publish/status.json -w "%{http_code}" \
+              "https://ts-line.onrender.com/social/publish-status?t=$(date +%s)" || true)
+            if [ "$code" = "200" ]; then
+              endpoint_ready=1
+              if node - <<'NODE'
+          const fs = require('fs');
+          const s = JSON.parse(fs.readFileSync('/tmp/xjw-publish/status.json', 'utf8'));
+          if (s.ok !== true || s.version !== '2026-07-24-incomplete-retry-v1') process.exit(1);
+          if (Number(s.canonicalCount) !== 10) process.exit(1);
+          if (Number(s.incompleteCount) !== 0) process.exit(1);
+          NODE
+              then complete=1; break; fi
+            fi
+            sleep 15
+          done
+          echo "endpoint_ready=$endpoint_ready" >> "$GITHUB_OUTPUT"
+          echo "complete=$complete" >> "$GITHUB_OUTPUT"
+          test "$endpoint_ready" -eq 1
+          test "$complete" -eq 1
+
+      - name: Save actual publish status
+        if: always()
+        shell: bash
+        env:
+          CHECK_OUTCOME: ${{ steps.check.outcome }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          let source = {};
+          try { source = JSON.parse(fs.readFileSync('/tmp/xjw-publish/status.json', 'utf8')); } catch {}
+          const result = {
+            ok: process.env.CHECK_OUTCOME === 'success' && source.ok === true && Number(source.incompleteCount || 0) === 0,
+            verifiedAt: new Date().toISOString(),
+            commit: process.env.GITHUB_SHA,
+            checkOutcome: process.env.CHECK_OUTCOME,
+            version: source.version || '',
+            canonicalCount: Number(source.canonicalCount || 0),
+            incompleteCount: Number(source.incompleteCount || 0),
+            posts: Array.isArray(source.posts) ? source.posts : [],
+          };
+          fs.writeFileSync('final-publish-status.json', JSON.stringify(result, null, 2) + '\n');
+          NODE
+          git config user.name "仙加味社群補發驗收"
+          git config user.email "actions@users.noreply.github.com"
+          git add final-publish-status.json
+          git commit -m "chore: record final social publish status" || exit 0
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Require all selected platforms complete
+        if: always()
+        shell: bash
+        env:
+          CHECK_OUTCOME: ${{ steps.check.outcome }}
+        run: test "$CHECK_OUTCOME" = "success"
