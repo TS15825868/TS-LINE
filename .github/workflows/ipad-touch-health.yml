@@ -1,125 +1,148 @@
-name: 仙加味 App iPad 觸控驗收
+name: 仙加味內部系統分流驗收
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - "internal-app-shell.js"
-      - "internal-app-review-only.js"
-      - "internal-app-facebook-health.js"
       - "internal-app-client-fix.js"
+      - "internal-social-site.js"
+      - "internal-social-site/**"
+      - "social-static-asset-bridge.js"
+      - "social-final-posts.js"
+      - "social-review-only-mode.js"
+      - "social-schedule-policy.js"
+      - "social-publish-guard.js"
+      - "package.json"
       - "tools/release_check.js"
       - ".github/workflows/ipad-touch-health.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: xjw-ipad-touch-health
+  group: xjw-internal-split-health
   cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Verify touch-safe source
-        id: source
+
+      - name: Verify split architecture and safety rules
         run: |
+          set -euo pipefail
           npm ci
-          node --check internal-app-shell.js
-          node --check internal-app-review-only.js
-          node --check internal-app-facebook-health.js
-          grep -q '20260724-shell-ipad-touch-4' internal-app-shell.js
-          grep -q 'installTapRecovery' internal-app-shell.js
-          grep -q 'document.elementsFromPoint' internal-app-shell.js
-          grep -q 'lastClickControl' internal-app-shell.js
-          grep -q 'if (!nativeClickArrived) activateFallback(control)' internal-app-shell.js
-          grep -q '20260724-review-gate-v5-polling' internal-app-review-only.js
-          ! grep -q 'new MutationObserver' internal-app-review-only.js
-          grep -q '20260724-facebook-health-polling-2' internal-app-facebook-health.js
-          ! grep -q 'new MutationObserver' internal-app-facebook-health.js
-          grep -q '20260724-ipad-touch-4' internal-app-client-fix.js
+          node --check internal-social-site.js
+          node --check social-static-asset-bridge.js
+          node --check internal-app-client-fix.js
+          node --check social-review-only-mode.js
           npm test
-      - name: Wait for Render and verify live touch fix
-        id: production
+          grep -q '20260724-inventory-split-1' internal-app-client-fix.js
+          grep -q 'socialSection.remove' internal-app-client-fix.js
+          grep -q '/internal/social-center' internal-app-client-fix.js
+          grep -q '2026-07-24-social-site-v3' internal-social-site.js
+          grep -q 'independent-website' internal-social-site.js
+          grep -q 'reviewRequiredBeforePublish: true' internal-social-site.js
+          grep -q 'automaticRetryEnabled: false' internal-social-site.js
+          grep -q '2026-07-24-raster-tc-v1' social-static-asset-bridge.js
+          grep -q 'NotoSansTC-VF.ttf' social-static-asset-bridge.js
+          grep -q '/social/raster-healthz' social-static-asset-bridge.js
+          ! grep -q 'MutationObserver' <(python3 - <<'PY'
+          import gzip,base64
+          print(gzip.decompress(base64.b64decode(open('internal-social-site/site.js.gz.b64').read())).decode())
+          PY
+          )
+
+      - name: Wait for Render and verify both live systems
         shell: bash
         env:
           BASE_URL: https://ts-line.onrender.com
         run: |
           set -euo pipefail
           success=0
-          for attempt in $(seq 1 72); do
-            echo "Live touch check $attempt/72"
-            if curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
-              "$BASE_URL/internal/app-shell.js?t=$(date +%s)" -o /tmp/shell.js \
-              && curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
-              "$BASE_URL/internal/app-review-only.js?t=$(date +%s)" -o /tmp/review.js \
-              && curl --connect-timeout 10 --max-time 40 --fail --silent --show-error \
-              "$BASE_URL/internal/app-facebook-health.js?t=$(date +%s)" -o /tmp/facebook.js \
-              && grep -q '20260724-shell-ipad-touch-4' /tmp/shell.js \
-              && grep -q 'installTapRecovery' /tmp/shell.js \
-              && grep -q 'document.elementsFromPoint' /tmp/shell.js \
-              && grep -q 'if (!nativeClickArrived) activateFallback(control)' /tmp/shell.js \
-              && grep -q '20260724-review-gate-v5-polling' /tmp/review.js \
-              && ! grep -q 'new MutationObserver' /tmp/review.js \
-              && grep -q '20260724-facebook-health-polling-2' /tmp/facebook.js \
-              && ! grep -q 'new MutationObserver' /tmp/facebook.js; then
+          for attempt in $(seq 1 80); do
+            echo "Split production check $attempt/80"
+            social_ok=0
+            raster_ok=0
+            app_ok=0
+
+            if curl --connect-timeout 10 --max-time 50 --fail --silent --show-error \
+              "$BASE_URL/internal/social-center-healthz?t=$(date +%s)" -o /tmp/social-health.json; then
+              node - <<'NODE' && social_ok=1 || true
+          const h = require('/tmp/social-health.json');
+          if (h.ok !== true) throw new Error('social site health not ok');
+          if (h.mode !== 'independent-website') throw new Error('social site is not independent');
+          if (h.reviewRequiredBeforePublish !== true) throw new Error('review gate not required');
+          if (h.automaticRetryEnabled !== false) throw new Error('automatic retry must be disabled');
+          if (h.inventoryApp !== '/internal/app' || h.socialWebsite !== '/internal/social-center') throw new Error('split routes mismatch');
+          NODE
+            fi
+
+            if curl --connect-timeout 10 --max-time 90 --fail --silent --show-error \
+              "$BASE_URL/social/raster-healthz?t=$(date +%s)" -o /tmp/raster-health.json; then
+              node - <<'NODE' && raster_ok=1 || true
+          const h = require('/tmp/raster-health.json');
+          if (h.ok !== true || h.rasterText !== true || h.preventsGibberish !== true) throw new Error('raster health not ok');
+          if (h.contentVersion !== 'social-raster-tc-v1') throw new Error('wrong raster version');
+          if (!String(h.sampleText || '').includes('繁體中文測試')) throw new Error('Traditional Chinese sample missing');
+          if (Number(h.fontBytes || 0) < 1000000 || Number(h.sampleBytes || 0) < 1000) throw new Error('font or sample too small');
+          NODE
+            fi
+
+            if curl --connect-timeout 10 --max-time 30 --fail --silent --show-error \
+              "$BASE_URL/internal/healthz?t=$(date +%s)" -o /tmp/app-health.json; then
+              node - <<'NODE' && app_ok=1 || true
+          const h = require('/tmp/app-health.json');
+          if (h.ok !== true || h.app !== '仙加味內部管理 App') throw new Error('inventory App health not ok');
+          NODE
+            fi
+
+            if [ "$social_ok" -eq 1 ] && [ "$raster_ok" -eq 1 ] && [ "$app_ok" -eq 1 ]; then
               success=1
               break
             fi
             sleep 15
           done
+
           if [ "$success" -ne 1 ]; then
-            echo "Render did not deploy the delayed iPad tap recovery" >&2
-            head -30 /tmp/shell.js 2>/dev/null || true
-            head -20 /tmp/review.js 2>/dev/null || true
-            head -20 /tmp/facebook.js 2>/dev/null || true
+            echo "Render did not deploy the split internal systems correctly" >&2
+            cat /tmp/social-health.json 2>/dev/null || true
+            cat /tmp/raster-health.json 2>/dev/null || true
+            cat /tmp/app-health.json 2>/dev/null || true
             exit 1
           fi
-          curl --connect-timeout 10 --max-time 30 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/internal.json
+
+          status=$(curl --connect-timeout 10 --max-time 30 --silent --output /tmp/social-login-body \
+            --dump-header /tmp/social-login-headers --write-out '%{http_code}' \
+            "$BASE_URL/internal/social-center?t=$(date +%s)")
+          test "$status" = "302"
+          tr -d '\r' < /tmp/social-login-headers | grep -qi '^location: /internal/login'
+
+          curl --connect-timeout 10 --max-time 120 --fail --silent --show-error \
+            "$BASE_URL/social-approved-assets/care-work-rest-v7.jpg?v=social-raster-tc-v1&t=$(date +%s)" \
+            -o /tmp/care-work-rest.jpg
           node - <<'NODE'
-          const health = require('/tmp/internal.json');
-          if (health.ok !== true || health.app !== '仙加味內部管理 App') throw new Error('internal App health failed');
-          console.log({ ok: true, app: health.app, touchFix: '20260724-shell-ipad-touch-4' });
+          const sharp = require('sharp');
+          (async () => {
+            const meta = await sharp('/tmp/care-work-rest.jpg').metadata();
+            if (meta.format !== 'jpeg' || meta.width !== 1254 || meta.height !== 1254) {
+              throw new Error(`wrong social image ${meta.format} ${meta.width}x${meta.height}`);
+            }
+            console.log({
+              ok: true,
+              inventoryApp: '/internal/app',
+              socialWebsite: '/internal/social-center',
+              image: `${meta.width}x${meta.height}`,
+              reviewRequired: true,
+              automaticRetry: false,
+              rasterVersion: 'social-raster-tc-v1'
+            });
+          })();
           NODE
-      - name: Record verification result
-        if: always()
-        env:
-          SOURCE_OUTCOME: ${{ steps.source.outcome }}
-          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
-          COMMIT_SHA: ${{ github.sha }}
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const source = process.env.SOURCE_OUTCOME || 'unknown';
-          const production = process.env.PRODUCTION_OUTCOME || 'unknown';
-          fs.writeFileSync('ipad-touch-status.json', JSON.stringify({
-            ok: source === 'success' && production === 'success',
-            verifiedAt: new Date().toISOString(),
-            commit: process.env.COMMIT_SHA,
-            sourceOutcome: source,
-            productionOutcome: production,
-            shellVersion: '20260724-shell-ipad-touch-4',
-            reviewVersion: '20260724-review-gate-v5-polling',
-            facebookVersion: '20260724-facebook-health-polling-2',
-            nativeClickFirst: true,
-            delayedTapRecovery: true,
-            touchMoveTolerancePx: 28,
-            elementsFromPointRecovery: true,
-            bodyWideMutationObserversRemoved: true,
-            socialReviewRequiredBeforePublish: true
-          }, null, 2) + '\n');
-          NODE
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
-          git add ipad-touch-status.json
-          git diff --cached --quiet || git commit -m "chore: record iPad touch verification"
-          git push origin HEAD:main
