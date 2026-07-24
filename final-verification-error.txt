@@ -1,6 +1,6 @@
-commit=6069e18eb979bfbc7ab33deef060c40f9188dd62
-testOutcome=failure
-productionOutcome=skipped
+commit=8ceaa1a25ef58f90eabdcdba1ea07ea43360abc1
+testOutcome=success
+productionOutcome=failure
 
 --- tests ---
 
@@ -15,30 +15,9 @@ PASS fixed Wed/Fri 10:00 and conditional weather on non-fixed days
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish controls preserved and first batch starts 7/24 morning
-node:internal/assert/utils:77
-    throw err;
-    ^
-
-AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
-
-  assert(facebookHealth.includes("button.disabled = false"))
-
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:92:1)
-    at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at Object..js (node:internal/modules/cjs/loader:1913:10)
-    at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function._load (node:internal/modules/cjs/loader:1309:12)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
-  generatedMessage: true,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
-
-Node.js v22.23.1
+仙加味正式檢查通過：iPad 觸控備援已啟用，全頁 MutationObserver 已移除；App 空白頁復原與禁止快取已啟用；10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；過期排程改至下一個安全時段；未審核與失敗平台不自動補發；防止重複發布
 
 --- production ---
+Final production verification 1/72
+Final production verification 2/72
+Final production verification 3/72
