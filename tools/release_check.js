@@ -96,7 +96,7 @@ assert(socialCss.includes(".upload-row"));
 assert(socialJs.includes('RASTER_VERSION = "social-raster-tc-v1"'));
 assert(socialJs.includes("/internal/api/v2/social/upload"));
 assert(socialJs.includes("ensureRasterPost"));
-assert(socialJs.includes("審核通過"));
+assert(socialJs.includes("通過後才會進入自動排程"));
 assert(!socialJs.includes("MutationObserver"), "獨立社群網站不可使用全頁 MutationObserver");
 
 const raster = read("social-static-asset-bridge.js");
