@@ -5,7 +5,7 @@ const path = require("path");
 const zlib = require("zlib");
 const { session } = require("./internal-app-security-patch");
 
-const VERSION = "2026-07-24-social-site-v2";
+const VERSION = "2026-07-24-social-site-v3";
 const ROOT = path.join(__dirname, "internal-social-site");
 const FILES = {
   html: path.join(ROOT, "index.html.gz.b64"),
@@ -46,6 +46,18 @@ function mountInternalSocialSite(app) {
   if (!app || app.locals?.xjwInternalSocialSiteMounted) return;
   app.locals.xjwInternalSocialSiteMounted = true;
 
+  app.get("/internal/social-center-healthz", (_req, res) => {
+    noCache(res, "application/json; charset=utf-8").json({
+      ok: true,
+      service: "仙加味社群管理中心",
+      version: VERSION,
+      mode: "independent-website",
+      reviewRequiredBeforePublish: true,
+      automaticRetryEnabled: false,
+      inventoryApp: "/internal/app",
+      socialWebsite: "/internal/social-center",
+    });
+  });
   app.get("/internal/social-center", requirePage, (_req, res) => {
     noCache(res, "text/html; charset=utf-8").send(
       read(FILES.html).replaceAll("__SOCIAL_SITE_VERSION__", VERSION)
