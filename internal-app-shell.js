@@ -1,14 +1,47 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260724-shell-ipad-touch-3";
+  const VERSION = "20260724-shell-ipad-touch-4";
+  const CONTROL_SELECTOR = "button,a[href],[data-view],summary,[role='button']";
   let refreshing = false;
   let touchState = null;
+  let lastClickControl = null;
+  let lastClickAt = 0;
+  let fallbackTimer = null;
+
+  function elementFrom(target) {
+    if (target instanceof Element) return target;
+    return target?.parentElement || null;
+  }
+
+  function controlFrom(target) {
+    return elementFrom(target)?.closest?.(CONTROL_SELECTOR) || null;
+  }
+
+  function enabled(control) {
+    return Boolean(control)
+      && control.disabled !== true
+      && control.getAttribute("aria-disabled") !== "true"
+      && control.hidden !== true;
+  }
+
+  function controlAtPoint(x, y) {
+    const stack = typeof document.elementsFromPoint === "function"
+      ? document.elementsFromPoint(x, y)
+      : [document.elementFromPoint(x, y)].filter(Boolean);
+    for (const node of stack) {
+      const control = controlFrom(node);
+      if (enabled(control)) return control;
+    }
+    return null;
+  }
 
   function showView(id) {
+    if (!id || !document.getElementById(id)) return false;
     document.querySelectorAll(".view").forEach((node) => node.classList.toggle("active", node.id === id));
     document.querySelectorAll("[data-view]").forEach((node) => node.classList.toggle("active", node.dataset.view === id));
     window.scrollTo(0, 0);
+    return true;
   }
 
   function showError(message) {
@@ -50,9 +83,7 @@
         return;
       }
       await window.loadAll();
-      if (typeof window.xjwSafeExtras?.refresh === "function") {
-        await window.xjwSafeExtras.refresh();
-      }
+      if (typeof window.xjwSafeExtras?.refresh === "function") await window.xjwSafeExtras.refresh();
       const lastSync = document.getElementById("lastSync");
       if (lastSync) lastSync.textContent = `更新：${new Date().toLocaleString("zh-TW", { hour12: false })}`;
       if (button) button.textContent = "已更新";
@@ -71,44 +102,71 @@
     }
   }
 
-  function controlFrom(target) {
-    return target?.closest?.("button,a[href],[data-view],summary,[role='button']") || null;
+  function activateFallback(control) {
+    if (!enabled(control)) return;
+    const view = control.closest("[data-view]");
+    if (view?.dataset.view) {
+      showView(view.dataset.view);
+      return;
+    }
+    if (isRefreshButton(control.closest("button"))) {
+      refreshApp(control.closest("button"));
+      return;
+    }
+    control.click();
   }
 
-  function installTouchFallback() {
+  function installTapRecovery() {
     const touchDevice = Number(navigator.maxTouchPoints || 0) > 0
       || window.matchMedia?.("(pointer: coarse)")?.matches;
-    if (!touchDevice || document.documentElement.dataset.xjwTouchFallback === "1") return;
-    document.documentElement.dataset.xjwTouchFallback = "1";
+    if (!touchDevice || document.documentElement.dataset.xjwTapRecovery === "1") return;
+    document.documentElement.dataset.xjwTapRecovery = "1";
 
     const style = document.createElement("style");
-    style.id = "xjwTouchFallbackStyle";
-    style.textContent = "button,a[href],[data-view],summary,[role='button']{touch-action:manipulation!important;-webkit-tap-highlight-color:rgba(11,31,59,.14);pointer-events:auto!important}#xjwMobileBackdrop:not(.open),#xjwMobileSheet:not(.open){pointer-events:none!important}";
+    style.id = "xjwTapRecoveryStyle";
+    style.textContent = `${CONTROL_SELECTOR}{touch-action:manipulation!important;-webkit-tap-highlight-color:rgba(11,31,59,.14)}#xjwMobileBackdrop:not(.open),#xjwMobileSheet:not(.open){pointer-events:none!important}`;
     document.head.appendChild(style);
+
+    document.addEventListener("click", (event) => {
+      const control = controlFrom(event.target);
+      if (!control) return;
+      lastClickControl = control;
+      lastClickAt = Date.now();
+    }, true);
 
     document.addEventListener("touchstart", (event) => {
       if (event.touches?.length !== 1) { touchState = null; return; }
-      const control = controlFrom(event.target);
-      if (!control) { touchState = null; return; }
       const point = event.touches[0];
-      touchState = { control, x: point.clientX, y: point.clientY, moved: false };
+      touchState = {
+        control: controlFrom(event.target) || controlAtPoint(point.clientX, point.clientY),
+        x: point.clientX,
+        y: point.clientY,
+        moved: false,
+      };
     }, { capture: true, passive: true });
 
     document.addEventListener("touchmove", (event) => {
       if (!touchState || !event.touches?.length) return;
       const point = event.touches[0];
-      if (Math.hypot(point.clientX - touchState.x, point.clientY - touchState.y) > 14) touchState.moved = true;
+      if (Math.hypot(point.clientX - touchState.x, point.clientY - touchState.y) > 28) touchState.moved = true;
     }, { capture: true, passive: true });
 
     document.addEventListener("touchend", (event) => {
       const state = touchState;
       touchState = null;
-      if (!state || state.moved || state.control.disabled || state.control.getAttribute("aria-disabled") === "true") return;
+      if (!state || state.moved) return;
       const point = event.changedTouches?.[0];
-      if (point && Math.hypot(point.clientX - state.x, point.clientY - state.y) > 14) return;
-      event.preventDefault();
-      state.control.click();
-    }, { capture: true, passive: false });
+      if (!point) return;
+      if (Math.hypot(point.clientX - state.x, point.clientY - state.y) > 28) return;
+      const control = controlAtPoint(point.clientX, point.clientY) || state.control;
+      if (!enabled(control)) return;
+      const endedAt = Date.now();
+      clearTimeout(fallbackTimer);
+      fallbackTimer = setTimeout(() => {
+        const nativeClickArrived = lastClickControl === control && lastClickAt >= endedAt - 40;
+        if (!nativeClickArrived) activateFallback(control);
+      }, 320);
+    }, { capture: true, passive: true });
 
     document.addEventListener("touchcancel", () => { touchState = null; }, { capture: true, passive: true });
   }
@@ -121,37 +179,33 @@
       }
     });
 
-    installTouchFallback();
+    installTapRecovery();
 
     document.addEventListener("click", (event) => {
-      const refreshButton = event.target.closest("button[data-refresh-app='true']");
-      if (refreshButton || isRefreshButton(event.target.closest("button"))) {
+      const target = elementFrom(event.target);
+      const button = target?.closest("button");
+      if (isRefreshButton(button)) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        refreshApp(refreshButton || event.target.closest("button"));
+        refreshApp(button);
         return;
       }
-
-      const viewButton = event.target.closest("[data-view]");
-      if (viewButton) {
+      const viewButton = target?.closest("[data-view]");
+      if (viewButton?.dataset.view) {
         event.preventDefault();
+        event.stopImmediatePropagation();
         showView(viewButton.dataset.view);
       }
-    }, true);
+    });
 
-    window.addEventListener("error", (event) => {
-      const message = event.message || event.error?.message || "未知錯誤";
-      showError(message);
-    });
-    window.addEventListener("unhandledrejection", (event) => {
-      const message = event.reason?.message || String(event.reason || "未知非同步錯誤");
-      showError(message);
-    });
+    window.addEventListener("error", (event) => showError(event.message || event.error?.message || "未知錯誤"));
+    window.addEventListener("unhandledrejection", (event) => showError(event.reason?.message || String(event.reason || "未知非同步錯誤")));
+    window.addEventListener("beforeunload", () => clearTimeout(fallbackTimer), { once: true });
   }
 
   window.showView = showView;
   window.xjwRefreshApp = refreshApp;
-  window.xjwShell = { version: VERSION, showView, refreshApp, installTouchFallback };
+  window.xjwShell = { version: VERSION, showView, refreshApp, installTapRecovery };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind, { once: true });
   else bind();
 })();
