@@ -5,7 +5,7 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260724-app-recovery-1";
+const RUNTIME_VERSION = "20260724-ipad-touch-3";
 const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
@@ -45,8 +45,8 @@ function fixGeneratedHtml(body) {
   if (!body.includes("<main") || !body.includes("</body>")) return recoveryPage("頁面資料不完整，請按下方按鈕重新載入。");
 
   const cleanHtml = body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
-  const orderStyle = '<style id="xjwOrderEntryOverride">#xjwProductPicker{display:none!important}html,body,.app-shell{visibility:visible!important;opacity:1!important}</style>';
-  const recoveryScript = `<script>(function(){window.__xjwBootStarted=Date.now();setTimeout(function(){var shell=document.querySelector('.app-shell');if(!shell||!shell.children.length){document.body.innerHTML='<main style="max-width:520px;margin:12vh auto;padding:24px;background:#fff;border:1px solid #ded7ca;border-radius:22px;font-family:-apple-system,BlinkMacSystemFont,\\'PingFang TC\\',sans-serif"><h1 style="color:#0b1f3b">仙加味內部管理 App</h1><p>頁面載入逾時，可能剛好遇到系統部署。請重新載入，不會影響尚未審核的貼文。</p><button style="border:0;border-radius:12px;padding:12px 16px;background:#0b1f3b;color:#fff;font-weight:800" onclick="location.replace(\\'/internal/app?recovery=\\'+Date.now())">重新載入 App</button></main>';}},8000);}());</script>`;
+  const orderStyle = '<style id="xjwOrderEntryOverride">#xjwProductPicker{display:none!important}html,body,.app-shell{visibility:visible!important;opacity:1!important}button,a[href],[data-view],summary,[role="button"]{touch-action:manipulation!important;pointer-events:auto!important}#xjwMobileBackdrop:not(.open),#xjwMobileSheet:not(.open){pointer-events:none!important}</style>';
+  const recoveryScript = `<script>(function(){window.__xjwBootStarted=Date.now();setTimeout(function(){var shell=document.querySelector('.app-shell');if(!shell||!shell.children.length){document.body.innerHTML='<main style="max-width:520px;margin:12vh auto;padding:24px;background:#fff;border:1px solid #ded7ca;border-radius:22px;font-family:-apple-system,BlinkMacSystemFont,\'PingFang TC\',sans-serif"><h1 style="color:#0b1f3b">仙加味內部管理 App</h1><p>頁面載入逾時，可能剛好遇到系統部署。請重新載入，不會影響尚未審核的貼文。</p><button style="border:0;border-radius:12px;padding:12px 16px;background:#0b1f3b;color:#fff;font-weight:800" onclick="location.replace(\'/internal/app?recovery=\'+Date.now())">重新載入 App</button></main>';}},8000);}());</script>`;
   const scripts = [
     `/internal/app-shell.js?v=${RUNTIME_VERSION}`,
     `/internal/app-runtime.js?v=${RUNTIME_VERSION}`,
