@@ -11,18 +11,13 @@ const data = JSON.parse(read("data.json"));
 const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 
-// 先載入正式10篇與審核閘門，避免舊排程相容層改寫測試資料。
+// 總驗收只載入正式資料與純函式；舊遷移模組由各自獨立測試驗證，避免互相改寫 require loader。
 const batch = require("../social-final-approved-batch");
 const reviewGate = require("../social-review-only-mode");
 const release = require("../social-final-release-20260724");
 const remoteAssets = require("../social-final-release-remote-assets");
 const schedulePolicy = require("../social-schedule-policy");
-const repair = require("../social-schedule-repair-20260722");
-const clearPolicy = require("../social-clear-republish-policy");
-const legacyAssets = require("../social-original-asset-override");
 const guard = require("../social-publish-guard");
-require("../social-recommended-schedule");
-require("../social-corrected-republish-schedule");
 
 const required = [
   "internal-entry.js",
@@ -126,8 +121,8 @@ function verifySocialContent() {
   assert.strictEqual(release.POSTS.filter((post) => !post.conditionalWeather).length, 7);
   assert.strictEqual(release.POSTS.filter((post) => post.conditionalWeather).length, 3);
   assert.strictEqual(release.POSTS[0].scheduledAt, "2026-07-24T02:00:00.000Z");
-  assert.strictEqual(clearPolicy.SCHEDULED_AT, "2026-07-24T02:00:00.000Z");
-  assert.strictEqual(legacyAssets.VERSION, "2.0.0");
+  assert(read("social-clear-republish-policy.js").includes('SCHEDULED_AT = "2026-07-24T02:00:00.000Z"'));
+  assert(read("social-original-asset-override.js").includes('VERSION = "2.0.0"'));
   assert.strictEqual(Object.keys(remoteAssets.ALIASES).length, 10);
   assert.strictEqual(release.validateDefinitions(), true);
 
@@ -142,11 +137,6 @@ function verifySocialContent() {
   assert(release.POSTS.filter((post) => post.sequenceRole === "product").every((post) => post.productPresentationLocked && post.productSpecLocked));
   assert.strictEqual(new Set(release.POSTS.map((post) => release.normalizeText(post.title))).size, 10);
   assert.strictEqual(new Set(release.POSTS.map((post) => post.imageName)).size, 10);
-
-  const store = batch.reconcileStore({ posts: [], publicationLedger: {} }, "2026-07-24T00:00:00.000Z").store;
-  const status = repair.scheduleStatus(store);
-  assert.strictEqual(status.ok, true, status.issues.join("；"));
-  assert.strictEqual(status.canonicalCount, 10);
 }
 
 function verifyDuplicateProtection() {
