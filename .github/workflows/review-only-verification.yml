@@ -1,4 +1,4 @@
-name: 仙加味 App 人工確認模式驗收
+name: 仙加味 App 審核後自動發布驗收
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: xjw-review-only-verification
+  group: xjw-review-gate-verification
   cancel-in-progress: true
 
 jobs:
@@ -29,17 +29,27 @@ jobs:
         with:
           node-version: 22
       - run: npm test
-      - name: Wait for Render review-only mode
+      - name: Wait for Render review gate
         shell: bash
         run: |
           set -euo pipefail
           ok=""
           for i in $(seq 1 40); do
-            code=$(curl -L -sS -o /tmp/review.json -w '%{http_code}' "https://ts-line.onrender.com/social/review-only-status?t=$(date +%s)" || true)
+            code=$(curl -L -sS -o /tmp/review.json -w '%{http_code}' "https://ts-line.onrender.com/social/review-gate-status?t=$(date +%s)" || true)
             if [ "$code" = "200" ] && node -e '
               const fs=require("fs");
               const d=JSON.parse(fs.readFileSync("/tmp/review.json","utf8"));
-              if (!(d.ok===true && d.reviewOnlyMode===true && d.automaticSchedulingEnabled===false && d.automaticRetryEnabled===false && d.canonicalCount===10 && d.draftCount===10)) process.exit(1);
+              const valid = d.ok===true
+                && d.reviewGateMode===true
+                && d.reviewRequiredBeforePublish===true
+                && d.automaticSchedulingEnabled===true
+                && d.automaticSchedulingRequiresReview===true
+                && d.automaticRetryEnabled===false
+                && d.canonicalCount===10
+                && d.unreviewedActiveCount===0
+                && Array.isArray(d.posts)
+                && d.posts.every(p => !["approved","paused","publishing","published","partial","failed"].includes(p.status) || Boolean(p.reviewApprovedAt));
+              if (!valid) process.exit(1);
             '; then
               ok="1"
               break
@@ -47,12 +57,13 @@ jobs:
             sleep 15
           done
           test "$ok" = "1"
-      - name: Verify App review notice script
+      - name: Verify App approval controls
         run: |
           curl -L -fsS "https://ts-line.onrender.com/internal/app-review-only.js?t=$(date +%s)" -o /tmp/app-review.js
-          grep -q "人工審核模式已開啟" /tmp/app-review.js
-          grep -q "我已確認，手動發布" /tmp/app-review.js
-          grep -q "不會自動排程、不會自動發布，也不會自動補發" /tmp/app-review.js
+          grep -q "人工審核閘門已開啟" /tmp/app-review.js
+          grep -q "審核通過・啟用自動發布" /tmp/app-review.js
+          grep -q "未審核內容不會發布" /tmp/app-review.js
+          grep -q "等待萬華實際氣候" /tmp/app-review.js
       - name: Record verified state
         shell: bash
         run: |
@@ -63,13 +74,18 @@ jobs:
             ok:true,
             verifiedAt:new Date().toISOString(),
             commit:process.env.GITHUB_SHA,
-            mode:'App review only',
-            automaticSchedulingEnabled:false,
+            mode:'App review gate',
+            reviewRequiredBeforePublish:true,
+            automaticSchedulingEnabled:true,
+            automaticSchedulingRequiresReview:true,
             automaticRetryEnabled:false,
             canonicalCount:live.canonicalCount,
             draftCount:live.draftCount,
+            reviewedCount:live.reviewedCount,
+            automaticQueueCount:live.automaticQueueCount,
+            unreviewedActiveCount:live.unreviewedActiveCount,
             posts:live.posts,
-            confirmationButton:'我已確認，手動發布'
+            approvalButton:'審核通過・啟用自動發布'
           };
           fs.writeFileSync('review-only-verification.json',JSON.stringify(result,null,2)+'\n');
           NODE
@@ -77,6 +93,6 @@ jobs:
           git config user.email actions@github.com
           git add review-only-verification.json
           if ! git diff --cached --quiet; then
-            git commit -m "chore: record App review-only verification"
+            git commit -m "chore: record App review-gate verification"
             git push
           fi
