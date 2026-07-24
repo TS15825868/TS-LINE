@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "verifiedAt": "2026-07-24T04:12:13.332Z",
+  "commit": "f2aa43267478a2089e4857cdd1a8684a608c8866",
+  "testOutcome": "success",
+  "productionOutcome": "success",
+  "releaseVersion": "2026-07-24-final-v1",
+  "assetVersion": "2026-07-24-remote-assets-v1",
+  "totalPosts": 10,
+  "fixedPosts": 7,
+  "weatherStandbyPosts": 3,
+  "immediatePublishUnlocked": true,
+  "duplicateTitleCount": 0,
+  "duplicateCaptionCount": 0,
+  "duplicateImageCount": 0,
+  "assetCount": 10,
+  "assetQualityOk": true,
+  "socialPostCount": 11,
+  "instagramConfigured": true,
+  "facebookConfigured": true,
+  "internalApp": "仙加味內部管理 App",
+  "storage": "supabase"
+}
