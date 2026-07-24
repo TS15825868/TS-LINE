@@ -18,7 +18,7 @@ on:
       - ".github/workflows/ipad-touch-health.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: xjw-internal-split-health
@@ -36,6 +36,7 @@ jobs:
           cache: npm
 
       - name: Verify split architecture and safety rules
+        id: source
         run: |
           set -euo pipefail
           npm ci
@@ -54,13 +55,15 @@ jobs:
           grep -q '2026-07-24-raster-tc-v1' social-static-asset-bridge.js
           grep -q 'NotoSansTC-VF.ttf' social-static-asset-bridge.js
           grep -q '/social/raster-healthz' social-static-asset-bridge.js
-          ! grep -q 'MutationObserver' <(python3 - <<'PY'
-          import gzip,base64
-          print(gzip.decompress(base64.b64decode(open('internal-social-site/site.js.gz.b64').read())).decode())
+          python3 - <<'PY' >/tmp/social-site.js
+          import gzip, base64
+          raw = open('internal-social-site/site.js.gz.b64').read()
+          print(gzip.decompress(base64.b64decode(raw)).decode())
           PY
-          )
+          ! grep -q 'MutationObserver' /tmp/social-site.js
 
       - name: Wait for Render and verify both live systems
+        id: production
         shell: bash
         env:
           BASE_URL: https://ts-line.onrender.com
@@ -146,3 +149,52 @@ jobs:
             });
           })();
           NODE
+
+      - name: Record final split-system result
+        if: always()
+        env:
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = process.env.SOURCE_OUTCOME || 'unknown';
+          const production = process.env.PRODUCTION_OUTCOME || 'unknown';
+          const read = (file) => {
+            try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+            catch { return {}; }
+          };
+          const social = read('/tmp/social-health.json');
+          const raster = read('/tmp/raster-health.json');
+          const app = read('/tmp/app-health.json');
+          fs.writeFileSync('internal-split-status.json', JSON.stringify({
+            ok: source === 'success' && production === 'success',
+            verifiedAt: new Date().toISOString(),
+            commit: process.env.COMMIT_SHA,
+            sourceOutcome: source,
+            productionOutcome: production,
+            inventoryApp: '/internal/app',
+            inventoryAppHealthy: app.ok === true,
+            socialWebsite: '/internal/social-center',
+            socialSiteVersion: social.version || '',
+            socialWebsiteHealthy: social.ok === true,
+            independentWebsite: social.mode === 'independent-website',
+            reviewRequiredBeforePublish: social.reviewRequiredBeforePublish === true,
+            automaticRetryEnabled: social.automaticRetryEnabled,
+            rasterVersion: raster.contentVersion || '',
+            rasterHealthy: raster.ok === true,
+            TraditionalChineseFont: raster.fontFamily || '',
+            preventsGibberish: raster.preventsGibberish === true,
+            targetImageSize: raster.targetSize || '',
+            fixedSchedule: '週三、週五 10:00',
+            weatherPosts: '依萬華實際氣候，非固定日加發',
+            unreviewedPublishingBlocked: true
+          }, null, 2) + '\n');
+          NODE
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add internal-split-status.json
+          git diff --cached --quiet || git commit -m "chore: record internal split-system verification"
+          git push origin HEAD:main
