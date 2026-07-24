@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "verifiedAt": "2026-07-24T11:51:10.797Z",
+  "commit": "9309f8649b7530734e7b97aed6f7813548376a02",
+  "sourceOutcome": "success",
+  "productionOutcome": "success",
+  "inventoryApp": "/internal/app",
+  "inventoryAppHealthy": true,
+  "socialWebsite": "/internal/social-center",
+  "socialSiteVersion": "2026-07-24-social-site-v3",
+  "socialWebsiteHealthy": true,
+  "independentWebsite": true,
+  "reviewRequiredBeforePublish": true,
+  "automaticRetryEnabled": false,
+  "rasterVersion": "social-raster-tc-v1",
+  "rasterHealthy": true,
+  "TraditionalChineseFont": "Noto Sans TC",
+  "preventsGibberish": true,
+  "targetImageSize": "1254x1254",
+  "fixedSchedule": "週三、週五 10:00",
+  "weatherPosts": "依萬華實際氣候，非固定日加發",
+  "unreviewedPublishingBlocked": true
+}
