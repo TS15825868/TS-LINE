@@ -1,0 +1,69 @@
+name: 仙加味正式排程快照
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/final-schedule-snapshot.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Read production schedule
+        shell: bash
+        run: |
+          set -euo pipefail
+          success=0
+          for attempt in $(seq 1 24); do
+            code=$(curl --connect-timeout 10 --max-time 35 --silent --show-error \
+              -o /tmp/schedule.json -w "%{http_code}" \
+              "https://ts-line.onrender.com/social/schedule-status?t=$(date +%s)" || true)
+            if [ "$code" = "200" ]; then success=1; break; fi
+            sleep 10
+          done
+          test "$success" -eq 1
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = JSON.parse(fs.readFileSync('/tmp/schedule.json', 'utf8'));
+          const posts = Array.isArray(source.posts) ? source.posts : [];
+          const snapshot = {
+            capturedAt: new Date().toISOString(),
+            commit: process.env.GITHUB_SHA,
+            ok: source.ok === true,
+            version: source.version || '',
+            canonicalCount: Number(source.canonicalCount || posts.length || 0),
+            activeCount: Number(source.activeCount || 0),
+            publishedCount: Number(source.publishedCount || 0),
+            approvedCount: Number(source.approvedCount || 0),
+            standbyCount: Number(source.standbyCount || 0),
+            issues: source.issues || [],
+            posts: posts.map((post) => ({
+              id: post.id,
+              title: post.title,
+              status: post.status,
+              scheduledAt: post.scheduledAt || '',
+              conditionalWeather: post.conditionalWeather === true,
+              automationStandby: post.automationStandby === true,
+              imageName: post.imageName || '',
+              imageUrl: post.imageUrl || '',
+              sourceImageFile: post.sourceImageFile || '',
+            })),
+          };
+          fs.writeFileSync('final-schedule-snapshot.json', JSON.stringify(snapshot, null, 2) + '\n');
+          NODE
+          git config user.name "仙加味排程快照"
+          git config user.email "actions@users.noreply.github.com"
+          git add final-schedule-snapshot.json
+          git commit -m "chore: record actual live social schedule" || exit 0
+          git pull --rebase origin main
+          git push origin main
