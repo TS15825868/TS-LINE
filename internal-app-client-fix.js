@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const Module = require("module");
+const { mountInternalSocialSite } = require("./internal-social-site");
 
 const mountedApps = new WeakSet();
 const RUNTIME_VERSION = "20260724-ipad-touch-4";
@@ -76,6 +77,7 @@ function sendScript(res, source) {
 function mountClientFix(app) {
   if (!app || mountedApps.has(app)) return;
   mountedApps.add(app);
+  mountInternalSocialSite(app);
   app.get("/internal/app-shell.js", (_req, res) => sendScript(res, shellScript()));
   app.get("/internal/app-runtime.js", (_req, res) => sendScript(res, runtimeScript()));
   app.get("/internal/app-upload-controller.js", (_req, res) => sendScript(res, uploadControllerScript()));
