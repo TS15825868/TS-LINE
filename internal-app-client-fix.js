@@ -5,7 +5,7 @@ const path = require("path");
 const Module = require("module");
 
 const mountedApps = new WeakSet();
-const RUNTIME_VERSION = "20260724-review-only-1";
+const RUNTIME_VERSION = "20260724-review-gate-2";
 const shellFile = path.join(__dirname, "internal-app-shell.js");
 const runtimeFile = path.join(__dirname, "internal-app-runtime.js");
 const uploadControllerFile = path.join(__dirname, "internal-app-upload-controller.js");
@@ -44,10 +44,11 @@ function fixGeneratedHtml(body) {
     `/internal/app-form-controller.js?v=${RUNTIME_VERSION}`,
     `/internal/app-safe-extras.js?v=${RUNTIME_VERSION}`,
     `/internal/order-entry-controller.js?v=${RUNTIME_VERSION}`,
+    // 審核確認監聽必須早於發布按鈕處理器載入。
+    `/internal/app-review-only.js?v=${RUNTIME_VERSION}`,
     `/internal/app-social-retry.js?v=${RUNTIME_VERSION}`,
     `/internal/app-social-filter.js?v=${RUNTIME_VERSION}`,
     `/internal/app-facebook-health.js?v=${RUNTIME_VERSION}`,
-    `/internal/app-review-only.js?v=${RUNTIME_VERSION}`,
     `/internal/app-mobile.js?v=${RUNTIME_VERSION}`,
     `/internal/app-postboot.js?v=${RUNTIME_VERSION}`,
   ].map((src) => `<script src="${src}"></script>`).join("");
