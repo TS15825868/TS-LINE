@@ -1,4 +1,4 @@
-commit=8ceaa1a25ef58f90eabdcdba1ea07ea43360abc1
+commit=59f5a9d5359174845862a8b2cbe0aaadcd83f0ab
 testOutcome=success
 productionOutcome=failure
 
@@ -15,9 +15,10 @@ PASS fixed Wed/Fri 10:00 and conditional weather on non-fixed days
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish controls preserved and first batch starts 7/24 morning
-仙加味正式檢查通過：iPad 觸控備援已啟用，全頁 MutationObserver 已移除；App 空白頁復原與禁止快取已啟用；10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；過期排程改至下一個安全時段；未審核與失敗平台不自動補發；防止重複發布
+仙加味正式檢查通過：iPad 原生點擊優先，Safari 未產生 click 時才延遲補送；觸控位移容許值已放寬；全頁 MutationObserver 已移除；10篇圖文先進 App 草稿，人工審核後才啟用自動發布；未審核與失敗平台不自動補發；防止重複發布
 
 --- production ---
 Final production verification 1/72
 Final production verification 2/72
 Final production verification 3/72
+Final production verification 4/72
