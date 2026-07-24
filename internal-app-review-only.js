@@ -1,11 +1,10 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260724-review-gate-v4-touch-fix";
+  const VERSION = "20260724-review-gate-v5-polling";
   const H = { "Content-Type": "application/json", "X-XJW-Requested-With": "internal-app-v2" };
   let posts = [];
   let timer = null;
-  let observer = null;
   let decorateFrame = 0;
   let decorating = false;
 
@@ -180,14 +179,11 @@
     installApprovalConfirmation();
     installNotice();
     loadPosts().catch(() => {});
-    observer = new MutationObserver(scheduleDecorate);
-    observer.observe(document.body, { childList: true, subtree: true });
     timer = setInterval(() => loadPosts().catch(() => {}), 5000);
     window.addEventListener("xjw:app-refreshed", () => loadPosts().catch(() => {}));
     window.addEventListener("beforeunload", () => {
       clearInterval(timer);
       if (decorateFrame) cancelAnimationFrame(decorateFrame);
-      observer?.disconnect();
     }, { once: true });
     window.xjwReviewGate = { version: VERSION, refresh: loadPosts, decorate: scheduleDecorate, get posts() { return posts; } };
   }
