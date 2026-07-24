@@ -1,0 +1,47 @@
+name: 仙加味社群平台狀態快照
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-status-snapshot.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Capture production publish status
+        shell: bash
+        run: |
+          set -euo pipefail
+          success=0
+          for attempt in $(seq 1 20); do
+            code=$(curl --connect-timeout 10 --max-time 35 --silent --show-error \
+              -o /tmp/publish.json -w "%{http_code}" \
+              "https://ts-line.onrender.com/social/publish-status?t=$(date +%s)" || true)
+            if [ "$code" = "200" ]; then success=1; break; fi
+            sleep 10
+          done
+          test "$success" -eq 1
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = JSON.parse(fs.readFileSync('/tmp/publish.json', 'utf8'));
+          source.capturedAt = new Date().toISOString();
+          source.commit = process.env.GITHUB_SHA;
+          fs.writeFileSync('current-publish-status.json', JSON.stringify(source, null, 2) + '\n');
+          NODE
+          git config user.name "仙加味社群狀態"
+          git config user.email "actions@users.noreply.github.com"
+          git add current-publish-status.json
+          git commit -m "chore: capture current social platform status" || exit 0
+          git pull --rebase origin main
+          git push origin main
