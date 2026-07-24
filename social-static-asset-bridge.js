@@ -184,12 +184,51 @@ function patchSocialServer(loaded) {
   return loaded;
 }
 
+function mountHealth(app) {
+  if (!app || app.locals?.xjwRasterTcHealthMounted) return;
+  app.locals.xjwRasterTcHealthMounted = true;
+  app.get("/social/raster-healthz", async (_req, res) => {
+    try {
+      const font = await ensureFont();
+      const sampleText = "繁體中文測試｜龜鹿膏100g｜30cc／180cc";
+      const sample = await textLayer(sampleText, 1100, 120, "#0b2e52", 900);
+      const metadata = await sharp(sample).metadata();
+      const ok = metadata.format === "png" && Number(metadata.width || 0) > 300 && Number(metadata.height || 0) > 20 && sample.length > 1000;
+      res.status(ok ? 200 : 503).json({
+        ok,
+        service: "仙加味繁體中文貼文圖片",
+        version: VERSION,
+        contentVersion: CONTENT_VERSION,
+        targetSize: `${TARGET_SIZE}x${TARGET_SIZE}`,
+        fontFamily: font.family,
+        fontBytes: fs.statSync(font.path).size,
+        sampleText,
+        sampleFormat: metadata.format || "",
+        sampleWidth: metadata.width || 0,
+        sampleHeight: metadata.height || 0,
+        sampleBytes: sample.length,
+        rasterText: true,
+        preventsGibberish: true,
+      });
+    } catch (error) {
+      res.status(503).json({
+        ok: false,
+        service: "仙加味繁體中文貼文圖片",
+        version: VERSION,
+        contentVersion: CONTENT_VERSION,
+        error: error.message,
+      });
+    }
+  });
+}
+
 function install() {
   if (installed) return;
   installed = true;
   const previousLoad = Module._load;
   Module._load = function loadWithRasterTraditionalChinese(request, parent, isMain) {
     const loaded = previousLoad.apply(this, arguments);
+    if (request === "./server" && loaded?.app) mountHealth(loaded.app);
     if (request === "./social-final-approved-batch") patchBatch(loaded);
     if (request === "./social-server") patchSocialServer(loaded);
     return loaded;
@@ -197,4 +236,4 @@ function install() {
 }
 
 install();
-module.exports = { VERSION, CONTENT_VERSION, TARGET_SIZE, FONT_CANDIDATES, ensureFont, textLayer, careAssetBuffer, productAssetBuffer, assetBuffer, versionedImageUrl, normalizeStore, patchBatch, patchSocialServer, install };
+module.exports = { VERSION, CONTENT_VERSION, TARGET_SIZE, FONT_CANDIDATES, ensureFont, textLayer, careAssetBuffer, productAssetBuffer, assetBuffer, versionedImageUrl, normalizeStore, patchBatch, patchSocialServer, mountHealth, install };
