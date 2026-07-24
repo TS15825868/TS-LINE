@@ -1,0 +1,196 @@
+name: 仙加味最終完整驗收
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "social-final-release-20260724.js"
+      - "social-final-identity-preserver.js"
+      - "social-final-release-remote-assets.js"
+      - "disable-official-social-rebuild.js"
+      - "internal-app-social-filter.js"
+      - "internal-app-social-retry.js"
+      - "internal-app-facebook-health.js"
+      - "tools/release_check.js"
+      - ".github/workflows/final-verification.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-final-verification
+  cancel-in-progress: true
+
+jobs:
+  final-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Run complete test suite
+        id: tests
+        run: |
+          set -euo pipefail
+          npm ci
+          npm test 2>&1 | tee /tmp/final-tests.log
+
+      - name: Wait for Render deployment and verify production
+        id: production
+        shell: bash
+        env:
+          BASE_URL: https://ts-line.onrender.com
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/xjw-final
+          success=0
+          for attempt in $(seq 1 72); do
+            echo "Final production verification $attempt/72" | tee -a /tmp/final-production.log
+            code=$(curl --connect-timeout 10 --max-time 55 --silent --show-error \
+              -o /tmp/xjw-final/release.json -w "%{http_code}" \
+              "$BASE_URL/social/final-release-healthz?t=$(date +%s)" || true)
+            if [ "$code" = "200" ]; then
+              if node - <<'NODE'
+          const fs = require('fs');
+          const r = JSON.parse(fs.readFileSync('/tmp/xjw-final/release.json', 'utf8'));
+          if (r.ok !== true) process.exit(1);
+          if (r.version !== '2026-07-24-final-v1') process.exit(1);
+          if (r.assetVersion !== '2026-07-24-remote-assets-v1') process.exit(1);
+          if (Number(r.totalPosts) !== 10 || Number(r.fixedPosts) !== 7 || Number(r.weatherStandbyPosts) !== 3) process.exit(1);
+          if (r.firstScheduledAt !== '2026-07-24T02:00:00.000Z') process.exit(1);
+          if (r.immediatePublishUnlocked !== true) process.exit(1);
+          if (r.duplicateTitleCount !== 0 || r.duplicateCaptionCount !== 0 || r.duplicateImageCount !== 0) process.exit(1);
+          if (!Array.isArray(r.assets) || r.assets.length !== 10) process.exit(1);
+          if (r.assets.some((a) => a.ok !== true || Number(a.width) !== 1254 || Number(a.height) !== 1254)) process.exit(1);
+          NODE
+              then success=1; break; fi
+            fi
+            sleep 15
+          done
+          if [ "$success" -ne 1 ]; then
+            echo "Final release health did not pass" | tee -a /tmp/final-production.log
+            cat /tmp/xjw-final/release.json 2>/dev/null | tee -a /tmp/final-production.log || true
+            exit 1
+          fi
+
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/healthz" -o /tmp/xjw-final/health.json
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/social/healthz" -o /tmp/xjw-final/social.json
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/healthz" -o /tmp/xjw-final/internal.json
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/db-healthz" -o /tmp/xjw-final/database.json
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-runtime.js?t=$(date +%s)" -o /tmp/xjw-final/runtime.js
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-social-retry.js?t=$(date +%s)" -o /tmp/xjw-final/retry.js
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-social-filter.js?t=$(date +%s)" -o /tmp/xjw-final/filter.js
+          curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/app-facebook-health.js?t=$(date +%s)" -o /tmp/xjw-final/facebook.js
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const json = (name) => JSON.parse(fs.readFileSync(`/tmp/xjw-final/${name}.json`, 'utf8'));
+          const health = json('health');
+          const social = json('social');
+          const internal = json('internal');
+          const database = json('database');
+          const runtime = fs.readFileSync('/tmp/xjw-final/runtime.js', 'utf8');
+          const retry = fs.readFileSync('/tmp/xjw-final/retry.js', 'utf8');
+          const filter = fs.readFileSync('/tmp/xjw-final/filter.js', 'utf8');
+          const facebook = fs.readFileSync('/tmp/xjw-final/facebook.js', 'utf8');
+          if (health.ok !== true) throw new Error('LINE OA health failed');
+          if (social.ok !== true || social.instagramConfigured !== true || social.facebookConfigured !== true) throw new Error('Social configuration failed');
+          if (Number(social.postCount) < 10) throw new Error('Social schedule count failed');
+          if (internal.ok !== true || internal.app !== '仙加味內部管理 App') throw new Error('Internal App failed');
+          if (database.ok !== true || database.storage !== 'supabase') throw new Error('Database failed');
+          if (!runtime.includes('data-social-action')) throw new Error('App action runtime missing');
+          if (!retry.includes('ensurePublishButton') || !retry.includes('button.disabled = false')) throw new Error('Immediate publish button missing');
+          if (!filter.includes('20260724-social-final-1') || !filter.includes('立即發布可隨時使用')) throw new Error('Final schedule UI missing');
+          if (!facebook.includes('20260724-facebook-health-unlocked-1') || !facebook.includes('button.disabled = false') || facebook.includes('button.disabled = expired')) throw new Error('Immediate publish remains locked');
+          NODE
+
+      - name: Write verification result
+        if: always()
+        shell: bash
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
+        run: |
+          set -euo pipefail
+          ok=false
+          if [ "$TEST_OUTCOME" = "success" ] && [ "$PRODUCTION_OUTCOME" = "success" ]; then ok=true; fi
+          node - <<'NODE'
+          const fs = require('fs');
+          const ok = process.env.TEST_OUTCOME === 'success' && process.env.PRODUCTION_OUTCOME === 'success';
+          let release = {};
+          let social = {};
+          let internal = {};
+          let database = {};
+          for (const [name, target] of [['release', release], ['social', social], ['internal', internal], ['database', database]]) {
+            try { Object.assign(target, JSON.parse(fs.readFileSync(`/tmp/xjw-final/${name}.json`, 'utf8'))); } catch {}
+          }
+          const result = {
+            ok,
+            verifiedAt: new Date().toISOString(),
+            commit: process.env.GITHUB_SHA,
+            testOutcome: process.env.TEST_OUTCOME,
+            productionOutcome: process.env.PRODUCTION_OUTCOME,
+            releaseVersion: release.version || '',
+            assetVersion: release.assetVersion || '',
+            totalPosts: Number(release.totalPosts || 0),
+            fixedPosts: Number(release.fixedPosts || 0),
+            weatherStandbyPosts: Number(release.weatherStandbyPosts || 0),
+            immediatePublishUnlocked: release.immediatePublishUnlocked === true,
+            duplicateTitleCount: Number(release.duplicateTitleCount || 0),
+            duplicateCaptionCount: Number(release.duplicateCaptionCount || 0),
+            duplicateImageCount: Number(release.duplicateImageCount || 0),
+            assetCount: Array.isArray(release.assets) ? release.assets.length : 0,
+            assetQualityOk: Array.isArray(release.assets) && release.assets.length === 10 && release.assets.every((a) => a.ok === true),
+            socialPostCount: Number(social.postCount || 0),
+            instagramConfigured: social.instagramConfigured === true,
+            facebookConfigured: social.facebookConfigured === true,
+            internalApp: internal.app || '',
+            storage: database.storage || '',
+          };
+          fs.writeFileSync('final-verification.json', JSON.stringify(result, null, 2) + '\n');
+          NODE
+          if [ "$ok" != "true" ]; then
+            {
+              echo "commit=$GITHUB_SHA"
+              echo "testOutcome=$TEST_OUTCOME"
+              echo "productionOutcome=$PRODUCTION_OUTCOME"
+              echo
+              echo "--- tests ---"
+              cat /tmp/final-tests.log 2>/dev/null || true
+              echo
+              echo "--- production ---"
+              cat /tmp/final-production.log 2>/dev/null || true
+            } > final-verification-error.txt
+          else
+            rm -f final-verification-error.txt
+          fi
+
+          git config user.name "仙加味最終驗收"
+          git config user.email "actions@users.noreply.github.com"
+          git add final-verification.json
+          if [ -f final-verification-error.txt ]; then git add final-verification-error.txt; else git rm -f --ignore-unmatch final-verification-error.txt; fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: record final App and social verification"
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Fail workflow when verification failed
+        if: always()
+        shell: bash
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
+        run: |
+          test "$TEST_OUTCOME" = "success"
+          test "$PRODUCTION_OUTCOME" = "success"
