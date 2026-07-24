@@ -13,11 +13,11 @@ const lock = JSON.parse(read("package-lock.json"));
 
 require("../social-recommended-schedule");
 require("../social-corrected-republish-schedule");
+const reviewGate = require("../social-review-only-mode");
 const clearPolicy = require("../social-clear-republish-policy");
 const batch = require("../social-final-approved-batch");
 const release = require("../social-final-release-20260724");
 const remoteAssets = require("../social-final-release-remote-assets");
-const reviewOnly = require("../social-review-only-mode");
 const schedulePolicy = require("../social-schedule-policy");
 const repair = require("../social-schedule-repair-20260722");
 const legacyAssets = require("../social-original-asset-override");
@@ -61,8 +61,8 @@ function verifyFilesAndCatalog() {
 
 function verifyAppControls() {
   const start = String(pkg.scripts?.start || "");
-  assert(start.includes("node -r ./social-review-only-mode.js"), "人工審核模式必須是正式啟動的第一個 preload");
-  assert(!start.includes("-r ./social-incomplete-auto-retry.js"), "不可再載入自動補發模組");
+  assert(start.includes("node -r ./social-review-only-mode.js"), "審核閘門必須是正式啟動的第一個 preload");
+  assert(!start.includes("-r ./social-incomplete-auto-retry.js"), "不可載入失敗平台自動補發模組");
   for (const token of [
     "social-review-only-mode.js",
     "social-clear-republish-policy.js",
@@ -80,28 +80,43 @@ function verifyAppControls() {
   const clientFix = read("internal-app-client-fix.js");
   const reviewUi = read("internal-app-review-only.js");
   const retry = read("internal-app-social-retry.js");
+  const filter = read("internal-app-social-filter.js");
+  const facebookHealth = read("internal-app-facebook-health.js");
   const immediate = read("social-manual-immediate-publish.js");
-  assert(clientFix.includes('RUNTIME_VERSION = "20260724-review-only-1"'));
-  assert(clientFix.includes("/internal/app-review-only.js"));
-  assert(reviewUi.includes("人工審核模式已開啟"));
-  assert(reviewUi.includes("我已確認，手動發布"));
-  assert(reviewUi.includes("不會自動排程、不會自動發布，也不會自動補發"));
+
+  assert(clientFix.includes('RUNTIME_VERSION = "20260724-review-gate-2"'));
+  assert(clientFix.indexOf("/internal/app-review-only.js") < clientFix.indexOf("/internal/app-social-retry.js"));
+  assert(reviewUi.includes("人工審核閘門已開啟"));
+  assert(reviewUi.includes("審核通過・啟用自動發布"));
+  assert(reviewUi.includes("未審核內容不會發布"));
+  assert(retry.includes("立即發布"));
   assert(retry.includes("已成功的平台不會重複發布"));
-  assert(immediate.includes('post.manualImmediatePublish = true'));
-  assert(immediate.includes('post.assetLocked = true'));
+  assert(filter.includes("週三、週五上午 10:00"));
+  assert(facebookHealth.includes("button.disabled = false"));
+  assert(immediate.includes("post.manualImmediatePublish = true"));
 }
 
-function verifyReviewOnlyMode() {
-  assert.strictEqual(reviewOnly.VERSION, "2026-07-24-review-only-v1");
-  const prepared = batch.reconcileStore({ posts: [], publicationLedger: {} }, "2026-07-24T00:00:00.000Z").store;
-  const reset = reviewOnly.initialReset(prepared);
-  const canonical = reset.posts.filter((post) => reviewOnly.CANONICAL_IDS.has(post.id));
-  assert.strictEqual(canonical.length, 10);
-  assert(canonical.every((post) => post.status === "draft"));
-  assert(canonical.every((post) => post.manualPublishOnly === true));
-  assert(canonical.every((post) => post.manualReviewRequired === true));
-  assert(canonical.every((post) => post.manualImmediatePublish === false));
-  assert.strictEqual(reset.socialReviewOnlyMode, true);
+function verifyReviewGate() {
+  assert.strictEqual(reviewGate.VERSION, "2026-07-24-review-gate-v2");
+  const reset = reviewGate.initialReset({ posts: batch.POSTS.map((post) => ({ ...post, status: "approved", assetLocked: true })), publicationLedger: {} });
+  assert.strictEqual(reset.posts.length, 10);
+  assert(reset.posts.every((post) => post.status === "draft"));
+  assert(reset.posts.every((post) => !post.reviewApprovedAt));
+
+  const fixedIndex = reset.posts.findIndex((post) => !post.conditionalWeather);
+  const appApproved = reviewGate.protectStore({
+    ...reset,
+    posts: reset.posts.map((post, index) => index === fixedIndex ? { ...post, status: "approved" } : post),
+  }, reset, true);
+  assert.strictEqual(appApproved.posts[fixedIndex].status, "approved");
+  assert(appApproved.posts[fixedIndex].reviewApprovedAt);
+  assert.strictEqual(appApproved.posts[fixedIndex].autoPublishAfterReview, true);
+
+  const backgroundApproved = reviewGate.protectStore({
+    ...reset,
+    posts: reset.posts.map((post, index) => index === fixedIndex ? { ...post, status: "approved" } : post),
+  }, reset, false);
+  assert.strictEqual(backgroundApproved.posts[fixedIndex].status, "draft");
 }
 
 function verifySocialContent() {
@@ -120,6 +135,10 @@ function verifySocialContent() {
 
   for (const post of release.POSTS.filter((post) => !post.conditionalWeather)) {
     assert(schedulePolicy.validScheduledAt(post.scheduledAt, post), `${post.title} 原建議排程不合規`);
+  }
+  for (const post of release.POSTS.filter((post) => post.conditionalWeather)) {
+    assert.strictEqual(post.scheduledAt, "");
+    assert.strictEqual(post.automationStandby, true);
   }
   assert(release.POSTS.every((post) => post.qBossMascotLocked && post.deerPartnerPresent && post.turtlePartnerPresent));
   assert(release.POSTS.filter((post) => post.sequenceRole === "product").every((post) => post.productPresentationLocked && post.productSpecLocked));
@@ -141,7 +160,7 @@ function verifyDuplicateProtection() {
 
 verifyFilesAndCatalog();
 verifyAppControls();
-verifyReviewOnlyMode();
+verifyReviewGate();
 verifySocialContent();
 verifyDuplicateProtection();
-console.log("仙加味正式檢查通過：10篇只進 App 草稿、禁止自動排程與補發、人工確認後才可手動發布、圖文不重複");
+console.log("仙加味正式檢查通過：10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；未審核與失敗平台不自動補發；防止重複發布");
