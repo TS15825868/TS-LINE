@@ -1,10 +1,29 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260724-review-gate-v3";
+  const VERSION = "20260724-review-gate-v4-touch-fix";
   const H = { "Content-Type": "application/json", "X-XJW-Requested-With": "internal-app-v2" };
   let posts = [];
   let timer = null;
+  let observer = null;
+  let decorateFrame = 0;
+  let decorating = false;
+
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
+  function setTitle(node, value) {
+    if (node && node.title !== value) node.title = value;
+  }
+
+  function setBoolean(node, key, value) {
+    if (node && node[key] !== value) node[key] = value;
+  }
+
+  function setColor(node, value) {
+    if (node && node.style.color !== value) node.style.color = value;
+  }
 
   function postId(card) {
     return card.querySelector("[data-social-action][data-id]")?.dataset.id
@@ -21,7 +40,7 @@
     }
     const data = await response.json().catch(() => ({}));
     posts = Array.isArray(data.socialPosts) ? data.socialPosts : [];
-    decorate();
+    scheduleDecorate();
   }
 
   function installNotice() {
@@ -44,22 +63,27 @@
       card.querySelector(".actions")?.insertAdjacentElement("beforebegin", meta);
     }
     if (!meta) return;
+
+    let message = "";
+    let color = "#315c45";
     if (!post.reviewApprovedAt) {
       const expired = post.scheduledAt && new Date(post.scheduledAt).getTime() <= Date.now();
-      meta.textContent = expired
+      message = expired
         ? "尚未審核：原時間已過。審核通過後會自動改排下一個空白的週三／週五上午10:00，不會立刻發布。"
         : "尚未審核：請先核對圖片、文案、發布平台與時間。";
-      meta.style.color = "#8d2024";
+      color = "#8d2024";
     } else if (post.conditionalWeather && post.status === "paused") {
-      meta.textContent = "已審核：等待萬華實際氣候符合後，由系統安排非週三、週五上午10:00發布。";
-      meta.style.color = "#315c45";
+      message = "已審核：等待萬華實際氣候符合後，由系統安排非週三、週五上午10:00發布。";
     } else {
-      const time = post.scheduledAt ? new Date(post.scheduledAt).toLocaleString("zh-TW", { hour12: false, timeZone: "Asia/Taipei" }) : "尚未設定時間";
-      meta.textContent = post.reviewScheduleNote
+      const time = post.scheduledAt
+        ? new Date(post.scheduledAt).toLocaleString("zh-TW", { hour12: false, timeZone: "Asia/Taipei" })
+        : "尚未設定時間";
+      message = post.reviewScheduleNote
         ? `已審核：${post.reviewScheduleNote}。預定 ${time} 自動發布。`
         : `已審核：預定 ${time} 自動發布。`;
-      meta.style.color = "#315c45";
     }
+    setText(meta, message);
+    setColor(meta, color);
   }
 
   function decorateCard(card, post) {
@@ -67,50 +91,66 @@
     const approve = card.querySelector('[data-social-action="approve"]');
     if (approve) {
       approve.type = "button";
-      approve.hidden = reviewed || !["draft", "rejected"].includes(post.status);
-      approve.disabled = false;
-      approve.textContent = "審核通過・啟用自動發布";
-      approve.title = "確認圖片、文案、平台與時間正確後，才讓這篇進入自動發布流程。";
+      setBoolean(approve, "hidden", reviewed || !["draft", "rejected"].includes(post.status));
+      setBoolean(approve, "disabled", false);
+      setText(approve, "審核通過・啟用自動發布");
+      setTitle(approve, "確認圖片、文案、平台與時間正確後，才讓這篇進入自動發布流程。");
     }
 
     const publish = card.querySelector('[data-social-action="publish"]');
     if (publish) {
       publish.type = "button";
-      publish.hidden = !reviewed || ["published", "publishing", "cancelled"].includes(post.status);
-      publish.disabled = !reviewed;
-      publish.textContent = reviewed ? "立即發布（已審核）" : "請先完成審核";
-      publish.title = reviewed
+      setBoolean(publish, "hidden", !reviewed || ["published", "publishing", "cancelled"].includes(post.status));
+      setBoolean(publish, "disabled", !reviewed);
+      setText(publish, reviewed ? "立即發布（已審核）" : "請先完成審核");
+      setTitle(publish, reviewed
         ? "略過原排程時間立即發布；已成功的平台不會重複發布。"
-        : "必須先按『審核通過・啟用自動發布』。";
+        : "必須先按『審核通過・啟用自動發布』。");
     }
 
     card.querySelectorAll('[data-social-action="resume"]').forEach((button) => {
       if (post.conditionalWeather) {
-        button.hidden = true;
-        button.disabled = true;
+        setBoolean(button, "hidden", true);
+        setBoolean(button, "disabled", true);
       }
     });
 
     const status = card.querySelector(".pill");
     if (status) {
-      if (!reviewed && post.status === "rejected") status.textContent = "已退回・等待重新審核";
-      else if (!reviewed) status.textContent = "等待你審核";
-      else if (post.status === "paused" && post.conditionalWeather) status.textContent = "已審核・等待氣候";
-      else if (post.status === "approved") status.textContent = "已審核・等待自動發布";
-      else if (post.status === "publishing") status.textContent = "發布中";
-      else if (post.status === "partial") status.textContent = "部分成功・請檢查";
-      else if (post.status === "failed") status.textContent = "發布失敗・請檢查";
-      else if (post.status === "published") status.textContent = "已發布";
+      let label = status.textContent;
+      if (!reviewed && post.status === "rejected") label = "已退回・等待重新審核";
+      else if (!reviewed) label = "等待你審核";
+      else if (post.status === "paused" && post.conditionalWeather) label = "已審核・等待氣候";
+      else if (post.status === "approved") label = "已審核・等待自動發布";
+      else if (post.status === "publishing") label = "發布中";
+      else if (post.status === "partial") label = "部分成功・請檢查";
+      else if (post.status === "failed") label = "發布失敗・請檢查";
+      else if (post.status === "published") label = "已發布";
+      setText(status, label);
     }
     ensureReviewMeta(card, post);
   }
 
   function decorate() {
-    installNotice();
-    const byId = new Map(posts.map((post) => [String(post.id || ""), post]));
-    document.querySelectorAll("#socialList .item").forEach((card) => {
-      const post = byId.get(postId(card));
-      if (post) decorateCard(card, post);
+    if (decorating) return;
+    decorating = true;
+    try {
+      installNotice();
+      const byId = new Map(posts.map((post) => [String(post.id || ""), post]));
+      document.querySelectorAll("#socialList .item").forEach((card) => {
+        const post = byId.get(postId(card));
+        if (post) decorateCard(card, post);
+      });
+    } finally {
+      decorating = false;
+    }
+  }
+
+  function scheduleDecorate() {
+    if (decorateFrame) return;
+    decorateFrame = requestAnimationFrame(() => {
+      decorateFrame = 0;
+      decorate();
     });
   }
 
@@ -140,15 +180,16 @@
     installApprovalConfirmation();
     installNotice();
     loadPosts().catch(() => {});
-    const observer = new MutationObserver(decorate);
+    observer = new MutationObserver(scheduleDecorate);
     observer.observe(document.body, { childList: true, subtree: true });
     timer = setInterval(() => loadPosts().catch(() => {}), 5000);
     window.addEventListener("xjw:app-refreshed", () => loadPosts().catch(() => {}));
     window.addEventListener("beforeunload", () => {
       clearInterval(timer);
-      observer.disconnect();
+      if (decorateFrame) cancelAnimationFrame(decorateFrame);
+      observer?.disconnect();
     }, { once: true });
-    window.xjwReviewGate = { version: VERSION, refresh: loadPosts, decorate, get posts() { return posts; } };
+    window.xjwReviewGate = { version: VERSION, refresh: loadPosts, decorate: scheduleDecorate, get posts() { return posts; } };
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
