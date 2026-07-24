@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260722-facebook-health-2";
+  const VERSION = "20260724-facebook-health-unlocked-1";
   let health = null;
   let timer = null;
 
@@ -54,9 +54,9 @@
     }
     let message = "";
     if (health?.expired) {
-      message = "Facebook Page Token 已過期。Instagram 已成功的貼文不會重複發布；更新 Render 的 META_PAGE_ACCESS_TOKEN 後，再按「重試失敗平台」。";
+      message = "Facebook Page Token 已過期，但立即發布不會被鎖住。Instagram 可先發布；Facebook 若失敗會保留為待補發，更新 META_PAGE_ACCESS_TOKEN 後再按『重試失敗平台』。";
     } else if (health?.usable === false) {
-      message = `Facebook 連線異常：${health.error || "請檢查 Page Token 與粉絲專頁權限。"}`;
+      message = `Facebook 連線異常，但立即發布仍可操作：${health.error || "請檢查 Page Token 與粉絲專頁權限。"}`;
     }
     warning.hidden = !message;
     setText(warning, message);
@@ -75,9 +75,13 @@
     failurePosts().forEach((card) => {
       const button = card.querySelector('[data-social-action="publish"]');
       if (!button) return;
-      button.disabled = expired;
-      button.title = expired ? "先更新 Facebook Page Token，再重新整理後補發 Facebook" : "";
-      setText(button, expired ? "Facebook Token 已過期" : "重試失敗平台");
+      button.disabled = false;
+      button.removeAttribute("aria-disabled");
+      button.style.pointerEvents = "auto";
+      button.title = expired
+        ? "立即發布仍可使用；Instagram 可先發布，Facebook 若失敗會保留為待補發。"
+        : "立即重試尚未成功的平台。";
+      setText(button, "重試失敗平台");
     });
   }
 
