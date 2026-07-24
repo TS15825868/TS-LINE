@@ -1,5 +1,5 @@
-commit=4a098fde07d273cd964abe26ef536eb1fb4be5b5
-recorded_at=2026-07-24T05:03:20Z
+commit=a86e4f97b5fcbe7791ad9af169433e1ef23fcf71
+recorded_at=2026-07-24T05:05:18Z
 
 
 > xianjiawei-lineoa@6.0.4 test
@@ -13,20 +13,29 @@ PASS fixed Wed/Fri 10:00 and conditional weather on non-fixed days
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish controls preserved and first batch starts 7/24 morning
-/home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.js:15
-  if (!post) throw new Error("找不到7/24上午首發的日常關心貼文");
-             ^
+node:internal/assert/utils:77
+    throw err;
+    ^
 
-Error: 找不到7/24上午首發的日常關心貼文
-    at applyClearRepublishPolicy (/home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.js:15:20)
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-clear-republish-policy.js:48:21)
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(template && reviewGate.CANONICAL_IDS.has(template.id))
+
+    at verifyReviewGate (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:98:3)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:151:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at node:internal/modules/cjs/loader:1913:10
-    at Object.loadWithScheduleTimePolicy [as .js] (/home/runner/work/TS-LINE/TS-LINE/social-schedule-policy.js:195:55)
+    at Object.<anonymous> (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
     at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
-    at Function.patchedLoad (/home/runner/work/TS-LINE/TS-LINE/social-final-approved-batch.js:256:33)
-    at Function.reviewGateLoader (/home/runner/work/TS-LINE/TS-LINE/social-review-only-mode.js:285:33)
-    at Function.loadWithFinalSocialRelease (/home/runner/work/TS-LINE/TS-LINE/social-final-release-20260724.js:275:33)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
 
 Node.js v22.23.1
