@@ -17,6 +17,17 @@ function allBubbles(message) {
   return message.contents?.type === "carousel" ? message.contents.contents : [message.contents];
 }
 
+function syntheticScene(title) {
+  return {
+    type: "flex",
+    altText: title,
+    contents: {
+      type: "bubble",
+      body: { type: "box", layout: "vertical", contents: [{ type: "text", text: title }] },
+    },
+  };
+}
+
 (async () => {
   assert.strictEqual(runtime.VERSION, "402.1");
   assert.strictEqual(runtime.APPROVED_MASCOT_VERSION, safety.APPROVED_MASCOT_VERSION);
@@ -43,7 +54,7 @@ function allBubbles(message) {
     [server.usageChooserReply(), "usage"],
     [server.faqReply(), "faq"],
     [server.brandStoryReply(), "brand"],
-    [server.productMenuReply(), "products"],
+    [syntheticScene("產品總覽｜小老闆幫你整理"), "products"],
     [server.cartFlex({ cart: [], checkout: null }), "cart"],
   ];
 
