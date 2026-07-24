@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const VERSION = "20260722-social-review-3";
+  const VERSION = "20260724-social-final-1";
   const H = { "Content-Type": "application/json", "X-XJW-Requested-With": "internal-app-v2" };
   const PAGE_SIZE = 8;
   const ACTIVE_STATUSES = new Set(["draft", "rejected", "approved", "paused", "publishing", "failed", "partial"]);
@@ -78,19 +78,12 @@
       && !post.scheduledAt;
   }
 
-  function isRegularCare(post = {}) {
-    if (isWeatherPost(post)) return false;
-    if (String(post.sequenceRole || "").toLowerCase() === "care") return true;
-    return /(?:日常關心|生活關心|節氣關心)/.test(String(post.category || ""));
-  }
-
   function validTargetSlot(post = {}) {
     if (isWeatherStandby(post)) return true;
     const parts = taipeiParts(post.scheduledAt);
     if (!parts) return false;
     if (isWeatherPost(post)) return parts.hour === "10" && parts.minute === "00";
-    if (isRegularCare(post)) return parts.weekday === "Wed" && parts.hour === "19" && parts.minute === "30";
-    return parts.weekday === "Fri" && parts.hour === "20" && parts.minute === "00";
+    return ["Wed", "Fri"].includes(parts.weekday) && parts.hour === "10" && parts.minute === "00";
   }
 
   function groupFor(post) {
@@ -118,11 +111,11 @@
       const localDate = new Date(Date.UTC(Number(nowParts.year), Number(nowParts.month) - 1, Number(nowParts.day) + offset));
       const day = localDate.getUTCDay();
       if (day !== 3 && day !== 5) continue;
-      const hour = day === 3 ? 19 : 20;
-      const minute = day === 3 ? 30 : 0;
+      const hour = 10;
+      const minute = 0;
       const utcCandidate = Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), hour - 8, minute, 0);
       if (utcCandidate < earliest) continue;
-      return `${localDate.getUTCFullYear()}-${String(localDate.getUTCMonth() + 1).padStart(2, "0")}-${String(localDate.getUTCDate()).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+      return `${localDate.getUTCFullYear()}-${String(localDate.getUTCMonth() + 1).padStart(2, "0")}-${String(localDate.getUTCDate()).padStart(2, "0")}T10:00`;
     }
     return "";
   }
@@ -141,7 +134,7 @@
     const hint = document.createElement("div");
     hint.id = "xjwSocialScheduleHint";
     hint.className = "meta";
-    hint.textContent = "固定排程：週三 19:30 關心文、週五 20:00 產品文；氣候符合時當日上午 10:00 例外加發。";
+    hint.textContent = "固定排程：每週三、週五上午 10:00；氣候與補水依萬華實際天氣於非週三、週五上午 10:00 例外加發。";
     field.closest("label")?.appendChild(hint);
   }
 
@@ -285,7 +278,7 @@
     const healthText = invalid || duplicates
       ? `${invalid ? `｜${invalid} 篇時間不合規` : ""}${duplicates ? `｜${duplicates} 個重複時段` : ""}`
       : "｜排程檢查正常";
-    summary.textContent = `固定每週 2 篇｜週三 19:30 關心文｜週五 20:00 產品文｜氣候文符合萬華實際天氣時，當日上午 10:00 額外發布，不占固定篇數｜待審 ${countFor("review")} 篇｜固定排程 ${fixedScheduled.length} 篇｜氣候待命 ${weatherStandby.length} 篇${weatherActive.length ? `｜氣候已啟用 ${weatherActive.length} 篇` : ""}｜共 ${posts.length} 篇｜排至 ${lastText}${healthText}`;
+    summary.textContent = `固定每週 2 篇｜週三、週五上午 10:00｜氣候與補水符合萬華實際天氣時，於非週三、週五上午 10:00 額外發布，不占固定篇數｜立即發布可隨時使用｜待審 ${countFor("review")} 篇｜固定排程 ${fixedScheduled.length} 篇｜氣候待命 ${weatherStandby.length} 篇${weatherActive.length ? `｜氣候已啟用 ${weatherActive.length} 篇` : ""}｜共 ${posts.length} 篇｜排至 ${lastText}${healthText}`;
   }
 
   function apply() {
