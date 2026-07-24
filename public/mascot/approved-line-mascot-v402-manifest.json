@@ -1,0 +1,20 @@
+{
+  "version": "402.1-20260724-approved",
+  "source": "repository approved independent LINE OA scene files",
+  "format": "JPEG",
+  "aspectRatio": "1:1",
+  "files": {
+    "welcome.jpg": { "blobSha": "643c8f81a54a516b9241b9459e3fd97bbdadb767" },
+    "recommend.jpg": { "blobSha": "9a7c366e9e8adcfd2ad6a51939c485217c324396" },
+    "combo.jpg": { "blobSha": "6573c93d6a2f05b88f5ff8b6f6da3b27c57d7077" },
+    "usage.jpg": { "blobSha": "9330c75c4190b325991d2fe89374f803e45512ce" },
+    "faq.jpg": { "blobSha": "dafde99bcdac6698d0e0734720ba7bf37a1f896b" },
+    "service.jpg": { "blobSha": "86449a18704bc7f59431f9128544be572b721d45" },
+    "brand.jpg": { "blobSha": "1797bce8e2b7b4843d040c3b70c05945e7bc0e87" },
+    "products.jpg": { "blobSha": "3493e46df8f4fce3911ae22c018aa66262abc185" },
+    "cart.jpg": { "blobSha": "ac77aa46717b2eb57bb0dd712d33a7fe97b51327" }
+  },
+  "realProductCards": 6,
+  "legacyUrlsBlocked": true,
+  "socialReviewGateUnaffected": true
+}
