@@ -1,0 +1,68 @@
+name: 仙加味審核閘門正式環境快照
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/review-gate-live-snapshot.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Render and capture review gate
+        shell: bash
+        run: |
+          set -u
+          code="000"
+          for i in $(seq 1 40); do
+            code=$(curl -L -sS -o /tmp/review-gate.json -w '%{http_code}' "https://ts-line.onrender.com/social/review-gate-status?t=$(date +%s)" || true)
+            if [ "$code" = "200" ] && node -e '
+              const fs=require("fs");
+              const d=JSON.parse(fs.readFileSync("/tmp/review-gate.json","utf8"));
+              if (!(d.version==="2026-07-24-review-gate-v3" && d.canonicalCount===10)) process.exit(1);
+            '; then
+              break
+            fi
+            sleep 15
+          done
+          export SNAPSHOT_HTTP_CODE="$code"
+          node - <<'NODE'
+          const fs=require('fs');
+          let live={};
+          try { live=JSON.parse(fs.readFileSync('/tmp/review-gate.json','utf8')); }
+          catch (error) { live={ parseError:error.message, raw:fs.existsSync('/tmp/review-gate.json') ? fs.readFileSync('/tmp/review-gate.json','utf8') : '' }; }
+          const expected = live.ok===true
+            && live.version==='2026-07-24-review-gate-v3'
+            && live.reviewGateMode===true
+            && live.reviewRequiredBeforePublish===true
+            && live.automaticSchedulingEnabled===true
+            && live.automaticSchedulingRequiresReview===true
+            && live.automaticRetryEnabled===false
+            && live.overdueApprovalPolicy==='move-to-next-free-wed-fri-10:00'
+            && live.canonicalCount===10
+            && live.unreviewedActiveCount===0
+            && Array.isArray(live.posts)
+            && live.posts.every(post => !['approved','paused','publishing','published','partial','failed'].includes(post.status) || Boolean(post.reviewApprovedAt));
+          const result={
+            capturedAt:new Date().toISOString(),
+            commit:process.env.GITHUB_SHA,
+            httpCode:process.env.SNAPSHOT_HTTP_CODE,
+            expectedState:expected,
+            live
+          };
+          fs.writeFileSync('review-gate-live.json',JSON.stringify(result,null,2)+'\n');
+          NODE
+      - name: Record live state
+        shell: bash
+        run: |
+          git config user.name actions
+          git config user.email actions@github.com
+          git add review-gate-live.json
+          git commit -m "chore: record live review-gate state" || exit 0
+          git push
