@@ -14,6 +14,7 @@ const lock = JSON.parse(read("package-lock.json"));
 const required = [
   "internal-entry.js",
   "internal-app-client-fix.js",
+  "internal-app-shell.js",
   "internal-app-review-only.js",
   "internal-app-social-retry.js",
   "internal-app-social-filter.js",
@@ -72,24 +73,32 @@ assert(gate.includes("nextAvailableFixedSlot"));
 assert(gate.includes("move-to-next-free-wed-fri-10:00"));
 
 const clientFix = read("internal-app-client-fix.js");
+const shell = read("internal-app-shell.js");
 const reviewUi = read("internal-app-review-only.js");
 const retry = read("internal-app-social-retry.js");
 const filter = read("internal-app-social-filter.js");
 const facebookHealth = read("internal-app-facebook-health.js");
 const immediate = read("social-manual-immediate-publish.js");
-assert(clientFix.includes('RUNTIME_VERSION = "20260724-app-recovery-1"'));
+assert(clientFix.includes('RUNTIME_VERSION = "20260724-ipad-touch-3"'));
 assert(clientFix.includes("internal/app-recovery"));
 assert(clientFix.includes("no-store, no-cache, must-revalidate"));
+assert(clientFix.includes("touch-action:manipulation"));
 assert(clientFix.indexOf("/internal/app-review-only.js") < clientFix.indexOf("/internal/app-social-retry.js"));
+assert(shell.includes('VERSION = "20260724-shell-ipad-touch-3"'));
+assert(shell.includes("installTouchFallback"));
+assert(shell.includes('document.addEventListener("touchend"'));
+assert(shell.includes("state.control.click()"));
 assert(reviewUi.includes("人工審核閘門已開啟"));
 assert(reviewUi.includes("審核通過・啟用自動發布"));
 assert(reviewUi.includes("未審核內容不會發布"));
 assert(reviewUi.includes("等待萬華實際氣候"));
 assert(reviewUi.includes("自動改排下一個空白的週三／週五上午10:00"));
+assert(!reviewUi.includes("new MutationObserver"), "審核介面不可再用全頁 MutationObserver");
 assert(retry.includes("立即發布"));
 assert(retry.includes("已成功的平台不會重複發布"));
 assert(filter.includes("週三、週五上午 10:00"));
-assert(facebookHealth.includes("button.disabled = false"));
+assert(facebookHealth.includes('setBoolean(button, "disabled", false)'));
+assert(!facebookHealth.includes("new MutationObserver"), "Facebook 狀態介面不可再用全頁 MutationObserver");
 assert(immediate.includes("post.manualImmediatePublish = true"));
 
 const postSource = read("social-final-posts.js");
@@ -117,4 +126,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：App 空白頁復原與禁止快取已啟用；10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；過期排程改至下一個安全時段；未審核與失敗平台不自動補發；防止重複發布");
+console.log("仙加味正式檢查通過：iPad 觸控備援已啟用，全頁 MutationObserver 已移除；App 空白頁復原與禁止快取已啟用；10篇圖文先進 App 草稿；人工審核後才啟用固定排程或氣候條件發布；過期排程改至下一個安全時段；未審核與失敗平台不自動補發；防止重複發布");
