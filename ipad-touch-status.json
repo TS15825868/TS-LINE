@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "verifiedAt": "2026-07-24T09:36:41.465Z",
+  "commit": "a6fe80423a4a9e34e0683ccd4be2aae48021ccc0",
+  "sourceOutcome": "success",
+  "productionOutcome": "success",
+  "shellVersion": "20260724-shell-ipad-touch-3",
+  "reviewVersion": "20260724-review-gate-v5-polling",
+  "facebookVersion": "20260724-facebook-health-polling-2",
+  "directTouchFallback": true,
+  "bodyWideMutationObserversRemoved": true,
+  "socialReviewRequiredBeforePublish": true
+}
