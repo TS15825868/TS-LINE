@@ -74,11 +74,14 @@ jobs:
           for (const [id, price] of Object.entries(expectedPrices)) {
             if (Number(sales.products?.[id]?.price) !== price) throw new Error(`${id} 正式售價不一致`);
           }
-          if (sales.products?.['guilu-jiao']?.quoteOnly !== true) throw new Error('龜鹿膠必須維持洽詢價');
-          if (!Array.isArray(sales.combos) || sales.combos.length !== 3) throw new Error('正式搭配必須為三組');
+          if (sales.products?.['guilu-jiao']?.quoteOnly !== true || Number(sales.products?.['guilu-jiao']?.price) !== 0) {
+            throw new Error('龜鹿膠必須維持洽詢價且不可直接結帳');
+          }
+          if (!Array.isArray(sales.comboOffers) || sales.comboOffers.length !== 3) throw new Error('正式搭配必須為三組');
+          if (!Array.isArray(sales.combos) || sales.combos.length !== 3) throw new Error('三組搭配相容欄位不完整');
           if (!sales.imagePolicy?.partners?.includes('小鹿娃娃') || !sales.imagePolicy?.partners?.includes('小烏龜娃娃')) throw new Error('固定夥伴規格缺漏');
           if (sales.imagePolicy?.realProductImagesOnly !== true || sales.imagePolicy?.approvalRequiredBeforePublish !== true) throw new Error('圖片或人工審核政策未鎖定');
-          console.log('正式售價、三組搭配、真實產品原圖與角色政策通過');
+          console.log('正式售價、龜鹿膠洽詢價、三組搭配、真實產品原圖與角色政策通過');
           NODE
 
       - name: Wait for Render deployment and verify production
@@ -91,7 +94,7 @@ jobs:
           mkdir -p /tmp/xjw-final
           success=0
           for attempt in $(seq 1 96); do
-            echo "Final weekly-once verification $attempt/96" | tee -a /tmp/final-production.log
+            echo "Final review-gated weekly-once verification $attempt/96" | tee -a /tmp/final-production.log
             release_ok=0
             social_site_ok=0
             raster_ok=0
@@ -138,10 +141,23 @@ jobs:
               "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/xjw-final/review-gate.json; then
               node - <<'NODE' && review_gate_ok=1 || true
           const h = require('/tmp/xjw-final/review-gate.json');
-          if (h.ok !== true || h.version !== '2026-07-25-review-gate-v4') throw new Error('review gate version mismatch');
+          if (h.ok !== true || h.version !== '2026-07-26-review-gate-v5') throw new Error('review gate version mismatch');
           if (h.reviewRequiredBeforePublish !== true || h.automaticRetryEnabled !== false) throw new Error('review gate safety mismatch');
-          if (Number(h.canonicalCount) !== 10 || Number(h.unreviewedActiveCount) !== 0) throw new Error('review gate post state mismatch');
+          if (Number(h.canonicalCount) !== 10) throw new Error('review gate canonical count mismatch');
+          if (Number(h.unreviewedActiveCount) !== 0) throw new Error('unreviewed post is active');
+          if (Number(h.pendingReviewCount || 0) + Number(h.reviewedCount || 0) !== 10) throw new Error('review state count mismatch');
           if (h.overdueApprovalPolicy !== 'move-to-next-free-wed-20:00') throw new Error('review reschedule policy mismatch');
+          for (const post of h.posts || []) {
+            const reviewed = Boolean(post.reviewApprovedAt);
+            if (!reviewed) {
+              if (!['pending_review', 'rejected', 'cancelled'].includes(post.status)) throw new Error(`unreviewed status is unsafe: ${post.id}`);
+              if (post.scheduledAt) throw new Error(`unreviewed post has active schedule: ${post.id}`);
+              if (post.autoPublishAfterReview === true) throw new Error(`unreviewed post has auto publish flag: ${post.id}`);
+            }
+            if (reviewed && post.conditionalWeather && post.status === 'paused' && post.scheduledAt) {
+              throw new Error(`weather standby must not have fixed schedule: ${post.id}`);
+            }
+          }
           NODE
             fi
 
@@ -156,10 +172,17 @@ jobs:
           if (!String(h.rule?.weatherException || '').includes('週末不發布')) throw new Error('weekend stop rule missing');
           if (Array.isArray(h.issues) && h.issues.length) throw new Error(`schedule issues: ${h.issues.join('｜')}`);
           const fixed = (h.posts || []).filter((p) => !p.conditionalWeather && p.scheduledAt);
+          const weeks = new Map();
           for (const post of fixed) {
-            const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(post.scheduledAt)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+            const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',weekday:'short',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(post.scheduledAt)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
             if (parts.weekday !== 'Wed' || parts.hour !== '20' || parts.minute !== '00') throw new Error('fixed post is not Wednesday 20:00');
+            const date = new Date(Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day)));
+            const day = date.getUTCDay() || 7;
+            date.setUTCDate(date.getUTCDate() - day + 1);
+            const key = date.toISOString().slice(0,10);
+            weeks.set(key, (weeks.get(key) || 0) + 1);
           }
+          if ([...weeks.values()].some((count) => count > 1)) throw new Error('more than one fixed post in the same week');
           NODE
             fi
 
@@ -180,7 +203,7 @@ jobs:
           done
 
           if [ "$success" -ne 1 ]; then
-            echo "Final weekly-once production verification did not pass" | tee -a /tmp/final-production.log
+            echo "Final review-gated weekly-once production verification did not pass" | tee -a /tmp/final-production.log
             for file in release social-site raster review-gate schedule internal database social; do
               echo "--- $file ---" | tee -a /tmp/final-production.log
               cat "/tmp/xjw-final/$file.json" 2>/dev/null | tee -a /tmp/final-production.log || true
@@ -228,6 +251,7 @@ jobs:
           const schedule = load('schedule');
           const sales = JSON.parse(fs.readFileSync('line-sales-master.json', 'utf8'));
           const ok = process.env.TEST_OUTCOME === 'success' && process.env.PRODUCTION_OUTCOME === 'success';
+          const reviewPosts = Array.isArray(reviewGate.posts) ? reviewGate.posts : [];
           const result = {
             ok,
             verifiedAt: new Date().toISOString(),
@@ -258,11 +282,16 @@ jobs:
             independentWebsite: socialSite.mode === 'independent-website',
             reviewGateVersion: reviewGate.version || '',
             reviewRequiredBeforePublish: reviewGate.reviewRequiredBeforePublish === true,
+            pendingReviewCount: Number(reviewGate.pendingReviewCount || 0),
+            reviewedCount: Number(reviewGate.reviewedCount || 0),
+            automaticQueueCount: Number(reviewGate.automaticQueueCount || 0),
+            actualScheduledCount: reviewPosts.filter((post) => Boolean(post.scheduledAt)).length,
+            unreviewedActiveCount: Number(reviewGate.unreviewedActiveCount || 0),
             automaticRetryEnabled: reviewGate.automaticRetryEnabled,
             scheduleVersion: schedule.version || '',
-            fixedSchedule: '每週1篇，週三20:00（Asia/Taipei）',
+            fixedSchedule: '審核通過後每週1篇，週三20:00（Asia/Taipei）',
             weekendPublishing: false,
-            weatherPosts: '依萬華實際氣候，於其他平日20:00條件加發，每週最多1篇',
+            weatherPosts: '人工審核通過後，依萬華實際氣候於其他平日20:00條件加發，每週最多1篇',
             rasterVersion: raster.contentVersion || '',
             rasterHealthy: raster.ok === true,
             TraditionalChineseFont: raster.fontFamily || '',
@@ -272,7 +301,7 @@ jobs:
             officialProductImagesOnly: sales.imagePolicy?.realProductImagesOnly === true,
             mascot: sales.imagePolicy?.mascot || '',
             partners: sales.imagePolicy?.partners || [],
-            comboCount: Array.isArray(sales.combos) ? sales.combos.length : 0,
+            comboCount: Array.isArray(sales.comboOffers) ? sales.comboOffers.length : 0,
             unreviewedPublishingBlocked: true
           };
           fs.writeFileSync('final-verification.json', JSON.stringify(result, null, 2) + '\n');
