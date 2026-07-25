@@ -100,18 +100,20 @@ assert(transformedServer.includes('if (product.quoteOnly) return false'));
 assert(transformedServer.includes('label: "LINE洽詢"'));
 
 assert.strictEqual(weeklyOverride.VERSION, "2026-07-25-weekly-once-v1");
-assert.strictEqual(reviewGate.VERSION, "2026-07-25-review-gate-v4");
+assert.strictEqual(reviewGate.VERSION, "2026-07-26-review-gate-v5");
 assert.strictEqual(approvedBatch.VERSION, "6.1.0");
 assert.strictEqual(approvedBatch.WEATHER_START_DELAY_MS, 60 * 1000);
 assert.strictEqual(approvedBatch.WEATHER_RATE_LIMIT_BACKOFF_MS, 2 * 60 * 60 * 1000);
 const gate = read("social-review-only-mode.js");
-assert(gate.includes('VERSION = "2026-07-25-review-gate-v4"'));
+assert(gate.includes('VERSION = "2026-07-26-review-gate-v5"'));
 assert(gate.includes("automaticSchedulingRequiresReview: true"));
 assert(gate.includes("automaticRetryEnabled: false"));
 assert(gate.includes("這篇尚未通過人工審核，不能發布"));
 assert(gate.includes("nextAvailableFixedSlot"));
 assert(gate.includes('parts.weekday === "Wed"'));
 assert(gate.includes('parts.hour === "20"'));
+assert(gate.includes('status = "pending_review"'));
+assert(gate.includes('scheduledAt: ""'));
 
 const clientFix = read("internal-app-client-fix.js");
 assert(clientFix.includes('RUNTIME_VERSION = "20260724-inventory-split-1"'));
@@ -204,4 +206,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.0.6售價與龜鹿膠洽詢價防護、三組搭配相容欄位、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、社群人工審核、每週1篇週三20:00、天氣內容人工審核後只在其他平日20:00條件加發、HTTP 429自動退避、週末不發布");
+console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.0.6售價與龜鹿膠洽詢價防護、三組搭配相容欄位、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、全部未發布內容先待審、審核後每週1篇週三20:00、天氣內容人工審核後只在其他平日20:00條件加發、HTTP 429自動退避、週末不發布");
