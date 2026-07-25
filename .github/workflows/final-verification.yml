@@ -7,6 +7,9 @@ on:
     paths:
       - "package.json"
       - "package-lock.json"
+      - "line-sales-master.json"
+      - "product-sales-master.js"
+      - "MASCOT_CHARACTER_SPEC.md"
       - "internal-app-client-fix.js"
       - "internal-social-site.js"
       - "internal-social-site/**"
@@ -14,8 +17,10 @@ on:
       - "social-final-posts.js"
       - "social-final-release-20260724.js"
       - "social-final-release-remote-assets.js"
+      - "social-weekly-schedule-override.js"
       - "social-review-only-mode.js"
       - "social-schedule-policy.js"
+      - "social-schedule-repair-20260722.js"
       - "social-publish-guard.js"
       - "tools/release_check.js"
       - ".github/workflows/final-verification.yml"
@@ -30,7 +35,7 @@ concurrency:
 jobs:
   final-verification:
     runs-on: ubuntu-latest
-    timeout-minutes: 26
+    timeout-minutes: 28
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,20 +64,21 @@ jobs:
           mkdir -p /tmp/xjw-final
           success=0
           for attempt in $(seq 1 80); do
-            echo "Final split-system verification $attempt/80" | tee -a /tmp/final-production.log
+            echo "Final weekly-once verification $attempt/80" | tee -a /tmp/final-production.log
             release_ok=0
             social_site_ok=0
             raster_ok=0
             internal_ok=0
             database_ok=0
             social_ok=0
+            review_gate_ok=0
+            schedule_ok=0
 
             if curl --connect-timeout 10 --max-time 65 --fail --silent --show-error \
               "$BASE_URL/social/final-release-healthz?t=$(date +%s)" -o /tmp/xjw-final/release.json; then
               node - <<'NODE' && release_ok=1 || true
           const r = require('/tmp/xjw-final/release.json');
           if (r.ok !== true) throw new Error('release not ok');
-          if (r.version !== '2026-07-24-final-v1') throw new Error('release version mismatch');
           if (Number(r.totalPosts) !== 10 || Number(r.fixedPosts) !== 7 || Number(r.weatherStandbyPosts) !== 3) throw new Error('post counts mismatch');
           if (r.duplicateTitleCount !== 0 || r.duplicateCaptionCount !== 0 || r.duplicateImageCount !== 0) throw new Error('duplicates found');
           if (!Array.isArray(r.assets) || r.assets.length !== 10) throw new Error('asset count mismatch');
@@ -101,6 +107,34 @@ jobs:
           NODE
             fi
 
+            if curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
+              "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/xjw-final/review-gate.json; then
+              node - <<'NODE' && review_gate_ok=1 || true
+          const h = require('/tmp/xjw-final/review-gate.json');
+          if (h.ok !== true || h.version !== '2026-07-25-review-gate-v4') throw new Error('review gate version mismatch');
+          if (h.reviewRequiredBeforePublish !== true || h.automaticRetryEnabled !== false) throw new Error('review gate safety mismatch');
+          if (Number(h.canonicalCount) !== 10 || Number(h.unreviewedActiveCount) !== 0) throw new Error('review gate post state mismatch');
+          if (h.overdueApprovalPolicy !== 'move-to-next-free-wed-20:00') throw new Error('review reschedule policy mismatch');
+          NODE
+            fi
+
+            if curl --connect-timeout 10 --max-time 45 --silent --show-error \
+              "$BASE_URL/social/schedule-status?t=$(date +%s)" -o /tmp/xjw-final/schedule.json; then
+              node - <<'NODE' && schedule_ok=1 || true
+          const h = require('/tmp/xjw-final/schedule.json');
+          if (h.version !== '2026-07-25-v6') throw new Error('schedule repair version mismatch');
+          if (Number(h.canonicalCount) !== 10) throw new Error('schedule canonical count mismatch');
+          if (h.rule?.fixed !== '每週1篇，週三 20:00') throw new Error('fixed schedule rule mismatch');
+          if (!String(h.rule?.weatherException || '').includes('週末不發布')) throw new Error('weekend stop rule missing');
+          if (Array.isArray(h.issues) && h.issues.length) throw new Error(`schedule issues: ${h.issues.join('｜')}`);
+          const fixed = (h.posts || []).filter((p) => !p.conditionalWeather && p.scheduledAt);
+          for (const post of fixed) {
+            const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(post.scheduledAt)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+            if (parts.weekday !== 'Wed' || parts.hour !== '20' || parts.minute !== '00') throw new Error('fixed post is not Wednesday 20:00');
+          }
+          NODE
+            fi
+
             curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/healthz?t=$(date +%s)" -o /tmp/xjw-final/internal.json 2>/dev/null && \
               node -e "const h=require('/tmp/xjw-final/internal.json');if(h.ok!==true||h.app!=='仙加味內部管理 App')process.exit(1)" && internal_ok=1 || true
             curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/db-healthz?t=$(date +%s)" -o /tmp/xjw-final/database.json 2>/dev/null && \
@@ -109,7 +143,8 @@ jobs:
               node -e "const h=require('/tmp/xjw-final/social.json');if(h.ok!==true||h.instagramConfigured!==true||h.facebookConfigured!==true||Number(h.postCount)<10)process.exit(1)" && social_ok=1 || true
 
             if [ "$release_ok" -eq 1 ] && [ "$social_site_ok" -eq 1 ] && [ "$raster_ok" -eq 1 ] && \
-               [ "$internal_ok" -eq 1 ] && [ "$database_ok" -eq 1 ] && [ "$social_ok" -eq 1 ]; then
+               [ "$review_gate_ok" -eq 1 ] && [ "$schedule_ok" -eq 1 ] && [ "$internal_ok" -eq 1 ] && \
+               [ "$database_ok" -eq 1 ] && [ "$social_ok" -eq 1 ]; then
               success=1
               break
             fi
@@ -117,8 +152,8 @@ jobs:
           done
 
           if [ "$success" -ne 1 ]; then
-            echo "Final split-system production verification did not pass" | tee -a /tmp/final-production.log
-            for file in release social-site raster internal database social; do
+            echo "Final weekly-once production verification did not pass" | tee -a /tmp/final-production.log
+            for file in release social-site raster review-gate schedule internal database social; do
               echo "--- $file ---" | tee -a /tmp/final-production.log
               cat "/tmp/xjw-final/$file.json" 2>/dev/null | tee -a /tmp/final-production.log || true
             done
@@ -161,6 +196,8 @@ jobs:
           const database = load('database');
           const socialSite = load('social-site');
           const raster = load('raster');
+          const reviewGate = load('review-gate');
+          const schedule = load('schedule');
           const ok = process.env.TEST_OUTCOME === 'success' && process.env.PRODUCTION_OUTCOME === 'success';
           const result = {
             ok,
@@ -188,16 +225,19 @@ jobs:
             socialSiteVersion: socialSite.version || '',
             socialWebsiteHealthy: socialSite.ok === true,
             independentWebsite: socialSite.mode === 'independent-website',
-            reviewRequiredBeforePublish: socialSite.reviewRequiredBeforePublish === true,
-            automaticRetryEnabled: socialSite.automaticRetryEnabled,
+            reviewGateVersion: reviewGate.version || '',
+            reviewRequiredBeforePublish: reviewGate.reviewRequiredBeforePublish === true,
+            automaticRetryEnabled: reviewGate.automaticRetryEnabled,
+            scheduleVersion: schedule.version || '',
+            fixedSchedule: '每週1篇，週三20:00（Asia/Taipei）',
+            weekendPublishing: false,
+            weatherPosts: '依萬華實際氣候，於其他平日20:00條件加發，每週最多1篇',
             rasterVersion: raster.contentVersion || '',
             rasterHealthy: raster.ok === true,
             TraditionalChineseFont: raster.fontFamily || '',
             preventsGibberish: raster.preventsGibberish === true,
             targetImageSize: raster.targetSize || '',
             storage: database.storage || '',
-            fixedSchedule: '週三、週五 10:00',
-            weatherPosts: '依萬華實際氣候，非固定日加發',
             unreviewedPublishingBlocked: true
           };
           fs.writeFileSync('final-verification.json', JSON.stringify(result, null, 2) + '\n');
