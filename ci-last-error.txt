@@ -1,36 +1,35 @@
-commit=337a46b479651465e9e0da673e6b37b742f9b033
-recorded_at=2026-07-25T08:24:37Z
+commit=fd33649d6bb783ac3cfb3d0a993fe26ba0073546
+recorded_at=2026-07-25T08:30:32Z
 
 
 > xianjiawei-lineoa@6.0.6 test
-> node --check product-sales-master.js && node -e "const m=require('./line-sales-master.json');if(m.products['guilu-gao'].price!==2000||m.products['guilu-drink-30'].price!==100||!m.imagePolicy.partners.includes('小鹿娃娃')||!m.imagePolicy.partners.includes('小烏龜娃娃'))process.exit(1)" && node --check social-review-only-mode.js && node --check server.js && node --check social-server.js && node --check instagram-content-publishing-endpoint-fix.js && node --check social-publish-guard.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-corrected-republish-schedule.js && node --check social-original-asset-override.js && node --check social-static-asset-bridge.js && node --check social-final-approved-batch.js && node --check social-final-release-20260724.js && node --check social-final-identity-preserver.js && node --check social-final-release-remote-assets.js && node --check disable-official-social-rebuild.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-manual-immediate-publish.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-social-site.js && node --check internal-app-client-fix.js && node --check internal-app-review-only.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node social-review-only-mode.test.js && node social-clear-republish-policy.test.js && node social-final-approved-batch.test.js && node social-schedule-repair-20260722.test.js && node -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js -r ./social-corrected-republish-schedule.js social-schedule-policy.test.js && node social-manual-schedule-override.test.js && node social-publish-guard.test.js && node social-manual-immediate-publish.test.js && node tools/release_check.js
+> node --check product-sales-master.js && node --check social-weekly-schedule-override.js && node -e "const m=require('./line-sales-master.json');if(m.products['guilu-gao'].price!==2000||m.products['guilu-drink-30'].price!==100||!m.imagePolicy.partners.includes('小鹿娃娃')||!m.imagePolicy.partners.includes('小烏龜娃娃'))process.exit(1)" && node --check social-review-only-mode.js && node --check server.js && node --check social-server.js && node --check instagram-content-publishing-endpoint-fix.js && node --check social-publish-guard.js && node --check social-publication-ledger-backfill.js && node --check social-recommended-schedule.js && node --check social-final-posts.js && node --check social-clear-republish-policy.js && node --check social-corrected-republish-schedule.js && node --check social-original-asset-override.js && node --check social-static-asset-bridge.js && node --check social-final-approved-batch.js && node --check social-final-release-20260724.js && node --check social-final-identity-preserver.js && node --check social-final-release-remote-assets.js && node --check disable-official-social-rebuild.js && node --check social-schedule-repair-20260722.js && node --check social-schedule-policy.js && node --check social-manual-schedule-override.js && node --check social-manual-immediate-publish.js && node --check social-review-center.js && node --check facebook-page-token-bridge.js && node --check facebook-token-health-route.js && node --check internal-social-site.js && node --check internal-app-client-fix.js && node --check internal-app-review-only.js && node --check internal-app-form-controller.js && node --check internal-app-social-filter.js && node --check internal-app-social-retry.js && node --check internal-app-facebook-health.js && node --check internal-entry.js && node -r ./social-weekly-schedule-override.js social-review-only-mode.test.js && node -r ./social-weekly-schedule-override.js social-clear-republish-policy.test.js && node -r ./social-weekly-schedule-override.js social-final-approved-batch.test.js && node -r ./social-weekly-schedule-override.js social-schedule-repair-20260722.test.js && node -r ./social-weekly-schedule-override.js -r ./social-recommended-schedule.js -r ./social-clear-republish-policy.js -r ./social-corrected-republish-schedule.js social-schedule-policy.test.js && node -r ./social-weekly-schedule-override.js social-manual-schedule-override.test.js && node social-publish-guard.test.js && node -r ./social-weekly-schedule-override.js social-manual-immediate-publish.test.js && node -r ./social-weekly-schedule-override.js tools/release_check.js
 
-PASS App review gate blocks unreviewed publishing, safely reschedules overdue approvals, and enables automation only after review
-PASS first clear post scheduled for 2026/7/24 10:00
-PASS first 10 unique posts, 7/24 morning start, Wed/Fri 10:00 and weather standby
-PASS schedule repair installs 10 unique posts and starts 7/24 at 10:00
-PASS fixed Wed/Fri 10:00 and conditional weather on non-fixed days
-manual social schedule override tests passed
-PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
-PASS immediate publish controls preserved and first batch starts 7/24 morning
-node:internal/assert/utils:77
-    throw err;
-    ^
+node:assert:150
+  throw new AssertionError(obj);
+  ^
 
-AssertionError [ERR_ASSERTION]: 審核閘門必須在正式啟動時載入
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:67:1)
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ '2026-07-25-review-gate-v4'
+- '2026-07-24-review-gate-v3'
+            ^
+
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/social-review-only-mode.test.js:23:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.loadWithWeeklyOnceSchedule [as .js] (/home/runner/work/TS-LINE/TS-LINE/social-weekly-schedule-override.js:93:55)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
     at node:internal/main/run_main_module:36:49 {
-  generatedMessage: false,
+  generatedMessage: true,
   code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
+  actual: '2026-07-25-review-gate-v4',
+  expected: '2026-07-24-review-gate-v3',
+  operator: 'strictEqual',
   diff: 'simple'
 }
 
