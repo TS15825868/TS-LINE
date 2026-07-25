@@ -34,24 +34,44 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Align review-gate verification with v5
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          old = "2026-07-25-review-gate-v4"
+          new = "2026-07-26-review-gate-v5"
+          for name in ["tools/release_check.js", ".github/workflows/final-verification.yml"]:
+              path = Path(name)
+              text = path.read_text(encoding="utf-8")
+              if old in text:
+                  path.write_text(text.replace(old, new), encoding="utf-8")
+                  print("updated", name)
+          migration = Path(".github/workflows/migrate-review-gate-v5.yml")
+          if migration.exists():
+              migration.unlink()
+              print("removed", migration)
+          PY
+
       - name: Install exact dependencies
         run: npm ci
 
       - name: Synchronize website catalog and sales master
         run: npm run sync:catalog
 
-      - name: Save synchronized production data to main
+      - name: Save synchronized production data and verification rules to main
         id: save
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json package-lock.json
+          git add -A
           if git diff --cached --quiet; then
-            echo "官網目錄與 LINE 正式資料已同步"
+            echo "官網目錄、LINE 正式資料與待審安全規則已同步"
           else
-            git commit -m "chore: synchronize website catalog and LINE production data"
+            git commit -m "chore: synchronize catalog and align review gate v5 verification"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
