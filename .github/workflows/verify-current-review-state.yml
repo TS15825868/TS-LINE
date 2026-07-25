@@ -1,0 +1,233 @@
+name: 目前待審與 Render 正式狀態驗收
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-current-review-state.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-current-review-state
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify repository production rules
+        id: local
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            npm run check:catalog
+            npm test
+          } 2>&1 | tee /tmp/current-local.log
+
+      - name: Verify deployed Render review and schedule state
+        id: production
+        continue-on-error: true
+        shell: bash
+        env:
+          BASE_URL: https://ts-line.onrender.com
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/current-production
+          success=0
+          for attempt in $(seq 1 48); do
+            echo "current production verification $attempt/48" | tee -a /tmp/current-production.log
+            review_ok=0
+            schedule_ok=0
+            automation_ok=0
+            social_site_ok=0
+            internal_ok=0
+            database_ok=0
+            social_ok=0
+
+            if curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
+              "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/current-production/review.json; then
+              node - <<'NODE' && review_ok=1 || true
+          const h = require('/tmp/current-production/review.json');
+          if (h.ok !== true || h.version !== '2026-07-26-review-gate-v5') throw new Error('review gate v5 not deployed');
+          if (h.reviewRequiredBeforePublish !== true || h.automaticRetryEnabled !== false) throw new Error('review safety mismatch');
+          if (Number(h.canonicalCount) !== 10) throw new Error('canonical count mismatch');
+          if (Number(h.unreviewedActiveCount) !== 0) throw new Error('unreviewed active post found');
+          if (Number(h.pendingReviewCount || 0) + Number(h.reviewedCount || 0) !== 10) throw new Error('review state count mismatch');
+          for (const post of h.posts || []) {
+            const reviewed = Boolean(post.reviewApprovedAt);
+            if (!reviewed) {
+              if (!['pending_review', 'rejected', 'cancelled'].includes(post.status)) throw new Error(`unsafe unreviewed status ${post.id}:${post.status}`);
+              if (post.scheduledAt) throw new Error(`unreviewed post has active schedule ${post.id}`);
+              if (post.autoPublishAfterReview === true) throw new Error(`unreviewed auto publish flag ${post.id}`);
+            }
+            if (reviewed && post.conditionalWeather && post.status === 'paused' && post.scheduledAt) {
+              throw new Error(`weather standby has fixed schedule ${post.id}`);
+            }
+          }
+          NODE
+            fi
+
+            schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error \
+              -o /tmp/current-production/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
+            if [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; then
+              node - <<'NODE' && schedule_ok=1 || true
+          const h = require('/tmp/current-production/schedule.json');
+          if (h.version !== '2026-07-25-v6') throw new Error('schedule v6 not deployed');
+          if (Number(h.canonicalCount) !== 10) throw new Error('schedule canonical count mismatch');
+          if (h.rule?.fixed !== '每週1篇，週三 20:00') throw new Error('fixed schedule rule mismatch');
+          if (!String(h.rule?.weatherException || '').includes('週末不發布')) throw new Error('weekend rule missing');
+          if (Array.isArray(h.issues) && h.issues.length) throw new Error(h.issues.join('｜'));
+          NODE
+            fi
+
+            if curl --connect-timeout 10 --max-time 90 --fail --silent --show-error \
+              "$BASE_URL/social/automation-healthz?t=$(date +%s)" -o /tmp/current-production/automation.json; then
+              node - <<'NODE' && automation_ok=1 || true
+          const h = require('/tmp/current-production/automation.json');
+          if (h.ok !== true || h.version !== '6.1.0') throw new Error('social automation v6.1.0 not deployed');
+          if (Number(h.totalPosts) !== 10 || Number(h.fixedPosts) !== 7 || Number(h.weatherStandbyPosts) !== 3) throw new Error('automation post counts mismatch');
+          if (h.fixedRule !== '每週1篇，週三20:00') throw new Error('automation fixed rule mismatch');
+          if (!String(h.weatherRule || '').includes('人工審核通過後')) throw new Error('weather review gate missing');
+          if (Number(h.rateLimitBackoffMs) < 7200000) throw new Error('weather 429 backoff missing');
+          if (!Array.isArray(h.assets) || h.assets.length !== 10 || h.assets.some((item) => item.ok !== true)) throw new Error('approved assets invalid');
+          NODE
+            fi
+
+            curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
+              "$BASE_URL/internal/social-center-healthz?t=$(date +%s)" -o /tmp/current-production/social-site.json 2>/dev/null && \
+              node -e "const h=require('/tmp/current-production/social-site.json');if(h.ok!==true||h.mode!=='independent-website'||h.reviewRequiredBeforePublish!==true||h.automaticRetryEnabled!==false)process.exit(1)" && social_site_ok=1 || true
+            curl --connect-timeout 10 --max-time 35 --fail --silent --show-error \
+              "$BASE_URL/internal/healthz?t=$(date +%s)" -o /tmp/current-production/internal.json 2>/dev/null && \
+              node -e "const h=require('/tmp/current-production/internal.json');if(h.ok!==true||h.app!=='仙加味內部管理 App')process.exit(1)" && internal_ok=1 || true
+            curl --connect-timeout 10 --max-time 35 --fail --silent --show-error \
+              "$BASE_URL/internal/db-healthz?t=$(date +%s)" -o /tmp/current-production/database.json 2>/dev/null && \
+              node -e "const h=require('/tmp/current-production/database.json');if(h.ok!==true||h.storage!=='supabase')process.exit(1)" && database_ok=1 || true
+            curl --connect-timeout 10 --max-time 35 --fail --silent --show-error \
+              "$BASE_URL/social/healthz?t=$(date +%s)" -o /tmp/current-production/social.json 2>/dev/null && \
+              node -e "const h=require('/tmp/current-production/social.json');if(h.ok!==true||h.instagramConfigured!==true||h.facebookConfigured!==true||Number(h.postCount)<10)process.exit(1)" && social_ok=1 || true
+
+            if [ "$review_ok" -eq 1 ] && [ "$schedule_ok" -eq 1 ] && [ "$automation_ok" -eq 1 ] && \
+               [ "$social_site_ok" -eq 1 ] && [ "$internal_ok" -eq 1 ] && [ "$database_ok" -eq 1 ] && [ "$social_ok" -eq 1 ]; then
+              success=1
+              break
+            fi
+            sleep 15
+          done
+
+          if [ "$success" -ne 1 ]; then
+            echo "deployed production state did not pass" | tee -a /tmp/current-production.log
+            for file in review schedule automation social-site internal database social; do
+              echo "--- $file ---" | tee -a /tmp/current-production.log
+              cat "/tmp/current-production/$file.json" 2>/dev/null | tee -a /tmp/current-production.log || true
+            done
+            exit 1
+          fi
+
+      - name: Record authoritative current verification
+        if: always()
+        shell: bash
+        env:
+          LOCAL_OUTCOME: ${{ steps.local.outcome }}
+          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const load = (name) => { try { return JSON.parse(fs.readFileSync(`/tmp/current-production/${name}.json`, 'utf8')); } catch { return {}; } };
+          const review = load('review');
+          const schedule = load('schedule');
+          const automation = load('automation');
+          const socialSite = load('social-site');
+          const internal = load('internal');
+          const database = load('database');
+          const social = load('social');
+          const ok = process.env.LOCAL_OUTCOME === 'success' && process.env.PRODUCTION_OUTCOME === 'success';
+          const posts = Array.isArray(review.posts) ? review.posts : [];
+          const result = {
+            ok,
+            verifiedAt: new Date().toISOString(),
+            commit: process.env.GITHUB_SHA,
+            localOutcome: process.env.LOCAL_OUTCOME,
+            productionOutcome: process.env.PRODUCTION_OUTCOME,
+            reviewGateVersion: review.version || '',
+            reviewRequiredBeforePublish: review.reviewRequiredBeforePublish === true,
+            canonicalCount: Number(review.canonicalCount || 0),
+            pendingReviewCount: Number(review.pendingReviewCount || 0),
+            reviewedCount: Number(review.reviewedCount || 0),
+            automaticQueueCount: Number(review.automaticQueueCount || 0),
+            actualScheduledCount: posts.filter((post) => Boolean(post.scheduledAt)).length,
+            unreviewedActiveCount: Number(review.unreviewedActiveCount || 0),
+            scheduleVersion: schedule.version || '',
+            scheduleIssues: Array.isArray(schedule.issues) ? schedule.issues : [],
+            automationVersion: automation.version || '',
+            fixedPosts: Number(automation.fixedPosts || 0),
+            weatherStandbyPosts: Number(automation.weatherStandbyPosts || 0),
+            weatherRateLimitBackoffMs: Number(automation.rateLimitBackoffMs || 0),
+            assetCount: Array.isArray(automation.assets) ? automation.assets.length : 0,
+            socialWebsiteHealthy: socialSite.ok === true,
+            inventoryAppHealthy: internal.ok === true,
+            storage: database.storage || '',
+            instagramConfigured: social.instagramConfigured === true,
+            facebookConfigured: social.facebookConfigured === true,
+            fixedSchedule: '人工審核通過後每週1篇，週三20:00',
+            weatherSchedule: '人工審核通過後，依萬華實際氣候於其他平日20:00條件加發；週末不發布',
+            unreviewedPublishingBlocked: true,
+          };
+          fs.writeFileSync('current-production-verification.json', JSON.stringify(result, null, 2) + '\n');
+          NODE
+
+          if [ "$LOCAL_OUTCOME" != "success" ] || [ "$PRODUCTION_OUTCOME" != "success" ]; then
+            {
+              echo "commit=$GITHUB_SHA"
+              echo "localOutcome=$LOCAL_OUTCOME"
+              echo "productionOutcome=$PRODUCTION_OUTCOME"
+              echo
+              echo "--- local ---"
+              cat /tmp/current-local.log 2>/dev/null || true
+              echo
+              echo "--- production ---"
+              cat /tmp/current-production.log 2>/dev/null || true
+            } > current-production-verification-error.txt
+          else
+            rm -f current-production-verification-error.txt
+          fi
+
+          git config user.name "仙加味正式狀態驗收"
+          git config user.email "actions@users.noreply.github.com"
+          git pull --rebase origin main
+          git add current-production-verification.json
+          if [ -f current-production-verification-error.txt ]; then git add current-production-verification-error.txt; else git rm -f --ignore-unmatch current-production-verification-error.txt; fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: record current review and Render verification"
+          git push origin HEAD:main
+
+      - name: Fail when current verification failed
+        if: always()
+        shell: bash
+        env:
+          LOCAL_OUTCOME: ${{ steps.local.outcome }}
+          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
+        run: |
+          test "$LOCAL_OUTCOME" = "success"
+          test "$PRODUCTION_OUTCOME" = "success"
