@@ -1,0 +1,89 @@
+name: 重新驗證 Render 十篇待審與 Supabase 正式狀態
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/verify-live-runtime-v7.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - name: Wait for latest Render deployment and verify three stable passes
+        id: live
+        continue-on-error: true
+        shell: bash
+        env:
+          BASE_URL: https://ts-line.onrender.com
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/xjw-live
+          stable=0
+          for attempt in $(seq 1 80); do
+            db_ok=0; review_ok=0; automation_ok=0; internal_ok=0
+            if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/internal/db-healthz?t=$(date +%s)" -o /tmp/xjw-live/db.json; then
+              node - <<'NODE' && db_ok=1 || true
+          const h=require('/tmp/xjw-live/db.json');
+          if(h.version!=='1.2.0'||h.storage!=='supabase'||h.connected!==true||String(h.lastError||''))throw new Error(`database ${h.version}/${h.connected}/${h.lastError}`);
+          if((h.activeSaveKeys||[]).length||Object.keys(h.retryBackoff||{}).length)throw new Error('save queue or retry backoff still active');
+          NODE
+            fi
+            if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/xjw-live/review.json; then
+              node - <<'NODE' && review_ok=1 || true
+          const h=require('/tmp/xjw-live/review.json');
+          if(h.version!=='2026-07-26-review-gate-v5'||h.reviewRequiredBeforePublish!==true||h.automaticRetryEnabled!==false)throw new Error('review policy mismatch');
+          if(Number(h.canonicalCount)!==10||Number(h.pendingReviewCount)!==10||Number(h.reviewedCount)!==0||Number(h.unreviewedActiveCount)!==0)throw new Error(`review counts ${h.canonicalCount}/${h.pendingReviewCount}/${h.reviewedCount}/${h.unreviewedActiveCount}`);
+          if((h.posts||[]).some(p=>p.scheduledAt||p.reviewApprovedAt||!['pending_review','rejected'].includes(p.status)))throw new Error('unreviewed post is active');
+          NODE
+            fi
+            if curl --connect-timeout 10 --max-time 90 --fail --silent --show-error "$BASE_URL/social/automation-healthz?t=$(date +%s)" -o /tmp/xjw-live/automation.json; then
+              node - <<'NODE' && automation_ok=1 || true
+          const h=require('/tmp/xjw-live/automation.json');
+          if(h.runtimeStabilizerVersion!=='2026-07-26-runtime-stabilizer-v2'||Number(h.totalPosts)!==10||Number(h.fixedPosts)!==7||Number(h.weatherStandbyPosts)!==3)throw new Error('automation counts mismatch');
+          if(!Array.isArray(h.assets)||h.assets.length!==10||h.assets.some(a=>a.ok!==true))throw new Error('approved assets incomplete');
+          NODE
+            fi
+            if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/internal/healthz?t=$(date +%s)" -o /tmp/xjw-live/internal.json; then
+              node -e "const h=require('/tmp/xjw-live/internal.json');if(h.ok!==true||h.app!=='仙加味內部管理 App')process.exit(1)" && internal_ok=1 || true
+            fi
+            echo "attempt=$attempt db=$db_ok review=$review_ok automation=$automation_ok internal=$internal_ok stable=$stable"
+            if [ "$db_ok" -eq 1 ] && [ "$review_ok" -eq 1 ] && [ "$automation_ok" -eq 1 ] && [ "$internal_ok" -eq 1 ]; then
+              stable=$((stable+1))
+              [ "$stable" -ge 3 ] && exit 0
+            else
+              stable=0
+            fi
+            sleep 15
+          done
+          exit 1
+      - name: Commit authoritative production result
+        if: always()
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.live.outcome }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs');const load=n=>{try{return JSON.parse(fs.readFileSync(`/tmp/xjw-live/${n}.json`,'utf8'))}catch{return {}}};
+          const db=load('db'),r=load('review'),a=load('automation'),i=load('internal');
+          const ok=process.env.OUTCOME==='success';
+          fs.writeFileSync('final-runtime-verification.json',JSON.stringify({ok,verifiedAt:new Date().toISOString(),commit:process.env.GITHUB_SHA,localOutcome:'success',productionOutcome:process.env.OUTCOME,persistenceBridgeVersion:db.version||'',supabaseConnected:db.connected===true,supabaseLastError:db.lastError||'',activeSaveKeys:db.activeSaveKeys||[],retryBackoff:db.retryBackoff||{},reviewGateVersion:r.version||'',canonicalCount:Number(r.canonicalCount||0),pendingReviewCount:Number(r.pendingReviewCount||0),reviewedCount:Number(r.reviewedCount||0),unreviewedActiveCount:Number(r.unreviewedActiveCount||0),runtimeStabilizerVersion:a.runtimeStabilizerVersion||'',assetCount:Array.isArray(a.assets)?a.assets.length:0,internalHealthy:i.ok===true,automaticRetryEnabled:r.automaticRetryEnabled,reviewRequiredBeforePublish:r.reviewRequiredBeforePublish===true},null,2)+'\n');
+          NODE
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/verify-live-runtime-v7.yml
+          git add final-runtime-verification.json
+          git commit -m "chore: record latest Render ten-post and Supabase verification"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Fail if production is incomplete
+        if: always()
+        env:
+          OUTCOME: ${{ steps.live.outcome }}
+        run: test "$OUTCOME" = success
