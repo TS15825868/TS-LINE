@@ -239,6 +239,7 @@
       ],
       "spec": "30cc玻璃瓶",
       "price": 100,
+      "originalPrice": null,
       "unit": "瓶",
       "offers": [],
       "quantityOptions": [
@@ -248,8 +249,7 @@
         12
       ],
       "priceText": "$100 / 瓶",
-      "priceLabel": "建議售價100元",
-      "originalPrice": null
+      "priceLabel": "建議售價100元"
     },
     {
       "id": "guilu-drink-180",
@@ -295,6 +295,7 @@
       ],
       "spec": "180cc鋁袋",
       "price": 200,
+      "originalPrice": null,
       "unit": "包",
       "offers": [],
       "quantityOptions": [
@@ -304,8 +305,7 @@
         12
       ],
       "priceText": "$200 / 包",
-      "priceLabel": "建議售價200元",
-      "originalPrice": null
+      "priceLabel": "建議售價200元"
     },
     {
       "id": "guilu-tangkuai",
@@ -343,6 +343,7 @@
       ],
       "spec": "75g（8入）",
       "price": 2000,
+      "originalPrice": null,
       "unit": "盒",
       "offers": [],
       "quantityOptions": [
@@ -352,8 +353,7 @@
         5
       ],
       "priceText": "$2,000 / 盒",
-      "priceLabel": "建議售價2,000元",
-      "originalPrice": null
+      "priceLabel": "建議售價2,000元"
     },
     {
       "id": "guilu-jiao",
@@ -437,6 +437,7 @@
       ],
       "spec": "75g",
       "price": 2000,
+      "originalPrice": null,
       "unit": "罐",
       "offers": [],
       "quantityOptions": [
@@ -446,8 +447,7 @@
         5
       ],
       "priceText": "$2,000 / 罐",
-      "priceLabel": "建議售價2,000元",
-      "originalPrice": null
+      "priceLabel": "建議售價2,000元"
     }
   ],
   "recipes": [
@@ -1232,6 +1232,6 @@
       }
     }
   },
-  "salesMasterVersion": "2026-07-25-v4",
+  "salesMasterVersion": "2026-07-25-v3",
   "salesMasterSource": "仙加味內部正式售價、組合、洽詢價與角色政策"
 }
