@@ -15,7 +15,7 @@ const filter = fs.readFileSync(require.resolve("./internal-app-social-filter"), 
 
 [
   "[data-view]", "重新整理", "更新中…", "已更新", "更新失敗",
-  "dataset.refreshApp", "button[data-refresh-app='true']", "window.xjwRefreshApp", "unhandledrejection",
+  "dataset.refreshApp", "function isRefreshButton", "window.xjwRefreshApp", "unhandledrejection",
 ].forEach((token) => assert.ok(shell.includes(token), `shell missing ${token}`));
 
 [
