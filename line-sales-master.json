@@ -1,0 +1,44 @@
+{
+  "version": "2026-07-25-v1",
+  "source": "仙加味內部正式售價與角色政策",
+  "products": {
+    "guilu-gao": {
+      "price": 2000,
+      "originalPrice": 2000,
+      "priceText": "$2,000 / 罐",
+      "priceLabel": "建議售價2,000元"
+    },
+    "guilu-drink-30": {
+      "price": 100,
+      "priceText": "$100 / 瓶",
+      "priceLabel": "建議售價100元"
+    },
+    "guilu-drink-180": {
+      "price": 200,
+      "priceText": "$200 / 包",
+      "priceLabel": "建議售價200元"
+    },
+    "guilu-tangkuai": {
+      "price": 2000,
+      "priceText": "$2,000 / 盒",
+      "priceLabel": "建議售價2,000元"
+    },
+    "luerong-fen": {
+      "price": 2000,
+      "priceText": "$2,000 / 罐",
+      "priceLabel": "建議售價2,000元"
+    }
+  },
+  "imagePolicy": {
+    "mascot": "官網正式版仙加味小老闆",
+    "partners": [
+      "小鹿娃娃",
+      "小烏龜娃娃"
+    ],
+    "realProductImagesOnly": true,
+    "noProductRedraw": true,
+    "noPackageTextChange": true,
+    "traditionalChineseOnly": true,
+    "approvalRequiredBeforePublish": true
+  }
+}
