@@ -79,6 +79,7 @@ validateMessage(faqReply());
 
 assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length);
 assert.strictEqual(recommendReply().contents.contents.length, 4);
+assert.strictEqual(DATA.offers.comboOffers.length, 3);
 assert.strictEqual(comboMenuReply().contents.contents.length, DATA.offers.comboOffers.length + 1);
 assert.strictEqual(usageChooserReply().contents.contents.length, DATA.products.length + 1);
 
@@ -88,11 +89,11 @@ for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組�
 }
 
 const expectedSales = {
-  "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5] },
-  "guilu-drink-30": { price: 50, offerQty: 12, offerTotal: 500, options: [1, 3, 5, 12] },
-  "guilu-drink-180": { price: 200, offerQty: 12, offerTotal: 2000, options: [1, 3, 5, 12] },
-  "guilu-tangkuai": { price: 1600, options: [1, 2, 3, 5] },
-  "guilu-jiao": { price: 9600, originalPrice: 12000, options: [1, 2, 3, 5] },
+  "guilu-gao": { price: 2000, options: [1, 2, 3, 5] },
+  "guilu-drink-30": { price: 100, options: [1, 3, 5, 12] },
+  "guilu-drink-180": { price: 200, options: [1, 3, 5, 12] },
+  "guilu-tangkuai": { price: 2000, options: [1, 2, 3, 5] },
+  "guilu-jiao": { price: 0, quoteOnly: true, options: [1, 2, 3, 5] },
   "luerong-fen": { price: 2000, options: [1, 2, 3, 5] },
 };
 for (const product of DATA.products) {
@@ -100,8 +101,9 @@ for (const product of DATA.products) {
   assert.ok(expected, `unexpected product: ${product.id}`);
   assert.strictEqual(product.price, expected.price);
   assert.deepStrictEqual(product.quantityOptions, expected.options);
-  if (expected.originalPrice) assert.strictEqual(product.originalPrice, expected.originalPrice);
-  if (expected.offerQty) assert.ok(product.offers.some((offer) => offer.qty === expected.offerQty && offer.total === expected.offerTotal));
+  assert.strictEqual(product.offers.length, 0, `${product.id} 不應保留舊數量活動`);
+  assert.strictEqual(Boolean(product.quoteOnly), Boolean(expected.quoteOnly));
+  if (expected.quoteOnly) assert.strictEqual(product.priceText, "價格請洽詢");
   const bubble = productMenuReply().contents.contents.find((item) => item.body?.contents?.some((content) => content.type === "text" && content.text === product.displayName));
   assert.ok(bubble?.hero?.url.startsWith("https://ts15825868.github.io/xianjiawei/images/products-v3/"));
   const dmButton = bubble.footer.contents.find((button) => button.action?.label === "看產品DM");
@@ -119,19 +121,21 @@ const websiteIntentCases = [
 ];
 for (const [message, expected] of websiteIntentCases) assert.strictEqual(detectWebsiteIntent(message), expected);
 
-const expectedComboPrices = [2500, 3500, 3600, 6100, 11600];
+const expectedComboPrices = [3000, 4000, 7000];
 for (let index = 0; index < expectedComboPrices.length; index += 1) {
   const combo = getCombo(index);
   assert.ok(combo);
   assert.strictEqual(comboUnitPrice(combo), expectedComboPrices[index]);
   assert.deepStrictEqual(combo.quantityOptions, [1, 2, 3, 5]);
+  assert.deepStrictEqual(comboPromotionLines(combo), []);
   const buttons = comboQtyMenu(index).contents.footer.contents;
   for (const qty of [1, 2, 3, 5]) assert.ok(buttons.some((button) => button.action?.text === `加入組合｜${index}｜${qty}`));
 }
+assert.strictEqual(getCombo(3), null);
 const comboState = { cart: [], checkout: null };
 addComboCart(comboState, getCombo(2), 2, 3);
-assert.strictEqual(comboState.cart[0].total, 10800);
-assert.ok(comboPromotionLines(getCombo(1)).some((line) => line.includes("買10送2")));
+assert.strictEqual(comboState.cart[0].total, 21000);
+assert.ok(comboState.cart[0].label.includes("$7,000"));
 
 for (const message of [mascotWelcomeReply(), recommendReply(), usageChooserReply(), faqReply()]) {
   const bubble = message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;
@@ -140,4 +144,4 @@ for (const message of [mascotWelcomeReply(), recommendReply(), usageChooserReply
   assert.strictEqual(bubble.hero.aspectMode, "fit");
 }
 
-console.log("PASS full LINE OA function matrix v401.6");
+console.log("PASS full LINE OA function matrix v401.6 with official prices, quote-only product and three combos");
