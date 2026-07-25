@@ -18,6 +18,7 @@ const lock = JSON.parse(read("package-lock.json"));
 const salesMaster = JSON.parse(read("line-sales-master.json"));
 const schedulePolicy = require("../social-schedule-policy");
 const finalPosts = require("../social-final-posts");
+const approvedBatch = require("../social-final-approved-batch");
 const reviewGate = require("../social-review-only-mode");
 
 const required = [
@@ -39,6 +40,7 @@ const required = [
   "social-clear-republish-policy.js",
   "social-original-asset-override.js",
   "social-final-approved-batch.js",
+  "social-final-approved-batch.test.js",
   "social-final-release-20260724.js",
   "social-final-release-remote-assets.js",
   "social-schedule-repair-20260722.js",
@@ -62,7 +64,7 @@ assert.strictEqual(pkg.version, "6.0.6");
 assert.strictEqual(lock.version, pkg.version);
 assert.strictEqual(lock.packages?.[" "]?.version, undefined);
 assert.strictEqual(lock.packages?.[""]?.version, pkg.version);
-assert.strictEqual(salesMaster.version, "2026-07-25-v3");
+assert.strictEqual(salesMaster.version, "2026-07-26-v4");
 assert.strictEqual(salesMaster.products?.["guilu-gao"]?.price, 2000);
 assert.strictEqual(salesMaster.products?.["guilu-drink-30"]?.price, 100);
 assert.strictEqual(salesMaster.products?.["guilu-drink-180"]?.price, 200);
@@ -71,6 +73,8 @@ assert.strictEqual(salesMaster.products?.["luerong-fen"]?.price, 2000);
 assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.price, 0);
 assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.quoteOnly, true);
 assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.priceText, "價格請洽詢");
+assert.strictEqual(salesMaster.comboOffers?.length, 3);
+assert.strictEqual(salesMaster.combos?.length, 3);
 assert.deepStrictEqual(salesMaster.imagePolicy?.partners, ["小鹿娃娃", "小烏龜娃娃"]);
 assert.strictEqual(salesMaster.imagePolicy?.realProductImagesOnly, true);
 assert.strictEqual(salesMaster.imagePolicy?.noProductRedraw, true);
@@ -97,6 +101,9 @@ assert(transformedServer.includes('label: "LINE洽詢"'));
 
 assert.strictEqual(weeklyOverride.VERSION, "2026-07-25-weekly-once-v1");
 assert.strictEqual(reviewGate.VERSION, "2026-07-25-review-gate-v4");
+assert.strictEqual(approvedBatch.VERSION, "6.1.0");
+assert.strictEqual(approvedBatch.WEATHER_START_DELAY_MS, 60 * 1000);
+assert.strictEqual(approvedBatch.WEATHER_RATE_LIMIT_BACKOFF_MS, 2 * 60 * 60 * 1000);
 const gate = read("social-review-only-mode.js");
 assert(gate.includes('VERSION = "2026-07-25-review-gate-v4"'));
 assert(gate.includes("automaticSchedulingRequiresReview: true"));
@@ -197,4 +204,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.0.6售價與龜鹿膠洽詢價防護、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、社群人工審核、每週1篇週三20:00、天氣內容只在其他平日條件加發、週末不發布");
+console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.0.6售價與龜鹿膠洽詢價防護、三組搭配相容欄位、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、社群人工審核、每週1篇週三20:00、天氣內容人工審核後只在其他平日20:00條件加發、HTTP 429自動退避、週末不發布");
