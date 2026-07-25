@@ -1,16 +1,27 @@
 "use strict";
 
 const Module = require("module");
+const weekly = require("./social-weekly-schedule-override");
 const batch = require("./social-final-approved-batch");
 const reviewGate = require("./social-review-only-mode");
-const remoteAssets = require("./social-final-release-remote-assets");
-const weekly = require("./social-weekly-schedule-override");
 
-const VERSION = "2026-07-26-runtime-stabilizer-v1";
+const VERSION = "2026-07-26-runtime-stabilizer-v2";
 const REVIEW_NOTE = "已上傳至 App，等待人工審核；未審核不會排程、發布或補發";
 const FORCE_REVIEW_TOPICS = new Set(["care-work-rest"]);
 const CANONICAL_IDS = new Set((batch.POSTS || []).map((post) => String(post.id || "")));
 const FIXED_PROPOSALS = Array.isArray(weekly.FIXED_SCHEDULES) ? weekly.FIXED_SCHEDULES : [];
+const LEGACY_ASSET_ALIASES = Object.freeze({
+  "care-work-rest-v7.jpg": "care-work-rest.jpg",
+  "product-guilu-gao-100g-v7.jpg": "product-guilu-gao-100g.jpg",
+  "care-family-v7.jpg": "care-family.jpg",
+  "product-guilu-drink-v7.jpg": "product-guilu-drink-combined.jpg",
+  "product-lurongfen-75g-v7.jpg": "product-lurongfen-75g.jpg",
+  "product-guilu-tangkuai-75g-v7.jpg": "product-guilu-tangkuai-75g.jpg",
+  "product-guilu-jiao-600g-v7.jpg": "product-guilu-jiao-600g.jpg",
+  "care-temperature-gap-v7.jpg": "care-temperature-gap.jpg",
+  "care-hot-hydration-v7.jpg": "care-hot-hydration.jpg",
+  "care-rainy-day-v7.jpg": "care-rainy-day.jpg",
+});
 const timers = new Set();
 let installed = false;
 let socialApi = null;
@@ -81,7 +92,7 @@ function pendingPost(template = {}, existing = {}, fixedIndex = 0) {
   };
 }
 
-function reviewedPost(template = {}, existing = {}, fixedIndex = 0) {
+function reviewedPost(template = {}, existing = {}, fixedIndex = 0, store = {}) {
   const base = { ...template, ...existing, id: template.id };
   if (template.conditionalWeather === true) {
     return {
@@ -98,7 +109,7 @@ function reviewedPost(template = {}, existing = {}, fixedIndex = 0) {
   }
   let scheduledAt = base.scheduledAt || base.proposedScheduledAt || proposedAt(template, fixedIndex);
   if (!reviewGate.validFixedSlot(scheduledAt) || new Date(scheduledAt).getTime() <= Date.now() + 60000) {
-    scheduledAt = reviewGate.nextAvailableFixedSlot({ posts: (socialApi?.readStore?.().posts || []) }, base.id, Date.now());
+    scheduledAt = reviewGate.nextAvailableFixedSlot(store, base.id, Date.now());
   }
   return {
     ...base,
@@ -139,10 +150,10 @@ function normalizeStore(inputStore = {}, previousStore = {}) {
     const existing = byId.get(String(template.id || "")) || {};
     const index = template.conditionalWeather === true ? fixedIndex : fixedIndex++;
     if (isConfirmedPublished(existing)) return { ...template, ...existing, runtimeStabilizerVersion: VERSION };
-    if (reviewed(existing) && !isForceReview(template)) return reviewedPost(template, existing, index);
+    if (reviewed(existing) && !isForceReview(template)) return reviewedPost(template, existing, index, { ...input, posts: incomingPosts });
     return pendingPost(template, existing, index);
   });
-  const store = {
+  return {
     ...input,
     posts: [...nonCanonical, ...canonical].slice(-500),
     publicationLedger: cleanForceReviewLedger(input.publicationLedger || previousStore.publicationLedger || {}),
@@ -153,7 +164,6 @@ function normalizeStore(inputStore = {}, previousStore = {}) {
     socialReviewGateVersion: reviewGate.VERSION,
     runtimeSocialStabilizerVersion: VERSION,
   };
-  return store;
 }
 
 function comparable(store = {}) {
@@ -170,8 +180,8 @@ function removeRoute(app, routePath) {
 
 async function currentAssetInfo(post = {}) {
   const name = String(post.imageName || "");
-  if (remoteAssets.ALIASES?.[name]) return remoteAssets.assetInfo(name);
-  return batch.assetInfo(name);
+  const canonicalName = LEGACY_ASSET_ALIASES[name] || name;
+  return batch.assetInfo(canonicalName);
 }
 
 function mountCurrentHealth(app) {
@@ -215,12 +225,20 @@ function wrapSocialApi(api) {
   };
   Object.defineProperty(api, "__xjwRuntimeStabilized", { value: true });
   setImmediate(() => {
-    try { api.writeStore(normalizeStore(api.readStore(), api.readStore())); }
-    catch (error) { console.error("Runtime social stabilization failed", error.message); }
+    try {
+      const current = api.readStore();
+      api.writeStore(normalizeStore(current, current));
+    } catch (error) {
+      console.error("Runtime social stabilization failed", error.message);
+    }
   });
   const timer = setInterval(() => {
-    try { api.writeStore(normalizeStore(api.readStore(), api.readStore())); }
-    catch (error) { console.error("Runtime social periodic stabilization failed", error.message); }
+    try {
+      const current = api.readStore();
+      api.writeStore(normalizeStore(current, current));
+    } catch (error) {
+      console.error("Runtime social periodic stabilization failed", error.message);
+    }
   }, 5 * 60 * 1000);
   timer.unref?.();
   timers.add(timer);
@@ -245,6 +263,8 @@ module.exports = {
   VERSION,
   FORCE_REVIEW_TOPICS,
   CANONICAL_IDS,
+  FIXED_PROPOSALS,
+  LEGACY_ASSET_ALIASES,
   isForceReview,
   isConfirmedPublished,
   reviewed,
