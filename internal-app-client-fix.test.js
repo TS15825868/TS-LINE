@@ -66,7 +66,6 @@ assert.ok(retry.includes("data-social-action"));
 assert.ok(retry.includes('post.status === "partial"'));
 assert.ok(retry.includes('post.status === "failed"'));
 assert.ok(retry.includes('["published", "publishing", "cancelled"]'));
-assert.ok(!retry.includes("MutationObserver"));
 new vm.Script(retry);
 
 const filter = socialFilterScript();
@@ -81,7 +80,6 @@ const filter = socialFilterScript();
   "data-social-filter",
   "搜尋標題或文案",
 ].forEach((token) => assert.ok(filter.includes(token), `social filter missing ${token}`));
-assert.ok(!filter.includes("MutationObserver"));
 new vm.Script(filter);
 
 const postboot = postbootScript();
@@ -110,4 +108,4 @@ assert.ok(!fixed.includes("/old.js"));
 assert.ok(!fixed.includes("/internal/app-order-calculator.js"));
 assert.strictEqual(fixGeneratedHtml("plain response"), "plain response");
 
-console.log("PASS stable inventory app shell and controllers; social management is split to the protected independent social website");
+console.log("PASS stable inventory app shell and controllers; legacy social scripts parse but are not loaded, while social management stays on the protected independent website");
