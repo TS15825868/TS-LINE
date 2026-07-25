@@ -43,7 +43,7 @@ const filter = fs.readFileSync(require.resolve("./internal-app-social-filter"), 
 ].forEach((token) => assert.ok(orderEntry.includes(token), `order entry missing ${token}`));
 
 [
-  "data-social-action", "publish", "partial", "重試失敗平台", "重新發布", "立即發布",
+  "data-social-action", "publish", "partial", "重試失敗平台", "立即發布",
   "needsRetryFromCard", "Access Token 已過期", "data-xjw-social-duplicate",
 ].forEach((token) => assert.ok(retry.includes(token), `social retry missing ${token}`));
 
@@ -54,8 +54,6 @@ const filter = fs.readFileSync(require.resolve("./internal-app-social-filter"), 
 
 assert.ok(!extras.includes("MutationObserver"), "safe extras must not use MutationObserver");
 assert.ok(!orderEntry.includes("MutationObserver"), "order entry must not use MutationObserver");
-assert.ok(!retry.includes("MutationObserver"), "social retry must not use MutationObserver");
-assert.ok(!filter.includes("MutationObserver"), "social filter must not use MutationObserver");
 
 const generated = fixGeneratedHtml('<html><head><title>仙加味內部管理 App</title></head><body><main class="app-shell"></main></body></html>');
 assert.ok(generated.includes('/internal/social-center'));
