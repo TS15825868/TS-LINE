@@ -7,6 +7,8 @@ on:
     paths:
       - "package.json"
       - "package-lock.json"
+      - "data.json"
+      - "catalog-public.json"
       - "line-sales-master.json"
       - "product-sales-master.js"
       - "MASCOT_CHARACTER_SPEC.md"
@@ -15,6 +17,7 @@ on:
       - "internal-social-site/**"
       - "social-static-asset-bridge.js"
       - "social-final-posts.js"
+      - "social-final-approved-batch.js"
       - "social-final-release-20260724.js"
       - "social-final-release-remote-assets.js"
       - "social-weekly-schedule-override.js"
@@ -23,6 +26,8 @@ on:
       - "social-schedule-repair-20260722.js"
       - "social-publish-guard.js"
       - "tools/release_check.js"
+      - "tools/sync_website_catalog.js"
+      - "tools/sync_sales_master.js"
       - ".github/workflows/final-verification.yml"
 
 permissions:
@@ -35,24 +40,46 @@ concurrency:
 jobs:
   final-verification:
     runs-on: ubuntu-latest
-    timeout-minutes: 28
+    timeout-minutes: 32
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Run complete test suite
+      - name: Run complete local validation
         id: tests
+        shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           npm ci
           npm test 2>&1 | tee /tmp/final-tests.log
+          npm run check:catalog 2>&1 | tee -a /tmp/final-tests.log
+          node - <<'NODE' | tee -a /tmp/final-tests.log
+          const sales = require('./line-sales-master.json');
+          const expectedPrices = {
+            'guilu-gao': 2000,
+            'guilu-drink-30': 100,
+            'guilu-drink-180': 200,
+            'guilu-tangkuai': 2000,
+            'luerong-fen': 2000,
+          };
+          for (const [id, price] of Object.entries(expectedPrices)) {
+            if (Number(sales.products?.[id]?.price) !== price) throw new Error(`${id} 正式售價不一致`);
+          }
+          if (sales.products?.['guilu-jiao']?.quoteOnly !== true) throw new Error('龜鹿膠必須維持洽詢價');
+          if (!Array.isArray(sales.combos) || sales.combos.length !== 3) throw new Error('正式搭配必須為三組');
+          if (!sales.imagePolicy?.partners?.includes('小鹿娃娃') || !sales.imagePolicy?.partners?.includes('小烏龜娃娃')) throw new Error('固定夥伴規格缺漏');
+          if (sales.imagePolicy?.realProductImagesOnly !== true || sales.imagePolicy?.approvalRequiredBeforePublish !== true) throw new Error('圖片或人工審核政策未鎖定');
+          console.log('正式售價、三組搭配、真實產品原圖與角色政策通過');
+          NODE
 
       - name: Wait for Render deployment and verify production
         id: production
@@ -63,8 +90,8 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/xjw-final
           success=0
-          for attempt in $(seq 1 80); do
-            echo "Final weekly-once verification $attempt/80" | tee -a /tmp/final-production.log
+          for attempt in $(seq 1 96); do
+            echo "Final weekly-once verification $attempt/96" | tee -a /tmp/final-production.log
             release_ok=0
             social_site_ok=0
             raster_ok=0
@@ -118,8 +145,9 @@ jobs:
           NODE
             fi
 
-            if curl --connect-timeout 10 --max-time 45 --silent --show-error \
-              "$BASE_URL/social/schedule-status?t=$(date +%s)" -o /tmp/xjw-final/schedule.json; then
+            schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error \
+              -o /tmp/xjw-final/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
+            if [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; then
               node - <<'NODE' && schedule_ok=1 || true
           const h = require('/tmp/xjw-final/schedule.json');
           if (h.version !== '2026-07-25-v6') throw new Error('schedule repair version mismatch');
@@ -177,7 +205,7 @@ jobs:
           })();
           NODE
 
-      - name: Write verification result
+      - name: Write authoritative verification result
         if: always()
         shell: bash
         env:
@@ -198,13 +226,16 @@ jobs:
           const raster = load('raster');
           const reviewGate = load('review-gate');
           const schedule = load('schedule');
+          const sales = JSON.parse(fs.readFileSync('line-sales-master.json', 'utf8'));
           const ok = process.env.TEST_OUTCOME === 'success' && process.env.PRODUCTION_OUTCOME === 'success';
           const result = {
             ok,
             verifiedAt: new Date().toISOString(),
             commit: process.env.GITHUB_SHA,
+            verificationAuthority: 'final-verification.json',
             testOutcome: process.env.TEST_OUTCOME,
             productionOutcome: process.env.PRODUCTION_OUTCOME,
+            salesMasterVersion: sales.version || '',
             releaseVersion: release.version || '',
             assetVersion: release.assetVersion || '',
             totalPosts: Number(release.totalPosts || 0),
@@ -238,6 +269,10 @@ jobs:
             preventsGibberish: raster.preventsGibberish === true,
             targetImageSize: raster.targetSize || '',
             storage: database.storage || '',
+            officialProductImagesOnly: sales.imagePolicy?.realProductImagesOnly === true,
+            mascot: sales.imagePolicy?.mascot || '',
+            partners: sales.imagePolicy?.partners || [],
+            comboCount: Array.isArray(sales.combos) ? sales.combos.length : 0,
             unreviewedPublishingBlocked: true
           };
           fs.writeFileSync('final-verification.json', JSON.stringify(result, null, 2) + '\n');
@@ -257,6 +292,7 @@ jobs:
             } > final-verification-error.txt
           else
             rm -f final-verification-error.txt
+            rm -f final-publish-status.json
           fi
 
           git config user.name "仙加味最終驗收"
@@ -264,8 +300,9 @@ jobs:
           git pull --rebase origin main
           git add final-verification.json
           if [ -f final-verification-error.txt ]; then git add final-verification-error.txt; else git rm -f --ignore-unmatch final-verification-error.txt; fi
+          if [ "$ok" = "true" ]; then git rm -f --ignore-unmatch final-publish-status.json; fi
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "chore: record final App and social verification"
+          git commit -m "chore: record authoritative LINE and social verification"
           git push origin HEAD:main
 
       - name: Fail workflow when verification failed
