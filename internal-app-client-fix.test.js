@@ -63,7 +63,9 @@ new vm.Script(orderEntry);
 const retry = socialRetryScript();
 assert.ok(retry.includes("重試失敗平台"));
 assert.ok(retry.includes("data-social-action"));
-assert.ok(retry.includes('["approved", "failed", "partial"]'));
+assert.ok(retry.includes('post.status === "partial"'));
+assert.ok(retry.includes('post.status === "failed"'));
+assert.ok(retry.includes('["published", "publishing", "cancelled"]'));
 assert.ok(!retry.includes("MutationObserver"));
 new vm.Script(retry);
 
