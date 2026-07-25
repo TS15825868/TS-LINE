@@ -5,16 +5,19 @@ const Module = require("module");
 const sharp = require("sharp");
 const { POSTS, validatePosts } = require("./social-final-posts");
 
-const VERSION = "6.0.0";
+const VERSION = "6.1.0";
 const CONTENT_VERSION = "approved-website-qboss-exact-products-v1";
 const CAMPAIGN_ID = "xjw-social-first-batch-10-v1";
 const PUBLIC_BASE = String(process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const ROUTE_PREFIX = "/social-approved-assets";
 const TARGET_IMAGE_SIZE = 1254;
 const WEATHER_INTERVAL_MS = Number(process.env.SOCIAL_WEATHER_CHECK_INTERVAL_MS || 60 * 60 * 1000);
+const WEATHER_START_DELAY_MS = Number(process.env.SOCIAL_WEATHER_START_DELAY_MS || 60 * 1000);
+const WEATHER_RATE_LIMIT_BACKOFF_MS = Number(process.env.SOCIAL_WEATHER_RATE_LIMIT_BACKOFF_MS || 2 * 60 * 60 * 1000);
 const WEATHER_LATITUDE = Number(process.env.SOCIAL_WEATHER_LATITUDE || 25.038);
 const WEATHER_LONGITUDE = Number(process.env.SOCIAL_WEATHER_LONGITUDE || 121.499);
-const FIXED_WEEKDAYS = new Set(["Wed", "Fri"]);
+const FIXED_WEEKDAYS = new Set(["Wed"]);
+const WEEKEND_DAYS = new Set(["Sat", "Sun"]);
 const WEBSITE_ASSET_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/approved-v405";
 
 const CARE_SCENES = Object.freeze({
@@ -57,14 +60,18 @@ function addApprovedHost() {
 
 async function fetchRemoteBuffer(url) {
   if (!REMOTE_CACHE.has(url)) {
-    REMOTE_CACHE.set(url, (async () => {
+    const pending = (async () => {
       if (typeof fetch !== "function") throw new Error("目前環境不支援遠端圖片讀取");
       const response = await fetch(url, { headers: { Accept: "image/webp,image/*,*/*" }, signal: AbortSignal.timeout(20000) });
       if (!response.ok) throw new Error(`正式圖片讀取失敗：HTTP ${response.status}`);
       const buffer = Buffer.from(await response.arrayBuffer());
       if (buffer.length < 100000) throw new Error("正式圖片檔案過小");
       return buffer;
-    })());
+    })().catch((error) => {
+      REMOTE_CACHE.delete(url);
+      throw error;
+    });
+    REMOTE_CACHE.set(url, pending);
   }
   return REMOTE_CACHE.get(url);
 }
@@ -105,7 +112,13 @@ async function productAssetBuffer(name) {
 
 async function assetBuffer(name) {
   const safeName = path.basename(String(name || ""));
-  if (!IMAGE_CACHE.has(safeName)) IMAGE_CACHE.set(safeName, PRODUCT_SCENES[safeName] ? productAssetBuffer(safeName) : careAssetBuffer(safeName));
+  if (!IMAGE_CACHE.has(safeName)) {
+    const pending = (PRODUCT_SCENES[safeName] ? productAssetBuffer(safeName) : careAssetBuffer(safeName)).catch((error) => {
+      IMAGE_CACHE.delete(safeName);
+      throw error;
+    });
+    IMAGE_CACHE.set(safeName, pending);
+  }
   return IMAGE_CACHE.get(safeName);
 }
 
@@ -149,8 +162,28 @@ function desiredPost(template, previous = {}, updatedAt = nowIso()) {
     createdAt: previous.createdAt || updatedAt,
     updatedAt,
   };
-  if (weatherTemplate && !weatherActivated) Object.assign(next, { scheduledAt: "", conditionalWeather: true, automationStandby: true, oneTimeWeatherPost: false, status: "paused", assetLocked: true, approvedAt: previous.approvedAt || updatedAt, lastError: "等待符合萬華實際氣候後，自動安排非週三、週五上午10:00例外加發" });
-  else Object.assign(next, { scheduledAt: weatherActivated ? previous.scheduledAt : template.scheduledAt, conditionalWeather: weatherTemplate, automationStandby: false, status: ["publishing", "failed", "partial"].includes(previous.status) ? previous.status : "approved", assetLocked: true, approvedAt: previous.approvedAt || updatedAt, lastError: ["failed", "partial"].includes(previous.status) ? previous.lastError : "" });
+  if (weatherTemplate && !weatherActivated) {
+    Object.assign(next, {
+      scheduledAt: "",
+      conditionalWeather: true,
+      automationStandby: true,
+      oneTimeWeatherPost: false,
+      status: "paused",
+      assetLocked: true,
+      approvedAt: previous.approvedAt || updatedAt,
+      lastError: "等待人工審核通過並符合萬華實際氣候後，安排非週三平日20:00例外加發；週末不發布",
+    });
+  } else {
+    Object.assign(next, {
+      scheduledAt: weatherActivated ? previous.scheduledAt : template.scheduledAt,
+      conditionalWeather: weatherTemplate,
+      automationStandby: false,
+      status: ["publishing", "failed", "partial"].includes(previous.status) ? previous.status : "approved",
+      assetLocked: true,
+      approvedAt: previous.approvedAt || updatedAt,
+      lastError: ["failed", "partial"].includes(previous.status) ? previous.lastError : "",
+    });
+  }
   const history = Array.isArray(previous.history) ? previous.history.slice(-49) : [];
   if (!previous.id) history.push(historyEntry("建立第一批正式貼文", "文案與圖片已完成重複檢查；使用網站核准小老闆與真實產品原圖", updatedAt));
   next.history = history;
@@ -173,8 +206,16 @@ function reconcile(readStore, writeStore) {
   const current = readStore();
   const result = reconcileStore(current);
   if (result.changed || current.socialFinalApprovedBatchVersion !== VERSION) writeStore(result.store);
-  const active = result.store.posts.filter((post) => CANONICAL_IDS.has(String(post.id || "")) && post.status !== "cancelled");
-  return { version: VERSION, changed: result.changed, active: active.length, approved: active.filter((post) => post.status === "approved").length, standby: active.filter((post) => post.automationStandby === true).length };
+  const persisted = readStore();
+  const active = (persisted.posts || []).filter((post) => CANONICAL_IDS.has(String(post.id || "")) && post.status !== "cancelled");
+  return {
+    version: VERSION,
+    changed: result.changed,
+    active: active.length,
+    approved: active.filter((post) => post.status === "approved").length,
+    pendingReview: active.filter((post) => ["draft", "pending_review"].includes(post.status) || post.manualReviewRequired === true).length,
+    standby: active.filter((post) => post.automationStandby === true).length,
+  };
 }
 
 function taipeiParts(value = new Date()) {
@@ -185,26 +226,45 @@ function taipeiParts(value = new Date()) {
 
 function dateKey(value = new Date()) { const parts = taipeiParts(value); return parts ? `${parts.year}-${parts.month}-${parts.day}` : ""; }
 function addDays(key, days) { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || "")); return match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + Number(days || 0))).toISOString().slice(0, 10) : ""; }
-function tenAt(key) { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || "")); return match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 2, 0, 0, 0)).toISOString() : ""; }
-function weekdayForKey(key) { return taipeiParts(tenAt(key))?.weekday || ""; }
+function weatherAt(key) { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || "")); return match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0)).toISOString() : ""; }
+function tenAt(key) { return weatherAt(key); }
+function weekdayForKey(key) { return taipeiParts(weatherAt(key))?.weekday || ""; }
 function isFixedPublishDate(key) { return FIXED_WEEKDAYS.has(weekdayForKey(key)); }
+function isWeekendPublishDate(key) { return WEEKEND_DAYS.has(weekdayForKey(key)); }
 function nextWeatherDate(now = new Date()) {
-  const parts = taipeiParts(now); if (!parts) return "";
+  const parts = taipeiParts(now);
+  if (!parts) return "";
   const today = `${parts.year}-${parts.month}-${parts.day}`;
   const minutes = Number(parts.hour) * 60 + Number(parts.minute);
-  for (let offset = 0; offset < 5; offset += 1) { const key = addDays(today, offset); if (isFixedPublishDate(key)) continue; if (offset === 0 && minutes >= 570) continue; return key; }
+  for (let offset = 0; offset < 8; offset += 1) {
+    const key = addDays(today, offset);
+    if (isFixedPublishDate(key) || isWeekendPublishDate(key)) continue;
+    if (offset === 0 && minutes >= 1170) continue;
+    return key;
+  }
   return "";
 }
 
 function weatherUrl() {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
-  url.searchParams.set("latitude", String(WEATHER_LATITUDE)); url.searchParams.set("longitude", String(WEATHER_LONGITUDE)); url.searchParams.set("timezone", "Asia/Taipei"); url.searchParams.set("forecast_days", "5"); url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,precipitation_sum,precipitation_probability_max"); return url;
+  url.searchParams.set("latitude", String(WEATHER_LATITUDE));
+  url.searchParams.set("longitude", String(WEATHER_LONGITUDE));
+  url.searchParams.set("timezone", "Asia/Taipei");
+  url.searchParams.set("forecast_days", "5");
+  url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,precipitation_sum,precipitation_probability_max");
+  return url;
 }
 
 function selectWeather(daily, key) {
-  const index = Array.isArray(daily?.time) ? daily.time.indexOf(key) : -1; if (index < 0) return null;
+  const index = Array.isArray(daily?.time) ? daily.time.indexOf(key) : -1;
+  if (index < 0) return null;
   const number = (name) => Number(daily?.[name]?.[index]);
-  const code = number("weather_code"), max = number("temperature_2m_max"), min = number("temperature_2m_min"), apparent = number("apparent_temperature_max"), rain = number("precipitation_sum"), probability = number("precipitation_probability_max");
+  const code = number("weather_code");
+  const max = number("temperature_2m_max");
+  const min = number("temperature_2m_min");
+  const apparent = number("apparent_temperature_max");
+  const rain = number("precipitation_sum");
+  const probability = number("precipitation_probability_max");
   if (code >= 51 || probability >= 60 || rain >= 5) return { trigger: "rain", summary: `降雨機率${probability}%／預估雨量${rain}mm` };
   if (apparent >= 34 || max >= 32) return { trigger: "hot", summary: `最高${max}°C／體感最高${apparent}°C` };
   if (max - min >= 8) return { trigger: "temperature-gap", summary: `高低溫差${(max - min).toFixed(1)}°C` };
@@ -213,52 +273,204 @@ function selectWeather(daily, key) {
 
 function weekKey(value) { const parts = taipeiParts(value); if (!parts) return ""; const date = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day))); const day = date.getUTCDay() || 7; date.setUTCDate(date.getUTCDate() - day + 1); return date.toISOString().slice(0, 10); }
 
+function explicitlyReviewedWeatherPost(post = {}) {
+  return post.conditionalWeather === true
+    && post.automationStandby === true
+    && post.status === "paused"
+    && post.assetLocked === true
+    && Boolean(post.reviewApprovedAt || post.manualReviewConfirmedAt);
+}
+
 function activateWeatherPost(store, selection, publishDate, checkedAt) {
-  if (!publishDate || isFixedPublishDate(publishDate)) return { activated: false, reason: "氣候貼文不可與週三、週五固定貼文同日" };
-  const schedule = tenAt(publishDate), week = weekKey(schedule), activeStatuses = new Set(["approved", "publishing", "published", "failed", "partial"]);
+  if (!publishDate || isFixedPublishDate(publishDate) || isWeekendPublishDate(publishDate)) {
+    return { activated: false, reason: "氣候貼文只能安排於非週三平日20:00，週末不發布" };
+  }
+  const schedule = weatherAt(publishDate);
+  const week = weekKey(schedule);
+  const activeStatuses = new Set(["approved", "publishing", "published", "failed", "partial"]);
   const weekPosts = (store.posts || []).filter((post) => activeStatuses.has(post.status) && weekKey(post.scheduledAt) === week);
   if (weekPosts.some((post) => post.oneTimeWeatherPost === true)) return { activated: false, reason: "本週已有氣候條件貼文" };
   if (weekPosts.some((post) => post.scheduledAt === schedule)) return { activated: false, reason: "該時段已有貼文" };
-  const target = (store.posts || []).find((post) => post.automationStandby === true && post.weatherTrigger === selection.trigger && post.status === "paused");
-  if (!target) return { activated: false, reason: "找不到尚未使用的對應氣候素材" };
-  Object.assign(target, { status: "approved", assetLocked: true, automationStandby: false, oneTimeWeatherPost: true, scheduledAt: schedule, scheduleTimePolicy: "weather-condition-non-wed-fri-10:00", approvedAt: target.approvedAt || checkedAt, weatherActivatedAt: checkedAt, weatherSummary: selection.summary, lastError: "", updatedAt: checkedAt });
+  const target = (store.posts || []).find((post) => explicitlyReviewedWeatherPost(post) && post.weatherTrigger === selection.trigger);
+  if (!target) return { activated: false, reason: "找不到已通過人工審核且尚未使用的對應氣候素材" };
+  Object.assign(target, {
+    status: "approved",
+    assetLocked: true,
+    automationStandby: false,
+    oneTimeWeatherPost: true,
+    scheduledAt: schedule,
+    scheduleTimePolicy: "weather-condition-weekday-non-wed-20:00-no-weekend",
+    approvedAt: target.approvedAt || checkedAt,
+    weatherActivatedAt: checkedAt,
+    weatherSummary: selection.summary,
+    lastError: "",
+    updatedAt: checkedAt,
+  });
   target.history = [...(target.history || []).slice(-49), historyEntry("依萬華實際氣候自動加發", selection.summary, checkedAt)];
   return { activated: true, id: target.id, scheduledAt: schedule, fixedPostsPreserved: true };
+}
+
+function retryAfterMs(response, fallback = WEATHER_RATE_LIMIT_BACKOFF_MS) {
+  const raw = String(response?.headers?.get?.("retry-after") || "").trim();
+  if (!raw) return fallback;
+  if (/^\d+$/.test(raw)) return Math.max(60 * 1000, Number(raw) * 1000);
+  const timestamp = Date.parse(raw);
+  return Number.isFinite(timestamp) ? Math.max(60 * 1000, timestamp - Date.now()) : fallback;
 }
 
 async function checkWeather(readStore, writeStore) {
   if (weatherChecking || typeof fetch !== "function") return { skipped: true };
   weatherChecking = true;
   try {
-    const publishDate = nextWeatherDate(); if (!publishDate) return { skipped: true, reason: "未找到可用的非固定發布日" };
-    const response = await fetch(weatherUrl(), { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12000) }); if (!response.ok) throw new Error(`weather HTTP ${response.status}`);
-    const data = await response.json(), selection = selectWeather(data.daily, publishDate), store = readStore(), checkedAt = nowIso();
+    const store = readStore();
+    const reviewedStandby = (store.posts || []).filter(explicitlyReviewedWeatherPost);
+    if (!reviewedStandby.length) {
+      return { skipped: true, reason: "沒有已通過人工審核的氣候待命貼文，不呼叫天氣服務" };
+    }
+
+    const nextCheckAt = Date.parse(store.weatherAutomation?.nextCheckAt || "");
+    if (Number.isFinite(nextCheckAt) && nextCheckAt > Date.now()) {
+      return { skipped: true, reason: "氣候服務仍在冷卻時間", nextCheckAt: new Date(nextCheckAt).toISOString() };
+    }
+
+    const publishDate = nextWeatherDate();
+    if (!publishDate) return { skipped: true, reason: "未找到可用的非週三平日發布日" };
+
+    const response = await fetch(weatherUrl(), {
+      headers: { Accept: "application/json", "User-Agent": `Xianjiawei-Social-Weather/${VERSION}` },
+      signal: AbortSignal.timeout(12000),
+    });
+
+    if (response.status === 429) {
+      const checkedAt = nowIso();
+      const backoffMs = retryAfterMs(response);
+      const nextAt = new Date(Date.now() + backoffMs).toISOString();
+      store.weatherAutomation = {
+        ...(store.weatherAutomation || {}),
+        version: VERSION,
+        checkedAt,
+        nextCheckAt: nextAt,
+        rateLimited: true,
+        lastError: "weather HTTP 429",
+        activation: { activated: false, reason: "天氣服務流量限制，已自動延後重試" },
+      };
+      writeStore(store);
+      console.warn(`Social weather automation rate limited; next check ${nextAt}`);
+      return { skipped: true, rateLimited: true, nextCheckAt: nextAt };
+    }
+
+    if (!response.ok) throw new Error(`weather HTTP ${response.status}`);
+
+    const data = await response.json();
+    const selection = selectWeather(data.daily, publishDate);
+    const checkedAt = nowIso();
     const activation = selection ? activateWeatherPost(store, selection, publishDate, checkedAt) : { activated: false, reason: "目前沒有需要啟用的氣候貼文" };
-    store.weatherAutomation = { version: VERSION, checkedAt, publishDate, selectedTrigger: selection?.trigger || "", summary: selection?.summary || "目前沒有需要啟用的氣候貼文", activation };
-    writeStore(store); return { skipped: false, selection, activation };
-  } catch (error) { console.error("Social weather automation failed", error.message); return { skipped: false, error: error.message }; }
-  finally { weatherChecking = false; }
+    store.weatherAutomation = {
+      version: VERSION,
+      checkedAt,
+      nextCheckAt: new Date(Date.now() + WEATHER_INTERVAL_MS).toISOString(),
+      rateLimited: false,
+      lastError: "",
+      publishDate,
+      selectedTrigger: selection?.trigger || "",
+      summary: selection?.summary || "目前沒有需要啟用的氣候貼文",
+      activation,
+    };
+    writeStore(store);
+    return { skipped: false, selection, activation };
+  } catch (error) {
+    const store = readStore();
+    const checkedAt = nowIso();
+    const nextAt = new Date(Date.now() + WEATHER_INTERVAL_MS).toISOString();
+    store.weatherAutomation = {
+      ...(store.weatherAutomation || {}),
+      version: VERSION,
+      checkedAt,
+      nextCheckAt: nextAt,
+      rateLimited: false,
+      lastError: error.message,
+      activation: { activated: false, reason: "天氣檢查失敗，已保留待命貼文並延後重試" },
+    };
+    writeStore(store);
+    console.error("Social weather automation failed", error.message);
+    return { skipped: false, error: error.message, nextCheckAt: nextAt };
+  } finally {
+    weatherChecking = false;
+  }
 }
 
-function startWeatherAutomation(readStore, writeStore) { if (weatherTimer) return weatherTimer; setTimeout(() => checkWeather(readStore, writeStore), 3000).unref?.(); weatherTimer = setInterval(() => checkWeather(readStore, writeStore), WEATHER_INTERVAL_MS); weatherTimer.unref?.(); return weatherTimer; }
+function startWeatherAutomation(readStore, writeStore) {
+  if (weatherTimer) return weatherTimer;
+  setTimeout(() => checkWeather(readStore, writeStore), WEATHER_START_DELAY_MS).unref?.();
+  weatherTimer = setInterval(() => checkWeather(readStore, writeStore), WEATHER_INTERVAL_MS);
+  weatherTimer.unref?.();
+  return weatherTimer;
+}
 
 function mount(app) {
   if (!app || app.__xjwFirstBatchAssetsMounted) return;
   Object.defineProperty(app, "__xjwFirstBatchAssetsMounted", { value: true });
-  app.get(`${ROUTE_PREFIX}/:name`, async (req, res) => { const name = path.basename(String(req.params.name || "")); if (!CARE_SCENES[name] && !PRODUCT_SCENES[name]) return res.status(404).send("not found"); try { const buffer = await assetBuffer(name); return res.type("image/jpeg").set("Cache-Control", "public, max-age=604800, immutable").set("X-XJW-Asset-Version", CONTENT_VERSION).set("X-XJW-Image-Size", "1254x1254").send(buffer); } catch (error) { console.error("approved social asset failed", name, error.message); return res.status(500).send("asset failed"); } });
-  app.get("/social/automation-healthz", async (_req, res) => { const assets = await Promise.all(POSTS.map((post) => assetInfo(post.imageName))); const result = { ok: assets.every((item) => item.ok) && validatePosts(POSTS), version: VERSION, contentVersion: CONTENT_VERSION, totalPosts: POSTS.length, fixedPosts: POSTS.filter((post) => !post.conditionalWeather).length, weatherStandbyPosts: POSTS.filter((post) => post.conditionalWeather).length, fixedRule: "週三、週五10:00", weatherRule: "依實際氣候於非週三、週五10:00加發；每週最多1篇", appButtonCodeChanged: false, assets }; res.status(result.ok ? 200 : 503).json(result); });
+  app.get(`${ROUTE_PREFIX}/:name`, async (req, res) => {
+    const name = path.basename(String(req.params.name || ""));
+    if (!CARE_SCENES[name] && !PRODUCT_SCENES[name]) return res.status(404).send("not found");
+    try {
+      const buffer = await assetBuffer(name);
+      return res.type("image/jpeg").set("Cache-Control", "public, max-age=604800, immutable").set("X-XJW-Asset-Version", CONTENT_VERSION).set("X-XJW-Image-Size", "1254x1254").send(buffer);
+    } catch (error) {
+      console.error("approved social asset failed", name, error.message);
+      return res.status(500).send("asset failed");
+    }
+  });
+  app.get("/social/automation-healthz", async (_req, res) => {
+    const assets = await Promise.all(POSTS.map((post) => assetInfo(post.imageName)));
+    const result = {
+      ok: assets.every((item) => item.ok) && validatePosts(POSTS),
+      version: VERSION,
+      contentVersion: CONTENT_VERSION,
+      totalPosts: POSTS.length,
+      fixedPosts: POSTS.filter((post) => !post.conditionalWeather).length,
+      weatherStandbyPosts: POSTS.filter((post) => post.conditionalWeather).length,
+      fixedRule: "每週1篇，週三20:00",
+      weatherRule: "人工審核通過後，依實際氣候於其他平日20:00加發；每週最多1篇；週末不發布",
+      weatherStartDelayMs: WEATHER_START_DELAY_MS,
+      weatherIntervalMs: WEATHER_INTERVAL_MS,
+      rateLimitBackoffMs: WEATHER_RATE_LIMIT_BACKOFF_MS,
+      appButtonCodeChanged: false,
+      assets,
+    };
+    res.status(result.ok ? 200 : 503).json(result);
+  });
 }
 
 function install() {
-  if (installed) return; installed = true; addApprovedHost(); validatePosts(POSTS);
+  if (installed) return;
+  installed = true;
+  addApprovedHost();
+  validatePosts(POSTS);
   const originalLoad = Module._load;
   Module._load = function patchedLoad(request, parent, isMain) {
     const loaded = originalLoad.apply(this, arguments);
     if (request === "./server" && loaded?.app) mount(loaded.app);
     if (request === "./social-server" && loaded?.readStore && loaded?.writeStore && !socialHookAttached) {
       socialHookAttached = true;
-      setImmediate(() => { try { console.log("First batch social schedule reconciliation", reconcile(loaded.readStore, loaded.writeStore)); startWeatherAutomation(loaded.readStore, loaded.writeStore); } catch (error) { console.error("First batch social setup failed", error.message); } });
-      if (!reconcileTimer) { reconcileTimer = setInterval(() => { try { reconcile(loaded.readStore, loaded.writeStore); } catch (error) { console.error("First batch social reconciliation failed", error.message); } }, 30000); reconcileTimer.unref?.(); }
+      setImmediate(() => {
+        try {
+          console.log("First batch social schedule reconciliation", reconcile(loaded.readStore, loaded.writeStore));
+          startWeatherAutomation(loaded.readStore, loaded.writeStore);
+        } catch (error) {
+          console.error("First batch social setup failed", error.message);
+        }
+      });
+      if (!reconcileTimer) {
+        reconcileTimer = setInterval(() => {
+          try {
+            reconcile(loaded.readStore, loaded.writeStore);
+          } catch (error) {
+            console.error("First batch social reconciliation failed", error.message);
+          }
+        }, 30000);
+        reconcileTimer.unref?.();
+      }
     }
     return loaded;
   };
@@ -266,4 +478,45 @@ function install() {
 
 install();
 
-module.exports = { VERSION, CONTENT_VERSION, CAMPAIGN_ID, ROUTE_PREFIX, TARGET_IMAGE_SIZE, POSTS, CANONICAL_IDS, CARE_SCENES, PRODUCT_SCENES, assetUrl, fetchRemoteBuffer, careAssetBuffer, productAssetBuffer, assetBuffer, assetInfo, desiredPost, reconcileStore, reconcile, taipeiParts, dateKey, addDays, tenAt, weekdayForKey, isFixedPublishDate, nextWeatherDate, weatherUrl, selectWeather, weekKey, activateWeatherPost, checkWeather, startWeatherAutomation, mount, install };
+module.exports = {
+  VERSION,
+  CONTENT_VERSION,
+  CAMPAIGN_ID,
+  ROUTE_PREFIX,
+  TARGET_IMAGE_SIZE,
+  WEATHER_INTERVAL_MS,
+  WEATHER_START_DELAY_MS,
+  WEATHER_RATE_LIMIT_BACKOFF_MS,
+  POSTS,
+  CANONICAL_IDS,
+  CARE_SCENES,
+  PRODUCT_SCENES,
+  assetUrl,
+  fetchRemoteBuffer,
+  careAssetBuffer,
+  productAssetBuffer,
+  assetBuffer,
+  assetInfo,
+  desiredPost,
+  reconcileStore,
+  reconcile,
+  taipeiParts,
+  dateKey,
+  addDays,
+  tenAt,
+  weatherAt,
+  weekdayForKey,
+  isFixedPublishDate,
+  isWeekendPublishDate,
+  nextWeatherDate,
+  weatherUrl,
+  selectWeather,
+  weekKey,
+  explicitlyReviewedWeatherPost,
+  activateWeatherPost,
+  retryAfterMs,
+  checkWeather,
+  startWeatherAutomation,
+  mount,
+  install,
+};
