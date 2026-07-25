@@ -1,0 +1,32 @@
+{
+  "ok": false,
+  "verifiedAt": "2026-07-25T21:18:12.157Z",
+  "commit": "74c897883b937dca536c488d368ff15a241b489e",
+  "localOutcome": "success",
+  "productionOutcome": "failure",
+  "reviewGateVersion": "2026-07-26-review-gate-v5",
+  "reviewRequiredBeforePublish": true,
+  "canonicalCount": 9,
+  "pendingReviewCount": 9,
+  "reviewedCount": 0,
+  "automaticQueueCount": 0,
+  "actualScheduledCount": 0,
+  "unreviewedActiveCount": 0,
+  "scheduleVersion": "2026-07-25-v6",
+  "scheduleIssues": [
+    "工作再忙，也別忘了休息一下 排程時間不符合規則"
+  ],
+  "automationVersion": "2026-07-24-final-v1",
+  "fixedPosts": 7,
+  "weatherStandbyPosts": 3,
+  "weatherRateLimitBackoffMs": 0,
+  "assetCount": 10,
+  "socialWebsiteHealthy": true,
+  "inventoryAppHealthy": true,
+  "storage": "supabase",
+  "instagramConfigured": true,
+  "facebookConfigured": true,
+  "fixedSchedule": "人工審核通過後每週1篇，週三20:00",
+  "weatherSchedule": "人工審核通過後，依萬華實際氣候於其他平日20:00條件加發；週末不發布",
+  "unreviewedPublishingBlocked": true
+}
