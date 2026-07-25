@@ -7,16 +7,16 @@ const batch = require("./social-final-approved-batch");
 const sales = require("./line-sales-master.json");
 
 assert.strictEqual(weekly.VERSION, "2026-07-25-weekly-once-v1");
-assert.strictEqual(reviewGate.VERSION, "2026-07-25-review-gate-v4");
+assert.strictEqual(reviewGate.VERSION, "2026-07-26-review-gate-v5");
 assert.strictEqual(weekly.FIXED_SCHEDULES.length, 7);
 assert.strictEqual(new Set(weekly.FIXED_SCHEDULES).size, weekly.FIXED_SCHEDULES.length);
 
 for (const scheduledAt of weekly.FIXED_SCHEDULES) {
   const parts = reviewGate.taipeiParts(scheduledAt);
-  assert(parts, `無法解析排程：${scheduledAt}`);
-  assert.strictEqual(parts.weekday, "Wed", `固定貼文不是週三：${scheduledAt}`);
-  assert.strictEqual(parts.hour, "20", `固定貼文不是晚上8點：${scheduledAt}`);
-  assert.strictEqual(parts.minute, "00", `固定貼文分鐘不正確：${scheduledAt}`);
+  assert(parts, `無法解析建議排程：${scheduledAt}`);
+  assert.strictEqual(parts.weekday, "Wed", `固定貼文建議排程不是週三：${scheduledAt}`);
+  assert.strictEqual(parts.hour, "20", `固定貼文建議排程不是晚上8點：${scheduledAt}`);
+  assert.strictEqual(parts.minute, "00", `固定貼文建議排程分鐘不正確：${scheduledAt}`);
 }
 
 assert.strictEqual(batch.POSTS.length, 10);
@@ -38,8 +38,12 @@ const reset = reviewGate.initialReset({
 });
 const canonical = reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id));
 assert.strictEqual(canonical.length, 10);
-assert(canonical.every((post) => post.status === "draft"));
+assert(canonical.every((post) => post.status === "pending_review"));
+assert(canonical.every((post) => post.scheduledAt === ""));
+assert(canonical.filter((post) => !post.conditionalWeather).every((post) => reviewGate.validFixedSlot(post.proposedScheduledAt)));
 assert(canonical.every((post) => post.assetLocked === false));
+assert(canonical.every((post) => post.approved === false));
+assert(canonical.every((post) => post.schedule_enabled === false));
 assert(canonical.every((post) => !post.reviewApprovedAt));
 assert.strictEqual(reset.automaticSchedulingAfterReview, true);
 assert.strictEqual(reset.automaticRetryEnabled, false);
@@ -54,4 +58,4 @@ assert.strictEqual(sales.imagePolicy.realProductImagesOnly, true);
 assert(sales.imagePolicy.partners.includes("小鹿娃娃"));
 assert(sales.imagePolicy.partners.includes("小烏龜娃娃"));
 
-console.log("PASS current policy: weekly Wednesday 20:00, manual review, fixed mascot partners and official prices");
+console.log("PASS current policy: all unpublished posts pending review, schedule only after approval, weekly Wednesday 20:00, fixed mascot partners and official prices");
