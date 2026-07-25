@@ -3,9 +3,9 @@
 const Module = require("module");
 const batch = require("./social-final-approved-batch");
 
-const VERSION = "2026-07-24-review-gate-v3";
+const VERSION = "2026-07-25-review-gate-v4";
 const REVIEW_NOTE = "已上傳至 App，等待人工審核；未審核不會排程、發布或補發";
-const WEATHER_NOTE = "已通過人工審核，等待符合萬華實際氣候後安排發布";
+const WEATHER_NOTE = "已通過人工審核，等待符合萬華實際氣候後安排平日晚間發布";
 const CANONICAL_IDS = new Set(batch.CANONICAL_IDS || (batch.POSTS || []).map((post) => post.id));
 const CONTENT_FIELDS = ["title", "imageUrl", "instagramCaption", "facebookCaption", "scheduledAt", "publishInstagram", "publishFacebook"];
 let installed = false;
@@ -41,7 +41,7 @@ function taipeiParts(value = new Date()) {
 
 function validFixedSlot(value) {
   const parts = taipeiParts(value);
-  return Boolean(parts && ["Wed", "Fri"].includes(parts.weekday) && parts.hour === "10" && parts.minute === "00");
+  return Boolean(parts && parts.weekday === "Wed" && parts.hour === "20" && parts.minute === "00");
 }
 
 function nextAvailableFixedSlot(store = {}, postId = "", afterMs = Date.now()) {
@@ -50,15 +50,14 @@ function nextAvailableFixedSlot(store = {}, postId = "", afterMs = Date.now()) {
     .map((post) => new Date(post.scheduledAt).toISOString()));
   const local = taipeiParts(new Date(afterMs));
   if (!local) return "";
-  for (let offset = 0; offset < 370; offset += 1) {
+  for (let offset = 0; offset < 740; offset += 1) {
     const localDate = new Date(Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day) + offset));
-    const weekday = localDate.getUTCDay();
-    if (weekday !== 3 && weekday !== 5) continue;
+    if (localDate.getUTCDay() !== 3) continue;
     const candidate = new Date(Date.UTC(
       localDate.getUTCFullYear(),
       localDate.getUTCMonth(),
       localDate.getUTCDate(),
-      2, 0, 0, 0
+      12, 0, 0, 0
     ));
     if (candidate.getTime() <= afterMs + 60 * 1000) continue;
     if (occupied.has(candidate.toISOString())) continue;
@@ -103,7 +102,7 @@ function approvePost(post = {}, store = {}) {
     const originalTime = new Date(scheduledAt).getTime();
     if (!validFixedSlot(scheduledAt) || !Number.isFinite(originalTime) || originalTime <= Date.now() + 60 * 1000) {
       scheduledAt = nextAvailableFixedSlot(store, post.id, Date.now());
-      if (!scheduledAt) throw new Error("找不到可用的週三／週五上午10:00排程，請先調整其他貼文時間");
+      if (!scheduledAt) throw new Error("找不到可用的週三晚上8:00排程，請先調整其他貼文時間");
       reviewScheduleNote = `原排程已過或不合規，審核後改排至${new Date(scheduledAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}`;
     }
   }
@@ -273,7 +272,7 @@ function wrapSocialApi(api) {
         automaticSchedulingEnabled: true,
         automaticSchedulingRequiresReview: true,
         automaticRetryEnabled: false,
-        overdueApprovalPolicy: "move-to-next-free-wed-fri-10:00",
+        overdueApprovalPolicy: "move-to-next-free-wed-20:00",
         canonicalCount: posts.length,
         draftCount: posts.filter((post) => ["draft", "rejected"].includes(post.status)).length,
         reviewedCount: reviewed.length,
