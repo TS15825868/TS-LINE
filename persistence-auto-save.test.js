@@ -15,6 +15,7 @@ for (const token of [
   "SAVE_DEBOUNCE_MS",
   "enqueueSave",
   "centralized save queue",
+  'require("./runtime-social-stabilizer")',
 ]) {
   assert.ok(source.includes(token), `persistence auto-save missing ${token}`);
 }
@@ -23,7 +24,7 @@ assert.ok(!source.includes("RETRY_DELAY_MS"), "auto-save must not start a compet
 
 const original = fs.renameSync;
 const autoSave = require("./persistence-auto-save");
-assert.strictEqual(autoSave.VERSION, "1.2.0");
+assert.strictEqual(autoSave.VERSION, "1.2.1");
 assert.ok(autoSave.SAVE_DEBOUNCE_MS >= 0);
 autoSave.installPersistenceAutoSave();
 assert.notStrictEqual(fs.renameSync, original);
@@ -31,4 +32,4 @@ autoSave.installPersistenceAutoSave();
 autoSave.uninstallPersistenceAutoSave();
 assert.strictEqual(fs.renameSync, original);
 
-console.log("PASS debounced atomic-write interception using one centralized Supabase queue and backoff source");
+console.log("PASS centralized Supabase queue and early ten-post review stabilizer installation");
