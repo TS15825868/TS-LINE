@@ -48,10 +48,6 @@ jobs:
               if old in text:
                   path.write_text(text.replace(old, new), encoding="utf-8")
                   print("updated", name)
-          migration = Path(".github/workflows/migrate-review-gate-v5.yml")
-          if migration.exists():
-              migration.unlink()
-              print("removed", migration)
           PY
 
       - name: Install exact dependencies
