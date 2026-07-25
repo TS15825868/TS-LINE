@@ -3,11 +3,11 @@
 const Module = require("module");
 const batch = require("./social-final-approved-batch");
 
-const VERSION = "2026-07-25-review-gate-v4";
+const VERSION = "2026-07-26-review-gate-v5";
 const REVIEW_NOTE = "已上傳至 App，等待人工審核；未審核不會排程、發布或補發";
 const WEATHER_NOTE = "已通過人工審核，等待符合萬華實際氣候後安排平日晚間發布";
 const CANONICAL_IDS = new Set(batch.CANONICAL_IDS || (batch.POSTS || []).map((post) => post.id));
-const CONTENT_FIELDS = ["title", "imageUrl", "instagramCaption", "facebookCaption", "scheduledAt", "publishInstagram", "publishFacebook"];
+const CONTENT_FIELDS = ["title", "imageUrl", "instagramCaption", "facebookCaption", "proposedScheduledAt", "scheduledAt", "publishInstagram", "publishFacebook"];
 let installed = false;
 
 const nowIso = () => new Date().toISOString();
@@ -46,7 +46,7 @@ function validFixedSlot(value) {
 
 function nextAvailableFixedSlot(store = {}, postId = "", afterMs = Date.now()) {
   const occupied = new Set((store.posts || [])
-    .filter((post) => String(post.id || "") !== String(postId || "") && post.scheduledAt)
+    .filter((post) => String(post.id || "") !== String(postId || "") && post.scheduledAt && ["approved", "publishing", "published", "partial", "failed"].includes(String(post.status || "")))
     .map((post) => new Date(post.scheduledAt).toISOString()));
   const local = taipeiParts(new Date(afterMs));
   if (!local) return "";
@@ -66,10 +66,17 @@ function nextAvailableFixedSlot(store = {}, postId = "", afterMs = Date.now()) {
   return "";
 }
 
-function clearPublishState(post = {}, status = "draft", note = REVIEW_NOTE) {
+function clearPublishState(post = {}, status = "pending_review", note = REVIEW_NOTE) {
+  const proposedScheduledAt = post.proposedScheduledAt || post.scheduledAt || "";
   return {
     ...post,
+    proposedScheduledAt,
+    scheduledAt: "",
     status,
+    approved: false,
+    scheduleEnabled: false,
+    schedule_enabled: false,
+    published: false,
     assetLocked: false,
     manualPublishOnly: false,
     manualReviewRequired: true,
@@ -95,21 +102,26 @@ function clearPublishState(post = {}, status = "draft", note = REVIEW_NOTE) {
 
 function approvePost(post = {}, store = {}) {
   const approvedAt = nowIso();
-  const weatherStandby = post.conditionalWeather === true && !post.scheduledAt;
-  let scheduledAt = post.scheduledAt || "";
+  const weatherStandby = post.conditionalWeather === true;
+  let scheduledAt = weatherStandby ? "" : (post.proposedScheduledAt || post.scheduledAt || "");
   let reviewScheduleNote = "";
   if (!weatherStandby) {
     const originalTime = new Date(scheduledAt).getTime();
     if (!validFixedSlot(scheduledAt) || !Number.isFinite(originalTime) || originalTime <= Date.now() + 60 * 1000) {
       scheduledAt = nextAvailableFixedSlot(store, post.id, Date.now());
       if (!scheduledAt) throw new Error("找不到可用的週三晚上8:00排程，請先調整其他貼文時間");
-      reviewScheduleNote = `原排程已過或不合規，審核後改排至${new Date(scheduledAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}`;
+      reviewScheduleNote = `原建議排程已過或不合規，審核後改排至${new Date(scheduledAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}`;
     }
   }
   return {
     ...post,
+    proposedScheduledAt: post.proposedScheduledAt || post.scheduledAt || scheduledAt,
     scheduledAt,
     status: weatherStandby ? "paused" : "approved",
+    approved: true,
+    scheduleEnabled: !weatherStandby,
+    schedule_enabled: !weatherStandby,
+    published: false,
     assetLocked: true,
     manualPublishOnly: false,
     manualReviewRequired: false,
@@ -118,8 +130,8 @@ function approvePost(post = {}, store = {}) {
     reviewApprovedAt: approvedAt,
     reviewApprovedBy: "內部管理 App",
     manualReviewConfirmedAt: approvedAt,
-    approvedAt: post.approvedAt || approvedAt,
-    automationStandby: weatherStandby ? true : Boolean(post.automationStandby),
+    approvedAt: approvedAt,
+    automationStandby: weatherStandby,
     platformStatus: { instagram: "待發布", facebook: "待發布" },
     reviewScheduleNote,
     lastError: weatherStandby ? WEATHER_NOTE : "",
@@ -128,12 +140,13 @@ function approvePost(post = {}, store = {}) {
   };
 }
 
-function removeCanonicalLedgerEntries(store = {}) {
+function removeUnpublishedCanonicalLedgerEntries(store = {}, publishedIds = new Set()) {
   const ledger = store.publicationLedger && typeof store.publicationLedger === "object" ? { ...store.publicationLedger } : {};
   for (const platform of ["instagram", "facebook"]) {
     const entries = ledger[platform] && typeof ledger[platform] === "object" ? { ...ledger[platform] } : {};
     for (const [fingerprint, entry] of Object.entries(entries)) {
-      if (CANONICAL_IDS.has(String(entry?.postId || ""))) delete entries[fingerprint];
+      const postId = String(entry?.postId || "");
+      if (CANONICAL_IDS.has(postId) && !publishedIds.has(postId)) delete entries[fingerprint];
     }
     ledger[platform] = entries;
   }
@@ -149,8 +162,30 @@ function initialReset(inputStore = {}) {
     store.automaticRetryEnabled = false;
     return store;
   }
-  store.posts = (Array.isArray(store.posts) ? store.posts : []).map((post) => isCanonical(post) ? clearPublishState(post) : post);
-  store.publicationLedger = removeCanonicalLedgerEntries(store);
+
+  const originalPosts = Array.isArray(store.posts) ? store.posts : [];
+  const publishedIds = new Set(originalPosts
+    .filter((post) => isCanonical(post) && post.status === "published" && Boolean(post.publishedAt || post.instagramPublishedAt || post.facebookPublishedAt))
+    .map((post) => String(post.id || "")));
+
+  store.posts = originalPosts.map((post) => {
+    if (!isCanonical(post)) return post;
+    if (publishedIds.has(String(post.id || ""))) {
+      return {
+        ...post,
+        approved: true,
+        published: true,
+        assetLocked: true,
+        manualReviewRequired: false,
+        autoPublishAfterReview: false,
+        scheduleEnabled: false,
+        schedule_enabled: false,
+        reviewModeVersion: VERSION,
+      };
+    }
+    return clearPublishState(post);
+  });
+  store.publicationLedger = removeUnpublishedCanonicalLedgerEntries(store, publishedIds);
   store.socialReviewGateMode = true;
   store.socialReviewRequired = true;
   store.automaticSchedulingAfterReview = true;
@@ -164,7 +199,7 @@ function preserveReviewedPost(incoming = {}, previous = {}, fromApp = false) {
   const approvedAt = previous.reviewApprovedAt || previous.manualReviewConfirmedAt;
   const contentChanged = fromApp && contentSignature(incoming) !== contentSignature(previous);
   if (contentChanged && incoming.manualImmediatePublish !== true) {
-    return clearPublishState(incoming, "draft", "內容或排程已修改，請重新審核後再啟用自動發布");
+    return clearPublishState(incoming, "pending_review", "內容或建議排程已修改，請重新審核後再啟用自動發布");
   }
   if (fromApp && incoming.status === "rejected") return clearPublishState(incoming, "rejected", "已退回修改；修改完成後請重新審核");
   if (fromApp && incoming.status === "cancelled") return { ...clearPublishState(incoming, "cancelled", "已取消"), manualReviewRequired: false };
@@ -176,10 +211,14 @@ function preserveReviewedPost(incoming = {}, previous = {}, fromApp = false) {
   return {
     ...incoming,
     status,
+    approved: true,
+    published: status === "published",
     assetLocked: true,
     manualPublishOnly: false,
     manualReviewRequired: false,
-    autoPublishAfterReview: true,
+    autoPublishAfterReview: status !== "published",
+    scheduleEnabled: status === "approved",
+    schedule_enabled: status === "approved",
     reviewApprovedAt: approvedAt,
     reviewApprovedBy: previous.reviewApprovedBy || "內部管理 App",
     manualReviewConfirmedAt: approvedAt,
@@ -196,8 +235,11 @@ function protectStore(inputStore = {}, previousStore = {}, fromApp = false) {
     const previous = previousById.get(String(incoming.id || "")) || {};
     const previouslyReviewed = Boolean(previous.reviewApprovedAt || previous.manualReviewConfirmedAt);
 
+    if (previous.status === "published" && Boolean(previous.publishedAt || previous.instagramPublishedAt || previous.facebookPublishedAt)) {
+      return preserveReviewedPost({ ...incoming, status: "published" }, previous, false);
+    }
     if (!previouslyReviewed && incoming.manualImmediatePublish === true) {
-      return clearPublishState(incoming, "draft", "請先按『審核通過・啟用自動發布』，確認後才可立即發布");
+      return clearPublishState(incoming, "pending_review", "請先按『審核通過・啟用自動發布』，確認後才可立即發布");
     }
     if (!previouslyReviewed && fromApp && incoming.status === "approved") {
       return approvePost(incoming, store);
@@ -252,6 +294,7 @@ function wrapSocialApi(api) {
         id: post.id,
         title: post.title,
         status: post.status,
+        proposedScheduledAt: post.proposedScheduledAt || "",
         scheduledAt: post.scheduledAt || "",
         imageUrl: post.imageUrl || "",
         conditionalWeather: post.conditionalWeather === true,
@@ -274,7 +317,8 @@ function wrapSocialApi(api) {
         automaticRetryEnabled: false,
         overdueApprovalPolicy: "move-to-next-free-wed-20:00",
         canonicalCount: posts.length,
-        draftCount: posts.filter((post) => ["draft", "rejected"].includes(post.status)).length,
+        pendingReviewCount: posts.filter((post) => post.status === "pending_review").length,
+        draftCount: posts.filter((post) => ["draft", "pending_review", "rejected"].includes(post.status)).length,
         reviewedCount: reviewed.length,
         automaticQueueCount: reviewed.filter((post) => ["approved", "paused"].includes(post.status)).length,
         unreviewedActiveCount: posts.filter((post) => !post.reviewApprovedAt && ["approved", "paused", "publishing", "published", "partial", "failed"].includes(post.status)).length,
@@ -316,7 +360,7 @@ module.exports = {
   nextAvailableFixedSlot,
   clearPublishState,
   approvePost,
-  removeCanonicalLedgerEntries,
+  removeUnpublishedCanonicalLedgerEntries,
   initialReset,
   preserveReviewedPost,
   protectStore,
