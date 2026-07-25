@@ -1,6 +1,6 @@
 {
-  "version": "2026-07-25-v2",
-  "source": "仙加味內部正式售價與角色政策",
+  "version": "2026-07-25-v3",
+  "source": "仙加味內部正式售價、洽詢價與角色政策",
   "products": {
     "guilu-gao": {
       "price": 2000,
@@ -36,6 +36,14 @@
       "offers": [],
       "priceText": "$2,000 / 罐",
       "priceLabel": "建議售價2,000元"
+    },
+    "guilu-jiao": {
+      "price": 0,
+      "originalPrice": null,
+      "offers": [],
+      "quoteOnly": true,
+      "priceText": "價格請洽詢",
+      "priceLabel": "價格與通路條件請洽詢客服"
     }
   },
   "imagePolicy": {
