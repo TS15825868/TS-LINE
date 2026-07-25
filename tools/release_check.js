@@ -12,6 +12,7 @@ const decodeBundle = (file) => zlib.gunzipSync(Buffer.from(read(file).replace(/\
 const data = JSON.parse(read("data.json"));
 const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
+const salesMaster = JSON.parse(read("line-sales-master.json"));
 
 const required = [
   "internal-entry.js",
@@ -36,6 +37,9 @@ const required = [
   "social-schedule-policy.js",
   "social-manual-schedule-override.js",
   "social-manual-immediate-publish.js",
+  "product-sales-master.js",
+  "line-sales-master.json",
+  "MASCOT_CHARACTER_SPEC.md",
   "supabase-state-bridge.js",
   "persistence-auto-save.js",
 ];
@@ -44,12 +48,24 @@ for (const file of required) assert(exists(file), `缺少正式檔案：${file}`
 assert.strictEqual(data.lineId, "@762jybnm");
 assert.strictEqual(data.catalogVersion, "408.7");
 assert.strictEqual(data.products.length, 6);
-assert.strictEqual(pkg.version, "6.0.5");
+assert.strictEqual(pkg.version, "6.0.6");
 assert.strictEqual(lock.version, pkg.version);
 assert.strictEqual(lock.packages?.[""]?.version, pkg.version);
+assert.strictEqual(salesMaster.version, "2026-07-25-v2");
+assert.strictEqual(salesMaster.products?.["guilu-gao"]?.price, 2000);
+assert.strictEqual(salesMaster.products?.["guilu-drink-30"]?.price, 100);
+assert.strictEqual(salesMaster.products?.["guilu-drink-180"]?.price, 200);
+assert.strictEqual(salesMaster.products?.["guilu-tangkuai"]?.price, 2000);
+assert.strictEqual(salesMaster.products?.["luerong-fen"]?.price, 2000);
+assert.deepStrictEqual(salesMaster.imagePolicy?.partners, ["小鹿娃娃", "小烏龜娃娃"]);
+assert.strictEqual(salesMaster.imagePolicy?.realProductImagesOnly, true);
+assert.strictEqual(salesMaster.imagePolicy?.noProductRedraw, true);
+assert.strictEqual(salesMaster.imagePolicy?.approvalRequiredBeforePublish, true);
 
 const start = String(pkg.scripts?.start || "");
-assert(start.includes("node -r ./social-review-only-mode.js"), "審核閘門必須是正式啟動的第一個 preload");
+assert(start.includes("node -r ./product-sales-master.js"), "正式售價與角色主檔必須在啟動時載入");
+assert(start.includes("node -r ./social-review-only-mode.js"), "審核閘門必須在正式啟動時載入");
+assert(start.indexOf("product-sales-master.js") < start.indexOf("social-review-only-mode.js"), "售價與角色主檔必須先於社群服務載入");
 assert(start.includes("-r ./social-static-asset-bridge.js"), "缺少繁體中文光柵圖片橋接器");
 assert(start.indexOf("social-static-asset-bridge.js") < start.indexOf("social-final-approved-batch.js"), "圖片橋接器必須先於舊圖片產生器載入");
 assert(!start.includes("-r ./social-incomplete-auto-retry.js"), "不可載入失敗平台自動補發模組");
@@ -134,4 +150,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：進銷存保留原內部 App；社群貼文改為獨立網站；圖片可上傳與預覽；繁體中文以指定字型光柵化避免亂碼；10篇圖文不重複；未審核不排程、不發布、不補發；審核後才啟用固定排程或氣候條件發布");
+console.log("仙加味正式檢查通過：LINE OA v6.0.6 售價主檔、官網小老闆與小鹿小烏龜娃娃規格、進銷存獨立 App、社群獨立網站、繁體中文圖片、10篇既有圖文、未審核不排程不發布、人工核准後才啟用發布流程");
