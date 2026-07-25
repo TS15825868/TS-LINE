@@ -20,20 +20,24 @@ const reset = reviewGate.initialReset({
   },
 });
 
-assert.strictEqual(reviewGate.VERSION, "2026-07-25-review-gate-v4");
+assert.strictEqual(reviewGate.VERSION, "2026-07-26-review-gate-v5");
 assert.strictEqual(reset.socialReviewGateMode, true);
 assert.strictEqual(reset.automaticSchedulingAfterReview, true);
 assert.strictEqual(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).length, 10);
-assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => post.status === "draft"));
+assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => post.status === "pending_review"));
+assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => post.scheduledAt === ""));
+assert(reset.posts.filter((post) => !post.conditionalWeather).every((post) => reviewGate.validFixedSlot(post.proposedScheduledAt)));
 assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => !post.reviewApprovedAt));
+assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => post.schedule_enabled === false));
 assert.strictEqual(Object.keys(reset.publicationLedger.facebook).length, 0);
 
 const automaticAttempt = {
   ...reset,
-  posts: reset.posts.map((post, index) => index === 0 ? { ...post, status: "approved", assetLocked: true } : post),
+  posts: reset.posts.map((post, index) => index === 0 ? { ...post, status: "approved", assetLocked: true, scheduledAt: post.proposedScheduledAt } : post),
 };
 const blockedAutomatic = reviewGate.protectStore(automaticAttempt, reset, false);
-assert.strictEqual(blockedAutomatic.posts[0].status, "draft");
+assert.strictEqual(blockedAutomatic.posts[0].status, "pending_review");
+assert.strictEqual(blockedAutomatic.posts[0].scheduledAt, "");
 assert.strictEqual(blockedAutomatic.posts[0].assetLocked, false);
 assert.strictEqual(blockedAutomatic.posts[0].reviewApprovedAt, "");
 
@@ -42,11 +46,11 @@ const immediateAttempt = {
   posts: reset.posts.map((post, index) => index === 0 ? { ...post, status: "approved", manualImmediatePublish: true } : post),
 };
 const blockedImmediate = reviewGate.protectStore(immediateAttempt, reset, true);
-assert.strictEqual(blockedImmediate.posts[0].status, "draft");
+assert.strictEqual(blockedImmediate.posts[0].status, "pending_review");
 assert.strictEqual(blockedImmediate.posts[0].manualImmediatePublish, false);
 
 const fixedIndex = reset.posts.findIndex((post) => !post.conditionalWeather);
-const originalFixedTime = reset.posts[fixedIndex].scheduledAt;
+const originalFixedTime = reset.posts[fixedIndex].proposedScheduledAt;
 const occupiedByOthers = new Set(reset.posts.filter((_, index) => index !== fixedIndex).map((post) => post.scheduledAt).filter(Boolean));
 const approveFixedInput = {
   ...reset,
@@ -55,6 +59,8 @@ const approveFixedInput = {
 const approvedFixed = reviewGate.protectStore(approveFixedInput, reset, true);
 const fixed = approvedFixed.posts[fixedIndex];
 assert.strictEqual(fixed.status, "approved");
+assert.strictEqual(fixed.approved, true);
+assert.strictEqual(fixed.schedule_enabled, true);
 assert.strictEqual(fixed.assetLocked, true);
 assert.strictEqual(fixed.autoPublishAfterReview, true);
 assert(fixed.reviewApprovedAt);
@@ -63,7 +69,7 @@ assert(new Date(fixed.scheduledAt).getTime() > Date.now());
 assert(!occupiedByOthers.has(fixed.scheduledAt));
 if (new Date(originalFixedTime).getTime() <= Date.now() + 60 * 1000) {
   assert.notStrictEqual(fixed.scheduledAt, originalFixedTime);
-  assert(fixed.reviewScheduleNote.includes("原排程已過或不合規"));
+  assert(fixed.reviewScheduleNote.includes("原建議排程已過或不合規"));
 }
 
 const parts = reviewGate.taipeiParts(fixed.scheduledAt);
@@ -86,6 +92,8 @@ const approveWeatherInput = {
 const approvedWeather = reviewGate.protectStore(approveWeatherInput, reset, true);
 const weather = approvedWeather.posts[weatherIndex];
 assert.strictEqual(weather.status, "paused");
+assert.strictEqual(weather.scheduledAt, "");
+assert.strictEqual(weather.schedule_enabled, false);
 assert.strictEqual(weather.automationStandby, true);
 assert.strictEqual(weather.autoPublishAfterReview, true);
 assert(weather.reviewApprovedAt);
@@ -95,7 +103,21 @@ const editedInput = {
   posts: approvedFixed.posts.map((post, index) => index === fixedIndex ? { ...post, title: `${post.title}（修改）` } : post),
 };
 const edited = reviewGate.protectStore(editedInput, approvedFixed, true);
-assert.strictEqual(edited.posts[fixedIndex].status, "draft");
+assert.strictEqual(edited.posts[fixedIndex].status, "pending_review");
+assert.strictEqual(edited.posts[fixedIndex].scheduledAt, "");
 assert.strictEqual(edited.posts[fixedIndex].reviewApprovedAt, "");
 
-console.log("PASS review gate blocks unreviewed publishing and moves approved posts to the next Wednesday 20:00 slot");
+const publishedSource = sourcePosts.map((post, index) => index === 0 ? {
+  ...post,
+  status: "published",
+  publishedAt: "2026-07-01T12:00:00.000Z",
+  reviewApprovedAt: "2026-06-30T12:00:00.000Z",
+  manualReviewConfirmedAt: "2026-06-30T12:00:00.000Z",
+} : post);
+const resetWithPublished = reviewGate.initialReset({ posts: publishedSource, publicationLedger: { facebook: { keep: { postId: publishedSource[0].id } }, instagram: {} } });
+assert.strictEqual(resetWithPublished.posts[0].status, "published");
+assert.strictEqual(resetWithPublished.posts[0].published, true);
+assert.strictEqual(resetWithPublished.publicationLedger.facebook.keep.postId, publishedSource[0].id);
+assert(resetWithPublished.posts.slice(1).every((post) => post.status === "pending_review"));
+
+console.log("PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval");
