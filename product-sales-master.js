@@ -13,13 +13,44 @@ function getMaster() {
   return master;
 }
 
+function rootCombos(comboOffers = []) {
+  return comboOffers.map((combo) => ({
+    id: combo.id,
+    name: combo.name,
+    aliases: combo.aliases || [],
+    items: combo.items || [],
+    gift: combo.gift || "",
+    desc: combo.desc || "",
+    unit: combo.unit || "組",
+    products: combo.products || [],
+    quantityOptions: combo.quantityOptions || [1, 2, 3, 5],
+    priceNote: "實際組合金額由正式產品建議售價計算；活動與通路條件請洽客服確認。",
+  }));
+}
+
 function applyMaster(data) {
   const policy = getMaster();
   const productOverrides = policy.products || {};
+  const comboOffers = Array.isArray(policy.comboOffers) ? policy.comboOffers : [];
+
   data.products = (data.products || []).map((product) => ({
     ...product,
     ...(productOverrides[product.id] || {}),
   }));
+
+  data.offers = {
+    ...(data.offers || {}),
+    comboOffers,
+  };
+  data.combos = rootCombos(comboOffers);
+  data.retentionOffers = {
+    ...(data.retentionOffers || {}),
+    combos: Object.fromEntries(comboOffers.map((combo) => [
+      combo.name,
+      "可依組合內容、數量與需求協助整理較適合的方案。",
+    ])),
+  };
+
   data.runtime = {
     ...(data.runtime || {}),
     imagePolicy: {
@@ -54,4 +85,4 @@ fs.readFileSync = function patchedReadFileSync(file, ...args) {
   return result;
 };
 
-module.exports = { applyMaster, getMaster };
+module.exports = { applyMaster, getMaster, rootCombos };
