@@ -1,5 +1,5 @@
-commit=ed3a151d8749ec04a3798d4bdf191f01104d75e2
-recorded_at=2026-07-25T07:35:17Z
+commit=58bb53d0061f324bf67fae4227a1fd386f75d153
+recorded_at=2026-07-25T08:22:42Z
 
 
 > xianjiawei-lineoa@6.0.6 test
@@ -13,15 +13,12 @@ PASS fixed Wed/Fri 10:00 and conditional weather on non-fixed days
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish controls preserved and first batch starts 7/24 morning
-node:assert:150
-  throw new AssertionError(obj);
-  ^
+node:internal/assert/utils:77
+    throw err;
+    ^
 
-AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-
-'6.0.6' !== '6.0.5'
-
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:47:8)
+AssertionError [ERR_ASSERTION]: 審核閘門必須在正式啟動時載入
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:67:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
@@ -29,11 +26,11 @@ AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
     at node:internal/main/run_main_module:36:49 {
-  generatedMessage: true,
+  generatedMessage: false,
   code: 'ERR_ASSERTION',
-  actual: '6.0.6',
-  expected: '6.0.5',
-  operator: 'strictEqual',
+  actual: false,
+  expected: true,
+  operator: '==',
   diff: 'simple'
 }
 
