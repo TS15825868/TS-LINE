@@ -1,10 +1,13 @@
 "use strict";
 
+// internal-entry 會先載入此模組；在任何 social-server 實例建立前安裝正式十篇待審穩定器。
+require("./runtime-social-stabilizer");
+
 const fs = require("fs");
 const path = require("path");
 const bridge = require("./supabase-state-bridge");
 
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 const SAVE_DEBOUNCE_MS = Number(process.env.SUPABASE_SAVE_DEBOUNCE_MS || 1500);
 
 let installed = false;
