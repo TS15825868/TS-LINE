@@ -40,12 +40,8 @@ jobs:
       - name: Synchronize website catalog and sales master
         run: npm run sync:catalog
 
-      - name: Verify synchronized catalog and complete release rules
-        run: |
-          npm run check:catalog
-          npm test
-
       - name: Save synchronized production data to main
+        id: save
         shell: bash
         run: |
           set -euo pipefail
@@ -59,3 +55,8 @@ jobs:
           git commit -m "chore: synchronize website catalog and LINE production data"
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Verify synchronized catalog and complete release rules
+        run: |
+          npm run check:catalog
+          npm test
