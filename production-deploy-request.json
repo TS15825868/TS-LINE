@@ -1,23 +1,40 @@
 {
-  "requestedAt": "2026-07-23T08:05:00.000Z",
+  "requestedAt": "2026-07-25T08:55:00.000Z",
   "requestedBy": "ChatGPT",
   "mode": "automatic-production-deploy",
   "target": "main",
   "service": "TS-LINE",
-  "expectedVersion": "6.0.3",
-  "socialPostCount": 11,
-  "change": "完成社群管理 App 按鈕、圖片、立即發布、1254×1254清晰原圖、防重複與2026/7/24 19:30重新發布排程的最終修正與上線驗收",
+  "expectedVersion": "6.0.6",
+  "expectedReviewGateVersion": "2026-07-25-review-gate-v4",
+  "expectedScheduleVersion": "2026-07-25-v6",
+  "socialPostCount": 10,
+  "fixedDraftCount": 7,
+  "weatherStandbyCount": 3,
+  "change": "重新部署 LINE OA、社群待審中心、官網版小老闆與固定夥伴、正式售價主檔，以及每週一篇週三晚上8點且週末停發的排程安全規則",
+  "schedule": {
+    "timezone": "Asia/Taipei",
+    "fixed": "每週1篇，週三20:00",
+    "weatherException": "符合萬華實際氣候時，可於其他平日20:00加發，每週最多1篇",
+    "weekendPublishing": false
+  },
+  "approval": {
+    "requiredBeforeScheduling": true,
+    "requiredBeforePublishing": true,
+    "automaticRetryEnabled": false,
+    "contentChangeRevokesApproval": true
+  },
   "checks": [
-    "full npm test suite",
+    "complete npm test suite",
     "GitHub Actions",
-    "Render auto deploy",
-    "1254x1254 exact clear original asset",
-    "social card image display",
-    "all social action buttons",
-    "manual immediate publishing without schedule lock",
+    "Render automatic deploy",
+    "review-gate-status",
+    "schedule-status",
+    "LINE OA health",
     "Instagram and Facebook configuration",
-    "persistent cross-platform no-duplicate guard",
     "Supabase persistence",
-    "2026/7/24 19:30 clear repost schedule"
+    "1254x1254 Traditional Chinese image rendering",
+    "website-approved mascot with deer and turtle partners",
+    "real product images only",
+    "persistent duplicate publish protection"
   ]
 }
