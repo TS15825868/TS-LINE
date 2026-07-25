@@ -17,9 +17,9 @@ node:internal/assert/utils:77
 
 AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
 
-  assert.ok(retry.includes('["approved", "failed", "partial"]'))
+  assert.ok(!retry.includes("MutationObserver"))
 
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/internal-app-client-fix.test.js:66:8)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/internal-app-client-fix.test.js:69:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
@@ -43,10 +43,10 @@ node:internal/assert/utils:77
     throw err;
     ^
 
-AssertionError [ERR_ASSERTION]: shell missing button[data-refresh-app='true']
-    at /home/runner/work/TS-LINE/TS-LINE/internal-app-button-contract.test.js:19:29
+AssertionError [ERR_ASSERTION]: social retry missing 重新發布
+    at /home/runner/work/TS-LINE/TS-LINE/internal-app-button-contract.test.js:48:29
     at Array.forEach (<anonymous>)
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/internal-app-button-contract.test.js:19:3)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/internal-app-button-contract.test.js:48:3)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
