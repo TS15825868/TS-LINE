@@ -1,7 +1,7 @@
 {
   "ok": false,
-  "verifiedAt": "2026-07-25T23:05:29.331Z",
-  "commit": "ede9abe6c913a84bae80b645b1b35d3a2496a317",
+  "verifiedAt": "2026-07-25T23:38:57.477Z",
+  "commit": "2192cf32dc3f71e60843d8205306ccbdbfbb4302",
   "localOutcome": "success",
   "productionOutcome": "failure",
   "persistenceBridgeVersion": "",
@@ -14,7 +14,7 @@
   "pendingReviewCount": 9,
   "reviewedCount": 0,
   "unreviewedActiveCount": 0,
-  "runtimeStabilizerVersion": "2026-07-26-runtime-stabilizer-v2",
+  "runtimeStabilizerVersion": "",
   "assetCount": 10,
   "internalHealthy": true,
   "automaticRetryEnabled": false,
