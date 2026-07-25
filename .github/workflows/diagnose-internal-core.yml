@@ -1,0 +1,56 @@
+name: 內部 App 核心測試精確診斷
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-internal-core.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run each internal core test and save exact output
+        shell: bash
+        run: |
+          set +e
+          : > internal-core-diagnostics.txt
+          failed=0
+          for test in internal-app.test.js internal-app-pro.test.js internal-app-mobile.test.js internal-app-client-fix.test.js internal-app-button-contract.test.js; do
+            echo "===== $test =====" | tee -a internal-core-diagnostics.txt
+            node "$test" 2>&1 | tee -a internal-core-diagnostics.txt
+            code=${PIPESTATUS[0]}
+            echo "exit=$code" | tee -a internal-core-diagnostics.txt
+            echo | tee -a internal-core-diagnostics.txt
+            if [ "$code" -ne 0 ]; then failed=1; fi
+          done
+          echo "failed=$failed" | tee -a internal-core-diagnostics.txt
+          exit 0
+
+      - name: Save diagnostics and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/diagnose-internal-core.yml
+          git add internal-core-diagnostics.txt
+          git commit -m "chore: record internal App core diagnostics"
+          git pull --rebase origin main
+          git push origin HEAD:main
