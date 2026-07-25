@@ -22,6 +22,7 @@
   "offers": {
     "comboOffers": [
       {
+        "id": "daily-rhythm",
         "name": "日常節奏組",
         "aliases": [
           "日常節奏組",
@@ -33,7 +34,6 @@
         ],
         "gift": "",
         "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
-        "id": "daily-rhythm",
         "products": [
           {
             "productId": "guilu-gao",
@@ -53,49 +53,19 @@
         ]
       },
       {
-        "name": "日常便利組",
+        "id": "table-pairing",
+        "name": "料理搭配組",
         "aliases": [
-          "日常便利組",
-          "便利組"
-        ],
-        "items": [
-          "龜鹿膏 1 罐",
-          "龜鹿飲180cc 12 包（買10送2）"
-        ],
-        "gift": "",
-        "desc": "適合想固定節奏，也想增加外出或忙碌時的便利性。",
-        "id": "daily-convenience",
-        "products": [
-          {
-            "productId": "guilu-gao",
-            "qty": 1
-          },
-          {
-            "productId": "guilu-drink-180",
-            "qty": 12
-          }
-        ],
-        "unit": "組",
-        "quantityOptions": [
-          1,
-          2,
-          3,
-          5
-        ]
-      },
-      {
-        "name": "餐桌搭配組",
-        "aliases": [
+          "料理搭配組",
           "餐桌搭配組",
-          "餐桌組"
+          "料理組"
         ],
         "items": [
           "龜鹿湯塊75g 1 盒",
           "鹿茸粉75g 1 罐"
         ],
         "gift": "",
-        "desc": "適合想從料理與熱飲一起安排的人。",
-        "id": "table-pairing",
+        "desc": "適合想從料理與溫熱飲品一起安排的人。",
         "products": [
           {
             "productId": "guilu-tangkuai",
@@ -115,6 +85,7 @@
         ]
       },
       {
+        "id": "full-experience",
         "name": "完整體驗組",
         "aliases": [
           "完整體驗組",
@@ -127,8 +98,7 @@
           "鹿茸粉75g 1 罐"
         ],
         "gift": "",
-        "desc": "適合想一次了解不同型態，依生活情境安排的人。",
-        "id": "full-experience",
+        "desc": "適合想一次了解不同型態，再依生活情境安排的人。",
         "products": [
           {
             "productId": "guilu-gao",
@@ -140,39 +110,6 @@
           },
           {
             "productId": "guilu-tangkuai",
-            "qty": 1
-          },
-          {
-            "productId": "luerong-fen",
-            "qty": 1
-          }
-        ],
-        "unit": "組",
-        "quantityOptions": [
-          1,
-          2,
-          3,
-          5
-        ]
-      },
-      {
-        "name": "傳統燉煮組",
-        "aliases": [
-          "傳統燉煮組",
-          "紅盒組",
-          "一斤組",
-          "傳統組"
-        ],
-        "items": [
-          "龜鹿膠600g（一斤裝）1 盒",
-          "鹿茸粉75g 1 罐"
-        ],
-        "gift": "",
-        "desc": "適合想了解一斤裝大份量與鹿茸粉搭配安排的人。",
-        "id": "traditional-stew",
-        "products": [
-          {
-            "productId": "guilu-jiao",
             "qty": 1
           },
           {
@@ -201,10 +138,8 @@
     },
     "combos": {
       "日常節奏組": "可依組合內容、數量與需求協助整理較適合的方案。",
-      "日常便利組": "可依組合內容、數量與需求協助整理較適合的方案。",
-      "餐桌搭配組": "可依組合內容、數量與需求協助整理較適合的方案。",
-      "完整體驗組": "可依組合內容、數量與需求協助整理較適合的方案。",
-      "傳統燉煮組": "可依組合內容、數量與需求協助整理較適合的方案。"
+      "料理搭配組": "可依組合內容、數量與需求協助整理較適合的方案。",
+      "完整體驗組": "可依組合內容、數量與需求協助整理較適合的方案。"
     }
   },
   "products": [
@@ -249,8 +184,8 @@
         "龜鹿膏100g"
       ],
       "spec": "100g",
-      "price": 1500,
-      "originalPrice": 1800,
+      "price": 2000,
+      "originalPrice": null,
       "unit": "罐",
       "offers": [],
       "quantityOptions": [
@@ -259,8 +194,8 @@
         3,
         5
       ],
-      "priceText": "$1800 / 罐",
-      "priceLabel": "售價1,800元，優惠價1,500元"
+      "priceText": "$2,000 / 罐",
+      "priceLabel": "建議售價2,000元"
     },
     {
       "id": "guilu-drink-30",
@@ -303,23 +238,18 @@
         "玻璃瓶"
       ],
       "spec": "30cc玻璃瓶",
-      "price": 50,
+      "price": 100,
       "unit": "瓶",
-      "offers": [
-        {
-          "qty": 12,
-          "total": 500,
-          "label": "買10送2（12瓶）"
-        }
-      ],
+      "offers": [],
       "quantityOptions": [
         1,
         3,
         5,
         12
       ],
-      "priceText": "$50 / 瓶",
-      "priceLabel": "售價50元，買10送2"
+      "priceText": "$100 / 瓶",
+      "priceLabel": "建議售價100元",
+      "originalPrice": null
     },
     {
       "id": "guilu-drink-180",
@@ -366,13 +296,7 @@
       "spec": "180cc鋁袋",
       "price": 200,
       "unit": "包",
-      "offers": [
-        {
-          "qty": 12,
-          "total": 2000,
-          "label": "買10送2（12包）"
-        }
-      ],
+      "offers": [],
       "quantityOptions": [
         1,
         3,
@@ -380,7 +304,8 @@
         12
       ],
       "priceText": "$200 / 包",
-      "priceLabel": "售價200元，買10送2"
+      "priceLabel": "建議售價200元",
+      "originalPrice": null
     },
     {
       "id": "guilu-tangkuai",
@@ -417,7 +342,7 @@
         "2兩"
       ],
       "spec": "75g（8入）",
-      "price": 1600,
+      "price": 2000,
       "unit": "盒",
       "offers": [],
       "quantityOptions": [
@@ -426,8 +351,9 @@
         3,
         5
       ],
-      "priceText": "$1600 / 盒",
-      "priceLabel": "售價1,600元"
+      "priceText": "$2,000 / 盒",
+      "priceLabel": "建議售價2,000元",
+      "originalPrice": null
     },
     {
       "id": "guilu-jiao",
@@ -464,8 +390,8 @@
         "龜鹿膠一斤裝"
       ],
       "spec": "一斤裝",
-      "price": 9600,
-      "originalPrice": 12000,
+      "price": 0,
+      "originalPrice": null,
       "unit": "盒",
       "offers": [],
       "quantityOptions": [
@@ -474,8 +400,9 @@
         3,
         5
       ],
-      "priceText": "$12000 / 盒",
-      "priceLabel": "售價12,000元，優惠價9,600元"
+      "priceText": "價格請洽詢",
+      "priceLabel": "價格與通路條件請洽詢客服",
+      "quoteOnly": true
     },
     {
       "id": "luerong-fen",
@@ -518,8 +445,9 @@
         3,
         5
       ],
-      "priceText": "$2000 / 罐",
-      "priceLabel": "售價2,000元"
+      "priceText": "$2,000 / 罐",
+      "priceLabel": "建議售價2,000元",
+      "originalPrice": null
     }
   ],
   "recipes": [
@@ -928,54 +856,111 @@
   "siteUrl": "https://ts15825868.github.io/xianjiawei/",
   "combos": [
     {
-      "id": "newbie",
-      "name": "新客食補體驗組",
-      "items": [
-        "龜鹿膏 ×1",
-        "龜鹿飲30cc ×12"
+      "id": "daily-rhythm",
+      "name": "日常節奏組",
+      "aliases": [
+        "日常節奏組",
+        "節奏組"
       ],
-      "desc": "適合第一次了解仙加味，先比較固定取用與方便即飲兩種用途方向。",
-      "price": 2000,
+      "items": [
+        "龜鹿膏 1 罐",
+        "龜鹿飲180cc 5 包"
+      ],
+      "gift": "",
+      "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
       "unit": "組",
-      "priceNote": "龜鹿膏優惠價1罐＋龜鹿飲30cc買10送2試算"
+      "products": [
+        {
+          "productId": "guilu-gao",
+          "qty": 1
+        },
+        {
+          "productId": "guilu-drink-180",
+          "qty": 5
+        }
+      ],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "priceNote": "實際組合金額由正式產品建議售價計算；活動與通路條件請洽客服確認。"
     },
     {
-      "id": "soup",
-      "name": "沖泡燉湯食補組",
-      "items": [
-        "龜鹿湯塊 ×1",
-        "鹿茸粉 ×1"
+      "id": "table-pairing",
+      "name": "料理搭配組",
+      "aliases": [
+        "料理搭配組",
+        "餐桌搭配組",
+        "料理組"
       ],
-      "desc": "適合喜歡熱水沖泡、家常燉湯與自行調飲的人。",
-      "price": 3600,
+      "items": [
+        "龜鹿湯塊75g 1 盒",
+        "鹿茸粉75g 1 罐"
+      ],
+      "gift": "",
+      "desc": "適合想從料理與溫熱飲品一起安排的人。",
       "unit": "組",
-      "priceNote": "龜鹿湯塊1盒＋鹿茸粉1罐試算"
+      "products": [
+        {
+          "productId": "guilu-tangkuai",
+          "qty": 1
+        },
+        {
+          "productId": "luerong-fen",
+          "qty": 1
+        }
+      ],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "priceNote": "實際組合金額由正式產品建議售價計算；活動與通路條件請洽客服確認。"
     },
     {
-      "id": "full",
-      "name": "完整用途體驗組",
-      "items": [
-        "龜鹿膏 ×1",
-        "龜鹿飲30cc ×12",
-        "龜鹿湯塊 ×1",
-        "鹿茸粉 ×1"
+      "id": "full-experience",
+      "name": "完整體驗組",
+      "aliases": [
+        "完整體驗組",
+        "體驗組"
       ],
-      "desc": "一次比較固定、即飲、沖泡燉湯與自行搭配等不同食補型態。",
-      "price": 5600,
-      "unit": "組",
-      "priceNote": "龜鹿膏優惠價1罐＋龜鹿飲30cc買10送2＋龜鹿湯塊1盒＋鹿茸粉1罐試算"
-    },
-    {
-      "id": "pro",
-      "name": "家庭大規格食補組",
       "items": [
-        "龜鹿膠 ×1",
-        "龜鹿湯塊 ×1"
+        "龜鹿膏 1 罐",
+        "龜鹿飲180cc 5 包",
+        "龜鹿湯塊75g 1 盒",
+        "鹿茸粉75g 1 罐"
       ],
-      "desc": "適合熟悉龜鹿產品、家庭固定安排或通路合作洽詢。",
-      "price": 11200,
+      "gift": "",
+      "desc": "適合想一次了解不同型態，再依生活情境安排的人。",
       "unit": "組",
-      "priceNote": "龜鹿膠優惠價1盒＋龜鹿湯塊1盒試算"
+      "products": [
+        {
+          "productId": "guilu-gao",
+          "qty": 1
+        },
+        {
+          "productId": "guilu-drink-180",
+          "qty": 5
+        },
+        {
+          "productId": "guilu-tangkuai",
+          "qty": 1
+        },
+        {
+          "productId": "luerong-fen",
+          "qty": 1
+        }
+      ],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "priceNote": "實際組合金額由正式產品建議售價計算；活動與通路條件請洽客服確認。"
     }
   ],
   "version": "401.6",
@@ -1064,7 +1049,23 @@
       "textOnlyUntilApprovedImage": [
         "emptyCart"
       ],
-      "onePurposeOneImage": true
+      "onePurposeOneImage": true,
+      "mascot": "官網正式版仙加味小老闆",
+      "partners": [
+        "小鹿娃娃",
+        "小烏龜娃娃"
+      ],
+      "realProductImagesOnly": true,
+      "noProductRedraw": true,
+      "noPackageTextChange": true,
+      "traditionalChineseOnly": true,
+      "approvalRequiredBeforePublish": true
+    },
+    "contentApproval": {
+      "mode": "review-only",
+      "defaultStatus": "pending_review",
+      "scheduleRequiresApproval": true,
+      "publishRequiresApproval": true
     }
   },
   "richMenu": {
@@ -1230,5 +1231,7 @@
         "sha256": "f2a66a7fddc5c3727718c84fbb33e382e489d7bae5337936a4050b04c32dff04"
       }
     }
-  }
+  },
+  "salesMasterVersion": "2026-07-25-v4",
+  "salesMasterSource": "仙加味內部正式售價、組合、洽詢價與角色政策"
 }
