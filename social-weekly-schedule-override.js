@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "2026-07-25-weekly-once-v2";
+const VERSION = "2026-07-25-weekly-once-v1";
 const FIXED_SCHEDULES = Object.freeze([
   "2026-07-29T12:00:00.000Z",
   "2026-08-05T12:00:00.000Z",
