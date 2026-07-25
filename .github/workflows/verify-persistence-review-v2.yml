@@ -1,0 +1,148 @@
+name: 驗證 Supabase、待審閘門與 Render 穩定狀態
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-persistence-review-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify local persistence and review contracts
+        id: local
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm ci
+          node --check supabase-state-bridge.js
+          node --check persistence-auto-save.js
+          node supabase-state-bridge.test.js
+          node persistence-auto-save.test.js
+          node runtime-social-stabilizer.test.js
+          node social-review-only-mode.test.js
+          npm test
+
+      - name: Wait for Render and verify stable production state
+        id: production
+        continue-on-error: true
+        shell: bash
+        env:
+          BASE_URL: https://ts-line.onrender.com
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/xjw-live
+          success=0
+          stable=0
+          for attempt in $(seq 1 64); do
+            echo "production verification $attempt/64 stable=$stable"
+            db_ok=0; review_ok=0; automation_ok=0; service_ok=0
+            if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/internal/db-healthz?t=$(date +%s)" -o /tmp/xjw-live/db.json; then
+              node - <<'NODE' && db_ok=1 || true
+          const h=require('/tmp/xjw-live/db.json');
+          if(h.version!=='1.2.0')throw new Error(`bridge version ${h.version}`);
+          if(h.enabled!==true||h.storage!=='supabase'||h.connected!==true)throw new Error('Supabase not connected');
+          if(String(h.lastError||''))throw new Error(`Supabase error: ${h.lastError}`);
+          if(Array.isArray(h.activeSaveKeys)&&h.activeSaveKeys.length)throw new Error('save queue is still active');
+          if(h.retryBackoff&&Object.keys(h.retryBackoff).length)throw new Error('retry backoff is still active');
+          NODE
+            fi
+            if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/xjw-live/review.json; then
+              node - <<'NODE' && review_ok=1 || true
+          const h=require('/tmp/xjw-live/review.json');
+          if(h.ok!==true||h.version!=='2026-07-26-review-gate-v5')throw new Error('review gate version mismatch');
+          if(h.reviewRequiredBeforePublish!==true||h.automaticRetryEnabled!==false)throw new Error('review safety mismatch');
+          if(Number(h.canonicalCount)!==10||Number(h.pendingReviewCount)!==10||Number(h.reviewedCount)!==0)throw new Error(`review counts ${h.canonicalCount}/${h.pendingReviewCount}/${h.reviewedCount}`);
+          if(Number(h.unreviewedActiveCount)!==0)throw new Error('unreviewed content is active');
+          if((h.posts||[]).some(p=>p.reviewApprovedAt||p.scheduledAt||!['pending_review','rejected'].includes(p.status)))throw new Error('unreviewed post has approval or active schedule');
+          NODE
+            fi
+            if curl --connect-timeout 10 --max-time 90 --fail --silent --show-error "$BASE_URL/social/automation-healthz?t=$(date +%s)" -o /tmp/xjw-live/automation.json; then
+              node - <<'NODE' && automation_ok=1 || true
+          const h=require('/tmp/xjw-live/automation.json');
+          if(h.ok!==true||h.runtimeStabilizerVersion!=='2026-07-26-runtime-stabilizer-v2')throw new Error('runtime stabilizer mismatch');
+          if(Number(h.totalPosts)!==10||Number(h.fixedPosts)!==7||Number(h.weatherStandbyPosts)!==3)throw new Error('canonical release counts mismatch');
+          if(!Array.isArray(h.assets)||h.assets.length!==10||h.assets.some(a=>a.ok!==true))throw new Error('approved assets incomplete');
+          NODE
+            fi
+            if curl --connect-timeout 10 --max-time 60 --fail --silent --show-error "$BASE_URL/internal/healthz?t=$(date +%s)" -o /tmp/xjw-live/service.json; then
+              node -e "const h=require('/tmp/xjw-live/service.json');if(h.ok!==true||h.app!=='仙加味內部管理 App')process.exit(1)" && service_ok=1 || true
+            fi
+            if [ "$db_ok" -eq 1 ] && [ "$review_ok" -eq 1 ] && [ "$automation_ok" -eq 1 ] && [ "$service_ok" -eq 1 ]; then
+              stable=$((stable+1))
+              if [ "$stable" -ge 4 ]; then success=1; break; fi
+            else
+              stable=0
+            fi
+            sleep 15
+          done
+          test "$success" -eq 1
+
+      - name: Write and commit authoritative verification result
+        if: always()
+        shell: bash
+        env:
+          LOCAL_OUTCOME: ${{ steps.local.outcome }}
+          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs');
+          const load=(name)=>{try{return JSON.parse(fs.readFileSync(`/tmp/xjw-live/${name}.json`,'utf8'))}catch{return {}}};
+          const db=load('db'),review=load('review'),automation=load('automation'),service=load('service');
+          const ok=process.env.LOCAL_OUTCOME==='success'&&process.env.PRODUCTION_OUTCOME==='success';
+          const result={
+            ok,
+            verifiedAt:new Date().toISOString(),
+            commit:process.env.GITHUB_SHA,
+            localOutcome:process.env.LOCAL_OUTCOME,
+            productionOutcome:process.env.PRODUCTION_OUTCOME,
+            persistenceBridgeVersion:db.version||'',
+            supabaseConnected:db.connected===true,
+            supabaseLastError:db.lastError||'',
+            activeSaveKeys:db.activeSaveKeys||[],
+            retryBackoff:db.retryBackoff||{},
+            reviewGateVersion:review.version||'',
+            canonicalCount:Number(review.canonicalCount||0),
+            pendingReviewCount:Number(review.pendingReviewCount||0),
+            reviewedCount:Number(review.reviewedCount||0),
+            unreviewedActiveCount:Number(review.unreviewedActiveCount||0),
+            runtimeStabilizerVersion:automation.runtimeStabilizerVersion||'',
+            assetCount:Array.isArray(automation.assets)?automation.assets.length:0,
+            internalHealthy:service.ok===true,
+            automaticRetryEnabled:review.automaticRetryEnabled,
+            reviewRequiredBeforePublish:review.reviewRequiredBeforePublish===true
+          };
+          fs.writeFileSync('persistence-review-verification.json',JSON.stringify(result,null,2)+'\n');
+          NODE
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/verify-persistence-review-v2.yml
+          git add persistence-review-verification.json
+          git commit -m "chore: record Supabase and review-gate production verification"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Fail when verification is not complete
+        if: always()
+        shell: bash
+        env:
+          LOCAL_OUTCOME: ${{ steps.local.outcome }}
+          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
+        run: |
+          test "$LOCAL_OUTCOME" = "success"
+          test "$PRODUCTION_OUTCOME" = "success"
