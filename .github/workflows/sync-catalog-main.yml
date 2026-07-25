@@ -50,13 +50,54 @@ jobs:
           git add data.json package-lock.json
           if git diff --cached --quiet; then
             echo "官網目錄與 LINE 正式資料已同步"
-            exit 0
+          else
+            git commit -m "chore: synchronize website catalog and LINE production data"
+            git pull --rebase origin main
+            git push origin HEAD:main
           fi
-          git commit -m "chore: synchronize website catalog and LINE production data"
+
+      - name: Verify synchronized catalog and complete release rules
+        id: verify
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            npm run check:catalog
+            npm test
+          } 2>&1 | tee /tmp/catalog-sync-verify.log
+
+      - name: Record catalog verification failure
+        if: steps.verify.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "recorded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            cat /tmp/catalog-sync-verify.log
+          } > catalog-sync-error.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add catalog-sync-error.txt
+          git commit -m "chore: record catalog synchronization verification failure"
           git pull --rebase origin main
           git push origin HEAD:main
 
-      - name: Verify synchronized catalog and complete release rules
+      - name: Clear resolved catalog error
+        if: steps.verify.outcome == 'success'
+        shell: bash
         run: |
-          npm run check:catalog
-          npm test
+          set -euo pipefail
+          if [ ! -f catalog-sync-error.txt ]; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm catalog-sync-error.txt
+          git commit -m "chore: clear resolved catalog synchronization failure"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Fail when verification failed
+        if: steps.verify.outcome == 'failure'
+        run: exit 1
