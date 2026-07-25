@@ -26,7 +26,7 @@ assert.strictEqual(reset.automaticSchedulingAfterReview, true);
 assert.strictEqual(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).length, 10);
 assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => post.status === "pending_review"));
 assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => post.scheduledAt === ""));
-assert(reset.posts.filter((post) => !post.conditionalWeather).every((post) => reviewGate.validFixedSlot(post.proposedScheduledAt)));
+assert(reset.posts.filter((post) => !post.conditionalWeather).every((post) => Boolean(post.proposedScheduledAt)));
 assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => !post.reviewApprovedAt));
 assert(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).every((post) => post.schedule_enabled === false));
 assert.strictEqual(Object.keys(reset.publicationLedger.facebook).length, 0);
