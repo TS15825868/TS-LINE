@@ -20,7 +20,7 @@ const reset = reviewGate.initialReset({
   },
 });
 
-assert.strictEqual(reviewGate.VERSION, "2026-07-24-review-gate-v3");
+assert.strictEqual(reviewGate.VERSION, "2026-07-25-review-gate-v4");
 assert.strictEqual(reset.socialReviewGateMode, true);
 assert.strictEqual(reset.automaticSchedulingAfterReview, true);
 assert.strictEqual(reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id)).length, 10);
@@ -66,6 +66,10 @@ if (new Date(originalFixedTime).getTime() <= Date.now() + 60 * 1000) {
   assert(fixed.reviewScheduleNote.includes("原排程已過或不合規"));
 }
 
+const parts = reviewGate.taipeiParts(fixed.scheduledAt);
+assert.strictEqual(parts.weekday, "Wed");
+assert.strictEqual(parts.hour, "20");
+
 const publishingInput = {
   ...approvedFixed,
   posts: approvedFixed.posts.map((post, index) => index === fixedIndex ? { ...post, status: "publishing" } : post),
@@ -94,4 +98,4 @@ const edited = reviewGate.protectStore(editedInput, approvedFixed, true);
 assert.strictEqual(edited.posts[fixedIndex].status, "draft");
 assert.strictEqual(edited.posts[fixedIndex].reviewApprovedAt, "");
 
-console.log("PASS App review gate blocks unreviewed publishing, safely reschedules overdue approvals, and enables automation only after review");
+console.log("PASS review gate blocks unreviewed publishing and moves approved posts to the next Wednesday 20:00 slot");
