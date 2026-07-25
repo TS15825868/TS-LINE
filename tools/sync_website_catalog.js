@@ -42,6 +42,7 @@ const SALES_FIELDS = [
   "quantityOptions",
   "priceText",
   "priceLabel",
+  "quoteOnly",
 ];
 
 function stable(value) {
@@ -178,6 +179,42 @@ function mergeCatalog(localData, catalog) {
   return result;
 }
 
+function preview(value) {
+  const text = JSON.stringify(value);
+  if (text === undefined) return "undefined";
+  return text.length > 180 ? `${text.slice(0, 177)}...` : text;
+}
+
+function diffEntries(actual, expected, currentPath = "$", output = []) {
+  if (output.length >= 40) return output;
+  if (Object.is(actual, expected)) return output;
+
+  const actualArray = Array.isArray(actual);
+  const expectedArray = Array.isArray(expected);
+  const actualObject = actual && typeof actual === "object" && !actualArray;
+  const expectedObject = expected && typeof expected === "object" && !expectedArray;
+
+  if (actualArray && expectedArray) {
+    const length = Math.max(actual.length, expected.length);
+    for (let index = 0; index < length && output.length < 40; index += 1) {
+      diffEntries(actual[index], expected[index], `${currentPath}[${index}]`, output);
+    }
+    return output;
+  }
+
+  if (actualObject && expectedObject) {
+    const keys = [...new Set([...Object.keys(actual), ...Object.keys(expected)])].sort();
+    for (const key of keys) {
+      if (output.length >= 40) break;
+      diffEntries(actual[key], expected[key], `${currentPath}.${key}`, output);
+    }
+    return output;
+  }
+
+  output.push(`${currentPath}: actual=${preview(actual)} expected=${preview(expected)}`);
+  return output;
+}
+
 async function fetchCatalog() {
   const url = process.env.CATALOG_URL || DEFAULT_CATALOG_URL;
   const response = await fetch(url, { headers: { "user-agent": "xianjiawei-lineoa-catalog-sync" } });
@@ -198,7 +235,8 @@ async function main() {
   }
 
   if (stable(localData) !== stable(merged)) {
-    throw new Error("LINE OA data.json 與官網共用目錄不同步，請執行 npm run sync:catalog");
+    const differences = diffEntries(localData, merged);
+    throw new Error(`LINE OA data.json 與官網共用目錄不同步：\n${differences.join("\n") || "無法定位差異"}`);
   }
   console.log(`PASS shared catalog ${catalog.catalogVersion}: public product fields and LINE sales fields are consistent`);
 }
@@ -217,6 +255,7 @@ module.exports = {
   normalizeComboItems,
   normalizeWebsiteValue,
   normalizeRuntime,
+  diffEntries,
   EXPECTED_IDS,
   SHARED_FIELDS,
   SALES_FIELDS,
