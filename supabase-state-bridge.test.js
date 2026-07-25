@@ -16,6 +16,13 @@ for (const token of [
   "writeRemote",
   "readRaw",
   "setInterval",
+  "AbortController",
+  "REQUEST_TIMEOUT_MS",
+  "REQUEST_RETRIES",
+  "saveChains",
+  "retryAfterAt",
+  "raw === snapshots.get(key)",
+  "centralized retry backoff active",
 ]) {
   assert.ok(bridgeSource.includes(token), `Supabase bridge missing ${token}`);
 }
@@ -34,11 +41,15 @@ delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 delete require.cache[require.resolve("./supabase-state-bridge")];
 const bridge = require("./supabase-state-bridge");
 const health = bridge.health();
+assert.strictEqual(bridge.VERSION, "1.2.0");
 assert.strictEqual(health.storage, "local-json");
 assert.strictEqual(health.projectUrl, "https://iphexhvjhsmelbgwzhhr.supabase.co");
 assert.strictEqual(typeof bridge.restoreAll, "function");
 assert.strictEqual(typeof bridge.startWatching, "function");
+assert.strictEqual(typeof bridge.saveFile, "function");
+assert.ok(bridge.REQUEST_TIMEOUT_MS >= 1000);
+assert.ok(bridge.REQUEST_RETRIES >= 0);
 if (oldSecret !== undefined) process.env.SUPABASE_SECRET_KEY = oldSecret;
 if (oldRole !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = oldRole;
 
-console.log("PASS Supabase persistence bridge, schema, fallback and project routing");
+console.log("PASS Supabase centralized persistence queue, de-duplication, timeout, retries, backoff, schema and local fallback");
