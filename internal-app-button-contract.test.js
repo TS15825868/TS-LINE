@@ -2,6 +2,7 @@
 
 const assert = require("assert");
 const fs = require("fs");
+const { fixGeneratedHtml } = require("./internal-app-client-fix");
 
 const shell = fs.readFileSync(require.resolve("./internal-app-shell"), "utf8");
 const runtime = fs.readFileSync(require.resolve("./internal-app-runtime"), "utf8");
@@ -47,12 +48,21 @@ const filter = fs.readFileSync(require.resolve("./internal-app-social-filter"), 
 ].forEach((token) => assert.ok(retry.includes(token), `social retry missing ${token}`));
 
 [
-  "全部", "待審核", "已排程", "發布失敗", "已發布", "已取消",
-  "data-social-filter", "groupFor", "搜尋標題或文案", "固定每週 2 篇",
+  "全部", "待審核", "固定排程", "氣候例外", "發布失敗", "已發布", "已取消",
+  "data-social-filter", "groupFor", "搜尋標題或文案",
 ].forEach((token) => assert.ok(filter.includes(token), `social filter missing ${token}`));
 
 assert.ok(!extras.includes("MutationObserver"), "safe extras must not use MutationObserver");
 assert.ok(!orderEntry.includes("MutationObserver"), "order entry must not use MutationObserver");
 assert.ok(!retry.includes("MutationObserver"), "social retry must not use MutationObserver");
 assert.ok(!filter.includes("MutationObserver"), "social filter must not use MutationObserver");
-console.log("PASS all internal app button contracts including itemized orders, stock linking, pending delivery, refresh and current social review filters");
+
+const generated = fixGeneratedHtml('<html><head><title>仙加味內部管理 App</title></head><body><main class="app-shell"></main></body></html>');
+assert.ok(generated.includes('/internal/social-center'));
+assert.ok(generated.includes('社群網站'));
+assert.ok(!generated.includes('/internal/app-social-retry.js'));
+assert.ok(!generated.includes('/internal/app-social-filter.js'));
+assert.ok(!generated.includes('/internal/app-facebook-health.js'));
+assert.ok(!generated.includes('/internal/app-review-only.js'));
+
+console.log("PASS inventory app button contracts and independent social website split; legacy social scripts are not loaded into inventory App");
