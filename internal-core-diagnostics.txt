@@ -1,0 +1,68 @@
+===== internal-app.test.js =====
+PASS internal management app v2 storage, security, social and metrics
+exit=0
+
+===== internal-app-pro.test.js =====
+PASS internal management app v2 helpers
+exit=0
+
+===== internal-app-mobile.test.js =====
+PASS complete mobile navigation, safe-area spacing and non-blocking connection status
+exit=0
+
+===== internal-app-client-fix.test.js =====
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(retry.includes('["approved", "failed", "partial"]'))
+
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/internal-app-client-fix.test.js:66:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+exit=1
+
+===== internal-app-button-contract.test.js =====
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: shell missing button[data-refresh-app='true']
+    at /home/runner/work/TS-LINE/TS-LINE/internal-app-button-contract.test.js:19:29
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/internal-app-button-contract.test.js:19:3)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+exit=1
+
+failed=1
