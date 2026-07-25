@@ -44,7 +44,7 @@ const filter = fs.readFileSync(require.resolve("./internal-app-social-filter"), 
 
 [
   "data-social-action", "publish", "partial", "重試失敗平台", "立即發布",
-  "needsRetryFromCard", "Access Token 已過期", "data-xjw-social-duplicate",
+  "postIdFromCard", "data-xjw-social-duplicate", "確定立即發布", "已成功的平台不會重複發布",
 ].forEach((token) => assert.ok(retry.includes(token), `social retry missing ${token}`));
 
 [
