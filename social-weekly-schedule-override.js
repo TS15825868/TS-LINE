@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "2026-07-25-weekly-once-v1";
+const VERSION = "2026-07-25-weekly-once-v2";
 const FIXED_SCHEDULES = Object.freeze([
   "2026-07-29T12:00:00.000Z",
   "2026-08-05T12:00:00.000Z",
@@ -98,5 +98,7 @@ function install() {
 }
 
 install();
+// 先套用修正版貼文 ID 與時間，再讓審核閘門建立 canonical 清單，避免待審貼文遺漏。
+const EARLY_CLEAR_POLICY = require("./social-clear-republish-policy");
 
-module.exports = { VERSION, FIXED_SCHEDULES, OLD_SCHEDULES, transformFinalPosts, transformClearRepublish, transformApprovedBatch, transformRepair, transformSource, install };
+module.exports = { VERSION, FIXED_SCHEDULES, OLD_SCHEDULES, EARLY_CLEAR_POLICY, transformFinalPosts, transformClearRepublish, transformApprovedBatch, transformRepair, transformSource, install };
