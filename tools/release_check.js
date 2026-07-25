@@ -10,8 +10,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const exists = (file) => fs.existsSync(path.join(root, file));
 const decodeBundle = (file) => zlib.gunzipSync(Buffer.from(read(file).replace(/\s+/g, ""), "base64")).toString("utf8");
 
-// CI 直接執行此檔案時，也要先安裝每週一篇相容層。
 const weeklyOverride = require("../social-weekly-schedule-override");
+const quoteOnlyGuard = require("../product-quote-only-guard");
 const data = JSON.parse(read("data.json"));
 const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
@@ -32,6 +32,7 @@ const required = [
   "social-weekly-schedule-override.js",
   "social-review-only-mode.js",
   "social-review-only-mode.test.js",
+  "social-current-policy.test.js",
   "social-publish-guard.js",
   "social-publication-ledger-backfill.js",
   "social-final-posts.js",
@@ -45,6 +46,8 @@ const required = [
   "social-manual-schedule-override.js",
   "social-manual-immediate-publish.js",
   "product-sales-master.js",
+  "product-quote-only-guard.js",
+  "product-quote-only-guard.test.js",
   "line-sales-master.json",
   "MASCOT_CHARACTER_SPEC.md",
   "supabase-state-bridge.js",
@@ -53,17 +56,21 @@ const required = [
 for (const file of required) assert(exists(file), `缺少正式檔案：${file}`);
 
 assert.strictEqual(data.lineId, "@762jybnm");
-assert.strictEqual(data.catalogVersion, "408.7");
+assert.strictEqual(data.catalogVersion, "408.9");
 assert.strictEqual(data.products.length, 6);
 assert.strictEqual(pkg.version, "6.0.6");
 assert.strictEqual(lock.version, pkg.version);
+assert.strictEqual(lock.packages?.[" "]?.version, undefined);
 assert.strictEqual(lock.packages?.[""]?.version, pkg.version);
-assert.strictEqual(salesMaster.version, "2026-07-25-v2");
+assert.strictEqual(salesMaster.version, "2026-07-25-v3");
 assert.strictEqual(salesMaster.products?.["guilu-gao"]?.price, 2000);
 assert.strictEqual(salesMaster.products?.["guilu-drink-30"]?.price, 100);
 assert.strictEqual(salesMaster.products?.["guilu-drink-180"]?.price, 200);
 assert.strictEqual(salesMaster.products?.["guilu-tangkuai"]?.price, 2000);
 assert.strictEqual(salesMaster.products?.["luerong-fen"]?.price, 2000);
+assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.price, 0);
+assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.quoteOnly, true);
+assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.priceText, "價格請洽詢");
 assert.deepStrictEqual(salesMaster.imagePolicy?.partners, ["小鹿娃娃", "小烏龜娃娃"]);
 assert.strictEqual(salesMaster.imagePolicy?.realProductImagesOnly, true);
 assert.strictEqual(salesMaster.imagePolicy?.noProductRedraw, true);
@@ -71,14 +78,22 @@ assert.strictEqual(salesMaster.imagePolicy?.approvalRequiredBeforePublish, true)
 
 const start = String(pkg.scripts?.start || "");
 assert(start.includes("node -r ./product-sales-master.js"), "正式售價與角色主檔必須在啟動時載入");
+assert(start.includes("-r ./product-quote-only-guard.js"), "龜鹿膠洽詢價防護必須在正式啟動時載入");
 assert(start.includes("-r ./social-weekly-schedule-override.js"), "每週一篇相容層必須在啟動時載入");
 assert(start.includes("-r ./social-review-only-mode.js"), "審核閘門必須在正式啟動時載入");
-assert(start.indexOf("product-sales-master.js") < start.indexOf("social-weekly-schedule-override.js"), "售價主檔必須先於排程相容層載入");
+assert(start.indexOf("product-sales-master.js") < start.indexOf("product-quote-only-guard.js"), "售價主檔必須先於洽詢價防護載入");
+assert(start.indexOf("product-quote-only-guard.js") < start.indexOf("social-weekly-schedule-override.js"), "洽詢價防護必須先於排程相容層載入");
 assert(start.indexOf("social-weekly-schedule-override.js") < start.indexOf("social-review-only-mode.js"), "每週一篇相容層必須先於審核閘門載入");
 assert(start.includes("-r ./social-static-asset-bridge.js"), "缺少繁體中文光柵圖片橋接器");
 assert(start.indexOf("social-static-asset-bridge.js") < start.indexOf("social-final-approved-batch.js"), "圖片橋接器必須先於舊圖片產生器載入");
 assert(!start.includes("-r ./social-incomplete-auto-retry.js"), "不可載入失敗平台自動補發模組");
 assert(!start.includes("line-approved-mascot-runtime.js"), "損壞的 LINE 小老闆圖片流程不可載入");
+
+assert.strictEqual(quoteOnlyGuard.VERSION, "2026-07-25-quote-only-v2");
+const transformedServer = quoteOnlyGuard.transformServer(read("server.js"));
+assert(transformedServer.includes('product.quoteOnly ? (product.priceLabel || "價格請洽詢客服")'));
+assert(transformedServer.includes('if (product.quoteOnly) return false'));
+assert(transformedServer.includes('label: "LINE洽詢"'));
 
 assert.strictEqual(weeklyOverride.VERSION, "2026-07-25-weekly-once-v1");
 assert.strictEqual(reviewGate.VERSION, "2026-07-25-review-gate-v4");
@@ -182,4 +197,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：LINE OA v6.0.6 售價主檔、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、社群人工審核、每週1篇週三20:00、天氣內容只在其他平日條件加發、週末不發布");
+console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.0.6售價與龜鹿膠洽詢價防護、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、社群人工審核、每週1篇週三20:00、天氣內容只在其他平日條件加發、週末不發布");
