@@ -9,10 +9,16 @@ const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const exists = (file) => fs.existsSync(path.join(root, file));
 const decodeBundle = (file) => zlib.gunzipSync(Buffer.from(read(file).replace(/\s+/g, ""), "base64")).toString("utf8");
+
+// CI 直接執行此檔案時，也要先安裝每週一篇相容層。
+const weeklyOverride = require("../social-weekly-schedule-override");
 const data = JSON.parse(read("data.json"));
 const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 const salesMaster = JSON.parse(read("line-sales-master.json"));
+const schedulePolicy = require("../social-schedule-policy");
+const finalPosts = require("../social-final-posts");
+const reviewGate = require("../social-review-only-mode");
 
 const required = [
   "internal-entry.js",
@@ -23,6 +29,7 @@ const required = [
   "internal-social-site/site.js.gz.b64",
   "social-static-asset-bridge.js",
   "social-server.js",
+  "social-weekly-schedule-override.js",
   "social-review-only-mode.js",
   "social-review-only-mode.test.js",
   "social-publish-guard.js",
@@ -64,19 +71,25 @@ assert.strictEqual(salesMaster.imagePolicy?.approvalRequiredBeforePublish, true)
 
 const start = String(pkg.scripts?.start || "");
 assert(start.includes("node -r ./product-sales-master.js"), "正式售價與角色主檔必須在啟動時載入");
-assert(start.includes("node -r ./social-review-only-mode.js"), "審核閘門必須在正式啟動時載入");
-assert(start.indexOf("product-sales-master.js") < start.indexOf("social-review-only-mode.js"), "售價與角色主檔必須先於社群服務載入");
+assert(start.includes("-r ./social-weekly-schedule-override.js"), "每週一篇相容層必須在啟動時載入");
+assert(start.includes("-r ./social-review-only-mode.js"), "審核閘門必須在正式啟動時載入");
+assert(start.indexOf("product-sales-master.js") < start.indexOf("social-weekly-schedule-override.js"), "售價主檔必須先於排程相容層載入");
+assert(start.indexOf("social-weekly-schedule-override.js") < start.indexOf("social-review-only-mode.js"), "每週一篇相容層必須先於審核閘門載入");
 assert(start.includes("-r ./social-static-asset-bridge.js"), "缺少繁體中文光柵圖片橋接器");
 assert(start.indexOf("social-static-asset-bridge.js") < start.indexOf("social-final-approved-batch.js"), "圖片橋接器必須先於舊圖片產生器載入");
 assert(!start.includes("-r ./social-incomplete-auto-retry.js"), "不可載入失敗平台自動補發模組");
 assert(!start.includes("line-approved-mascot-runtime.js"), "損壞的 LINE 小老闆圖片流程不可載入");
 
+assert.strictEqual(weeklyOverride.VERSION, "2026-07-25-weekly-once-v1");
+assert.strictEqual(reviewGate.VERSION, "2026-07-25-review-gate-v4");
 const gate = read("social-review-only-mode.js");
-assert(gate.includes('VERSION = "2026-07-24-review-gate-v3"'));
+assert(gate.includes('VERSION = "2026-07-25-review-gate-v4"'));
 assert(gate.includes("automaticSchedulingRequiresReview: true"));
 assert(gate.includes("automaticRetryEnabled: false"));
 assert(gate.includes("這篇尚未通過人工審核，不能發布"));
 assert(gate.includes("nextAvailableFixedSlot"));
+assert(gate.includes('parts.weekday === "Wed"'));
+assert(gate.includes('parts.hour === "20"'));
 
 const clientFix = read("internal-app-client-fix.js");
 assert(clientFix.includes('RUNTIME_VERSION = "20260724-inventory-split-1"'));
@@ -131,23 +144,42 @@ assert(raster.includes("preventsGibberish: true"));
 
 const immediate = read("social-manual-immediate-publish.js");
 assert(immediate.includes("post.manualImmediatePublish = true"));
+const posts = finalPosts.POSTS;
+assert.strictEqual(posts.length, 10, `正式貼文應為10篇，目前找到${posts.length}篇`);
+assert.strictEqual(new Set(posts.map((post) => post.id)).size, 10, "正式貼文 ID 不可重複");
+assert(posts.every((post) => post.qBossMascotLocked && post.deerPartnerPresent && post.turtlePartnerPresent), "小老闆與夥伴規格不完整");
+const fixed = posts.filter((post) => !post.conditionalWeather);
+const weather = posts.filter((post) => post.conditionalWeather);
+assert.strictEqual(fixed.length, 7);
+assert.strictEqual(weather.length, 3);
+assert(weather.every((post) => !post.scheduledAt && post.automationStandby === true), "天氣貼文不可預排固定日期");
+const weekCounts = new Map();
+for (const post of fixed) {
+  assert(schedulePolicy.validScheduledAt(post.scheduledAt, post), `${post.title} 不是週三晚上8:00`);
+  const week = schedulePolicy.weekKey(post.scheduledAt);
+  weekCounts.set(week, (weekCounts.get(week) || 0) + 1);
+}
+assert([...weekCounts.values()].every((count) => count === 1), "固定貼文每週只能有1篇");
+assert.strictEqual(fixed[0].scheduledAt, "2026-07-29T12:00:00.000Z");
+
 const postSource = read("social-final-posts.js");
-const postIds = [...postSource.matchAll(/id:\s*"(first-batch-[^"]+)"/g)].map((match) => match[1]);
-assert.strictEqual(postIds.length, 10, `正式貼文應為10篇，目前找到${postIds.length}篇`);
-assert.strictEqual(new Set(postIds).size, 10, "正式貼文 ID 不可重複");
 assert(postSource.includes("validatePosts();"));
 assert(postSource.includes('assertUnique(posts, "instagramCaption", "Instagram文案"'));
 assert(postSource.includes('assertUnique(posts, "facebookCaption", "Facebook文案"'));
 assert(postSource.includes('assertUnique(posts, "imageName", "圖片"'));
 
 const schedule = read("social-schedule-policy.js");
-assert(schedule.includes('FIXED_DAYS = Object.freeze(["Wed", "Fri"])'));
-assert(schedule.includes('FIXED_HOUR = "10"'));
-assert(schedule.includes("氣候條件貼文必須依實際氣候安排於非週三、週五"));
+assert(schedule.includes('FIXED_DAYS = Object.freeze(["Wed"])'));
+assert(schedule.includes('FIXED_HOUR = "20"'));
+assert(schedule.includes("週六、週日不發布"));
+assert.strictEqual(schedulePolicy.validScheduledAt("2026-07-29T12:00:00.000Z", { category: "產品介紹" }), true);
+assert.strictEqual(schedulePolicy.validScheduledAt("2026-07-31T12:00:00.000Z", { category: "產品介紹" }), false);
+assert.strictEqual(schedulePolicy.validScheduledAt("2026-08-01T12:00:00.000Z", { conditionalWeather: true, weatherTrigger: "hot" }), false);
+
 const guard = read("social-publish-guard.js");
 assert(guard.includes('VERSION = "2.0.0"'));
 assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：LINE OA v6.0.6 售價主檔、官網小老闆與小鹿小烏龜娃娃規格、進銷存獨立 App、社群獨立網站、繁體中文圖片、10篇既有圖文、未審核不排程不發布、人工核准後才啟用發布流程");
+console.log("仙加味正式檢查通過：LINE OA v6.0.6 售價主檔、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、社群人工審核、每週1篇週三20:00、天氣內容只在其他平日條件加發、週末不發布");
