@@ -70,14 +70,14 @@ new vm.Script(retry);
 const filter = socialFilterScript();
 [
   "待審核",
-  "已排程",
+  "固定排程",
+  "氣候例外",
   "發布失敗",
   "已發布",
   "已取消",
   "全部",
   "data-social-filter",
   "搜尋標題或文案",
-  "固定每週 2 篇",
 ].forEach((token) => assert.ok(filter.includes(token), `social filter missing ${token}`));
 assert.ok(!filter.includes("MutationObserver"));
 new vm.Script(filter);
@@ -87,7 +87,7 @@ assert.ok(postboot.includes("window.loadAll"));
 assert.ok(postboot.includes("xjwAppReady"));
 new vm.Script(postboot);
 
-const broken = '<html><head><title>仙加味內部管理 App</title></head><body><script>broken(</script><script src="/old.js"></script></body></html>';
+const broken = '<html><head><title>仙加味內部管理 App</title></head><body><main class="app-shell"></main><script>broken(</script><script src="/old.js"></script></body></html>';
 const fixed = fixGeneratedHtml(broken);
 assert.ok(fixed.includes("/internal/app-shell.js"));
 assert.ok(fixed.includes("/internal/app-runtime.js"));
@@ -95,12 +95,17 @@ assert.ok(fixed.includes("/internal/app-upload-controller.js"));
 assert.ok(fixed.includes("/internal/app-form-controller.js"));
 assert.ok(fixed.includes("/internal/app-safe-extras.js"));
 assert.ok(fixed.includes("/internal/order-entry-controller.js"));
-assert.ok(fixed.includes("/internal/app-social-retry.js"));
-assert.ok(fixed.includes("/internal/app-social-filter.js"));
+assert.ok(fixed.includes("/internal/app-mobile.js"));
 assert.ok(fixed.includes("/internal/app-postboot.js"));
+assert.ok(fixed.includes("/internal/social-center"));
+assert.ok(fixed.includes("社群網站"));
+assert.ok(!fixed.includes("/internal/app-social-retry.js"));
+assert.ok(!fixed.includes("/internal/app-social-filter.js"));
+assert.ok(!fixed.includes("/internal/app-facebook-health.js"));
+assert.ok(!fixed.includes("/internal/app-review-only.js"));
 assert.ok(!fixed.includes("broken("));
 assert.ok(!fixed.includes("/old.js"));
 assert.ok(!fixed.includes("/internal/app-order-calculator.js"));
 assert.strictEqual(fixGeneratedHtml("plain response"), "plain response");
 
-console.log("PASS stable internal app shell, core, upload, forms, itemized order entry, social retry, current review filters and postboot");
+console.log("PASS stable inventory app shell and controllers; social management is split to the protected independent social website");
