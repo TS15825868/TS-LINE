@@ -1,0 +1,61 @@
+name: 官網目錄與 LINE 正式資料同步
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "line-sales-master.json"
+      - "tools/sync_website_catalog.js"
+      - "tools/sync_sales_master.js"
+      - ".github/workflows/sync-catalog-main.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-line-catalog-main
+  cancel-in-progress: true
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Synchronize website catalog and sales master
+        run: npm run sync:catalog
+
+      - name: Verify synchronized catalog and complete release rules
+        run: |
+          npm run check:catalog
+          npm test
+
+      - name: Save synchronized production data to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "官網目錄與 LINE 正式資料已同步"
+            exit 0
+          fi
+          git commit -m "chore: synchronize website catalog and LINE production data"
+          git pull --rebase origin main
+          git push origin HEAD:main
