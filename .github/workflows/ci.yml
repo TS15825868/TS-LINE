@@ -17,9 +17,9 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -28,43 +28,38 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install
+      - name: Install exact dependencies
         run: npm ci
 
-      - name: Syntax checks
+      - name: Run complete LINE OA, social, review and schedule tests
+        run: npm test
+
+      - name: Verify public catalog remains synchronized
+        run: npm run check:catalog
+
+      - name: Verify main-only production files
+        shell: bash
         run: |
-          node --check server.js
-          node --check social-server.js
-          node --check internal-app.js
-          node --check internal-entry.js
-          node --check supabase-state-bridge.js
-          node --check persistence-auto-save.js
-          node --check line-image-safety.js
-          node --check tools/sync_website_catalog.js
-
-      - name: Production release gate
-        run: node tools/release_check.js
-
-      - name: Core LINE OA tests
-        run: node test.js
-
-      - name: Catalog tests
-        run: node catalog.test.js
-
-      - name: Security tests
-        run: node security.test.js
-
-      - name: Functional tests
-        run: node function.test.js
-
-      - name: Image policy tests
-        run: node image-policy.test.js
-
-      - name: Internal app tests
-        run: node internal-app.test.js
-
-      - name: Supabase bridge tests
-        run: node supabase-state-bridge.test.js
-
-      - name: Immediate persistence tests
-        run: node persistence-auto-save.test.js
+          set -euo pipefail
+          test -f line-sales-master.json
+          test -f product-sales-master.js
+          test -f social-weekly-schedule-override.js
+          test -f social-review-only-mode.js
+          test -f social-final-posts.js
+          test -f social-final-approved-batch.js
+          test -f social-schedule-policy.js
+          test -f social-schedule-repair-20260722.js
+          test -f social-publish-guard.js
+          test -f MASCOT_CHARACTER_SPEC.md
+          node - <<'NODE'
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
+          const sales = require('./line-sales-master.json');
+          if (pkg.version !== '6.0.6') throw new Error('package version must be 6.0.6');
+          if (lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version) throw new Error('package lock version mismatch');
+          if (sales.products?.['guilu-gao']?.price !== 2000) throw new Error('龜鹿膏售價主檔錯誤');
+          if (sales.products?.['guilu-drink-30']?.price !== 100) throw new Error('龜鹿飲30cc售價主檔錯誤');
+          if (!sales.imagePolicy?.partners?.includes('小鹿娃娃') || !sales.imagePolicy?.partners?.includes('小烏龜娃娃')) throw new Error('小老闆固定夥伴缺漏');
+          if (sales.imagePolicy?.approvalRequiredBeforePublish !== true) throw new Error('人工審核規則未鎖定');
+          console.log('TS-LINE v6.0.6 main-only validation passed');
+          NODE
