@@ -6,10 +6,14 @@ on:
     branches: [main]
     paths:
       - "package.json"
-      - "social-final-release-20260724.js"
-      - "social-final-release-remote-assets.js"
-      - "disable-official-social-rebuild.js"
-      - "internal-app-social-filter.js"
+      - "package-lock.json"
+      - "production-deploy-request.json"
+      - "social-weekly-schedule-override.js"
+      - "social-review-only-mode.js"
+      - "social-final-posts.js"
+      - "social-final-approved-batch.js"
+      - "social-schedule-policy.js"
+      - "social-schedule-repair-20260722.js"
       - ".github/workflows/production-schedule-status.yml"
 
 permissions:
@@ -22,7 +26,7 @@ concurrency:
 jobs:
   verify-schedule:
     runs-on: ubuntu-latest
-    timeout-minutes: 22
+    timeout-minutes: 26
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,41 +35,65 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Verify schedule definitions
-        run: |
-          npm ci
-          node -r ./social-final-approved-batch.js -r ./social-final-release-20260724.js -r ./social-final-release-remote-assets.js -r ./disable-official-social-rebuild.js - <<'NODE'
-          const release = require('./social-final-release-20260724');
-          const assets = require('./social-final-release-remote-assets');
-          const fixed = release.POSTS.filter((post) => !post.conditionalWeather);
-          const weather = release.POSTS.filter((post) => post.conditionalWeather);
-          if (!release.validateDefinitions() || fixed.length !== 7 || weather.length !== 3) process.exit(1);
-          if (fixed[0].scheduledAt !== '2026-07-24T02:00:00.000Z') process.exit(1);
-          if (new Set(release.POSTS.map((post) => post.imageName)).size !== 10) process.exit(1);
-          if (new Set(release.POSTS.map((post) => post.title)).size !== 10) process.exit(1);
-          if (Object.keys(assets.ALIASES).length !== 10) process.exit(1);
-          console.log({fixed:fixed.map((p)=>[p.title,p.scheduledAt]), weather:weather.map((p)=>p.weatherTrigger)});
-          NODE
-      - name: Verify live schedule release
-        shell: bash
+
+      - name: Verify local weekly-once definitions
         run: |
           set -euo pipefail
+          npm ci
+          npm test
+          node -r ./social-weekly-schedule-override.js - <<'NODE'
+          const batch = require('./social-final-approved-batch');
+          const repair = require('./social-schedule-repair-20260722');
+          const gate = require('./social-review-only-mode');
+          const fixed = batch.POSTS.filter((post) => !post.conditionalWeather);
+          const weather = batch.POSTS.filter((post) => post.conditionalWeather);
+          if (fixed.length !== 7 || weather.length !== 3) throw new Error('正式圖文數量錯誤');
+          if (gate.VERSION !== '2026-07-25-review-gate-v4') throw new Error('人工審核閘門版本錯誤');
+          if (repair.VERSION !== '2026-07-25-v6') throw new Error('排程修復版本錯誤');
+          for (const post of fixed) {
+            const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(post.scheduledAt)).filter((p)=>p.type!=='literal').map((p)=>[p.type,p.value]));
+            if (parts.weekday !== 'Wed' || parts.hour !== '20' || parts.minute !== '00') throw new Error(`${post.title} 不是週三20:00`);
+          }
+          if (new Set(fixed.map((post) => new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(post.scheduledAt)).slice(0,7))).size < 2) console.log('排程集中於相鄰月份，仍符合每週一篇');
+          if (weather.some((post) => post.scheduledAt)) throw new Error('天氣貼文不可預先排固定日期');
+          console.log({fixed: fixed.map((p)=>[p.title,p.scheduledAt]), weather: weather.map((p)=>p.weatherTrigger)});
+          NODE
+
+      - name: Wait for Render and verify live review and schedule state
+        shell: bash
+        env:
+          BASE_URL: https://ts-line.onrender.com
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/xjw-schedule
           success=0
-          for attempt in $(seq 1 72); do
-            if curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
-              "https://ts-line.onrender.com/social/final-release-healthz?t=$(date +%s)" -o /tmp/release.json; then
+          for attempt in $(seq 1 88); do
+            echo "Live weekly-once schedule check $attempt/88"
+            review_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error -o /tmp/xjw-schedule/review.json -w "%{http_code}" "$BASE_URL/social/review-gate-status?t=$(date +%s)" || true)
+            schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error -o /tmp/xjw-schedule/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
+            if [ "$review_code" = "200" ] && { [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; }; then
               if node - <<'NODE'
-          const r = require('/tmp/release.json');
-          if (r.ok !== true || r.version !== '2026-07-24-final-v1') process.exit(1);
-          if (r.assetVersion !== '2026-07-24-remote-assets-v1') process.exit(1);
-          if (r.firstScheduledAt !== '2026-07-24T02:00:00.000Z') process.exit(1);
-          if (r.fixedRule !== '每週三、週五上午10:00') process.exit(1);
-          if (r.immediatePublishUnlocked !== true) process.exit(1);
-          if (Number(r.totalPosts) !== 10 || Number(r.fixedPosts) !== 7 || Number(r.weatherStandbyPosts) !== 3) process.exit(1);
-          if (!Array.isArray(r.assets) || r.assets.length !== 10 || r.assets.some((asset) => asset.ok !== true)) process.exit(1);
+          const review = require('/tmp/xjw-schedule/review.json');
+          const schedule = require('/tmp/xjw-schedule/schedule.json');
+          if (review.ok !== true || review.version !== '2026-07-25-review-gate-v4') throw new Error('live review gate mismatch');
+          if (review.reviewRequiredBeforePublish !== true || review.automaticRetryEnabled !== false) throw new Error('live review safety mismatch');
+          if (Number(review.canonicalCount) !== 10 || Number(review.unreviewedActiveCount) !== 0) throw new Error('live review queue mismatch');
+          if (review.overdueApprovalPolicy !== 'move-to-next-free-wed-20:00') throw new Error('live overdue policy mismatch');
+          if (schedule.version !== '2026-07-25-v6') throw new Error('live schedule version mismatch');
+          if (Number(schedule.canonicalCount) !== 10) throw new Error('live schedule count mismatch');
+          if (schedule.rule?.fixed !== '每週1篇，週三 20:00') throw new Error('live fixed rule mismatch');
+          if (!String(schedule.rule?.weatherException || '').includes('週末不發布')) throw new Error('live weekend stop rule missing');
+          if (Array.isArray(schedule.issues) && schedule.issues.length) throw new Error(schedule.issues.join('｜'));
           NODE
               then success=1; break; fi
             fi
             sleep 15
           done
-          test "$success" -eq 1
+          if [ "$success" -ne 1 ]; then
+            echo 'Render 尚未套用每週一篇正式排程' >&2
+            echo '--- review ---' >&2
+            cat /tmp/xjw-schedule/review.json 2>/dev/null || true
+            echo '--- schedule ---' >&2
+            cat /tmp/xjw-schedule/schedule.json 2>/dev/null || true
+            exit 1
+          fi
