@@ -35,10 +35,12 @@
 1. 先完成文案。
 2. 依文案選擇或生成對應圖片。
 3. 圖文一起進入待審核。
-4. 人工核准後才可啟用排程。
+4. 人工核准後才可啟用排程或立即發布。
 5. 文案、圖片、平台或時間修改後，必須撤銷核准並重新審核。
-6. 固定內容以每週最多兩篇、週三與週五晚上 8:00（Asia/Taipei）為主要規則。
-7. 天氣內容必須符合當日條件後再送審，不預先自動發布。
+6. 固定內容每週一篇，建議安排週三晚上 8:00（Asia/Taipei）。
+7. 週六、週日不發布固定或氣候貼文。
+8. 天氣內容不預先啟用；符合萬華實際氣候時，可於其他平日晚上 8:00 送審並加發，每週最多一篇。
+9. 失敗平台不自動補發，避免重複發布；確認後由人工處理。
 
 ## 必要環境變數
 
@@ -71,13 +73,18 @@ SOCIAL_DATA_PATH=/tmp/xianjiawei-social-posts.json
 
 ```bash
 npm test
+npm run check:catalog
 ```
 
-GitHub Actions 會在推送到 `main` 時自動驗收。
+GitHub Actions 會在推送到 `main` 時自動驗收，不建立其他分支。
 
 健康檢查：
 
 - LINE OA：`/healthz`
 - 社群發布：`/social/healthz`
+- 人工審核閘門：`/social/review-gate-status`
+- 每週一篇排程：`/social/schedule-status`
+- 社群管理網站：`/internal/social-center-healthz`
+- 繁體中文圖片：`/social/raster-healthz`
 - 內部管理 App：`/internal/healthz`
 - Supabase 持久化：`/internal/db-healthz`
