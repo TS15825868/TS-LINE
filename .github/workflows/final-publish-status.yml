@@ -1,4 +1,4 @@
-name: 仙加味社群補發狀態驗收
+name: 仙加味社群待審與排程安全驗收
 
 on:
   workflow_dispatch:
@@ -6,7 +6,11 @@ on:
     branches: [main]
     paths:
       - "package.json"
-      - "social-incomplete-auto-retry.js"
+      - "social-weekly-schedule-override.js"
+      - "social-review-only-mode.js"
+      - "social-schedule-policy.js"
+      - "social-schedule-repair-20260722.js"
+      - "social-publish-guard.js"
       - ".github/workflows/final-publish-status.yml"
 
 permissions:
@@ -19,46 +23,65 @@ concurrency:
 jobs:
   verify-publish-status:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Wait for production auto-retry
+      - name: Wait for production review gate and weekly schedule
         id: check
         continue-on-error: true
         shell: bash
         run: |
           set -uo pipefail
           mkdir -p /tmp/xjw-publish
-          endpoint_ready=0
-          complete=0
-          for attempt in $(seq 1 56); do
-            echo "Publish-status check $attempt/56"
-            code=$(curl --connect-timeout 10 --max-time 35 --silent --show-error \
-              -o /tmp/xjw-publish/status.json -w "%{http_code}" \
-              "https://ts-line.onrender.com/social/publish-status?t=$(date +%s)" || true)
-            if [ "$code" = "200" ]; then
-              endpoint_ready=1
+          review_ready=0
+          schedule_ready=0
+          for attempt in $(seq 1 72); do
+            echo "Review-only publish-status check $attempt/72"
+            review_code=$(curl --connect-timeout 10 --max-time 40 --silent --show-error \
+              -o /tmp/xjw-publish/review.json -w "%{http_code}" \
+              "https://ts-line.onrender.com/social/review-gate-status?t=$(date +%s)" || true)
+            schedule_code=$(curl --connect-timeout 10 --max-time 40 --silent --show-error \
+              -o /tmp/xjw-publish/schedule.json -w "%{http_code}" \
+              "https://ts-line.onrender.com/social/schedule-status?t=$(date +%s)" || true)
+
+            if [ "$review_code" = "200" ]; then
               if node - <<'NODE'
           const fs = require('fs');
-          const s = JSON.parse(fs.readFileSync('/tmp/xjw-publish/status.json', 'utf8'));
-          if (s.ok !== true || s.version !== '2026-07-24-incomplete-retry-v1') process.exit(1);
-          if (Number(s.canonicalCount) !== 10) process.exit(1);
-          if (Number(s.incompleteCount) !== 0) process.exit(1);
+          const s = JSON.parse(fs.readFileSync('/tmp/xjw-publish/review.json', 'utf8'));
+          if (s.ok !== true || s.version !== '2026-07-25-review-gate-v4') process.exit(1);
+          if (s.reviewRequiredBeforePublish !== true || s.automaticRetryEnabled !== false) process.exit(1);
+          if (Number(s.canonicalCount) !== 10 || Number(s.unreviewedActiveCount) !== 0) process.exit(1);
+          if (s.overdueApprovalPolicy !== 'move-to-next-free-wed-20:00') process.exit(1);
           NODE
-              then complete=1; break; fi
+              then review_ready=1; fi
             fi
+
+            if [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; then
+              if node - <<'NODE'
+          const fs = require('fs');
+          const s = JSON.parse(fs.readFileSync('/tmp/xjw-publish/schedule.json', 'utf8'));
+          if (s.version !== '2026-07-25-v6') process.exit(1);
+          if (Number(s.canonicalCount) !== 10) process.exit(1);
+          if (s.rule?.fixed !== '每週1篇，週三 20:00') process.exit(1);
+          if (!String(s.rule?.weatherException || '').includes('週末不發布')) process.exit(1);
+          if (Array.isArray(s.issues) && s.issues.length !== 0) process.exit(1);
+          NODE
+              then schedule_ready=1; fi
+            fi
+
+            if [ "$review_ready" -eq 1 ] && [ "$schedule_ready" -eq 1 ]; then break; fi
             sleep 15
           done
-          echo "endpoint_ready=$endpoint_ready" >> "$GITHUB_OUTPUT"
-          echo "complete=$complete" >> "$GITHUB_OUTPUT"
-          test "$endpoint_ready" -eq 1
-          test "$complete" -eq 1
+          echo "review_ready=$review_ready" >> "$GITHUB_OUTPUT"
+          echo "schedule_ready=$schedule_ready" >> "$GITHUB_OUTPUT"
+          test "$review_ready" -eq 1
+          test "$schedule_ready" -eq 1
 
-      - name: Save actual publish status
+      - name: Save actual review and schedule status
         if: always()
         shell: bash
         env:
@@ -67,28 +90,47 @@ jobs:
           set -euo pipefail
           node - <<'NODE'
           const fs = require('fs');
-          let source = {};
-          try { source = JSON.parse(fs.readFileSync('/tmp/xjw-publish/status.json', 'utf8')); } catch {}
+          const load = (name) => { try { return JSON.parse(fs.readFileSync(`/tmp/xjw-publish/${name}.json`, 'utf8')); } catch { return {}; } };
+          const review = load('review');
+          const schedule = load('schedule');
+          const ok = process.env.CHECK_OUTCOME === 'success'
+            && review.ok === true
+            && review.reviewRequiredBeforePublish === true
+            && review.automaticRetryEnabled === false
+            && Number(review.unreviewedActiveCount || 0) === 0
+            && Number(schedule.canonicalCount || 0) === 10
+            && (!Array.isArray(schedule.issues) || schedule.issues.length === 0);
           const result = {
-            ok: process.env.CHECK_OUTCOME === 'success' && source.ok === true && Number(source.incompleteCount || 0) === 0,
+            ok,
             verifiedAt: new Date().toISOString(),
             commit: process.env.GITHUB_SHA,
             checkOutcome: process.env.CHECK_OUTCOME,
-            version: source.version || '',
-            canonicalCount: Number(source.canonicalCount || 0),
-            incompleteCount: Number(source.incompleteCount || 0),
-            posts: Array.isArray(source.posts) ? source.posts : [],
+            mode: 'review-required-weekly-once',
+            reviewGateVersion: review.version || '',
+            scheduleVersion: schedule.version || '',
+            canonicalCount: Number(review.canonicalCount || schedule.canonicalCount || 0),
+            draftCount: Number(review.draftCount || 0),
+            reviewedCount: Number(review.reviewedCount || 0),
+            automaticQueueCount: Number(review.automaticQueueCount || 0),
+            unreviewedActiveCount: Number(review.unreviewedActiveCount || 0),
+            reviewRequiredBeforePublish: review.reviewRequiredBeforePublish === true,
+            automaticRetryEnabled: review.automaticRetryEnabled === true,
+            fixedSchedule: schedule.rule?.fixed || '',
+            weatherException: schedule.rule?.weatherException || '',
+            weekendPublishing: false,
+            issues: Array.isArray(schedule.issues) ? schedule.issues : [],
+            posts: Array.isArray(review.posts) ? review.posts : [],
           };
           fs.writeFileSync('final-publish-status.json', JSON.stringify(result, null, 2) + '\n');
           NODE
-          git config user.name "仙加味社群補發驗收"
+          git config user.name "仙加味社群安全驗收"
           git config user.email "actions@users.noreply.github.com"
+          git pull --rebase origin main
           git add final-publish-status.json
           git commit -m "chore: record final social publish status" || exit 0
-          git pull --rebase origin main
-          git push origin main
+          git push origin HEAD:main
 
-      - name: Require all selected platforms complete
+      - name: Require safe review-only production state
         if: always()
         shell: bash
         env:
