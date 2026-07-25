@@ -1,8 +1,0 @@
-commit=5e415d7d5e59df2950514c2bb593c4bec4bcc778
-recorded_at=2026-07-25T19:56:13Z
-
-
-> xianjiawei-lineoa@6.0.6 check:catalog
-> node tools/sync_website_catalog.js --check && node tools/sync_sales_master.js
-
-LINE OA data.json 與官網共用目錄不同步，請執行 npm run sync:catalog
