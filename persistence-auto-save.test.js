@@ -13,23 +13,22 @@ for (const token of [
   "INTERNAL_DATA_PATH",
   "SOCIAL_DATA_PATH",
   "SAVE_DEBOUNCE_MS",
-  "RETRY_DELAY_MS",
-  "ERROR_LOG_COOLDOWN_MS",
   "enqueueSave",
-  "retry scheduled",
+  "centralized save queue",
 ]) {
   assert.ok(source.includes(token), `persistence auto-save missing ${token}`);
 }
+assert.ok(!source.includes("retryCounts"), "retry ownership must stay in the central Supabase bridge");
+assert.ok(!source.includes("RETRY_DELAY_MS"), "auto-save must not start a competing retry loop");
 
 const original = fs.renameSync;
 const autoSave = require("./persistence-auto-save");
-assert.strictEqual(autoSave.VERSION, "1.1.0");
+assert.strictEqual(autoSave.VERSION, "1.2.0");
 assert.ok(autoSave.SAVE_DEBOUNCE_MS >= 0);
-assert.ok(autoSave.RETRY_DELAY_MS >= 1000);
 autoSave.installPersistenceAutoSave();
 assert.notStrictEqual(fs.renameSync, original);
 autoSave.installPersistenceAutoSave();
 autoSave.uninstallPersistenceAutoSave();
 assert.strictEqual(fs.renameSync, original);
 
-console.log("PASS debounced automatic persistence, bounded retries and atomic-write interception");
+console.log("PASS debounced atomic-write interception using one centralized Supabase queue and backoff source");
