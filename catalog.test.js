@@ -15,7 +15,7 @@ const expectedIds = [
 ];
 
 assert.strictEqual(data.version, "401.6");
-assert.strictEqual(data.catalogVersion, "408.7");
+assert.strictEqual(data.catalogVersion, "408.9");
 assert.strictEqual(data.catalogSource.repository, "TS15825868/xianjiawei");
 assert.strictEqual(data.lineId, "@762jybnm");
 assert.deepStrictEqual(data.products.map((product) => product.id), expectedIds);
@@ -32,10 +32,16 @@ for (const product of data.products) {
     "page",
     "aliases",
     "spec",
-    "price",
     "unit",
   ]) {
     assert.ok(product[field], `${product.id} missing ${field}`);
+  }
+  assert.notStrictEqual(product.price, undefined, `${product.id} missing price`);
+  if (product.quoteOnly) {
+    assert.strictEqual(Number(product.price), 0, `${product.id} quote-only price must be zero`);
+    assert.strictEqual(product.priceText, "價格請洽詢");
+  } else {
+    assert(Number(product.price) > 0, `${product.id} price invalid`);
   }
   assert.ok(Array.isArray(product.ingredients) && product.ingredients.length > 0, `${product.id} ingredients invalid`);
   assert.ok(Array.isArray(product.usage) && product.usage.length > 0, `${product.id} usage invalid`);
@@ -44,9 +50,11 @@ for (const product of data.products) {
 }
 
 const combos = data.offers?.comboOffers || [];
+assert.strictEqual(combos.length, 3);
+assert.deepStrictEqual(combos.map((combo) => combo.name), ["日常節奏組", "料理搭配組", "完整體驗組"]);
 const comboItems = combos.flatMap((combo) => combo.items || []);
 assert.ok(comboItems.includes("龜鹿飲180cc 5 包"));
-assert.ok(comboItems.includes("龜鹿飲180cc 12 包（買10送2）"));
+assert.ok(!comboItems.some((item) => item.includes("買10送2")));
 assert.ok(!comboItems.includes("龜鹿飲 5 包"));
 assert.ok(!comboItems.includes("龜鹿飲 10 包"));
 assert.ok(!comboItems.includes("龜鹿飲180cc 10 包"));
@@ -55,4 +63,4 @@ const drink180 = data.products.find((product) => product.id === "guilu-drink-180
 assert.strictEqual(drink180.page, "product-guilu-drink-180cc.html");
 assert.ok(drink180.image.includes("guilu-drink-180.jpg"));
 
-console.log(`PASS LINE OA catalog ${data.catalogVersion}: website fields, sales fields, assets and combo wording`);
+console.log(`PASS LINE OA catalog ${data.catalogVersion}: website fields, official sales fields, six products, quote-only mode and three combos`);
