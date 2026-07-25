@@ -1,0 +1,46 @@
+name: 啟動最新最終驗收
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/retrigger-final-verification.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update-and-trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Include validation tests in final verification triggers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/final-verification.yml')
+          text = path.read_text(encoding='utf-8')
+          marker = '      - ".github/workflows/final-verification.yml"\n'
+          additions = '      - "test.js"\n      - "*.test.js"\n'
+          if additions not in text:
+              if marker not in text:
+                  raise SystemExit('final verification path marker not found')
+              text = text.replace(marker, additions + marker)
+              path.write_text(text, encoding='utf-8')
+          PY
+          git rm .github/workflows/retrigger-final-verification.yml
+      - name: Save to main and trigger full verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: trigger final verification after validation updates"
+          git pull --rebase origin main
+          git push origin HEAD:main
