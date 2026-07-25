@@ -31,8 +31,16 @@ assert.deepStrictEqual(
 );
 
 for (const product of DATA.products) {
-  for (const key of ["displayName", "spec", "price", "unit", "image", "dmImage", "page", "usage", "ingredients"]) {
+  for (const key of ["displayName", "spec", "unit", "image", "dmImage", "page", "usage", "ingredients"]) {
     assert.ok(product[key], `${product.id} missing ${key}`);
+  }
+  assert.notStrictEqual(product.price, undefined, `${product.id} missing price`);
+  assert(Number(product.price) >= 0, `${product.id} price invalid`);
+  if (product.quoteOnly) {
+    assert.strictEqual(Number(product.price), 0, `${product.id} 洽詢價必須使用0作為不可結帳旗標`);
+    assert.strictEqual(product.priceText, "價格請洽詢");
+  } else {
+    assert(Number(product.price) > 0, `${product.id} 正式售價必須大於0`);
   }
   assert.ok(Array.isArray(product.usage) && product.usage.length > 0, `${product.id} usage invalid`);
   assert.ok(Array.isArray(product.ingredients) && product.ingredients.length > 0, `${product.id} ingredients invalid`);
@@ -46,16 +54,17 @@ assert.strictEqual(detectProduct("龜鹿膠一斤裝").id, "guilu-jiao");
 assert.strictEqual(detectProduct("鹿茸粉").id, "luerong-fen");
 
 const drink30 = getProduct("guilu-drink-30");
-assert.deepStrictEqual(calcItem(drink30, 1), { total: 50, label: "單瓶×1" });
-assert.deepStrictEqual(calcItem(drink30, 12), { total: 500, label: "買10送2（12瓶）×1" });
-assert.deepStrictEqual(calcItem(drink30, 24), { total: 1000, label: "買10送2（12瓶）×2" });
+assert.strictEqual(drink30.price, 100);
+assert.deepStrictEqual(calcItem(drink30, 1), { total: 100, label: "單瓶×1" });
+assert.deepStrictEqual(calcItem(drink30, 12), { total: 1200, label: "單瓶×12" });
+assert.deepStrictEqual(calcItem(drink30, 24), { total: 2400, label: "單瓶×24" });
 
 const state = { cart: [], checkout: null };
 addCart(state, drink30, 12);
 addCart(state, drink30, 1);
 assert.strictEqual(state.cart.length, 1);
 assert.strictEqual(state.cart[0].qty, 13);
-assert.strictEqual(cartTotal(state.cart), 550);
+assert.strictEqual(cartTotal(state.cart), 1300);
 
 const productCards = productCarousel();
 assert.strictEqual(productCards.type, "flex");
@@ -84,10 +93,11 @@ assert.strictEqual(isSensitiveHealthQuestion("枸杞可以明目嗎"), true);
 assert.strictEqual(isSensitiveHealthQuestion("龜鹿膏怎麼使用"), false);
 assert.strictEqual(isSensitiveHealthQuestion("搭配組合"), false);
 
-console.log(`PASS LINE OA ${VERSION}: products, prices, cart, cards, usage, classics and referral`);
-
 assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length);
+assert.strictEqual(DATA.offers.comboOffers.length, 3);
 assert.strictEqual(comboMenuReply().contents.contents.length, DATA.offers.comboOffers.length + 1);
 assert.ok(comboMenuReply().contents.contents[0].body.contents[0].text.includes("日常搭配導覽"));
 assert.ok(comboMenuReply().contents.contents[1].body.contents[0].text.includes("日常節奏組"));
 assert.ok(comboDetailReply(0).contents.body.contents[0].text.includes("日常節奏組"));
+
+console.log(`PASS LINE OA ${VERSION}: official prices, quote-only product, three combos, cart, cards, usage, classics and referral`);
