@@ -1,0 +1,70 @@
+name: 首批十篇待審唯一化與正式驗收
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/finalize-canonical-ten-posts.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ts-line-canonical-ten-posts
+  cancel-in-progress: true
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Lock social store to canonical ten pending-review posts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('runtime-social-stabilizer.js')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('const VERSION = "2026-07-26-runtime-stabilizer-v2";', 'const VERSION = "2026-07-26-runtime-stabilizer-v3";')
+          s=s.replace('  const nonCanonical = incomingPosts.filter((post) => !CANONICAL_IDS.has(String(post.id || "")));\n', '')
+          s=s.replace('    if (reviewed(existing) && !isForceReview(template)) return reviewedPost(template, existing, index, { ...input, posts: incomingPosts });\n', '')
+          s=s.replace('    posts: [...nonCanonical, ...canonical].slice(-500),', '    posts: canonical,')
+          s=s.replace('  const forceIds = new Set((batch.POSTS || []).filter(isForceReview).map((post) => String(post.id || "")));', '  const forceIds = new Set((batch.POSTS || []).map((post) => String(post.id || "")));')
+          p.write_text(s, encoding='utf-8')
+          for f in Path('.').rglob('*.test.js'):
+              t=f.read_text(encoding='utf-8')
+              t=t.replace('2026-07-26-runtime-stabilizer-v2','2026-07-26-runtime-stabilizer-v3')
+              f.write_text(t,encoding='utf-8')
+          q=Path('package.json')
+          t=q.read_text(encoding='utf-8').replace('"version": "6.0.6"','"version": "6.0.7"')
+          q.write_text(t,encoding='utf-8')
+          r=Path('tools/release_check.js')
+          if r.exists():
+              t=r.read_text(encoding='utf-8').replace('assert.strictEqual(pkg.version, "6.0.6");','assert.strictEqual(pkg.version, "6.0.7");').replace('LINE OA v6.0.6售價','LINE OA v6.0.7售價')
+              r.write_text(t,encoding='utf-8')
+          PY
+      - name: Verify complete repository
+        run: |
+          npm ci
+          npm test
+          npm run check:catalog
+      - name: Commit verified repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/finalize-canonical-ten-posts.yml
+          git add runtime-social-stabilizer.js package.json package-lock.json tools/release_check.js '*.test.js' 2>/dev/null || true
+          git add -u
+          git commit -m "固定Supabase僅保留首批十篇人工待審貼文"
+          git pull --rebase origin main
+          git push origin HEAD:main
