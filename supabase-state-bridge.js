@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const TABLE = "xjw_app_state";
 const INTERNAL_KEY = "internal";
 const SOCIAL_KEY = "social";
@@ -14,6 +14,8 @@ const RETRY_BASE_MS = Number(process.env.SUPABASE_RETRY_BASE_MS || 15000);
 const RETRY_MAX_MS = Number(process.env.SUPABASE_RETRY_MAX_MS || 5 * 60 * 1000);
 const ERROR_LOG_COOLDOWN_MS = Number(process.env.SUPABASE_ERROR_LOG_COOLDOWN_MS || 5 * 60 * 1000);
 const DEFAULT_SUPABASE_URL = "https://iphexhvjhsmelbgwzhhr.supabase.co";
+const INSTANCE_STARTED_AT = new Date().toISOString();
+const INSTANCE_STARTED_MS = Date.parse(INSTANCE_STARTED_AT);
 
 const snapshots = new Map();
 const saveChains = new Map();
@@ -28,6 +30,7 @@ const status = {
   lastSavedAt: "",
   lastVerifiedAt: "",
   lastError: "",
+  staleWriteSkips: 0,
 };
 
 function config() {
@@ -144,13 +147,52 @@ async function readRemote(key) {
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
-async function writeRemote(key, data) {
+function normalizeStateForKey(key, data, previous = data) {
+  if (key !== SOCIAL_KEY || !data || typeof data !== "object") return data;
+  try {
+    const stabilizer = require("./runtime-social-stabilizer");
+    return stabilizer.normalizeStore(data, previous && typeof previous === "object" ? previous : data);
+  } catch (error) {
+    logErrorThrottled("social-normalizer", `Social state normalization temporarily unavailable: ${errorText(error)}`);
+    return data;
+  }
+}
+
+function prepareState(key, data, previous = data) {
+  const normalized = normalizeStateForKey(key, data, previous);
+  if (!normalized || typeof normalized !== "object" || Array.isArray(normalized)) return normalized;
+  return {
+    ...normalized,
+    persistenceBridgeVersion: VERSION,
+    persistenceWriterStartedAt: INSTANCE_STARTED_AT,
+  };
+}
+
+function writerStartedMs(data = {}) {
+  const value = Date.parse(String(data?.persistenceWriterStartedAt || ""));
+  return Number.isFinite(value) ? value : 0;
+}
+
+async function assertCurrentWriter(key) {
+  if (key !== SOCIAL_KEY) return;
+  const row = await readRemote(key);
+  const remoteStartedMs = writerStartedMs(row?.data);
+  if (remoteStartedMs > INSTANCE_STARTED_MS + 1000) {
+    const error = new Error(`stale Render writer blocked; newer writer started at ${row.data.persistenceWriterStartedAt}`);
+    error.code = "STALE_WRITER";
+    throw error;
+  }
+}
+
+async function writeRemote(key, data, { checkWriter = true } = {}) {
+  if (checkWriter) await assertCurrentWriter(key);
+  const prepared = prepareState(key, data, data);
   await request(endpoint("?on_conflict=key"), {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
     body: JSON.stringify([{
       key,
-      data,
+      data: prepared,
       updated_at: new Date().toISOString(),
     }]),
   });
@@ -158,6 +200,7 @@ async function writeRemote(key, data) {
   status.lastSavedAt = new Date().toISOString();
   status.lastVerifiedAt = status.lastSavedAt;
   status.lastError = "";
+  return prepared;
 }
 
 function readLocal(file) {
@@ -211,6 +254,13 @@ async function saveState(key, data) {
     markSuccess(key);
     return true;
   } catch (error) {
+    if (error?.code === "STALE_WRITER") {
+      status.staleWriteSkips += 1;
+      status.connected = true;
+      status.lastError = "";
+      logErrorThrottled("stale-writer", `Supabase stale writer safely skipped for ${key}: ${error.message}`);
+      return false;
+    }
     markFailure(key, error);
     return false;
   }
@@ -234,17 +284,22 @@ async function saveFileNow(key, file, { force = false } = {}) {
   if (!force && raw === snapshots.get(key)) return true;
   if (!force && Date.now() < Number(retryAfterAt.get(key) || 0)) return false;
 
-  let data;
+  let parsed;
   try {
-    data = JSON.parse(raw);
+    parsed = JSON.parse(raw);
   } catch (error) {
     status.lastError = `JSON parse failed for ${key}: ${error.message}`;
     logErrorThrottled(`${key}:json`, status.lastError);
     return false;
   }
 
+  const data = prepareState(key, parsed, parsed);
+  const normalizedRaw = JSON.stringify(data, null, 2);
+  if (normalizedRaw !== raw) writeLocal(file, data);
+  if (!force && normalizedRaw === snapshots.get(key)) return true;
+
   const saved = await saveState(key, data);
-  if (saved) snapshots.set(key, raw);
+  if (saved) snapshots.set(key, normalizedRaw);
   return saved;
 }
 
@@ -272,17 +327,26 @@ async function restoreOne(item) {
   const remote = row?.data;
 
   if (hasMeaningfulData(remote)) {
-    writeLocal(item.file, remote);
-    snapshots.set(item.key, readRaw(item.file));
+    const normalized = prepareState(item.key, remote, remote);
+    writeLocal(item.file, normalized);
+    const normalizedRaw = readRaw(item.file);
+    snapshots.set(item.key, normalizedRaw);
+    if (JSON.stringify(normalized) !== JSON.stringify(remote)) {
+      const saved = await saveState(item.key, normalized);
+      return saved ? "restored-and-repaired" : "restored-repair-pending";
+    }
     return "restored";
   }
   if (hasMeaningfulData(local)) {
-    await writeRemote(item.key, local);
+    const normalized = prepareState(item.key, local, local);
+    writeLocal(item.file, normalized);
+    await writeRemote(item.key, normalized, { checkWriter: false });
     snapshots.set(item.key, readRaw(item.file));
     return "seeded-from-local";
   }
   if (remote && typeof remote === "object") {
-    writeLocal(item.file, remote);
+    const normalized = prepareState(item.key, remote, remote);
+    writeLocal(item.file, normalized);
     snapshots.set(item.key, readRaw(item.file));
     return "initialized-empty";
   }
@@ -352,7 +416,8 @@ function startWatching() {
     shuttingDown = true;
     clearInterval(timer);
     clearInterval(verifyTimer);
-    await syncAll({ force: false });
+    const active = [...saveChains.values()];
+    if (active.length) await Promise.race([Promise.allSettled(active), sleep(1500)]);
     process.exit(0);
   };
   process.once("SIGTERM", shutdown);
@@ -367,6 +432,8 @@ function startWatching() {
 
 function health() {
   const cfg = config();
+  let socialNormalizerVersion = "";
+  try { socialNormalizerVersion = require("./runtime-social-stabilizer").VERSION; } catch {}
   return {
     ...status,
     version: VERSION,
@@ -378,6 +445,10 @@ function health() {
     socialPath: process.env.SOCIAL_DATA_PATH || "/tmp/xianjiawei-social-posts.json",
     activeSaveKeys: [...saveChains.keys()],
     retryBackoff: Object.fromEntries([...retryAfterAt.entries()].map(([key, value]) => [key, new Date(value).toISOString()])),
+    instanceStartedAt: INSTANCE_STARTED_AT,
+    staleWriterProtection: true,
+    shutdownFlushEnabled: false,
+    socialNormalizerVersion,
   };
 }
 
@@ -390,6 +461,10 @@ module.exports = {
   REQUEST_RETRIES,
   RETRY_BASE_MS,
   RETRY_MAX_MS,
+  INSTANCE_STARTED_AT,
+  normalizeStateForKey,
+  prepareState,
+  writerStartedMs,
   restoreAll,
   startWatching,
   saveState,
