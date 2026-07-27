@@ -8,7 +8,18 @@ on:
     branches: [main]
     paths:
       - "data.json"
+      - "line-sales-master.json"
+      - "product-sales-master.js"
       - "server.js"
+      - "test.js"
+      - "function.test.js"
+      - "line-order-cart.js"
+      - "line-order-cart.test.js"
+      - "internal-order-pricing.js"
+      - "internal-order-pricing.test.js"
+      - "internal-line-order-sync.js"
+      - "internal-line-order-sync.test.js"
+      - "internal-inventory-seed.js"
       - "social-server.js"
       - "social-approved-originals.js"
       - "social-final-reconcile.js"
@@ -30,7 +41,7 @@ concurrency:
 jobs:
   validate-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 16
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -65,11 +76,19 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Run complete release checks and retain failure details
+      - name: Run complete release, cart and ERP order checks
         shell: bash
         run: |
           set +e
-          npm test 2>&1 | tee /tmp/xjw-test.log
+          {
+            npm test &&
+            node test.js &&
+            node catalog.test.js &&
+            node function.test.js &&
+            node line-order-cart.test.js &&
+            node internal-order-pricing.test.js &&
+            node internal-line-order-sync.test.js
+          } 2>&1 | tee /tmp/xjw-test.log
           status=${PIPESTATUS[0]}
           set -e
 
@@ -81,7 +100,7 @@ jobs:
               echo "commit=$(git rev-parse HEAD)"
               echo "recorded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
               echo
-              tail -n 160 /tmp/xjw-test.log
+              tail -n 200 /tmp/xjw-test.log
             } > ci-last-error.txt
             git add ci-last-error.txt
             git commit -m "chore: record latest CI failure" || true
