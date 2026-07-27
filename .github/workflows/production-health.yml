@@ -79,7 +79,7 @@ jobs:
 
             schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error -o /tmp/xjw-production/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
             if [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; then
-              node -e "const h=require('/tmp/xjw-production/schedule.json');if(h.version!=='2026-07-24-v5'||Number(h.canonicalCount)!==10||h.rule?.fixed!=='每週1篇，週三 20:00'||!String(h.rule?.weatherException||'').includes('週末不發布')||(Array.isArray(h.issues)&&h.issues.length))process.exit(1)" && schedule_ok=1 || true
+              node -e "const h=require('/tmp/xjw-production/schedule.json');if(h.version!=='2026-07-25-v6'||Number(h.canonicalCount)!==10||h.rule?.fixed!=='每週1篇，週三 20:00'||!String(h.rule?.weatherException||'').includes('週末不發布')||(Array.isArray(h.issues)&&h.issues.length))process.exit(1)" && schedule_ok=1 || true
             fi
 
             curl --connect-timeout 10 --max-time 45 --fail --silent --show-error "$BASE_URL/internal/social-center-healthz?t=$(date +%s)" -o /tmp/xjw-production/social-site.json 2>/dev/null && \
