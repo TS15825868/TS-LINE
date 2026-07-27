@@ -4,77 +4,102 @@ on:
   push:
     branches: [main]
     paths:
+      - "package.json"
+      - "package-lock.json"
+      - "line-sales-master.json"
+      - "brand-content.json"
+      - "brand-content-runtime.js"
       - "social-product-content-rebuild.js"
       - "social-product-content-bootstrap.js"
       - "social-product-content-rebuild.test.js"
-      - "package.json"
+      - "social-final-posts.js"
+      - "social-final-approved-batch.js"
+      - "social-review-only-mode.js"
+      - "social-schedule-repair-20260722.js"
       - ".github/workflows/verify-product-content.yml"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: xianjiawei-product-brand-review-verification
+  cancel-in-progress: true
 
 jobs:
   verify-product-content:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main
+        uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Run product content contract test
-        run: node social-product-content-rebuild.test.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
 
-      - name: Wait for Render and verify both campaigns
-        shell: bash
+      - name: Verify current product, brand and legacy cleanup contracts
         run: |
           set -euo pipefail
-          product_endpoint="https://ts-line.onrender.com/internal/product-content-healthz"
-          mascot_endpoint="https://ts-line.onrender.com/internal/approved-social-one-time-healthz"
-          mkdir -p deploy-status
+          npm ci
+          npm test
+          node social-product-content-rebuild.test.js
+          node - <<'NODE'
+          const sales = require('./line-sales-master.json');
+          const brand = require('./brand-content.json');
+          if (sales.version !== '2026-07-27-v5') throw new Error('正式售價版本錯誤');
+          if (sales.products?.['guilu-gao']?.price !== 1500 || sales.products?.['guilu-gao']?.originalPrice !== 1800) throw new Error('龜鹿膏售價錯誤');
+          if (sales.products?.['guilu-drink-30']?.price !== 50 || !sales.products?.['guilu-drink-30']?.offers?.includes('買10送2')) throw new Error('龜鹿飲30cc售價或活動錯誤');
+          if (sales.products?.['guilu-drink-180']?.price !== 200 || !sales.products?.['guilu-drink-180']?.offers?.includes('買10送2')) throw new Error('龜鹿飲180cc售價或活動錯誤');
+          if (sales.products?.['guilu-tangkuai']?.price !== 1600) throw new Error('龜鹿湯塊售價錯誤');
+          if (sales.products?.['luerong-fen']?.price !== 2000) throw new Error('鹿茸粉售價錯誤');
+          if (sales.products?.['guilu-jiao']?.price !== 9600 || sales.products?.['guilu-jiao']?.originalPrice !== 12000 || sales.products?.['guilu-jiao']?.quoteOnly !== false) throw new Error('龜鹿膠售價錯誤');
+          for (const label of ['品牌故事','品牌由來','選料理念','品質把關','傳統工法','品牌承諾']) {
+            if (!brand.quickReplies?.[label]) throw new Error(`品牌內容缺少：${label}`);
+          }
+          NODE
 
-          for attempt in $(seq 1 50); do
-            product="$(curl --location --silent --show-error --max-time 30 "$product_endpoint" || true)"
-            mascot="$(curl --location --silent --show-error --max-time 30 "$mascot_endpoint" || true)"
-            echo "Attempt ${attempt} product: ${product}"
-            echo "Attempt ${attempt} mascot: ${mascot}"
+      - name: Wait for Render and verify current ten-post review-only campaign
+        shell: bash
+        env:
+          BASE_URL: https://ts-line.onrender.com
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/xjw-product-brand
+          success=0
+          for attempt in $(seq 1 96); do
+            echo "Product and brand review verification $attempt/96"
+            release_code=$(curl --connect-timeout 10 --max-time 65 --silent --show-error -o /tmp/xjw-product-brand/release.json -w "%{http_code}" "$BASE_URL/social/final-release-healthz?t=$(date +%s)" || true)
+            review_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error -o /tmp/xjw-product-brand/review.json -w "%{http_code}" "$BASE_URL/social/review-gate-status?t=$(date +%s)" || true)
+            schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error -o /tmp/xjw-product-brand/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
 
-            product_ok=false
-            mascot_ok=false
-            if printf '%s' "$product" | jq -e '
-              .ok == true and
-              .campaignId == "xjw-product-brand-202607-v1" and
-              ((.activeTotal + .published) == 20) and
-              .validImages == true and
-              .total >= 40
-            ' >/dev/null 2>&1; then product_ok=true; fi
-
-            if printf '%s' "$mascot" | jq -e '
-              .ok == true and
-              .uploaded == 20 and
-              .received == 20 and
-              .preservedPublished >= 1 and
-              .uploadReceiverClosed == true
-            ' >/dev/null 2>&1; then mascot_ok=true; fi
-
-            if [[ "$product_ok" == true && "$mascot_ok" == true ]]; then
-              jq -n --argjson product "$product" --argjson mascot "$mascot" \
-                '{ok:true, verifiedAt:(now|todateiso8601), productCampaign:$product, mascotCampaign:$mascot}' \
-                > deploy-status/product-content.json
-              break
+            if [ "$release_code" = "200" ] && [ "$review_code" = "200" ] && { [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; }; then
+              if node - <<'NODE'
+          const release = require('/tmp/xjw-product-brand/release.json');
+          const review = require('/tmp/xjw-product-brand/review.json');
+          const schedule = require('/tmp/xjw-product-brand/schedule.json');
+          if (release.ok !== true || Number(release.totalPosts) !== 10 || Number(release.fixedPosts) !== 7 || Number(release.weatherStandbyPosts) !== 3) throw new Error('十篇正式內容未部署');
+          if (!Array.isArray(release.assets) || release.assets.length !== 10 || release.assets.some((asset) => asset.ok !== true || Number(asset.width) !== 1254 || Number(asset.height) !== 1254)) throw new Error('正式圖片未完整部署');
+          if (review.ok !== true || review.version !== '2026-07-26-review-gate-v5' || review.reviewRequiredBeforePublish !== true || review.automaticRetryEnabled !== false || Number(review.canonicalCount) !== 10 || Number(review.unreviewedActiveCount) !== 0) throw new Error('待審安全狀態錯誤');
+          if (schedule.version !== '2026-07-25-v6' || Number(schedule.canonicalCount) !== 10 || schedule.rule?.fixed !== '每週1篇，週三 20:00' || !String(schedule.rule?.weatherException || '').includes('週末不發布')) throw new Error('正式排程錯誤');
+          if (Array.isArray(schedule.issues) && schedule.issues.length) throw new Error(schedule.issues.join('｜'));
+          NODE
+              then success=1; break; fi
             fi
             sleep 15
           done
 
-          test -s deploy-status/product-content.json
+          if [ "$success" -ne 1 ]; then
+            echo '產品與品牌社群正式狀態未通過' >&2
+            for file in release review schedule; do
+              echo "--- $file ---" >&2
+              cat "/tmp/xjw-product-brand/$file.json" 2>/dev/null || true
+            done
+            exit 1
+          fi
 
-      - name: Record verified result on main
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add deploy-status/product-content.json
-          git commit -m "chore: record product content verification" || exit 0
-          git push origin HEAD:main
+          echo '產品與品牌內容已統一為十篇待審、核准後每週三20:00排程，天氣內容僅條件加發。'
