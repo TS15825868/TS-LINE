@@ -1,5 +1,5 @@
-commit=86d50ac8b970721486433371ed266c4f243e3ea5
-recorded_at=2026-07-27T10:36:02Z
+commit=29869f5882ed75e38805ff2739d0798dabe439c1
+recorded_at=2026-07-27T10:38:58Z
 
 
 > xianjiawei-lineoa@6.1.0 test
@@ -10,7 +10,7 @@ PASS quote-only product shows LINE inquiry and cannot enter cart at NT$0
 PASS current policy: all unpublished posts pending review, schedule only after approval, weekly Wednesday 20:00, fixed mascot partners and official prices
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-07-27T10:38:02.368Z
+Social weather automation rate limited; next check 2026-07-27T10:40:58.295Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
@@ -21,8 +21,8 @@ node:internal/assert/utils:77
     throw err;
     ^
 
-AssertionError [ERR_ASSERTION]: 正式售價與角色主檔必須在啟動時載入
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:86:1)
+AssertionError [ERR_ASSERTION]: 品牌內容至少需要六項正式資料
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:100:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at node:internal/modules/cjs/loader:1913:10
     at Object.loadWithWeeklyOnceSchedule (/home/runner/work/TS-LINE/TS-LINE/social-weekly-schedule-override.js:93:55)
