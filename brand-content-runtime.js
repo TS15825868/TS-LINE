@@ -18,11 +18,12 @@ function loadBrandContent() {
   }
 }
 
-function topicText(content, key, fallbackTitle, fallbackBody) {
+function topicText(content, key, quickReplyLabel, fallbackTitle, fallbackBody) {
   const item = content[key] || {};
+  const quickReply = content.quickReplies?.[quickReplyLabel];
   return {
-    title: item.title || fallbackTitle,
-    body: item.lineReply || item.summary || item.body || fallbackBody,
+    title: item.title || `仙加味｜${quickReplyLabel}` || fallbackTitle,
+    body: item.lineReply || item.summary || item.body || quickReply || fallbackBody,
   };
 }
 
@@ -32,11 +33,11 @@ Module._extensions[".js"] = function brandAwareLoader(module, filename) {
   }
 
   const content = loadBrandContent();
-  const story = topicText(content, "brandStory", "仙加味｜四代傳承", "仙加味的故事從台北萬華開始，四代延續對原料、工序、時間與品質的重視。");
-  const origin = topicText(content, "brandOrigin", "仙加味｜品牌由來", "仙加味於2008年完成品牌註冊，把家族熟悉的傳統整理成今天能理解的日常選擇。");
-  const ingredients = topicText(content, "ingredientPhilosophy", "仙加味｜選料理念", "選料重視看得懂、分得清、處理得當，依產品型態決定適合的原料組合。");
-  const quality = topicText(content, "qualityControl", "仙加味｜品質把關", "品質從原料、製程、規格、標示、保存到出貨逐步確認，三套系統使用同一份正式資料。");
-  const craft = topicText(content, "traditionalCraft", "仙加味｜傳統工法", "從挑選、前處理、切料、慢火熬製到濃縮成形，每一步都有目的與判斷基準。");
+  const story = topicText(content, "brandStory", "品牌故事", "仙加味｜四代傳承", "仙加味的故事從台北萬華開始，四代延續對原料、工序、時間與品質的重視。");
+  const origin = topicText(content, "brandOrigin", "品牌由來", "仙加味｜品牌由來", "仙加味於2008年完成品牌註冊，把家族熟悉的傳統整理成今天能理解的日常選擇。");
+  const ingredients = topicText(content, "ingredientPhilosophy", "選料理念", "仙加味｜選料理念", "選料重視看得懂、分得清、處理得當，依產品型態決定適合的原料組合。");
+  const quality = topicText(content, "qualityControl", "品質把關", "仙加味｜品質把關", "品質從原料、製程、規格、標示、保存到出貨逐步確認，三套系統使用同一份正式資料。");
+  const craft = topicText(content, "traditionalCraft", "傳統工法", "仙加味｜傳統工法", "從挑選、前處理、切料、慢火熬製到濃縮成形，每一步都有目的與判斷基準。");
 
   let source = fs.readFileSync(filename, "utf8");
   const start = source.indexOf("function brandStoryReply() {");
