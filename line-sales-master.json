@@ -1,13 +1,52 @@
 {
-  "version": "2026-07-26-v4",
-  "source": "仙加味內部正式售價、三組搭配、洽詢價、角色政策與相容欄位",
+  "version": "2026-07-27-v5",
+  "source": "仙加味・龜鹿系列最新正式售價、優惠、活動與角色政策",
   "products": {
-    "guilu-gao": {"price": 2000, "originalPrice": null, "offers": [], "priceText": "$2,000 / 罐", "priceLabel": "建議售價2,000元"},
-    "guilu-drink-30": {"price": 100, "originalPrice": null, "offers": [], "priceText": "$100 / 瓶", "priceLabel": "建議售價100元"},
-    "guilu-drink-180": {"price": 200, "originalPrice": null, "offers": [], "priceText": "$200 / 包", "priceLabel": "建議售價200元"},
-    "guilu-tangkuai": {"price": 2000, "originalPrice": null, "offers": [], "priceText": "$2,000 / 盒", "priceLabel": "建議售價2,000元"},
-    "luerong-fen": {"price": 2000, "originalPrice": null, "offers": [], "priceText": "$2,000 / 罐", "priceLabel": "建議售價2,000元"},
-    "guilu-jiao": {"price": 0, "originalPrice": null, "offers": [], "quoteOnly": true, "priceText": "價格請洽詢", "priceLabel": "價格與通路條件請洽詢客服"}
+    "guilu-gao": {
+      "price": 1500,
+      "originalPrice": 1800,
+      "offers": ["優惠價1,500元"],
+      "priceText": "$1,500 / 罐",
+      "originalPriceText": "$1,800",
+      "priceLabel": "售價1,800元，優惠價1,500元"
+    },
+    "guilu-drink-30": {
+      "price": 50,
+      "originalPrice": null,
+      "offers": ["買10送2"],
+      "priceText": "$50 / 瓶",
+      "priceLabel": "售價50元，買10送2"
+    },
+    "guilu-drink-180": {
+      "price": 200,
+      "originalPrice": null,
+      "offers": ["買10送2"],
+      "priceText": "$200 / 包",
+      "priceLabel": "售價200元，買10送2"
+    },
+    "guilu-tangkuai": {
+      "price": 1600,
+      "originalPrice": null,
+      "offers": [],
+      "priceText": "$1,600 / 盒",
+      "priceLabel": "售價1,600元"
+    },
+    "luerong-fen": {
+      "price": 2000,
+      "originalPrice": null,
+      "offers": [],
+      "priceText": "$2,000 / 罐",
+      "priceLabel": "售價2,000元"
+    },
+    "guilu-jiao": {
+      "price": 9600,
+      "originalPrice": 12000,
+      "offers": ["優惠價9,600元"],
+      "quoteOnly": false,
+      "priceText": "$9,600 / 一斤裝",
+      "originalPriceText": "$12,000",
+      "priceLabel": "售價12,000元，優惠價9,600元"
+    }
   },
   "comboOffers": [
     {
