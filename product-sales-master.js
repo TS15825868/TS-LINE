@@ -28,15 +28,53 @@ function rootCombos(comboOffers = []) {
   }));
 }
 
+function normalizeProductOffers(product, override = {}) {
+  const raw = Array.isArray(override.offers) ? override.offers : (Array.isArray(product.offers) ? product.offers : []);
+  const price = Number(override.price ?? product.price ?? 0);
+  const offers = [];
+  const promotionTexts = [];
+
+  for (const entry of raw) {
+    if (entry && typeof entry === "object") {
+      const qty = Number(entry.qty || 0);
+      const total = Number(entry.total || 0);
+      const label = String(entry.label || "").trim();
+      if (qty > 0 && total >= 0 && label) offers.push({ qty, total, label });
+      continue;
+    }
+
+    const label = String(entry || "").trim();
+    if (!label) continue;
+    promotionTexts.push(label);
+    if (/買\s*10\s*送\s*2/.test(label) && price > 0) {
+      offers.push({ qty: 12, total: price * 10, label: "買10送2" });
+    }
+  }
+
+  return { offers, promotionTexts };
+}
+
 function applyMaster(data) {
   const policy = getMaster();
   const productOverrides = policy.products || {};
   const comboOffers = Array.isArray(policy.comboOffers) ? policy.comboOffers : [];
 
-  data.products = (data.products || []).map((product) => ({
-    ...product,
-    ...(productOverrides[product.id] || {}),
-  }));
+  data.products = (data.products || []).map((product) => {
+    const override = productOverrides[product.id] || {};
+    const normalized = normalizeProductOffers(product, override);
+    const quantityOptions = [...new Set([
+      ...(Array.isArray(product.quantityOptions) ? product.quantityOptions : [1, 2, 3, 5]),
+      ...normalized.offers.map((offer) => offer.qty),
+    ].map(Number).filter((value) => Number.isFinite(value) && value > 0))];
+
+    return {
+      ...product,
+      ...override,
+      offers: normalized.offers,
+      promotionTexts: normalized.promotionTexts,
+      quantityOptions,
+    };
+  });
 
   data.offers = {
     ...(data.offers || {}),
@@ -85,4 +123,4 @@ fs.readFileSync = function patchedReadFileSync(file, ...args) {
   return result;
 };
 
-module.exports = { applyMaster, getMaster, rootCombos };
+module.exports = { applyMaster, getMaster, rootCombos, normalizeProductOffers };
