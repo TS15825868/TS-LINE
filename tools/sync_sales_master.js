@@ -9,6 +9,14 @@ const DATA_PATH = path.join(ROOT, "data.json");
 const MASTER_PATH = path.join(ROOT, "line-sales-master.json");
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 
+function hasBuyTenGetTwo(product, unitPrice) {
+  return (product.offers || []).some((offer) =>
+    Number(offer.qty) === 12
+    && Number(offer.total) === Number(unitPrice) * 10
+    && String(offer.label) === "買10送2"
+  );
+}
+
 function main() {
   const mode = process.argv.includes("--write") ? "write" : "check";
   const data = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
@@ -21,8 +29,8 @@ function main() {
 
   const expected = {
     "guilu-gao": { price: 1500, originalPrice: 1800 },
-    "guilu-drink-30": { price: 50, offer: "買10送2" },
-    "guilu-drink-180": { price: 200, offer: "買10送2" },
+    "guilu-drink-30": { price: 50, buyTenGetTwo: true },
+    "guilu-drink-180": { price: 200, buyTenGetTwo: true },
     "guilu-tangkuai": { price: 1600 },
     "luerong-fen": { price: 2000 },
     "guilu-jiao": { price: 9600, originalPrice: 12000, quoteOnly: false },
@@ -38,8 +46,11 @@ function main() {
     if (rule.quoteOnly !== undefined && Boolean(product.quoteOnly) !== rule.quoteOnly) {
       throw new Error(`${id} 洽詢模式設定不正確`);
     }
-    if (rule.offer && !(product.offers || []).includes(rule.offer)) {
-      throw new Error(`${id} 正式活動不同步`);
+    if (rule.buyTenGetTwo && !hasBuyTenGetTwo(product, rule.price)) {
+      throw new Error(`${id} 買10送2沒有轉成可正確計價的12入方案`);
+    }
+    if ((product.offers || []).some((offer) => typeof offer !== "object" || !offer.label)) {
+      throw new Error(`${id} 活動格式無法供購物車使用`);
     }
   }
 
@@ -49,9 +60,7 @@ function main() {
     return;
   }
 
-  // 正式執行階段由 product-sales-master.js 套用主檔；檢查模式只驗證套用結果，
-  // 不要求大型 data.json 每次價格調整都產生無關差異。
-  console.log(`PASS LINE OA sales master ${master.version}`);
+  console.log(`PASS LINE OA sales master ${master.version} with cart-safe offers`);
 }
 
 if (require.main === module) {
@@ -63,4 +72,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { stable };
+module.exports = { stable, hasBuyTenGetTwo };
