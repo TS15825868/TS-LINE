@@ -5,7 +5,7 @@ const batch = require("./social-final-approved-batch");
 const schedulePolicy = require("./social-schedule-policy");
 const { normalizeForDuplicateCheck, validatePosts } = require("./social-final-posts");
 
-const VERSION = "2026-07-24-v5";
+const VERSION = "2026-07-25-v6";
 const ACTIVE_STATUSES = new Set(["approved", "publishing", "published", "failed", "partial"]);
 let installed = false;
 let socialApi = null;
@@ -45,7 +45,7 @@ function repairStore(inputStore, updatedAt = nowIso()) {
   store.posts = [...published, ...canonical].slice(-500);
   store.socialScheduleRepairVersion = VERSION;
   store.socialScheduleRepairAt = updatedAt;
-  store.socialScheduleRepairReason = "2026/7/24上午10:00開始；固定週三、週五10:00；龜鹿飲30cc與180cc合併單篇；氣候與補水依實際氣候於非固定日10:00加發；圖文不重複";
+  store.socialScheduleRepairReason = "2026/7/29晚上20:00開始；固定每週三20:00；龜鹿飲30cc與180cc合併單篇；氣候與補水依萬華實際氣候於其他平日20:00加發，週末不發布；圖文不重複";
   return { store, changed: true, repaired, removed };
 }
 
@@ -122,7 +122,7 @@ function scheduleStatus(store = {}) {
     if (post.oneTimeWeatherPost || post.conditionalWeather) weatherWeekCounts.set(week, (weatherWeekCounts.get(week) || 0) + 1);
     else regularWeekCounts.set(week, (regularWeekCounts.get(week) || 0) + 1);
   }
-  for (const [week, count] of regularWeekCounts) if (count > 2) issues.push(`${week} 這週固定貼文共有${count}篇，超過每週2篇`);
+  for (const [week, count] of regularWeekCounts) if (count > 1) issues.push(`${week} 這週固定貼文共有${count}篇，超過每週1篇`);
   for (const [week, count] of weatherWeekCounts) if (count > 1) issues.push(`${week} 這週氣候例外貼文共有${count}篇，應最多1篇`);
 
   return {
@@ -131,8 +131,8 @@ function scheduleStatus(store = {}) {
     checkedAt: nowIso(),
     repairVersion: store.socialScheduleRepairVersion || "",
     rule: {
-      fixed: "每週三、週五 10:00",
-      weatherException: "符合萬華實際氣候時，於非週三、週五的上午10:00額外發布；每週最多1篇",
+      fixed: "每週1篇，週三 20:00",
+      weatherException: "符合萬華實際氣候時，於其他平日晚上20:00額外發布；每週最多1篇；週末不發布",
       guiluDrink: "30cc與180cc合併為單一貼文",
       duplicateProtection: "標題、圖片、Instagram文案、Facebook文案不得重複",
     },
