@@ -120,12 +120,17 @@ const websiteIntentCases = [
 for (const [message, expected] of websiteIntentCases) assert.strictEqual(detectWebsiteIntent(message), expected);
 
 const expectedComboPrices = [2500, 3600, 6100];
+const expectedComboPromotions = [
+  ["龜鹿膏：已套用優惠價 $1,500"],
+  [],
+  ["龜鹿膏：已套用優惠價 $1,500"],
+];
 for (let index = 0; index < expectedComboPrices.length; index += 1) {
   const combo = getCombo(index);
   assert.ok(combo);
   assert.strictEqual(comboUnitPrice(combo), expectedComboPrices[index]);
   assert.deepStrictEqual(combo.quantityOptions, [1, 2, 3, 5]);
-  assert.deepStrictEqual(comboPromotionLines(combo), []);
+  assert.deepStrictEqual(comboPromotionLines(combo), expectedComboPromotions[index]);
   const buttons = comboQtyMenu(index).contents.footer.contents;
   for (const qty of [1, 2, 3, 5]) assert.ok(buttons.some((button) => button.action?.text === `加入組合｜${index}｜${qty}`));
 }
@@ -142,4 +147,4 @@ for (const message of [mascotWelcomeReply(), recommendReply(), usageChooserReply
   assert.strictEqual(bubble.hero.aspectMode, "fit");
 }
 
-console.log("PASS full LINE OA function matrix v401.6 with official prices, buy-ten-get-two offers and three combos");
+console.log("PASS full LINE OA function matrix v401.6 with official prices, combo promotion labels, buy-ten-get-two offers and three combos");
