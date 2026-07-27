@@ -20,6 +20,7 @@ on:
       - "internal-line-order-sync.js"
       - "internal-line-order-sync.test.js"
       - "internal-inventory-seed.js"
+      - "internal-inventory-seed.test.js"
       - "social-server.js"
       - "social-approved-originals.js"
       - "social-final-reconcile.js"
@@ -86,6 +87,7 @@ jobs:
             node catalog.test.js &&
             node function.test.js &&
             node line-order-cart.test.js &&
+            node internal-inventory-seed.test.js &&
             node internal-order-pricing.test.js &&
             node internal-line-order-sync.test.js
           } 2>&1 | tee /tmp/xjw-test.log
