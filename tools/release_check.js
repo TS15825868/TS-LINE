@@ -50,6 +50,8 @@ const required = [
   "product-sales-master.js",
   "product-quote-only-guard.js",
   "product-quote-only-guard.test.js",
+  "brand-content.json",
+  "brand-content-runtime.js",
   "line-sales-master.json",
   "MASCOT_CHARACTER_SPEC.md",
   "supabase-state-bridge.js",
@@ -60,7 +62,7 @@ for (const file of required) assert(exists(file), `缺少正式檔案：${file}`
 assert.strictEqual(data.lineId, "@762jybnm");
 assert.strictEqual(data.catalogVersion, "408.9");
 assert.strictEqual(data.products.length, 6);
-assert.strictEqual(pkg.version, "6.0.6");
+assert.strictEqual(pkg.version, "6.1.0");
 assert.strictEqual(lock.version, pkg.version);
 assert.strictEqual(lock.packages?.[" "]?.version, undefined);
 assert.strictEqual(lock.packages?.[""]?.version, pkg.version);
@@ -85,6 +87,7 @@ assert(start.includes("node -r ./product-sales-master.js"), "正式售價與角�
 assert(start.includes("-r ./product-quote-only-guard.js"), "龜鹿膠洽詢價防護必須在正式啟動時載入");
 assert(start.includes("-r ./social-weekly-schedule-override.js"), "每週一篇相容層必須在啟動時載入");
 assert(start.includes("-r ./social-review-only-mode.js"), "審核閘門必須在正式啟動時載入");
+assert(start.includes("-r ./brand-content-runtime.js"), "品牌內容共用回覆必須在正式啟動時載入");
 assert(start.indexOf("product-sales-master.js") < start.indexOf("product-quote-only-guard.js"), "售價主檔必須先於洽詢價防護載入");
 assert(start.indexOf("product-quote-only-guard.js") < start.indexOf("social-weekly-schedule-override.js"), "洽詢價防護必須先於排程相容層載入");
 assert(start.indexOf("social-weekly-schedule-override.js") < start.indexOf("social-review-only-mode.js"), "每週一篇相容層必須先於審核閘門載入");
@@ -92,6 +95,10 @@ assert(start.includes("-r ./social-static-asset-bridge.js"), "缺少繁體中文
 assert(start.indexOf("social-static-asset-bridge.js") < start.indexOf("social-final-approved-batch.js"), "圖片橋接器必須先於舊圖片產生器載入");
 assert(!start.includes("-r ./social-incomplete-auto-retry.js"), "不可載入失敗平台自動補發模組");
 assert(!start.includes("line-approved-mascot-runtime.js"), "損壞的 LINE 小老闆圖片流程不可載入");
+
+const brandContent = JSON.parse(read("brand-content.json"));
+assert(Array.isArray(brandContent.records) && brandContent.records.length >= 6, "品牌內容至少需要六項正式資料");
+assert(brandContent.records.every((item) => item.id && item.title && item.lineReply), "品牌內容缺少 id、title 或 LINE 回覆");
 
 assert.strictEqual(quoteOnlyGuard.VERSION, "2026-07-25-quote-only-v2");
 const transformedServer = quoteOnlyGuard.transformServer(read("server.js"));
@@ -206,4 +213,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.0.6售價與龜鹿膠洽詢價防護、三組搭配相容欄位、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、全部未發布內容先待審、審核後每週1篇週三20:00、天氣內容人工審核後只在其他平日20:00條件加發、HTTP 429自動退避、週末不發布");
+console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.1.0品牌內容、售價與龜鹿膠洽詢價防護、三組搭配相容欄位、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、全部未發布內容先待審、審核後每週1篇週三20:00、天氣內容人工審核後只在其他平日20:00條件加發、HTTP 429自動退避、週末不發布");
