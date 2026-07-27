@@ -1,10 +1,16 @@
-commit=8992e50825db889c73cef8ff94bbcae2da037978
-recorded_at=2026-07-27T11:53:42Z
+commit=e7317deca79147506f2c3403c0e712f6249e309e
+recorded_at=2026-07-27T12:28:59Z
 
 
-> xianjiawei-lineoa@6.1.0 check:catalog
+> xianjiawei-lineoa@6.1.1 check:catalog
 > node tools/sync_website_catalog.js --check && node tools/sync_sales_master.js
 
 LINE OA data.json 與官網共用目錄不同步：
 $.products[0].originalPriceText: actual="$1,800" expected=undefined
+$.products[0].promotionTexts: actual=["優惠價1,500元"] expected=undefined
+$.products[1].promotionTexts: actual=["買10送2"] expected=undefined
+$.products[2].promotionTexts: actual=["買10送2"] expected=undefined
+$.products[3].promotionTexts: actual=[] expected=undefined
 $.products[4].originalPriceText: actual="$12,000" expected=undefined
+$.products[4].promotionTexts: actual=["優惠價9,600元"] expected=undefined
+$.products[5].promotionTexts: actual=[] expected=undefined
