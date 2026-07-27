@@ -1,5 +1,5 @@
-commit=156e7ad6a40717c7930114c3f41ad5188302b97b
-recorded_at=2026-07-27T09:35:22Z
+commit=8ac7f755d4c4f886d0dc20219ec2481c40b57c1b
+recorded_at=2026-07-27T10:09:56Z
 
 
 > xianjiawei-lineoa@6.1.0 test
@@ -10,7 +10,7 @@ PASS quote-only product shows LINE inquiry and cannot enter cart at NT$0
 PASS current policy: all unpublished posts pending review, schedule only after approval, weekly Wednesday 20:00, fixed mascot partners and official prices
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-07-27T09:37:22.382Z
+Social weather automation rate limited; next check 2026-07-27T10:11:56.480Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
