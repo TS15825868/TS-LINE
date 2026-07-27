@@ -9,6 +9,20 @@ function readCatalog() {
   return Array.isArray(data.products) ? data.products : [];
 }
 
+function promotionFields(product = {}) {
+  return {
+    offers: Array.isArray(product.offers)
+      ? product.offers.filter((offer) => offer && typeof offer === "object").map((offer) => ({
+          qty: Number(offer.qty || 0),
+          total: Number(offer.total || 0),
+          label: String(offer.label || ""),
+        })).filter((offer) => offer.qty > 0 && offer.total >= 0 && offer.label)
+      : [],
+    promotionTexts: Array.isArray(product.promotionTexts) ? [...product.promotionTexts] : [],
+    quoteOnly: product.quoteOnly === true,
+  };
+}
+
 function seedInventory(readStore, writeStore) {
   const store = readStore();
   store.inventory = Array.isArray(store.inventory) ? store.inventory : [];
@@ -21,6 +35,7 @@ function seedInventory(readStore, writeStore) {
     const productId = String(product.id || "").trim();
     if (!productId) continue;
     const current = existing.get(productId);
+    const promotions = promotionFields(product);
     if (current) {
       const next = {
         name: String(product.displayName || product.name || productId),
@@ -28,10 +43,13 @@ function seedInventory(readStore, writeStore) {
         unit: String(product.unit || current.unit || "件"),
         price: Number(product.price || 0),
         originalPrice: Number(product.originalPrice || 0),
+        offers: promotions.offers,
+        promotionTexts: promotions.promotionTexts,
+        quoteOnly: promotions.quoteOnly,
       };
       let changed = false;
       Object.entries(next).forEach(([key, value]) => {
-        if (current[key] !== value) {
+        if (JSON.stringify(current[key]) !== JSON.stringify(value)) {
           current[key] = value;
           changed = true;
         }
@@ -50,6 +68,9 @@ function seedInventory(readStore, writeStore) {
       unit: String(product.unit || "件"),
       price: Number(product.price || 0),
       originalPrice: Number(product.originalPrice || 0),
+      offers: promotions.offers,
+      promotionTexts: promotions.promotionTexts,
+      quoteOnly: promotions.quoteOnly,
       stock: 0,
       reserved: 0,
       lowStock: 5,
@@ -69,13 +90,13 @@ function seedInventory(readStore, writeStore) {
       id: `act-inventory-${Date.now().toString(36)}`,
       actor: "系統",
       action: "同步產品庫存目錄",
-      detail: `新增 ${added} 項，更新價格與規格 ${updated} 項`,
+      detail: `新增 ${added} 項，更新價格、優惠與規格 ${updated} 項`,
       createdAt: new Date().toISOString(),
     });
     writeStore(store);
   }
 
-  return { added, updated, total: store.inventory.length };
+  return { added, updated, total: store.inventory.length, promotionRulesSynchronized: true };
 }
 
-module.exports = { readCatalog, seedInventory };
+module.exports = { readCatalog, seedInventory, promotionFields };
