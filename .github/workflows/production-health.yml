@@ -75,11 +75,11 @@ jobs:
               node -e "const h=require('/tmp/xjw-production/release.json');if(h.ok!==true||Number(h.totalPosts)!==10||Number(h.fixedPosts)!==7||Number(h.weatherStandbyPosts)!==3||!Array.isArray(h.assets)||h.assets.length!==10||h.assets.some(a=>a.ok!==true||Number(a.width)!==1254||Number(a.height)!==1254))process.exit(1)" && release_ok=1 || true
 
             curl --connect-timeout 10 --max-time 45 --fail --silent --show-error "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/xjw-production/review.json 2>/dev/null && \
-              node -e "const h=require('/tmp/xjw-production/review.json');if(h.ok!==true||h.version!=='2026-07-25-review-gate-v4'||h.reviewRequiredBeforePublish!==true||h.automaticRetryEnabled!==false||Number(h.canonicalCount)!==10||Number(h.unreviewedActiveCount)!==0||h.overdueApprovalPolicy!=='move-to-next-free-wed-20:00')process.exit(1)" && review_ok=1 || true
+              node -e "const h=require('/tmp/xjw-production/review.json');if(h.ok!==true||h.version!=='2026-07-26-review-gate-v5'||h.reviewRequiredBeforePublish!==true||h.automaticRetryEnabled!==false||Number(h.canonicalCount)!==10||Number(h.unreviewedActiveCount)!==0||h.overdueApprovalPolicy!=='move-to-next-free-wed-20:00')process.exit(1)" && review_ok=1 || true
 
             schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error -o /tmp/xjw-production/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
             if [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; then
-              node -e "const h=require('/tmp/xjw-production/schedule.json');if(h.version!=='2026-07-25-v6'||Number(h.canonicalCount)!==10||h.rule?.fixed!=='每週1篇，週三 20:00'||!String(h.rule?.weatherException||'').includes('週末不發布')||(Array.isArray(h.issues)&&h.issues.length))process.exit(1)" && schedule_ok=1 || true
+              node -e "const h=require('/tmp/xjw-production/schedule.json');if(h.version!=='2026-07-24-v5'||Number(h.canonicalCount)!==10||h.rule?.fixed!=='每週1篇，週三 20:00'||!String(h.rule?.weatherException||'').includes('週末不發布')||(Array.isArray(h.issues)&&h.issues.length))process.exit(1)" && schedule_ok=1 || true
             fi
 
             curl --connect-timeout 10 --max-time 45 --fail --silent --show-error "$BASE_URL/internal/social-center-healthz?t=$(date +%s)" -o /tmp/xjw-production/social-site.json 2>/dev/null && \
