@@ -1,0 +1,10 @@
+commit=8992e50825db889c73cef8ff94bbcae2da037978
+recorded_at=2026-07-27T11:53:42Z
+
+
+> xianjiawei-lineoa@6.1.0 check:catalog
+> node tools/sync_website_catalog.js --check && node tools/sync_sales_master.js
+
+LINE OA data.json 與官網共用目錄不同步：
+$.products[0].originalPriceText: actual="$1,800" expected=undefined
+$.products[4].originalPriceText: actual="$12,000" expected=undefined
