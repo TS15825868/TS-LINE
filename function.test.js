@@ -69,9 +69,7 @@ const messages = [
   huangdiNeijingReply(),
   cartFlex({ cart: [], checkout: null }),
 ];
-for (const product of DATA.products) {
-  messages.push(usageReply(product), qtyMenu(product));
-}
+for (const product of DATA.products) messages.push(usageReply(product), qtyMenu(product));
 messages.forEach(validateMessage);
 validateMessage(comboDetailReply(0));
 validateBubble(brandStoryReply());
@@ -89,21 +87,21 @@ for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組�
 }
 
 const expectedSales = {
-  "guilu-gao": { price: 2000, options: [1, 2, 3, 5] },
-  "guilu-drink-30": { price: 100, options: [1, 3, 5, 12] },
-  "guilu-drink-180": { price: 200, options: [1, 3, 5, 12] },
-  "guilu-tangkuai": { price: 2000, options: [1, 2, 3, 5] },
-  "guilu-jiao": { price: 0, quoteOnly: true, options: [1, 2, 3, 5] },
-  "luerong-fen": { price: 2000, options: [1, 2, 3, 5] },
+  "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5], offers: [] },
+  "guilu-drink-30": { price: 50, options: [1, 3, 5, 12], offers: [{ qty: 12, total: 500, label: "買10送2" }] },
+  "guilu-drink-180": { price: 200, options: [1, 3, 5, 12], offers: [{ qty: 12, total: 2000, label: "買10送2" }] },
+  "guilu-tangkuai": { price: 1600, options: [1, 2, 3, 5], offers: [] },
+  "guilu-jiao": { price: 9600, originalPrice: 12000, quoteOnly: false, options: [1, 2, 3, 5], offers: [] },
+  "luerong-fen": { price: 2000, options: [1, 2, 3, 5], offers: [] },
 };
 for (const product of DATA.products) {
   const expected = expectedSales[product.id];
   assert.ok(expected, `unexpected product: ${product.id}`);
   assert.strictEqual(product.price, expected.price);
+  if (expected.originalPrice !== undefined) assert.strictEqual(product.originalPrice, expected.originalPrice);
   assert.deepStrictEqual(product.quantityOptions, expected.options);
-  assert.strictEqual(product.offers.length, 0, `${product.id} 不應保留舊數量活動`);
+  assert.deepStrictEqual(product.offers, expected.offers);
   assert.strictEqual(Boolean(product.quoteOnly), Boolean(expected.quoteOnly));
-  if (expected.quoteOnly) assert.strictEqual(product.priceText, "價格請洽詢");
   const bubble = productMenuReply().contents.contents.find((item) => item.body?.contents?.some((content) => content.type === "text" && content.text === product.displayName));
   assert.ok(bubble?.hero?.url.startsWith("https://ts15825868.github.io/xianjiawei/images/products-v3/"));
   const dmButton = bubble.footer.contents.find((button) => button.action?.label === "看產品DM");
@@ -121,7 +119,7 @@ const websiteIntentCases = [
 ];
 for (const [message, expected] of websiteIntentCases) assert.strictEqual(detectWebsiteIntent(message), expected);
 
-const expectedComboPrices = [3000, 4000, 7000];
+const expectedComboPrices = [2500, 3600, 6100];
 for (let index = 0; index < expectedComboPrices.length; index += 1) {
   const combo = getCombo(index);
   assert.ok(combo);
@@ -134,8 +132,8 @@ for (let index = 0; index < expectedComboPrices.length; index += 1) {
 assert.strictEqual(getCombo(3), null);
 const comboState = { cart: [], checkout: null };
 addComboCart(comboState, getCombo(2), 2, 3);
-assert.strictEqual(comboState.cart[0].total, 21000);
-assert.ok(comboState.cart[0].label.includes("$7,000"));
+assert.strictEqual(comboState.cart[0].total, 18300);
+assert.ok(comboState.cart[0].label.includes("$6,100"));
 
 for (const message of [mascotWelcomeReply(), recommendReply(), usageChooserReply(), faqReply()]) {
   const bubble = message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;
@@ -144,4 +142,4 @@ for (const message of [mascotWelcomeReply(), recommendReply(), usageChooserReply
   assert.strictEqual(bubble.hero.aspectMode, "fit");
 }
 
-console.log("PASS full LINE OA function matrix v401.6 with official prices, quote-only product and three combos");
+console.log("PASS full LINE OA function matrix v401.6 with official prices, buy-ten-get-two offers and three combos");
