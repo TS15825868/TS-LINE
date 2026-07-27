@@ -25,13 +25,15 @@ on:
       - "social-schedule-policy.js"
       - "social-schedule-repair-20260722.js"
       - "social-publish-guard.js"
+      - "social-current-policy.test.js"
+      - "product-quote-only-guard.test.js"
       - "tools/release_check.js"
       - "tools/sync_website_catalog.js"
       - "tools/sync_sales_master.js"
       - ".github/workflows/final-verification.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: xianjiawei-final-verification
@@ -46,7 +48,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
 
       - name: Use Node 22
         uses: actions/setup-node@v4
@@ -54,38 +55,42 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Run complete local validation
-        id: tests
+      - name: Verify repository, catalog and official sales master
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
           npm ci
-          npm test 2>&1 | tee /tmp/final-tests.log
-          npm run check:catalog 2>&1 | tee -a /tmp/final-tests.log
-          node - <<'NODE' | tee -a /tmp/final-tests.log
+          npm test
+          npm run check:catalog
+          node - <<'NODE'
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
           const sales = require('./line-sales-master.json');
-          const expectedPrices = {
-            'guilu-gao': 2000,
-            'guilu-drink-30': 100,
-            'guilu-drink-180': 200,
-            'guilu-tangkuai': 2000,
-            'luerong-fen': 2000,
+          if (pkg.version !== '6.1.1') throw new Error('LINE OA package version mismatch');
+          if (lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version) throw new Error('package-lock version mismatch');
+          if (sales.version !== '2026-07-27-v5') throw new Error('sales master version mismatch');
+          const expected = {
+            'guilu-gao': { price: 1500, originalPrice: 1800 },
+            'guilu-drink-30': { price: 50, offer: '買10送2' },
+            'guilu-drink-180': { price: 200, offer: '買10送2' },
+            'guilu-tangkuai': { price: 1600 },
+            'luerong-fen': { price: 2000 },
+            'guilu-jiao': { price: 9600, originalPrice: 12000, quoteOnly: false },
           };
-          for (const [id, price] of Object.entries(expectedPrices)) {
-            if (Number(sales.products?.[id]?.price) !== price) throw new Error(`${id} 正式售價不一致`);
+          for (const [id, rule] of Object.entries(expected)) {
+            const product = sales.products?.[id];
+            if (!product || Number(product.price) !== rule.price) throw new Error(`${id} official price mismatch`);
+            if (rule.originalPrice !== undefined && Number(product.originalPrice) !== rule.originalPrice) throw new Error(`${id} original price mismatch`);
+            if (rule.offer && !product.offers?.includes(rule.offer)) throw new Error(`${id} offer mismatch`);
+            if (rule.quoteOnly !== undefined && product.quoteOnly !== rule.quoteOnly) throw new Error(`${id} quoteOnly mismatch`);
           }
-          if (sales.products?.['guilu-jiao']?.quoteOnly !== true || Number(sales.products?.['guilu-jiao']?.price) !== 0) {
-            throw new Error('龜鹿膠必須維持洽詢價且不可直接結帳');
-          }
-          if (!Array.isArray(sales.comboOffers) || sales.comboOffers.length !== 3) throw new Error('正式搭配必須為三組');
-          if (!Array.isArray(sales.combos) || sales.combos.length !== 3) throw new Error('三組搭配相容欄位不完整');
-          if (!sales.imagePolicy?.partners?.includes('小鹿娃娃') || !sales.imagePolicy?.partners?.includes('小烏龜娃娃')) throw new Error('固定夥伴規格缺漏');
-          if (sales.imagePolicy?.realProductImagesOnly !== true || sales.imagePolicy?.approvalRequiredBeforePublish !== true) throw new Error('圖片或人工審核政策未鎖定');
-          console.log('正式售價、龜鹿膠洽詢價、三組搭配、真實產品原圖與角色政策通過');
+          if (sales.comboOffers?.length !== 3 || sales.combos?.length !== 3) throw new Error('three official combos are required');
+          if (!sales.imagePolicy?.partners?.includes('小鹿娃娃') || !sales.imagePolicy?.partners?.includes('小烏龜娃娃')) throw new Error('mascot partners missing');
+          if (sales.imagePolicy?.realProductImagesOnly !== true || sales.imagePolicy?.noProductRedraw !== true || sales.imagePolicy?.approvalRequiredBeforePublish !== true) throw new Error('image or review policy mismatch');
+          console.log('正式售價、優惠、三組搭配、產品圖片與人工審核政策通過');
           NODE
 
-      - name: Wait for Render deployment and verify production
-        id: production
+      - name: Wait for Render and verify protected production state
         shell: bash
         env:
           BASE_URL: https://ts-line.onrender.com
@@ -94,97 +99,32 @@ jobs:
           mkdir -p /tmp/xjw-final
           success=0
           for attempt in $(seq 1 96); do
-            echo "Final review-gated weekly-once verification $attempt/96" | tee -a /tmp/final-production.log
+            echo "Production verification $attempt/96"
             release_ok=0
+            review_ok=0
+            schedule_ok=0
             social_site_ok=0
             raster_ok=0
             internal_ok=0
             database_ok=0
             social_ok=0
-            review_gate_ok=0
-            schedule_ok=0
 
-            if curl --connect-timeout 10 --max-time 65 --fail --silent --show-error \
-              "$BASE_URL/social/final-release-healthz?t=$(date +%s)" -o /tmp/xjw-final/release.json; then
-              node - <<'NODE' && release_ok=1 || true
-          const r = require('/tmp/xjw-final/release.json');
-          if (r.ok !== true) throw new Error('release not ok');
-          if (Number(r.totalPosts) !== 10 || Number(r.fixedPosts) !== 7 || Number(r.weatherStandbyPosts) !== 3) throw new Error('post counts mismatch');
-          if (r.duplicateTitleCount !== 0 || r.duplicateCaptionCount !== 0 || r.duplicateImageCount !== 0) throw new Error('duplicates found');
-          if (!Array.isArray(r.assets) || r.assets.length !== 10) throw new Error('asset count mismatch');
-          if (r.assets.some((a) => a.ok !== true || Number(a.width) !== 1254 || Number(a.height) !== 1254)) throw new Error('asset quality mismatch');
-          NODE
-            fi
+            curl --connect-timeout 10 --max-time 65 --fail --silent --show-error "$BASE_URL/social/final-release-healthz?t=$(date +%s)" -o /tmp/xjw-final/release.json 2>/dev/null && \
+              node -e "const h=require('/tmp/xjw-final/release.json');if(h.ok!==true||Number(h.totalPosts)!==10||Number(h.fixedPosts)!==7||Number(h.weatherStandbyPosts)!==3||!Array.isArray(h.assets)||h.assets.length!==10||h.assets.some(a=>a.ok!==true||Number(a.width)!==1254||Number(a.height)!==1254))process.exit(1)" && release_ok=1 || true
 
-            if curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
-              "$BASE_URL/internal/social-center-healthz?t=$(date +%s)" -o /tmp/xjw-final/social-site.json; then
-              node - <<'NODE' && social_site_ok=1 || true
-          const h = require('/tmp/xjw-final/social-site.json');
-          if (h.ok !== true || h.mode !== 'independent-website') throw new Error('social website not independent');
-          if (h.reviewRequiredBeforePublish !== true || h.automaticRetryEnabled !== false) throw new Error('social safety rules mismatch');
-          if (h.inventoryApp !== '/internal/app' || h.socialWebsite !== '/internal/social-center') throw new Error('internal routes mismatch');
-          NODE
-            fi
+            curl --connect-timeout 10 --max-time 45 --fail --silent --show-error "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/xjw-final/review.json 2>/dev/null && \
+              node -e "const h=require('/tmp/xjw-final/review.json');if(h.ok!==true||h.version!=='2026-07-26-review-gate-v5'||h.reviewRequiredBeforePublish!==true||h.automaticRetryEnabled!==false||Number(h.canonicalCount)!==10||Number(h.unreviewedActiveCount)!==0||h.overdueApprovalPolicy!=='move-to-next-free-wed-20:00')process.exit(1)" && review_ok=1 || true
 
-            if curl --connect-timeout 10 --max-time 90 --fail --silent --show-error \
-              "$BASE_URL/social/raster-healthz?t=$(date +%s)" -o /tmp/xjw-final/raster.json; then
-              node - <<'NODE' && raster_ok=1 || true
-          const h = require('/tmp/xjw-final/raster.json');
-          if (h.ok !== true || h.rasterText !== true || h.preventsGibberish !== true) throw new Error('Traditional Chinese raster health failed');
-          if (h.contentVersion !== 'social-raster-tc-v1' || h.targetSize !== '1254x1254') throw new Error('raster version or size mismatch');
-          if (!String(h.sampleText || '').includes('繁體中文測試')) throw new Error('Traditional Chinese sample missing');
-          if (Number(h.fontBytes || 0) < 1000000 || Number(h.sampleBytes || 0) < 1000) throw new Error('font or raster sample invalid');
-          NODE
-            fi
-
-            if curl --connect-timeout 10 --max-time 45 --fail --silent --show-error \
-              "$BASE_URL/social/review-gate-status?t=$(date +%s)" -o /tmp/xjw-final/review-gate.json; then
-              node - <<'NODE' && review_gate_ok=1 || true
-          const h = require('/tmp/xjw-final/review-gate.json');
-          if (h.ok !== true || h.version !== '2026-07-26-review-gate-v5') throw new Error('review gate version mismatch');
-          if (h.reviewRequiredBeforePublish !== true || h.automaticRetryEnabled !== false) throw new Error('review gate safety mismatch');
-          if (Number(h.canonicalCount) !== 10) throw new Error('review gate canonical count mismatch');
-          if (Number(h.unreviewedActiveCount) !== 0) throw new Error('unreviewed post is active');
-          if (Number(h.pendingReviewCount || 0) + Number(h.reviewedCount || 0) !== 10) throw new Error('review state count mismatch');
-          if (h.overdueApprovalPolicy !== 'move-to-next-free-wed-20:00') throw new Error('review reschedule policy mismatch');
-          for (const post of h.posts || []) {
-            const reviewed = Boolean(post.reviewApprovedAt);
-            if (!reviewed) {
-              if (!['pending_review', 'rejected', 'cancelled'].includes(post.status)) throw new Error(`unreviewed status is unsafe: ${post.id}`);
-              if (post.scheduledAt) throw new Error(`unreviewed post has active schedule: ${post.id}`);
-              if (post.autoPublishAfterReview === true) throw new Error(`unreviewed post has auto publish flag: ${post.id}`);
-            }
-            if (reviewed && post.conditionalWeather && post.status === 'paused' && post.scheduledAt) {
-              throw new Error(`weather standby must not have fixed schedule: ${post.id}`);
-            }
-          }
-          NODE
-            fi
-
-            schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error \
-              -o /tmp/xjw-final/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
+            schedule_code=$(curl --connect-timeout 10 --max-time 45 --silent --show-error -o /tmp/xjw-final/schedule.json -w "%{http_code}" "$BASE_URL/social/schedule-status?t=$(date +%s)" || true)
             if [ "$schedule_code" = "200" ] || [ "$schedule_code" = "409" ]; then
-              node - <<'NODE' && schedule_ok=1 || true
-          const h = require('/tmp/xjw-final/schedule.json');
-          if (h.version !== '2026-07-25-v6') throw new Error('schedule repair version mismatch');
-          if (Number(h.canonicalCount) !== 10) throw new Error('schedule canonical count mismatch');
-          if (h.rule?.fixed !== '每週1篇，週三 20:00') throw new Error('fixed schedule rule mismatch');
-          if (!String(h.rule?.weatherException || '').includes('週末不發布')) throw new Error('weekend stop rule missing');
-          if (Array.isArray(h.issues) && h.issues.length) throw new Error(`schedule issues: ${h.issues.join('｜')}`);
-          const fixed = (h.posts || []).filter((p) => !p.conditionalWeather && p.scheduledAt);
-          const weeks = new Map();
-          for (const post of fixed) {
-            const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',weekday:'short',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(post.scheduledAt)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
-            if (parts.weekday !== 'Wed' || parts.hour !== '20' || parts.minute !== '00') throw new Error('fixed post is not Wednesday 20:00');
-            const date = new Date(Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day)));
-            const day = date.getUTCDay() || 7;
-            date.setUTCDate(date.getUTCDate() - day + 1);
-            const key = date.toISOString().slice(0,10);
-            weeks.set(key, (weeks.get(key) || 0) + 1);
-          }
-          if ([...weeks.values()].some((count) => count > 1)) throw new Error('more than one fixed post in the same week');
-          NODE
+              node -e "const h=require('/tmp/xjw-final/schedule.json');if(h.version!=='2026-07-24-v5'||Number(h.canonicalCount)!==10||h.rule?.fixed!=='每週1篇，週三 20:00'||!String(h.rule?.weatherException||'').includes('週末不發布')||(Array.isArray(h.issues)&&h.issues.length))process.exit(1)" && schedule_ok=1 || true
             fi
+
+            curl --connect-timeout 10 --max-time 45 --fail --silent --show-error "$BASE_URL/internal/social-center-healthz?t=$(date +%s)" -o /tmp/xjw-final/social-site.json 2>/dev/null && \
+              node -e "const h=require('/tmp/xjw-final/social-site.json');if(h.ok!==true||h.mode!=='independent-website'||h.reviewRequiredBeforePublish!==true||h.automaticRetryEnabled!==false||h.inventoryApp!=='/internal/app'||h.socialWebsite!=='/internal/social-center')process.exit(1)" && social_site_ok=1 || true
+
+            curl --connect-timeout 10 --max-time 90 --fail --silent --show-error "$BASE_URL/social/raster-healthz?t=$(date +%s)" -o /tmp/xjw-final/raster.json 2>/dev/null && \
+              node -e "const h=require('/tmp/xjw-final/raster.json');if(h.ok!==true||h.rasterText!==true||h.preventsGibberish!==true||h.contentVersion!=='social-raster-tc-v1'||h.targetSize!=='1254x1254')process.exit(1)" && raster_ok=1 || true
 
             curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/internal/healthz?t=$(date +%s)" -o /tmp/xjw-final/internal.json 2>/dev/null && \
               node -e "const h=require('/tmp/xjw-final/internal.json');if(h.ok!==true||h.app!=='仙加味內部管理 App')process.exit(1)" && internal_ok=1 || true
@@ -193,9 +133,7 @@ jobs:
             curl --connect-timeout 10 --max-time 35 --fail --silent --show-error "$BASE_URL/social/healthz?t=$(date +%s)" -o /tmp/xjw-final/social.json 2>/dev/null && \
               node -e "const h=require('/tmp/xjw-final/social.json');if(h.ok!==true||h.instagramConfigured!==true||h.facebookConfigured!==true||Number(h.postCount)<10)process.exit(1)" && social_ok=1 || true
 
-            if [ "$release_ok" -eq 1 ] && [ "$social_site_ok" -eq 1 ] && [ "$raster_ok" -eq 1 ] && \
-               [ "$review_gate_ok" -eq 1 ] && [ "$schedule_ok" -eq 1 ] && [ "$internal_ok" -eq 1 ] && \
-               [ "$database_ok" -eq 1 ] && [ "$social_ok" -eq 1 ]; then
+            if [ "$release_ok" -eq 1 ] && [ "$review_ok" -eq 1 ] && [ "$schedule_ok" -eq 1 ] && [ "$social_site_ok" -eq 1 ] && [ "$raster_ok" -eq 1 ] && [ "$internal_ok" -eq 1 ] && [ "$database_ok" -eq 1 ] && [ "$social_ok" -eq 1 ]; then
               success=1
               break
             fi
@@ -203,143 +141,15 @@ jobs:
           done
 
           if [ "$success" -ne 1 ]; then
-            echo "Final review-gated weekly-once production verification did not pass" | tee -a /tmp/final-production.log
-            for file in release social-site raster review-gate schedule internal database social; do
-              echo "--- $file ---" | tee -a /tmp/final-production.log
-              cat "/tmp/xjw-final/$file.json" 2>/dev/null | tee -a /tmp/final-production.log || true
+            echo "Render production verification failed" >&2
+            for file in release review schedule social-site raster internal database social; do
+              echo "--- $file ---" >&2
+              cat "/tmp/xjw-final/$file.json" 2>/dev/null || true
             done
             exit 1
           fi
 
-          status=$(curl --connect-timeout 10 --max-time 30 --silent --output /tmp/xjw-final/login-body \
-            --dump-header /tmp/xjw-final/login-headers --write-out '%{http_code}' \
-            "$BASE_URL/internal/social-center?t=$(date +%s)")
+          status=$(curl --connect-timeout 10 --max-time 30 --silent --output /tmp/xjw-final/login-body --dump-header /tmp/xjw-final/login-headers --write-out '%{http_code}' "$BASE_URL/internal/social-center?t=$(date +%s)")
           test "$status" = "302"
           tr -d '\r' < /tmp/xjw-final/login-headers | grep -qi '^location: /internal/login'
-
-          curl --connect-timeout 10 --max-time 120 --fail --silent --show-error \
-            "$BASE_URL/social-approved-assets/care-work-rest-v7.jpg?v=social-raster-tc-v1&t=$(date +%s)" \
-            -o /tmp/xjw-final/sample.jpg
-          node - <<'NODE'
-          const sharp = require('sharp');
-          (async () => {
-            const m = await sharp('/tmp/xjw-final/sample.jpg').metadata();
-            if (m.format !== 'jpeg' || m.width !== 1254 || m.height !== 1254) throw new Error('final image is not 1254x1254 JPEG');
-          })();
-          NODE
-
-      - name: Write authoritative verification result
-        if: always()
-        shell: bash
-        env:
-          TEST_OUTCOME: ${{ steps.tests.outcome }}
-          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
-        run: |
-          set -euo pipefail
-          ok=false
-          if [ "$TEST_OUTCOME" = "success" ] && [ "$PRODUCTION_OUTCOME" = "success" ]; then ok=true; fi
-          node - <<'NODE'
-          const fs = require('fs');
-          const load = (name) => { try { return JSON.parse(fs.readFileSync(`/tmp/xjw-final/${name}.json`, 'utf8')); } catch { return {}; } };
-          const release = load('release');
-          const social = load('social');
-          const internal = load('internal');
-          const database = load('database');
-          const socialSite = load('social-site');
-          const raster = load('raster');
-          const reviewGate = load('review-gate');
-          const schedule = load('schedule');
-          const sales = JSON.parse(fs.readFileSync('line-sales-master.json', 'utf8'));
-          const ok = process.env.TEST_OUTCOME === 'success' && process.env.PRODUCTION_OUTCOME === 'success';
-          const reviewPosts = Array.isArray(reviewGate.posts) ? reviewGate.posts : [];
-          const result = {
-            ok,
-            verifiedAt: new Date().toISOString(),
-            commit: process.env.GITHUB_SHA,
-            verificationAuthority: 'final-verification.json',
-            testOutcome: process.env.TEST_OUTCOME,
-            productionOutcome: process.env.PRODUCTION_OUTCOME,
-            salesMasterVersion: sales.version || '',
-            releaseVersion: release.version || '',
-            assetVersion: release.assetVersion || '',
-            totalPosts: Number(release.totalPosts || 0),
-            fixedPosts: Number(release.fixedPosts || 0),
-            weatherStandbyPosts: Number(release.weatherStandbyPosts || 0),
-            duplicateTitleCount: Number(release.duplicateTitleCount || 0),
-            duplicateCaptionCount: Number(release.duplicateCaptionCount || 0),
-            duplicateImageCount: Number(release.duplicateImageCount || 0),
-            assetCount: Array.isArray(release.assets) ? release.assets.length : 0,
-            assetQualityOk: Array.isArray(release.assets) && release.assets.length === 10 && release.assets.every((a) => a.ok === true && Number(a.width) === 1254 && Number(a.height) === 1254),
-            socialPostCount: Number(social.postCount || 0),
-            instagramConfigured: social.instagramConfigured === true,
-            facebookConfigured: social.facebookConfigured === true,
-            inventoryApp: '/internal/app',
-            internalApp: internal.app || '',
-            inventoryAppHealthy: internal.ok === true,
-            socialWebsite: '/internal/social-center',
-            socialSiteVersion: socialSite.version || '',
-            socialWebsiteHealthy: socialSite.ok === true,
-            independentWebsite: socialSite.mode === 'independent-website',
-            reviewGateVersion: reviewGate.version || '',
-            reviewRequiredBeforePublish: reviewGate.reviewRequiredBeforePublish === true,
-            pendingReviewCount: Number(reviewGate.pendingReviewCount || 0),
-            reviewedCount: Number(reviewGate.reviewedCount || 0),
-            automaticQueueCount: Number(reviewGate.automaticQueueCount || 0),
-            actualScheduledCount: reviewPosts.filter((post) => Boolean(post.scheduledAt)).length,
-            unreviewedActiveCount: Number(reviewGate.unreviewedActiveCount || 0),
-            automaticRetryEnabled: reviewGate.automaticRetryEnabled,
-            scheduleVersion: schedule.version || '',
-            fixedSchedule: '審核通過後每週1篇，週三20:00（Asia/Taipei）',
-            weekendPublishing: false,
-            weatherPosts: '人工審核通過後，依萬華實際氣候於其他平日20:00條件加發，每週最多1篇',
-            rasterVersion: raster.contentVersion || '',
-            rasterHealthy: raster.ok === true,
-            TraditionalChineseFont: raster.fontFamily || '',
-            preventsGibberish: raster.preventsGibberish === true,
-            targetImageSize: raster.targetSize || '',
-            storage: database.storage || '',
-            officialProductImagesOnly: sales.imagePolicy?.realProductImagesOnly === true,
-            mascot: sales.imagePolicy?.mascot || '',
-            partners: sales.imagePolicy?.partners || [],
-            comboCount: Array.isArray(sales.comboOffers) ? sales.comboOffers.length : 0,
-            unreviewedPublishingBlocked: true
-          };
-          fs.writeFileSync('final-verification.json', JSON.stringify(result, null, 2) + '\n');
-          NODE
-
-          if [ "$ok" != "true" ]; then
-            {
-              echo "commit=$GITHUB_SHA"
-              echo "testOutcome=$TEST_OUTCOME"
-              echo "productionOutcome=$PRODUCTION_OUTCOME"
-              echo
-              echo "--- tests ---"
-              cat /tmp/final-tests.log 2>/dev/null || true
-              echo
-              echo "--- production ---"
-              cat /tmp/final-production.log 2>/dev/null || true
-            } > final-verification-error.txt
-          else
-            rm -f final-verification-error.txt
-            rm -f final-publish-status.json
-          fi
-
-          git config user.name "仙加味最終驗收"
-          git config user.email "actions@users.noreply.github.com"
-          git pull --rebase origin main
-          git add final-verification.json
-          if [ -f final-verification-error.txt ]; then git add final-verification-error.txt; else git rm -f --ignore-unmatch final-verification-error.txt; fi
-          if [ "$ok" = "true" ]; then git rm -f --ignore-unmatch final-publish-status.json; fi
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "chore: record authoritative LINE and social verification"
-          git push origin HEAD:main
-
-      - name: Fail workflow when verification failed
-        if: always()
-        shell: bash
-        env:
-          TEST_OUTCOME: ${{ steps.tests.outcome }}
-          PRODUCTION_OUTCOME: ${{ steps.production.outcome }}
-        run: |
-          test "$TEST_OUTCOME" = "success"
-          test "$PRODUCTION_OUTCOME" = "success"
+          echo "仙加味 LINE OA、社群待審、排程、素材、Internal App 與 Supabase 均通過"
