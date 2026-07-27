@@ -62,19 +62,23 @@ for (const file of required) assert(exists(file), `缺少正式檔案：${file}`
 assert.strictEqual(data.lineId, "@762jybnm");
 assert.strictEqual(data.catalogVersion, "408.9");
 assert.strictEqual(data.products.length, 6);
-assert.strictEqual(pkg.version, "6.1.0");
+assert.strictEqual(pkg.version, "6.1.1");
 assert.strictEqual(lock.version, pkg.version);
 assert.strictEqual(lock.packages?.[" "]?.version, undefined);
 assert.strictEqual(lock.packages?.[""]?.version, pkg.version);
-assert.strictEqual(salesMaster.version, "2026-07-26-v4");
-assert.strictEqual(salesMaster.products?.["guilu-gao"]?.price, 2000);
-assert.strictEqual(salesMaster.products?.["guilu-drink-30"]?.price, 100);
+assert.strictEqual(salesMaster.version, "2026-07-27-v5");
+assert.strictEqual(salesMaster.products?.["guilu-gao"]?.price, 1500);
+assert.strictEqual(salesMaster.products?.["guilu-gao"]?.originalPrice, 1800);
+assert.strictEqual(salesMaster.products?.["guilu-drink-30"]?.price, 50);
+assert(salesMaster.products?.["guilu-drink-30"]?.offers?.includes("買10送2"));
 assert.strictEqual(salesMaster.products?.["guilu-drink-180"]?.price, 200);
-assert.strictEqual(salesMaster.products?.["guilu-tangkuai"]?.price, 2000);
+assert(salesMaster.products?.["guilu-drink-180"]?.offers?.includes("買10送2"));
+assert.strictEqual(salesMaster.products?.["guilu-tangkuai"]?.price, 1600);
 assert.strictEqual(salesMaster.products?.["luerong-fen"]?.price, 2000);
-assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.price, 0);
-assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.quoteOnly, true);
-assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.priceText, "價格請洽詢");
+assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.price, 9600);
+assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.originalPrice, 12000);
+assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.quoteOnly, false);
+assert.strictEqual(salesMaster.products?.["guilu-jiao"]?.priceText, "$9,600 / 一斤裝");
 assert.strictEqual(salesMaster.comboOffers?.length, 3);
 assert.strictEqual(salesMaster.combos?.length, 3);
 assert.deepStrictEqual(salesMaster.imagePolicy?.partners, ["小鹿娃娃", "小烏龜娃娃"]);
@@ -103,7 +107,7 @@ assert(brandContent.records.every((item) => item.id && item.title && item.lineRe
 assert.strictEqual(quoteOnlyGuard.VERSION, "2026-07-25-quote-only-v2");
 const transformedServer = quoteOnlyGuard.transformServer(read("server.js"));
 assert(transformedServer.includes('product.quoteOnly ? (product.priceLabel || "價格請洽詢客服")'));
-assert(transformedServer.includes('if (product.quoteOnly) return false'));
+assert(transformedServer.includes("if (product.quoteOnly) return false"));
 assert(transformedServer.includes('label: "LINE洽詢"'));
 
 assert.strictEqual(weeklyOverride.VERSION, "2026-07-25-weekly-once-v1");
@@ -213,4 +217,4 @@ assert(guard.includes("withPostLock"));
 assert(guard.includes("findPublishedMatch"));
 assert(guard.includes("recordPublication"));
 
-console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.1.0品牌內容、售價與龜鹿膠洽詢價防護、三組搭配相容欄位、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、全部未發布內容先待審、審核後每週1篇週三20:00、天氣內容人工審核後只在其他平日20:00條件加發、HTTP 429自動退避、週末不發布");
+console.log("仙加味正式檢查通過：官網目錄v408.9、LINE OA v6.1.1品牌內容、正式售價與優惠、三組搭配相容欄位、官網小老闆與小鹿小烏龜娃娃、真實產品原圖、全部未發布內容先待審、審核後每週1篇週三20:00、天氣內容人工審核後只在其他平日20:00條件加發、HTTP 429自動退避、週末不發布");
