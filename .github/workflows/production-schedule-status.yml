@@ -49,14 +49,12 @@ jobs:
           const weather = batch.POSTS.filter((post) => post.conditionalWeather);
           if (fixed.length !== 7 || weather.length !== 3) throw new Error('正式圖文數量錯誤');
           if (gate.VERSION !== '2026-07-26-review-gate-v5') throw new Error('人工審核閘門版本錯誤');
-          if (repair.VERSION !== '2026-07-24-v5') throw new Error('排程修復版本錯誤');
+          if (repair.VERSION !== '2026-07-25-v6') throw new Error('排程修復版本錯誤');
           for (const post of fixed) {
             const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(post.scheduledAt)).filter((p)=>p.type!=='literal').map((p)=>[p.type,p.value]));
             if (parts.weekday !== 'Wed' || parts.hour !== '20' || parts.minute !== '00') throw new Error(`${post.title} 不是週三20:00`);
           }
-          if (new Set(fixed.map((post) => new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(post.scheduledAt)).slice(0,7))).size < 2) console.log('排程集中於相鄰月份，仍符合每週一篇');
           if (weather.some((post) => post.scheduledAt)) throw new Error('天氣貼文不可預先排固定日期');
-          console.log({fixed: fixed.map((p)=>[p.title,p.scheduledAt]), weather: weather.map((p)=>p.weatherTrigger)});
           NODE
 
       - name: Wait for Render and verify live review and schedule state
@@ -79,7 +77,7 @@ jobs:
           if (review.reviewRequiredBeforePublish !== true || review.automaticRetryEnabled !== false) throw new Error('live review safety mismatch');
           if (Number(review.canonicalCount) !== 10 || Number(review.unreviewedActiveCount) !== 0) throw new Error('live review queue mismatch');
           if (review.overdueApprovalPolicy !== 'move-to-next-free-wed-20:00') throw new Error('live overdue policy mismatch');
-          if (schedule.version !== '2026-07-24-v5') throw new Error('live schedule version mismatch');
+          if (schedule.version !== '2026-07-25-v6') throw new Error('live schedule version mismatch');
           if (Number(schedule.canonicalCount) !== 10) throw new Error('live schedule count mismatch');
           if (schedule.rule?.fixed !== '每週1篇，週三 20:00') throw new Error('live fixed rule mismatch');
           if (!String(schedule.rule?.weatherException || '').includes('週末不發布')) throw new Error('live weekend stop rule missing');
