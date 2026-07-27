@@ -1,5 +1,5 @@
-commit=3cfeacf10ca7e45b08bdcd5d3525f8d63870579b
-recorded_at=2026-07-27T12:04:42Z
+commit=8ef46c5958cf11114d3b1864a6305ee1aad1ac98
+recorded_at=2026-07-27T12:15:59Z
 
 
 > xianjiawei-lineoa@6.1.1 test
@@ -10,19 +10,25 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current policy: all unpublished posts pending review, schedule only after approval, weekly Wednesday 20:00, fixed mascot partners and official prices
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-07-27T12:06:42.338Z
+Social weather automation rate limited; next check 2026-07-27T12:17:59.399Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish remains protected and the first suggested fixed slot is Wednesday 20:00
-node:internal/assert/utils:77
-    throw err;
-    ^
+node:assert:150
+  throw new AssertionError(obj);
+  ^
 
-AssertionError [ERR_ASSERTION]: 品牌內容至少需要六項正式資料
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:104:1)
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ '2026-07-25-v6'
+- '2026-07-24-v5'
+            ^
+
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:117:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at node:internal/modules/cjs/loader:1913:10
     at Object.loadWithWeeklyOnceSchedule (/home/runner/work/TS-LINE/TS-LINE/social-weekly-schedule-override.js:93:55)
@@ -31,11 +37,11 @@ AssertionError [ERR_ASSERTION]: 品牌內容至少需要六項正式資料
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
     at node:internal/main/run_main_module:36:49 {
-  generatedMessage: false,
+  generatedMessage: true,
   code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
+  actual: '2026-07-25-v6',
+  expected: '2026-07-24-v5',
+  operator: 'strictEqual',
   diff: 'simple'
 }
 
