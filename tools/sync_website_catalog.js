@@ -39,9 +39,11 @@ const SALES_FIELDS = [
   "originalPrice",
   "unit",
   "offers",
+  "promotionTexts",
   "quantityOptions",
   "priceText",
   "priceLabel",
+  "originalPriceText",
   "quoteOnly",
 ];
 
