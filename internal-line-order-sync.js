@@ -3,7 +3,7 @@
 const express = require("express");
 const crypto = require("crypto");
 
-const VERSION = "1.2.1";
+const VERSION = "1.3.0";
 const json = express.json({ limit: "2mb" });
 const SHIPPED = new Set(["已出貨", "已完成"]);
 const CANCELLED = new Set(["已取消"]);
@@ -35,11 +35,17 @@ function rawOrderLines(order = {}) {
   return String(order.items || "")
     .split(/\n|、|；|;/)
     .map((line) => {
-      const match = line.trim().match(/^(.+?)\s*[×xX*]\s*(\d+(?:\.\d+)?)(?:\s*[｜|]\s*單價\s*\$?([\d,]+(?:\.\d+)?))?(?:\s*[｜|]\s*小計\s*\$?([\d,]+(?:\.\d+)?))?\s*$/);
+      const match = line.trim().match(/^(.+?)\s*[×xX*]\s*(\d+(?:\.\d+)?)(?:\s*[｜|]\s*單價\s*\$?([\d,]+(?:\.\d+)?))?(?:\s*[｜|]\s*(?:方案\s*([^｜|]+)\s*[｜|]\s*)?小計\s*\$?([\d,]+(?:\.\d+)?))?\s*$/);
       if (!match) return null;
       const qty = number(match[2]);
-      const subtotal = number(match[4]);
-      return { name: match[1].trim(), qty, unitPrice: number(match[3]) || (qty && subtotal ? subtotal / qty : 0) };
+      const subtotal = number(match[5]);
+      return {
+        name: match[1].trim(),
+        qty,
+        unitPrice: number(match[3]) || (qty && subtotal ? subtotal / qty : 0),
+        subtotal,
+        pricingLabel: clean(match[4], 300),
+      };
     })
     .filter(Boolean);
 }
@@ -51,23 +57,35 @@ function normalizePricingLines(order = {}, inventory = []) {
     if (!qty) continue;
     const item = inventoryMatch(raw, inventory);
     const name = clean(raw.name || raw.productName || item?.name || "自訂商品", 300);
-    const unitPrice = Math.max(0, number(raw.unitPrice ?? raw.price));
+    const explicitSubtotal = Math.max(0, number(raw.subtotal ?? raw.lineTotal));
+    let unitPrice = Math.max(0, number(raw.unitPrice ?? raw.price));
+    if (!unitPrice && explicitSubtotal) unitPrice = explicitSubtotal / qty;
+    if (!unitPrice) unitPrice = Math.max(0, number(item?.price));
+    const subtotal = explicitSubtotal || Math.round(qty * unitPrice);
     lines.push({
       productId: item?.productId || clean(raw.productId, 120),
       name,
       qty,
       unitPrice,
-      subtotal: Math.round(qty * unitPrice),
+      subtotal: Math.round(subtotal),
+      pricingLabel: clean(raw.pricingLabel || raw.label, 300),
     });
   }
   return lines;
 }
 
 function hasManagedPricing(order = {}) {
+  if (order.pricingManaged === false || order.pricingManaged === "false") return false;
   if (order.pricingManaged === true || order.pricingManaged === "true") return true;
   if (Array.isArray(order.orderLines)) return true;
   if (typeof order.orderLines === "string" && order.orderLines.trim().startsWith("[")) return true;
   return ["subtotal", "discount", "shippingFee", "paidAmount", "paymentStatus", "balance"].some((key) => order[key] !== undefined && order[key] !== "");
+}
+
+function formatPricingLine(line) {
+  const subtotal = `$${Math.round(line.subtotal).toLocaleString("en-US")}`;
+  if (line.pricingLabel) return `${line.name} × ${line.qty}｜方案 ${line.pricingLabel}｜小計 ${subtotal}`;
+  return `${line.name} × ${line.qty}｜單價 $${Math.round(line.unitPrice).toLocaleString("en-US")}｜小計 ${subtotal}`;
 }
 
 function normalizeOrderPayload(order = {}, inventory = []) {
@@ -77,7 +95,7 @@ function normalizeOrderPayload(order = {}, inventory = []) {
 
   if (managed && lines.length) {
     next.orderLines = lines;
-    next.items = lines.map((line) => `${line.name} × ${line.qty}｜單價 $${Math.round(line.unitPrice).toLocaleString("en-US")}｜小計 $${Math.round(line.subtotal).toLocaleString("en-US")}`).join("\n");
+    next.items = lines.map(formatPricingLine).join("\n");
   }
 
   if (managed) {
@@ -114,10 +132,12 @@ function parseOrderLines(order = {}, inventory = []) {
     const item = inventoryMatch(line, inventory);
     if (!item) continue;
     const unitPrice = Math.max(0, number(line.unitPrice || item.price));
-    const key = `${item.productId}::${unitPrice}`;
-    const previous = merged.get(key) || { productId: item.productId, name: item.name, qty: 0, unitPrice };
+    const pricingLabel = clean(line.pricingLabel, 300);
+    const key = `${item.productId}::${unitPrice}::${pricingLabel}`;
+    const previous = merged.get(key) || { productId: item.productId, name: item.name, qty: 0, unitPrice, subtotal: 0, pricingLabel };
     previous.qty += line.qty;
-    previous.subtotal = Math.round(previous.qty * previous.unitPrice);
+    previous.subtotal += number(line.subtotal) || Math.round(line.qty * unitPrice);
+    previous.subtotal = Math.round(previous.subtotal);
     merged.set(key, previous);
   }
   return [...merged.values()];
@@ -346,5 +366,5 @@ function mountLineOrderSync(app, { readStore, writeStore }) {
 module.exports = {
   VERSION, ORDER_STATUSES, rawOrderLines, normalizePricingLines, normalizeOrderPayload, parseOrderLines,
   inventoryMode, applyOrderTransition, statusMessage, notifyOrder, validateOrderAvailability,
-  validateShipment, mountLineOrderSync,
+  validateShipment, mountLineOrderSync, formatPricingLine,
 };
