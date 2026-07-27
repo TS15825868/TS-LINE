@@ -48,8 +48,8 @@ jobs:
           const fixed = batch.POSTS.filter((post) => !post.conditionalWeather);
           const weather = batch.POSTS.filter((post) => post.conditionalWeather);
           if (fixed.length !== 7 || weather.length !== 3) throw new Error('正式圖文數量錯誤');
-          if (gate.VERSION !== '2026-07-25-review-gate-v4') throw new Error('人工審核閘門版本錯誤');
-          if (repair.VERSION !== '2026-07-25-v6') throw new Error('排程修復版本錯誤');
+          if (gate.VERSION !== '2026-07-26-review-gate-v5') throw new Error('人工審核閘門版本錯誤');
+          if (repair.VERSION !== '2026-07-24-v5') throw new Error('排程修復版本錯誤');
           for (const post of fixed) {
             const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(post.scheduledAt)).filter((p)=>p.type!=='literal').map((p)=>[p.type,p.value]));
             if (parts.weekday !== 'Wed' || parts.hour !== '20' || parts.minute !== '00') throw new Error(`${post.title} 不是週三20:00`);
@@ -75,11 +75,11 @@ jobs:
               if node - <<'NODE'
           const review = require('/tmp/xjw-schedule/review.json');
           const schedule = require('/tmp/xjw-schedule/schedule.json');
-          if (review.ok !== true || review.version !== '2026-07-25-review-gate-v4') throw new Error('live review gate mismatch');
+          if (review.ok !== true || review.version !== '2026-07-26-review-gate-v5') throw new Error('live review gate mismatch');
           if (review.reviewRequiredBeforePublish !== true || review.automaticRetryEnabled !== false) throw new Error('live review safety mismatch');
           if (Number(review.canonicalCount) !== 10 || Number(review.unreviewedActiveCount) !== 0) throw new Error('live review queue mismatch');
           if (review.overdueApprovalPolicy !== 'move-to-next-free-wed-20:00') throw new Error('live overdue policy mismatch');
-          if (schedule.version !== '2026-07-25-v6') throw new Error('live schedule version mismatch');
+          if (schedule.version !== '2026-07-24-v5') throw new Error('live schedule version mismatch');
           if (Number(schedule.canonicalCount) !== 10) throw new Error('live schedule count mismatch');
           if (schedule.rule?.fixed !== '每週1篇，週三 20:00') throw new Error('live fixed rule mismatch');
           if (!String(schedule.rule?.weatherException || '').includes('週末不發布')) throw new Error('live weekend stop rule missing');
