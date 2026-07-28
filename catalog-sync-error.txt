@@ -1,0 +1,12 @@
+commit=633c33d4b601cd926e331af07600e7ea3131a50f
+recorded_at=2026-07-28T04:48:45Z
+
+
+> xianjiawei-lineoa@6.1.1 check:catalog
+> node tools/sync_website_catalog.js --check && node tools/sync_sales_master.js
+
+LINE OA data.json 與官網共用目錄不同步：
+$.products[1].name: actual="龜鹿飲30cc玻璃罐" expected="龜鹿飲30cc"
+$.products[1].specification: actual="30cc／罐（小玻璃罐）" expected=undefined
+$.products[3].name: actual="龜鹿湯塊75g" expected="龜鹿湯塊"
+$.products[3].specification: actual="75g／盒｜8塊裝｜每塊約9.375g" expected=undefined
