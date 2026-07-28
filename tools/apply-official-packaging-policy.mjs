@@ -119,3 +119,5 @@ if (violations.length) throw new Error(violations.join('\n'));
 
 console.log(`官方包裝與規格同步完成，共更新 ${changed.length} 個檔案。`);
 for (const file of changed) console.log(`- ${file}`);
+
+// workflow trigger: 2026-07-28 official naming refresh
