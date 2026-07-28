@@ -13,7 +13,11 @@ assert.strictEqual(guard.VERSION, "2026-07-25-quote-only-v2");
 assert.strictEqual(jiao.quoteOnly, false);
 assert.strictEqual(jiao.price, 9600);
 assert.strictEqual(jiao.originalPrice, 12000);
-assert.strictEqual(jiao.priceText, "$9,600 / 一斤裝");
+assert.strictEqual(jiao.priceText, "$9,600 / 盒");
+assert.strictEqual(jiao.specification, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
+assert.strictEqual(jiao.size, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
+assert.strictEqual(jiao.spec, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
+assert.strictEqual(jiao.unit, "盒");
 assert.strictEqual(jiao.priceLabel, "售價12,000元，優惠價9,600元");
 
 // 保留守門程式，讓未來任何真正設定 quoteOnly 的產品仍無法以 NT$0 進入購物車。
