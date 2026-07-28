@@ -1,5 +1,5 @@
-commit=d2e5d91ab5c651e4523caa4df1900c5cf481b6d0
-recorded_at=2026-07-28T11:28:10Z
+commit=4207c97ee5091dafdf08441e892b3bc2d703779b
+recorded_at=2026-07-28T14:38:50Z
 
 
 > xianjiawei-lineoa@6.1.1 test
@@ -10,7 +10,7 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current policy: all unpublished posts pending review, schedule only after approval, weekly Wednesday 20:00, fixed mascot partners and official prices
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-07-28T11:30:10.610Z
+Social weather automation rate limited; next check 2026-07-28T14:40:50.342Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
