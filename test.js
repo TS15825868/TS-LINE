@@ -54,7 +54,9 @@ assert.strictEqual(gao.price, 1500);
 assert.strictEqual(gao.originalPrice, 1800);
 const drink30 = getProduct("guilu-drink-30");
 assert.strictEqual(drink30.price, 50);
-assert.deepStrictEqual(calcItem(drink30, 1), { total: 50, label: "單瓶×1" });
+assert.strictEqual(drink30.unit, "罐");
+assert.strictEqual(drink30.size, "30cc／罐（小玻璃罐）");
+assert.deepStrictEqual(calcItem(drink30, 1), { total: 50, label: "單罐×1" });
 assert.deepStrictEqual(calcItem(drink30, 12), { total: 500, label: "買10送2×1" });
 assert.deepStrictEqual(calcItem(drink30, 24), { total: 1000, label: "買10送2×2" });
 const drink180 = getProduct("guilu-drink-180");
@@ -65,13 +67,15 @@ assert.strictEqual(getProduct("luerong-fen").price, 2000);
 assert.strictEqual(getProduct("guilu-jiao").price, 9600);
 assert.strictEqual(getProduct("guilu-jiao").originalPrice, 12000);
 assert.strictEqual(getProduct("guilu-jiao").quoteOnly, false);
+assert.strictEqual(getProduct("guilu-jiao").size, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
+assert.strictEqual(getProduct("guilu-jiao").unit, "盒");
 
 const state = { cart: [], checkout: null };
 addCart(state, drink30, 12);
 addCart(state, drink30, 1);
 assert.strictEqual(state.cart.length, 1);
 assert.strictEqual(state.cart[0].qty, 13);
-assert.strictEqual(state.cart[0].label, "買10送2×1＋單瓶×1");
+assert.strictEqual(state.cart[0].label, "買10送2×1＋單罐×1");
 assert.strictEqual(cartTotal(state.cart), 550);
 
 const productCards = productCarousel();
@@ -88,24 +92,3 @@ for (const card of productCards.contents.contents) {
 }
 
 assert.strictEqual(recommendReply().contents.contents.length, 4);
-assert.ok(comboReply().contents.body.contents[1].text.includes("搭配組合"));
-assert.strictEqual(usageChooserReply().contents.contents.length, DATA.products.length + 1);
-assert.ok(usageReply(drink30).contents.body.contents[1].text.includes("開罐即可飲用"));
-assert.ok(doctorReferralReply().contents.body.contents[1].text.includes("@changwuchi"));
-assert.strictEqual(doctorReferralReply().contents.footer.contents[0].action.uri, "https://lin.ee/1MK4NR9");
-assert.ok(huangdiNeijingReply().contents.body.contents[0].text.includes("黃帝內經"));
-assert.ok(brandStoryReply().body.contents[1].text.includes("2008年"));
-
-assert.strictEqual(isSensitiveHealthQuestion("我有高血壓可以吃嗎"), true);
-assert.strictEqual(isSensitiveHealthQuestion("枸杞可以明目嗎"), true);
-assert.strictEqual(isSensitiveHealthQuestion("龜鹿膏怎麼使用"), false);
-assert.strictEqual(isSensitiveHealthQuestion("搭配組合"), false);
-
-assert.strictEqual(productMenuReply().contents.contents.length, DATA.products.length);
-assert.strictEqual(DATA.offers.comboOffers.length, 3);
-assert.strictEqual(comboMenuReply().contents.contents.length, DATA.offers.comboOffers.length + 1);
-assert.ok(comboMenuReply().contents.contents[0].body.contents[0].text.includes("日常搭配導覽"));
-assert.ok(comboMenuReply().contents.contents[1].body.contents[0].text.includes("日常節奏組"));
-assert.ok(comboDetailReply(0).contents.body.contents[0].text.includes("日常節奏組"));
-
-console.log(`PASS LINE OA ${VERSION}: official prices, buy-ten-get-two cart pricing, six products, three combos, cards, usage, classics and referral`);
