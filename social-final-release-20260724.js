@@ -76,8 +76,8 @@ const POSTS = Object.freeze([
     sourceImageFile: "仙加味龜鹿飲產品廣告.png",
     productPresentationLocked: true,
     productSpecLocked: true,
-    instagramCaption: ["龜鹿飲有兩種包裝：30cc玻璃小瓶與180cc鋁袋。", "", "30cc份量輕巧，適合外出攜帶或工作空檔；180cc適合居家或偏好一次安排完整份量。兩種皆可依個人習慣溫熱後飲用。", "", "開封後請儘速飲用完畢，保存與飲用方式以包裝標示為準。", "", "#仙加味 #龜鹿飲 #30cc #180cc #日常安排"].join("\n"),
-    facebookCaption: ["龜鹿飲可依生活情境選擇30cc玻璃小瓶或180cc鋁袋。", "", "30cc適合外出攜帶；180cc適合居家安排。兩種包裝都可依個人習慣溫熱後飲用，開封後請儘速飲用完畢。", "", "#仙加味 #龜鹿飲 #30cc #180cc"].join("\n"),
+    instagramCaption: ["龜鹿飲有兩種包裝：30cc小玻璃罐與180cc鋁袋。", "", "30cc份量輕巧，適合外出攜帶或工作空檔；180cc適合居家或偏好一次安排完整份量。兩種皆可依個人習慣溫熱後飲用。", "", "開封後請儘速飲用完畢，保存與飲用方式以包裝標示為準。", "", "#仙加味 #龜鹿飲 #30cc #180cc #日常安排"].join("\n"),
+    facebookCaption: ["龜鹿飲可依生活情境選擇30cc小玻璃罐或180cc鋁袋。", "", "30cc適合外出攜帶；180cc適合居家安排。兩種包裝都可依個人習慣溫熱後飲用，開封後請儘速飲用完畢。", "", "#仙加味 #龜鹿飲 #30cc #180cc"].join("\n"),
   }),
   post({
     id: "social-final-v1-product-lurongfen-20260807",

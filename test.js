@@ -43,7 +43,7 @@ for (const product of DATA.products) {
 }
 
 assert.strictEqual(detectProduct("龜鹿飲180cc鋁袋").id, "guilu-drink-180");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃瓶").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
 assert.strictEqual(detectProduct("龜鹿膏怎麼使用").id, "guilu-gao");
 assert.strictEqual(detectProduct("龜鹿湯塊").id, "guilu-tangkuai");
 assert.strictEqual(detectProduct("龜鹿膠一斤裝").id, "guilu-jiao");
@@ -90,7 +90,7 @@ for (const card of productCards.contents.contents) {
 assert.strictEqual(recommendReply().contents.contents.length, 4);
 assert.ok(comboReply().contents.body.contents[1].text.includes("搭配組合"));
 assert.strictEqual(usageChooserReply().contents.contents.length, DATA.products.length + 1);
-assert.ok(usageReply(drink30).contents.body.contents[1].text.includes("開瓶即可飲用"));
+assert.ok(usageReply(drink30).contents.body.contents[1].text.includes("開罐即可飲用"));
 assert.ok(doctorReferralReply().contents.body.contents[1].text.includes("@changwuchi"));
 assert.strictEqual(doctorReferralReply().contents.footer.contents[0].action.uri, "https://lin.ee/1MK4NR9");
 assert.ok(huangdiNeijingReply().contents.body.contents[0].text.includes("黃帝內經"));

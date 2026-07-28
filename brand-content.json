@@ -12,14 +12,35 @@
     "品牌承諾": "我們不追求最快，而是把每一道程序做好；不以療效或誇大用語取代產品資訊，讓客人依自己的生活方式找到合適的日常補養節奏。"
   },
   "menu": [
-    {"label": "品牌故事", "url": "https://ts15825868.github.io/xianjiawei/brand.html#story"},
-    {"label": "品牌由來", "url": "https://ts15825868.github.io/xianjiawei/brand.html#origin"},
-    {"label": "選料理念", "url": "https://ts15825868.github.io/xianjiawei/brand.html#selection"},
-    {"label": "品質把關", "url": "https://ts15825868.github.io/xianjiawei/brand.html#quality"},
-    {"label": "傳統工法", "url": "https://ts15825868.github.io/xianjiawei/brand.html#craft"}
+    {
+      "label": "品牌故事",
+      "url": "https://ts15825868.github.io/xianjiawei/brand.html#story"
+    },
+    {
+      "label": "品牌由來",
+      "url": "https://ts15825868.github.io/xianjiawei/brand.html#origin"
+    },
+    {
+      "label": "選料理念",
+      "url": "https://ts15825868.github.io/xianjiawei/brand.html#selection"
+    },
+    {
+      "label": "品質把關",
+      "url": "https://ts15825868.github.io/xianjiawei/brand.html#quality"
+    },
+    {
+      "label": "傳統工法",
+      "url": "https://ts15825868.github.io/xianjiawei/brand.html#craft"
+    }
   ],
   "compliance": {
     "allowedTone": "日常飲食、產品型態、使用方式、原料與文化傳承",
-    "blockedClaims": ["治療", "療效", "保證改善", "立即見效", "適用特定疾病"]
+    "blockedClaims": [
+      "治療",
+      "療效",
+      "保證改善",
+      "立即見效",
+      "適用特定疾病"
+    ]
   }
 }

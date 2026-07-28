@@ -69,7 +69,9 @@
         "products": [
           {
             "productId": "guilu-tangkuai",
-            "qty": 1
+            "qty": 1,
+            "name": "龜鹿湯塊75g",
+            "specification": "75g／盒｜8塊裝｜每塊約9.375g"
           },
           {
             "productId": "luerong-fen",
@@ -110,7 +112,9 @@
           },
           {
             "productId": "guilu-tangkuai",
-            "qty": 1
+            "qty": 1,
+            "name": "龜鹿湯塊75g",
+            "specification": "75g／盒｜8塊裝｜每塊約9.375g"
           },
           {
             "productId": "luerong-fen",
@@ -241,7 +245,7 @@
         "30cc",
         "玻璃瓶"
       ],
-      "spec": "30cc玻璃瓶",
+      "spec": "30cc／罐（小玻璃罐）",
       "price": 50,
       "originalPrice": null,
       "unit": "罐",
@@ -364,7 +368,7 @@
         "75g",
         "2兩"
       ],
-      "spec": "75g（8入）",
+      "spec": "75g／盒｜8塊裝｜每塊約9.375g",
       "price": 1600,
       "originalPrice": null,
       "unit": "盒",
@@ -869,7 +873,7 @@
     "noPublicPriceOnWebsite": true,
     "products": [
       "龜鹿膏100g",
-      "龜鹿飲30cc玻璃瓶",
+      "龜鹿飲30cc玻璃罐",
       "龜鹿飲180cc鋁袋",
       "龜鹿湯塊75g",
       "龜鹿膠一斤裝",
@@ -935,7 +939,9 @@
       "products": [
         {
           "productId": "guilu-tangkuai",
-          "qty": 1
+          "qty": 1,
+          "name": "龜鹿湯塊75g",
+          "specification": "75g／盒｜8塊裝｜每塊約9.375g"
         },
         {
           "productId": "luerong-fen",
@@ -977,7 +983,9 @@
         },
         {
           "productId": "guilu-tangkuai",
-          "qty": 1
+          "qty": 1,
+          "name": "龜鹿湯塊75g",
+          "specification": "75g／盒｜8塊裝｜每塊約9.375g"
         },
         {
           "productId": "luerong-fen",
