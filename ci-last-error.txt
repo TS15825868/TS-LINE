@@ -1,5 +1,5 @@
-commit=4207c97ee5091dafdf08441e892b3bc2d703779b
-recorded_at=2026-07-28T14:38:50Z
+commit=3ec0771d8e8835ef1fa746cc4b9ce94082ca92ea
+recorded_at=2026-07-28T14:55:09Z
 
 
 > xianjiawei-lineoa@6.1.1 test
@@ -10,38 +10,44 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current policy: all unpublished posts pending review, schedule only after approval, weekly Wednesday 20:00, fixed mascot partners and official prices
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-07-28T14:40:50.342Z
+Social weather automation rate limited; next check 2026-07-28T14:57:08.845Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish remains protected and the first suggested fixed slot is Wednesday 20:00
+仙加味正式檢查通過：LINE OA v6.1.1、六項售價與優惠、共用品牌內容、十篇待審、週三20:00排程、天氣條件加發、真實產品圖與固定角色夥伴。
+PASS early runtime stabilizer restores exactly ten canonical unreviewed posts without active schedules
+PASS Supabase persistence normalization, stale Render writer blocking, timeout, retries, backoff, schema and local fallback
+PASS centralized Supabase queue and early ten-post review stabilizer installation
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
 node:assert:150
   throw new AssertionError(obj);
   ^
 
-AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
 + actual - expected
 
-+ '2026-07-28-v6'
-- '2026-07-27-v5'
-            ^
+  {
++   label: '單罐×1',
+-   label: '單瓶×1',
+    total: 50
+  }
 
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:44:8)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/test.js:57:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at node:internal/modules/cjs/loader:1913:10
-    at Object.loadWithWeeklyOnceSchedule (/home/runner/work/TS-LINE/TS-LINE/social-weekly-schedule-override.js:93:55)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
     at node:internal/main/run_main_module:36:49 {
   generatedMessage: true,
   code: 'ERR_ASSERTION',
-  actual: '2026-07-28-v6',
-  expected: '2026-07-27-v5',
-  operator: 'strictEqual',
+  actual: { total: 50, label: '單罐×1' },
+  expected: { total: 50, label: '單瓶×1' },
+  operator: 'deepStrictEqual',
   diff: 'simple'
 }
 
