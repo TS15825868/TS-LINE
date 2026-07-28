@@ -1,0 +1,65 @@
+name: 同步LINE龜鹿飲30cc玻璃罐與龜鹿湯塊唯一規格
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/apply-official-packaging-policy.mjs"
+      - ".github/workflows/apply-official-packaging-policy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ts-line-official-packaging-policy
+  cancel-in-progress: true
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply official packaging and specification policy
+        run: node tools/apply-official-packaging-policy.mjs
+
+      - name: Verify official sales master
+        run: |
+          set -euo pipefail
+          node --check tools/apply-official-packaging-policy.mjs
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const master = JSON.parse(fs.readFileSync('line-sales-master.json', 'utf8'));
+          const drink = master.products['guilu-drink-30'];
+          const soup = master.products['guilu-tangkuai'];
+          if (drink.priceText !== '$50 / 罐') throw new Error('30cc售價單位未改為罐');
+          const allText = fs.readdirSync('.').filter((name) => /\.(?:js|json|html|md|txt)$/.test(name)).map((name) => fs.readFileSync(name, 'utf8')).join('\n');
+          if (allText.includes('龜鹿飲30cc玻璃瓶') || allText.includes('30cc／瓶（玻璃瓶）')) throw new Error('仍有玻璃瓶舊稱');
+          if (/龜鹿湯塊[\s\S]{0,40}(?:300|600)\s*g|(?:300|600)\s*g[\s\S]{0,40}龜鹿湯塊/i.test(allText)) throw new Error('仍有龜鹿湯塊舊規格');
+          if (!soup) throw new Error('缺少龜鹿湯塊正式產品');
+          console.log('PASS LINE官方包裝與唯一規格');
+          NODE
+
+      - name: Commit synchronized files
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "LINE官方規格已同步"
+          else
+            git commit -m "正式同步龜鹿飲30cc玻璃罐與龜鹿湯塊75g唯一規格"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
