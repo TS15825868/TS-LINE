@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-28-v6",
+  "version": "2026-07-28-v7",
   "source": "仙加味・龜鹿系列最新正式售價、優惠、活動、包裝與角色政策",
   "products": {
     "guilu-gao": {
@@ -51,13 +51,18 @@
       "priceLabel": "售價2,000元"
     },
     "guilu-jiao": {
+      "name": "龜鹿膠",
+      "specification": "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
+      "size": "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
+      "spec": "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
+      "unit": "盒",
       "price": 9600,
       "originalPrice": 12000,
       "offers": [
         "優惠價9,600元"
       ],
       "quoteOnly": false,
-      "priceText": "$9,600 / 一斤裝",
+      "priceText": "$9,600 / 盒",
       "originalPriceText": "$12,000",
       "priceLabel": "售價12,000元，優惠價9,600元"
     }
