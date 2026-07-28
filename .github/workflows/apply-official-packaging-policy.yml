@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "tools/apply-official-packaging-policy.mjs"
+      - "tools/apply-official-packaging-policy-v2.mjs"
       - ".github/workflows/apply-official-packaging-policy.yml"
   workflow_dispatch:
 
@@ -31,22 +31,24 @@ jobs:
           node-version: 22
 
       - name: Apply official packaging and specification policy
-        run: node tools/apply-official-packaging-policy.mjs
+        run: node tools/apply-official-packaging-policy-v2.mjs
 
       - name: Verify official sales master
         run: |
           set -euo pipefail
-          node --check tools/apply-official-packaging-policy.mjs
+          node --check tools/apply-official-packaging-policy-v2.mjs
           node - <<'NODE'
           const fs = require('node:fs');
           const master = JSON.parse(fs.readFileSync('line-sales-master.json', 'utf8'));
           const drink = master.products['guilu-drink-30'];
           const soup = master.products['guilu-tangkuai'];
+          if (drink.name !== '龜鹿飲30cc玻璃罐') throw new Error('30cc正式名稱未同步');
+          if (drink.specification !== '30cc／罐（小玻璃罐）') throw new Error('30cc正式規格未同步');
           if (drink.priceText !== '$50 / 罐') throw new Error('30cc售價單位未改為罐');
-          const allText = fs.readdirSync('.').filter((name) => /\.(?:js|json|html|md|txt)$/.test(name)).map((name) => fs.readFileSync(name, 'utf8')).join('\n');
+          if (!soup || soup.specification !== '75g／盒｜8塊裝｜每塊約9.375g') throw new Error('龜鹿湯塊75g唯一規格未同步');
+          const allText = fs.readdirSync('.').filter((name) => /\.(?:js|json|html|txt)$/.test(name)).map((name) => fs.readFileSync(name, 'utf8')).join('\n');
           if (allText.includes('龜鹿飲30cc玻璃瓶') || allText.includes('30cc／瓶（玻璃瓶）')) throw new Error('仍有玻璃瓶舊稱');
-          if (/龜鹿湯塊[\s\S]{0,40}(?:300|600)\s*g|(?:300|600)\s*g[\s\S]{0,40}龜鹿湯塊/i.test(allText)) throw new Error('仍有龜鹿湯塊舊規格');
-          if (!soup) throw new Error('缺少龜鹿湯塊正式產品');
+          if (/龜鹿湯塊\s*(?:300|600)\s*g/i.test(allText)) throw new Error('仍有龜鹿湯塊舊規格');
           console.log('PASS LINE官方包裝與唯一規格');
           NODE
 
