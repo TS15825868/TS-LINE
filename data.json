@@ -418,7 +418,7 @@
         "600g",
         "龜鹿膠一斤裝"
       ],
-      "spec": "一斤裝",
+      "spec": "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
       "price": 9600,
       "originalPrice": 12000,
       "unit": "盒",
@@ -432,10 +432,11 @@
         3,
         5
       ],
-      "priceText": "$9,600 / 一斤裝",
+      "priceText": "$9,600 / 盒",
       "priceLabel": "售價12,000元，優惠價9,600元",
       "originalPriceText": "$12,000",
-      "quoteOnly": false
+      "quoteOnly": false,
+      "specification": "600g／盒（1斤）｜32塊裝｜每塊約18.75g"
     },
     {
       "id": "luerong-fen",
@@ -1270,6 +1271,6 @@
       }
     }
   },
-  "salesMasterVersion": "2026-07-28-v6",
+  "salesMasterVersion": "2026-07-28-v7",
   "salesMasterSource": "仙加味・龜鹿系列最新正式售價、優惠、活動、包裝與角色政策"
 }
