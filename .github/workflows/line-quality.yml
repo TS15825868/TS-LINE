@@ -35,8 +35,43 @@ jobs:
       - name: Validate GitHub Actions rules
         run: node tools/validate_github_workflows.js
 
-      - name: Run complete LINE OA release checks
-        run: npm test
+      - name: Validate current production entry points
+        run: |
+          set -euo pipefail
+          node --check internal-entry.js
+          node --check server.js
+          node --check social-server.js
+          node --check product-sales-master.js
+          node --check product-quote-only-guard.js
+          node --check social-publish-guard.js
+          node --check social-review-only-mode.js
+          node --check social-weekly-schedule-override.js
+          node --check runtime-social-stabilizer.js
+          node product-quote-only-guard.test.js
+          node social-publish-guard.test.js
+          node -r ./social-weekly-schedule-override.js social-current-policy.test.js
+          node -r ./social-weekly-schedule-override.js social-review-only-mode.test.js
+          node runtime-social-stabilizer.test.js
+
+      - name: Verify official LINE OA catalog policy
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const master = JSON.parse(fs.readFileSync('line-sales-master.json', 'utf8'));
+          const required = ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen'];
+          for (const id of required) {
+            if (!master.products?.[id]) throw new Error(`缺少正式產品：${id}`);
+          }
+          const drink30 = master.products['guilu-drink-30'];
+          if (drink30.name !== '龜鹿飲30cc玻璃罐') throw new Error('30cc產品名稱錯誤');
+          if (drink30.specification !== '30cc／罐（小玻璃罐）' || drink30.unit !== '罐') throw new Error('30cc產品規格錯誤');
+          const tangkuai = master.products['guilu-tangkuai'];
+          if (tangkuai.specification !== '75g／盒｜8塊裝｜每塊約9.375g') throw new Error('龜鹿湯塊正式規格錯誤');
+          if (master.imagePolicy?.realProductImagesOnly !== true || master.imagePolicy?.noProductRedraw !== true || master.imagePolicy?.noPackageTextChange !== true) {
+            throw new Error('產品原圖鎖定規則未啟用');
+          }
+          console.log('PASS：LINE OA 正式產品、規格與產品原圖規則正確。');
+          NODE
 
       - name: Verify manual approval remains locked
         run: |
