@@ -1,0 +1,57 @@
+{
+  "version": "2026-07-30-official-product-asset-lock-v1",
+  "status": "locked_existing_assets_only",
+  "rule": "只使用使用者既有正式產品圖；禁止重畫、生成、改標籤、改包裝、改比例或以AI替代產品本體。",
+  "auto_publish": false,
+  "manual_approval_required": true,
+  "assets": [
+    {
+      "product": "仙加味・龜鹿膏",
+      "spec": "100 g／罐",
+      "file": "01_龜鹿膏_100g_正式既有圖.png",
+      "source_file": "1FE4F7BA-D14E-4050-8B62-6F82EFD93421.PNG",
+      "sha256": "c66a57762104b58e45c408e790f117021337b44069bd5804edfb772b3bacc096",
+      "allowed_operations": ["等比例縮放", "位置調整", "背景排版", "外加人工文字"],
+      "forbidden_operations": ["重畫產品", "改罐型", "改貼紙", "改盒型", "改產品文字", "AI生成替代品"]
+    },
+    {
+      "product": "仙加味・龜鹿飲",
+      "spec": "30 cc／罐（小玻璃罐）",
+      "file": "02_龜鹿飲_30cc_正式既有圖.png",
+      "source_file": "1CAD07EF-834E-4F6C-8A96-5619B7902874.PNG",
+      "sha256": "93ed892a85d1f6e9257946db88958f17e94b9ff8e8f9700903ffe426dcb78aab",
+      "metadata_note": "外部文案統一使用罐，不修改產品本體。"
+    },
+    {
+      "product": "仙加味・龜鹿飲",
+      "spec": "180 cc／包（鋁袋）",
+      "file": "03_龜鹿飲_180cc_正式既有圖.png",
+      "source_file": "184FA7F2-FA59-4746-95B6-F9439EEEEB86.PNG",
+      "sha256": "0472f4939e94c088977c71b21dad6eb2b9c0ebf4095cd69b7fe335d0004e48cb"
+    },
+    {
+      "product": "仙加味・龜鹿湯塊",
+      "spec": "75 g／盒｜8塊裝｜每塊約9.375g",
+      "file": "04_龜鹿湯塊_75g_正式既有圖.png",
+      "source_file": "3D530E6F-01A3-4721-A970-5EEDA10A6AB0.PNG",
+      "sha256": "d350825b3b6655233676a87de79ab4fbabbe632a0316e04e75e2a927c228cce2"
+    },
+    {
+      "product": "仙加味・龜鹿膠",
+      "spec": "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
+      "file": "05_龜鹿膠_600g_正式既有圖.png",
+      "source_file": "DADF3880-F250-48F6-8F56-B790972CA2EC.PNG",
+      "sha256": "4e12c794c9ba618b3470d9d23d23e34c7b0b08b32a7fa5894ad90e8294a0445b"
+    },
+    {
+      "product": "仙加味・鹿茸粉",
+      "spec": "75 g／罐",
+      "file": "06_鹿茸粉_75g_正式既有圖.png",
+      "source_file": "227100AA-3CB0-4EB8-BC8A-3E809CC0F868.PNG",
+      "sha256": "42b84d8ee11332c06c5e3c08677722f8c68a6faa536a863a2663b0a69277371f"
+    }
+  ],
+  "rejected_generated_asset": "a_clean_flat_promotional_poster_ad_image_for_a_tr.png",
+  "rejected_reason": "產品外觀、包裝、文字與使用資訊遭改變，不得使用。",
+  "publish_gate": "blocked_until_owner_approves_exact_existing_asset"
+}
