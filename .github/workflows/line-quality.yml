@@ -73,6 +73,9 @@ jobs:
           console.log('PASS：LINE OA 正式產品、規格與產品原圖規則正確。');
           NODE
 
+      - name: Verify final 15 post review package
+        run: node tools/validate_final_post_review_package.js
+
       - name: Verify manual approval remains locked
         run: |
           node <<'NODE'
