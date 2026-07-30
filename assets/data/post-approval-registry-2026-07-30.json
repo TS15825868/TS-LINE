@@ -1,0 +1,34 @@
+{
+  "version": "2026-07-30-approval-registry-v1",
+  "updated_at": "2026-07-30T19:47:00+08:00",
+  "status": "awaiting_owner_approval",
+  "manual_approval_required": true,
+  "auto_publish": false,
+  "publishable_now": false,
+  "product_posts": [
+    {"id":"01","name":"仙加味・龜鹿膏","spec":"100g／罐","status":"pending_owner_approval"},
+    {"id":"02","name":"仙加味・龜鹿飲","spec":"30cc／罐（小玻璃罐）","status":"pending_owner_approval"},
+    {"id":"03","name":"仙加味・龜鹿飲","spec":"180cc／包（鋁袋）","status":"pending_owner_approval"},
+    {"id":"04","name":"仙加味・龜鹿湯塊","spec":"75g／盒｜8塊裝｜每塊約9.375g","status":"pending_owner_approval"},
+    {"id":"05","name":"仙加味・龜鹿膠","spec":"600g／盒（1斤）｜32塊裝｜每塊約18.75g","status":"pending_owner_approval"},
+    {"id":"06","name":"仙加味・鹿茸粉","spec":"75g／罐","status":"pending_owner_approval"}
+  ],
+  "lifestyle_posts": [
+    {"id":"07","topic":"料理搭配","status":"pending_owner_approval"},
+    {"id":"08","topic":"保存方式","status":"pending_owner_approval"},
+    {"id":"09","topic":"飲用溫度","status":"pending_owner_approval"},
+    {"id":"10","topic":"產品型態選擇","status":"pending_owner_approval"},
+    {"id":"11","topic":"關心家人","status":"pending_owner_approval"},
+    {"id":"12","topic":"早晚溫差","status":"pending_owner_approval"},
+    {"id":"13","topic":"下雨天","status":"pending_owner_approval"},
+    {"id":"14","topic":"工作忙碌","status":"pending_owner_approval"},
+    {"id":"15","topic":"炎熱補水","status":"pending_owner_approval"}
+  ],
+  "rules": [
+    "所有產品圖只能使用既有正式原圖",
+    "不得重畫產品、包裝、貼紙、罐型、盒型或規格",
+    "公開貼文不得顯示價格",
+    "不得宣稱療效",
+    "未經使用者明確核准不得排程或發佈"
+  ]
+}
