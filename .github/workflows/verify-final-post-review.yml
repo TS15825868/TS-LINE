@@ -1,0 +1,46 @@
+name: 驗證15篇貼文文案與圖片核對總表
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/data/final-post-review-package-2026-07-30.json'
+      - 'assets/data/post-approval-registry-2026-07-30.json'
+      - 'tools/validate_final_post_review_package.js'
+      - '.github/workflows/verify-final-post-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ts-line-final-post-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 驗證15篇貼文文案、圖片校驗碼與人工審核閘門
+        run: node tools/validate_final_post_review_package.js
+
+      - name: 驗證審核登錄檔仍禁止發布
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const registry = JSON.parse(fs.readFileSync('assets/data/post-approval-registry-2026-07-30.json', 'utf8'));
+          const rows = [...(registry.product_posts || []), ...(registry.lifestyle_posts || [])];
+          if (registry.manual_approval_required !== true) throw new Error('人工審核未啟用');
+          if (registry.auto_publish !== false || registry.publishable_now !== false) throw new Error('未核准貼文不得發布');
+          if (rows.length !== 15 || rows.some((row) => row.status !== 'pending_owner_approval')) throw new Error('15篇貼文審核狀態不完整');
+          console.log('PASS：15篇貼文全部維持待老闆審核。');
+          NODE
