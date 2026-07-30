@@ -1,0 +1,43 @@
+{
+  "version": "2026-07-30-v1",
+  "brand": "仙加味",
+  "primary_product": {
+    "id": "PROD-GAO-100",
+    "name": "仙加味・龜鹿膏",
+    "specification": "100 g／罐",
+    "role": "品牌核心主推",
+    "reply_priority": 1,
+    "message": "固定節奏，慢慢養成。"
+  },
+  "convenience_entry": [
+    {
+      "id": "PROD-DRINK-30",
+      "name": "仙加味・龜鹿飲30cc玻璃罐",
+      "specification": "30 cc／罐（小玻璃罐）",
+      "role": "輕巧即飲入口",
+      "priority": 2
+    },
+    {
+      "id": "PROD-DRINK-180",
+      "name": "仙加味・龜鹿飲",
+      "specification": "180 cc／鋁袋",
+      "role": "完整份量即飲",
+      "priority": 3
+    }
+  ],
+  "supporting_products": [
+    "PROD-SOUP-75",
+    "PROD-JIAO-600",
+    "PROD-ANTLER-75"
+  ],
+  "line_rules": {
+    "recommend_primary_product_first": true,
+    "offer_convenience_alternative": true,
+    "medical_claims_forbidden": true,
+    "medical_questions_handoff": "@changwuchi"
+  },
+  "post_rules": {
+    "approval_required": true,
+    "publish_before_approval": false
+  }
+}
