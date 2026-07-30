@@ -5,8 +5,10 @@ on:
     branches: [main]
     paths:
       - 'assets/data/final-post-review-package-2026-07-30.json'
+      - 'assets/data/final-post-image-archive-manifest-2026-07-30.json'
       - 'assets/data/post-approval-registry-2026-07-30.json'
       - 'tools/validate_final_post_review_package.js'
+      - 'tools/validate_final_post_archive_manifest.js'
       - '.github/workflows/verify-final-post-review.yml'
   workflow_dispatch:
 
@@ -32,6 +34,9 @@ jobs:
 
       - name: 驗證15篇貼文文案、圖片校驗碼與人工審核閘門
         run: node tools/validate_final_post_review_package.js
+
+      - name: 驗證ZIP封存清單與15篇圖文一對一對照
+        run: node tools/validate_final_post_archive_manifest.js
 
       - name: 驗證審核登錄檔仍禁止發布
         run: |
