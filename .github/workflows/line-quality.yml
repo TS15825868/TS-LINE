@@ -1,0 +1,56 @@
+name: 仙加味 LINE OA 品質守門員
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ts-line-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: LINE OA 程式、資料與發布安全檢查
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate GitHub Actions rules
+        run: node tools/validate_github_workflows.js
+
+      - name: Run complete LINE OA release checks
+        run: npm test
+
+      - name: Verify manual approval remains locked
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'data/post-approval-registry-2026-07-30.json';
+          if (!fs.existsSync(path)) throw new Error(`缺少人工審核登錄檔：${path}`);
+          const registry = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const rows = Array.isArray(registry) ? registry : (registry.posts || registry.items || []);
+          if (!rows.length) throw new Error('人工審核登錄檔沒有貼文資料');
+          for (const row of rows) {
+            if (row.auto_publish === true || row.publishable_now === true) {
+              throw new Error(`貼文未經老闆核准卻可發布：${row.id || row.post_id || 'unknown'}`);
+            }
+          }
+          console.log(`PASS：${rows.length} 篇貼文維持人工審核與禁止自動發布。`);
+          NODE
