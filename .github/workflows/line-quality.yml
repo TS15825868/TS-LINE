@@ -42,15 +42,18 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('node:fs');
-          const path = 'data/post-approval-registry-2026-07-30.json';
+          const path = 'assets/data/post-approval-registry-2026-07-30.json';
           if (!fs.existsSync(path)) throw new Error(`缺少人工審核登錄檔：${path}`);
           const registry = JSON.parse(fs.readFileSync(path, 'utf8'));
-          const rows = Array.isArray(registry) ? registry : (registry.posts || registry.items || []);
-          if (!rows.length) throw new Error('人工審核登錄檔沒有貼文資料');
+          const rows = [
+            ...(Array.isArray(registry.product_posts) ? registry.product_posts : []),
+            ...(Array.isArray(registry.lifestyle_posts) ? registry.lifestyle_posts : []),
+          ];
+          if (registry.manual_approval_required !== true) throw new Error('人工審核閘門未啟用');
+          if (registry.auto_publish !== false || registry.publishable_now !== false) throw new Error('未核准貼文不得自動發布');
+          if (rows.length !== 15) throw new Error(`審核貼文數量應為15篇，目前${rows.length}篇`);
           for (const row of rows) {
-            if (row.auto_publish === true || row.publishable_now === true) {
-              throw new Error(`貼文未經老闆核准卻可發布：${row.id || row.post_id || 'unknown'}`);
-            }
+            if (row.status !== 'pending_owner_approval') throw new Error(`貼文審核狀態異常：${row.id || 'unknown'}`);
           }
           console.log(`PASS：${rows.length} 篇貼文維持人工審核與禁止自動發布。`);
           NODE
