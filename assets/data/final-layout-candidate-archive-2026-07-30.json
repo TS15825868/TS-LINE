@@ -1,0 +1,31 @@
+{
+  "version": "2026-07-30-final-layout-candidate-v1",
+  "archive_name": "仙加味_15張貼文最終排版候選_待審核.zip",
+  "archive_sha256": "6b62e6b9c1f9e619de4c046b2ba310e223c533a373ca286a6033baec245145ca",
+  "archive_file_count": 17,
+  "candidate_image_count": 15,
+  "status": "awaiting_owner_approval",
+  "manual_approval_required": true,
+  "auto_publish": false,
+  "publishable_now": false,
+  "ready_candidates": 13,
+  "blocked_candidates": 2,
+  "blocking_items": [
+    {
+      "id": "02",
+      "product": "龜鹿飲30cc",
+      "reason": "候選圖同時出現30cc與180cc，尚未符合單一產品獨立呈現標準"
+    },
+    {
+      "id": "03",
+      "product": "龜鹿飲180cc",
+      "reason": "候選圖同時出現30cc與180cc，尚未符合單一產品獨立呈現標準"
+    }
+  ],
+  "rules": [
+    "產品只能使用正式原圖",
+    "不得重畫或修改包裝、貼紙、罐型、盒型與規格",
+    "所有最終圖必須逐張確認文字安全區、產品比例與角色完整性",
+    "未經老闆明確核准不得排程或發布"
+  ]
+}
