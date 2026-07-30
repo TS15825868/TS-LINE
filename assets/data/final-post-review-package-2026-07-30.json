@@ -1,0 +1,35 @@
+{
+  "version": "2026-07-30-final-post-review-package-v1",
+  "created_at": "2026-07-30T21:09:00+08:00",
+  "status": "awaiting_owner_approval",
+  "manual_approval_required": true,
+  "auto_publish": false,
+  "publishable_now": false,
+  "total_posts": 15,
+  "verified_png_count": 15,
+  "image_policy": {
+    "official_original_images_only": true,
+    "product_redraw_forbidden": true,
+    "package_or_label_change_forbidden": true,
+    "traditional_chinese_only": true,
+    "mascot": "官網正式版仙加味小老闆",
+    "partners": ["小鹿娃娃", "小烏龜娃娃"]
+  },
+  "posts": [
+    {"id":"01","type":"product","title":"仙加味・龜鹿膏｜100g／罐","image_sha256":"c66a57762104b58e45c408e790f117021337b44069bd5804edfb772b3bacc096","copy":"把補養排進日常，不必等到特別的日子。仙加味・龜鹿膏為100g／罐，可直接食用，也可用熱水化開後飲用。開罐後請冷藏保存，並依自己的日常習慣安排食用。補養，是一種節奏。想了解產品或食用方式，歡迎透過LINE官方帳號詢問。","status":"pending_owner_approval"},
+    {"id":"02","type":"product","title":"仙加味・龜鹿飲｜30cc／罐（小玻璃罐）","image_sha256":"93ed892a85d1f6e9257946db88958f17e94b9ff8e8f9700903ffe426dcb78aab","copy":"小份量、好攜帶，讓日常安排更簡單。仙加味・龜鹿飲30cc小玻璃罐，可依自己的生活節奏安排飲用；建議隔水加熱或溫熱飲用，避免冰飲。補養，是一種節奏。想了解產品或飲用方式，歡迎透過LINE官方帳號詢問。","status":"pending_owner_approval"},
+    {"id":"03","type":"product","title":"仙加味・龜鹿飲｜180cc／包（鋁袋）","image_sha256":"0472f4939e94c088977c71b21dad6eb2b9c0ebf4095cd69b7fe335d0004e48cb","copy":"一份完整的日常飲用量，配合自己的生活節奏。仙加味・龜鹿飲180cc鋁袋，可隔水加熱或溫熱飲用；依自己的作息安排，避免冰飲。補養，是一種節奏。想了解產品或飲用方式，歡迎透過LINE官方帳號詢問。","status":"pending_owner_approval"},
+    {"id":"04","type":"product","title":"仙加味・龜鹿湯塊｜75g／盒","image_sha256":"d350825b3b6655233676a87de79ab4fbabbe632a0316e04e75e2a927c228cce2","copy":"8塊裝，每塊約9.375g。可搭配雞湯、排骨湯等日常料理；也可放入保溫壺，加入約300～500ml熱水沖泡。實際用量可依料理份量與個人習慣調整。以料理的方式，安排自己的日常補養節奏。","status":"pending_owner_approval"},
+    {"id":"05","type":"product","title":"仙加味・龜鹿膠｜600g／盒（1斤）","image_sha256":"4e12c794c9ba618b3470d9d23d23e34c7b0b08b32a7fa5894ad90e8294a0445b","copy":"32塊裝，每塊約18.75g。適合平時有燉湯、沖泡或多人料理需求時使用；分塊取用，可依料理份量與生活習慣彈性安排。補養，是一種節奏。想了解產品或使用方式，歡迎透過LINE官方帳號詢問。","status":"pending_owner_approval"},
+    {"id":"06","type":"product","title":"仙加味・鹿茸粉｜75g／罐","image_sha256":"42b84d8ee11332c06c5e3c08677722f8c68a6faa536a863a2663b0a69277371f","copy":"自己搭配，讓日常安排更有彈性。可加入溫開水、牛奶、豆漿或其他日常飲品中攪拌，也可依個人習慣直接入口後配水。從少量開始，找到適合自己的搭配方式。","status":"pending_owner_approval"},
+    {"id":"07","type":"lifestyle","title":"把補養放進日常料理","image_sha256":"603afbaea2b9e242e10bcec9458a3833d94f560272da80c4a1a5492ca328a101","copy":"龜鹿湯塊可搭配雞湯、排骨湯等日常料理，也可依份量與習慣彈性調整。不用複雜，找到適合自己的搭配方式就好。補養，是一種節奏。","status":"pending_owner_approval"},
+    {"id":"08","type":"lifestyle","title":"保存方式要注意","image_sha256":"a25c34ae6c94edc9995df45b93e745715c5baeb8611a9ec7684d6f3781d48d96","copy":"不同產品的保存方式不完全相同。龜鹿膏開罐後請冷藏；其他產品則依包裝標示保存，並避免高溫、潮濕與陽光直射。正確保存，才能維持產品原有狀態。","status":"pending_owner_approval"},
+    {"id":"09","type":"lifestyle","title":"溫熱飲用，更貼近日常習慣","image_sha256":"dcfcdcf2d72ff7d799c4ae477b8ea5cc95bdb111a661c8cd1f0430250a3cdfe3","copy":"龜鹿飲可隔水加熱或溫熱飲用，避免冰飲。依自己的作息與習慣安排，不必一次改變太多。補養，是一種節奏。","status":"pending_owner_approval"},
+    {"id":"10","type":"lifestyle","title":"找到適合自己的產品型態","image_sha256":"1fc168fe1de1f353114110f2c2d31f8f80813658ab87c4439a3e64f925a38685","copy":"想固定安排，可選龜鹿膏；想方便飲用，可選龜鹿飲；想搭配料理，可選龜鹿湯塊或龜鹿膠；想自己搭配，可選鹿茸粉。沒有唯一答案，選擇最適合自己生活方式的就好。","status":"pending_owner_approval"},
+    {"id":"11","type":"lifestyle","title":"關心家人，也可以從日常開始","image_sha256":"6373ede8fdda583bb8700abd449a5fb2a63aff36996eac12e1129ccaad9fec12","copy":"一份溫熱的飲品、一鍋家常湯，都是很自然的陪伴。不必說得很多，照顧常常就在每天的小事裡。補養，是一種節奏。","status":"pending_owner_approval"},
+    {"id":"12","type":"lifestyle","title":"早晚溫差大，記得照顧自己的節奏","image_sha256":"67a58b48af17cc316836af2d5bd4867fcfce418b1bcd8823600fd8513be2f96c","copy":"天氣變化時，飲食與作息也可以稍微調整。溫熱飲用、正常吃飯、適度休息，讓日常維持穩定。","status":"pending_owner_approval"},
+    {"id":"13","type":"lifestyle","title":"下雨天，也把步調放慢一點","image_sha256":"d85e2fb70ccf3f4fedd364376e4416caa96a13919699f7f79f1eb51cef0714c5","copy":"準備一杯溫熱飲品，或煮一鍋簡單的湯，讓忙碌的日子多一點停頓。補養，不必急著完成。補養，是一種節奏。","status":"pending_owner_approval"},
+    {"id":"14","type":"lifestyle","title":"工作再忙，也別忘了留一點時間給自己","image_sha256":"c22503d35b0937cb94198bedfa8f4e8132a4304e43f767d729926210991fdb3b","copy":"日常補養不一定要很複雜。選擇容易持續的方式，固定安排在自己的生活節奏裡，比一次做很多更重要。","status":"pending_owner_approval"},
+    {"id":"15","type":"lifestyle","title":"天氣炎熱，先把日常補水做好","image_sha256":"a6b6bd4cb340192b61d9c8e643ceffbb5ce22781222f6fe493886ff871221da0","copy":"炎熱時節，記得依活動量補充水分，飲食也以清爽、規律為主。龜鹿產品仍可依個人習慣安排，避免冰飲即可。","status":"pending_owner_approval"}
+  ]
+}
