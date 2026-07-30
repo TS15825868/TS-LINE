@@ -1,0 +1,29 @@
+{
+  "version": "2026-07-30-post-finalization-readiness-v1",
+  "updated_at": "2026-07-30T22:53:00+08:00",
+  "total_posts": 15,
+  "source_images_verified": 15,
+  "copy_verified": 15,
+  "archive_manifest_verified": true,
+  "official_product_images_only": true,
+  "product_redraw_forbidden": true,
+  "package_or_label_change_forbidden": true,
+  "manual_approval_required": true,
+  "auto_publish": false,
+  "publishable_now": false,
+  "current_stage": "source_images_and_copy_ready_for_owner_review",
+  "final_layout_status": "not_yet_verified_as_publish_ready",
+  "remaining_work": [
+    "逐張確認15篇最終貼文排版圖是否已完成，而非僅有產品或生活原圖",
+    "確認每張最終排版圖均包含官網正式版仙加味小老闆及指定夥伴，且版型規格不變",
+    "確認產品本體、包裝、貼紙、罐型、盒型與規格文字完全未被重畫或修改",
+    "將最終排版圖逐張交由老闆審核",
+    "只有老闆明確核准的貼文才可變更為可排程或可發布"
+  ],
+  "release_gate": {
+    "owner_approved_count": 0,
+    "publish_ready_count": 0,
+    "required_owner_approved_count": 15,
+    "status": "blocked_pending_owner_review_and_final_layout_verification"
+  }
+}
