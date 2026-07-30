@@ -1,0 +1,35 @@
+{
+  "version": "2026-07-30-final-post-image-archive-v1",
+  "archive_name": "仙加味_十五張貼文_總核准包_2026-07-30.zip",
+  "archive_sha256": "1c6ca84c6a56fb8f1806f8f6ef6801cf9993f15d8f5b826cd9a1fb5e1dec5ade",
+  "total_files": 52,
+  "total_posts": 15,
+  "product_post_images": 6,
+  "lifestyle_post_images": 9,
+  "status": "awaiting_owner_approval",
+  "manual_approval_required": true,
+  "auto_publish": false,
+  "publishable_now": false,
+  "notes": [
+    "此表用於確認審核 ZIP 與 Git 內貼文文案、圖片 SHA-256 對應一致。",
+    "產品圖只允許使用正式原圖，不得重畫、改包裝、改貼紙、改罐型或盒型。",
+    "ZIP 內圖片目前屬審核素材，不代表已排程或已發布。"
+  ],
+  "entries": [
+    {"id":"01","type":"product","folder":"01_產品貼文_6張/01_龜鹿膏100g","image":"產品原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"c66a57762104b58e45c408e790f117021337b44069bd5804edfb772b3bacc096"},
+    {"id":"02","type":"product","folder":"01_產品貼文_6張/02_龜鹿飲30cc","image":"產品原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"93ed892a85d1f6e9257946db88958f17e94b9ff8e8f9700903ffe426dcb78aab"},
+    {"id":"03","type":"product","folder":"01_產品貼文_6張/03_龜鹿飲180cc","image":"產品原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"0472f4939e94c088977c71b21dad6eb2b9c0ebf4095cd69b7fe335d0004e48cb"},
+    {"id":"04","type":"product","folder":"01_產品貼文_6張/04_龜鹿湯塊75g","image":"產品原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"d350825b3b6655233676a87de79ab4fbabbe632a0316e04e75e2a927c228cce2"},
+    {"id":"05","type":"product","folder":"01_產品貼文_6張/05_龜鹿膠600g","image":"產品原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"4e12c794c9ba618b3470d9d23d23e34c7b0b08b32a7fa5894ad90e8294a0445b"},
+    {"id":"06","type":"product","folder":"01_產品貼文_6張/06_鹿茸粉75g","image":"產品原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"42b84d8ee11332c06c5e3c08677722f8c68a6faa536a863a2663b0a69277371f"},
+    {"id":"07","type":"lifestyle","folder":"02_生活貼文_9張/06_料理搭配","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"603afbaea2b9e242e10bcec9458a3833d94f560272da80c4a1a5492ca328a101"},
+    {"id":"08","type":"lifestyle","folder":"02_生活貼文_9張/07_保存方式","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"a25c34ae6c94edc9995df45b93e745715c5baeb8611a9ec7684d6f3781d48d96"},
+    {"id":"09","type":"lifestyle","folder":"02_生活貼文_9張/08_飲用溫度","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"dcfcdcf2d72ff7d799c4ae477b8ea5cc95bdb111a661c8cd1f0430250a3cdfe3"},
+    {"id":"10","type":"lifestyle","folder":"02_生活貼文_9張/09_產品型態選擇","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"1fc168fe1de1f353114110f2c2d31f8f80813658ab87c4439a3e64f925a38685"},
+    {"id":"11","type":"lifestyle","folder":"02_生活貼文_9張/10_關心家人","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"6373ede8fdda583bb8700abd449a5fb2a63aff36996eac12e1129ccaad9fec12"},
+    {"id":"12","type":"lifestyle","folder":"02_生活貼文_9張/11_早晚溫差","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"67a58b48af17cc316836af2d5bd4867fcfce418b1bcd8823600fd8513be2f96c"},
+    {"id":"13","type":"lifestyle","folder":"02_生活貼文_9張/12_下雨天","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"d85e2fb70ccf3f4fedd364376e4416caa96a13919699f7f79f1eb51cef0714c5"},
+    {"id":"14","type":"lifestyle","folder":"02_生活貼文_9張/13_工作忙碌","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"c22503d35b0937cb94198bedfa8f4e8132a4304e43f767d729926210991fdb3b"},
+    {"id":"15","type":"lifestyle","folder":"02_生活貼文_9張/14_炎熱補水","image":"原圖_不得修改.png","copy":"貼文文案.txt","image_sha256":"a6b6bd4cb340192b61d9c8e643ceffbb5ce22781222f6fe493886ff871221da0"}
+  ]
+}
