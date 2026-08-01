@@ -1,0 +1,106 @@
+name: 安裝 LINE OA 正式完整小老闆圖片
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/install-official-line-mascot-scenes.yml'
+      - 'tools/install_official_line_mascot_scenes.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: install-official-line-mascot-scenes
+  cancel-in-progress: true
+
+jobs:
+  install-verify-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 取得最新 main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安裝正式小老闆圖片規則
+        run: |
+          set -euo pipefail
+          npm ci
+          node tools/install_official_line_mascot_scenes.js
+
+      - name: 把正式素材契約納入主 CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/ci.yml')
+          text = path.read_text(encoding='utf-8')
+          old = '''      - name: Run complete LINE OA, social, review and schedule tests
+        run: npm test
+'''
+          new = '''      - name: Run complete LINE OA, social, review and schedule tests
+        run: |
+          npm test
+          node tests/line-approved-mascot-contract.js
+'''
+          if 'node tests/line-approved-mascot-contract.js' not in text:
+              if text.count(old) != 1:
+                  raise SystemExit('找不到主 CI 的 npm test 步驟')
+              text = text.replace(old, new)
+              path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: 驗證程式、正式圖片 URL 與完整互動主測試
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check server.js
+          node --check line-image-safety.js
+          node --check tests/line-approved-mascot-contract.js
+          node tests/line-approved-mascot-contract.js
+
+          base='https://ts15825868.github.io/xianjiawei/images/brand/line-oa'
+          for name in welcome products recommend combo usage faq service brand; do
+            headers=$(curl --fail --silent --show-error --location --head "$base/$name.jpg")
+            printf '%s\n' "$headers" | grep -qi '^content-type: image/jpeg'
+          done
+
+          npm test
+          npm run check:catalog
+
+      - name: 清除一次性安裝器並提交 main
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f tools/install_official_line_mascot_scenes.js
+          rm -f .github/workflows/install-official-line-mascot-scenes.yml
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server.js line-image-safety.js tests/line-approved-mascot-contract.js .github/workflows/ci.yml
+          git add -u -- tools/install_official_line_mascot_scenes.js .github/workflows/install-official-line-mascot-scenes.yml
+          git diff --cached --quiet && { echo '沒有需要提交的變更'; exit 0; }
+          git commit -m 'feat(line): enable approved complete mascot scenes'
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "PASS 已更新 LINE OA 正式圖片（第 ${attempt} 次）"
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            sleep $((attempt * 3))
+          done
+          echo '三次重試後仍無法提交 LINE OA 正式圖片' >&2
+          exit 1
