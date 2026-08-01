@@ -1,5 +1,6 @@
 name: 安裝 LINE OA 正式完整小老闆圖片
 
+# trigger-revision: 2026-08-01-01
 on:
   push:
     branches: [main]
