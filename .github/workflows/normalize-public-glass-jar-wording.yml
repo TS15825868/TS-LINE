@@ -1,0 +1,52 @@
+name: 統一30cc小玻璃罐公開用語
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'social-first-batch-202607.js'
+      - 'social-final-reconcile.js'
+      - 'tools/normalize_public_glass_jar_wording.js'
+      - '.github/workflows/normalize-public-glass-jar-wording.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    name: 修正並驗證公開產品名稱
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 取得正式 main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: 設定 Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 統一公開用語
+        run: node tools/normalize_public_glass_jar_wording.js
+
+      - name: 驗證 JavaScript 語法
+        run: |
+          node --check social-first-batch-202607.js
+          node --check social-final-reconcile.js
+          node --check tools/normalize_public_glass_jar_wording.js
+          git diff --check
+
+      - name: 將修正寫回 main
+        run: |
+          if git diff --quiet; then
+            echo '公開文案已是正式用語，無需提交。'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add social-first-batch-202607.js social-final-reconcile.js
+          git commit -m 'fix(line): normalize public wording to 30cc small glass jar'
+          git push origin main
