@@ -1,16 +1,18 @@
 name: 安裝 LINE OA 正式完整小老闆圖片
 
-# trigger-revision: 2026-08-01-01
+# trigger-revision: 2026-08-01-02
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/install-official-line-mascot-scenes.yml'
       - 'tools/install_official_line_mascot_scenes.js'
+      - 'tools/patch_line_ci_mascot_contract.js'
   workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: install-official-line-mascot-scenes
@@ -19,7 +21,7 @@ concurrency:
 jobs:
   install-verify-commit:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: 取得最新 main
         uses: actions/checkout@v4
@@ -33,64 +35,88 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: 安裝正式小老闆圖片規則
+      - name: 執行完整安裝與驗證並保留診斷
+        id: pipeline
+        shell: bash
         run: |
-          set -euo pipefail
-          npm ci
-          node tools/install_official_line_mascot_scenes.js
+          set +e
+          mkdir -p artifacts
+          (
+            set -euo pipefail
+            echo '=== 安裝依賴 ==='
+            npm ci
 
-      - name: 把正式素材契約納入主 CI
+            echo '=== 安裝正式圖片規則 ==='
+            node tools/install_official_line_mascot_scenes.js
+            node tools/patch_line_ci_mascot_contract.js
+
+            echo '=== 程式與素材契約 ==='
+            node --check server.js
+            node --check line-image-safety.js
+            node --check tests/line-approved-mascot-contract.js
+            node tests/line-approved-mascot-contract.js
+
+            echo '=== 8 張正式 JPEG HTTPS ==='
+            base='https://ts15825868.github.io/xianjiawei/images/brand/line-oa'
+            for name in welcome products recommend combo usage faq service brand; do
+              echo "檢查 $name.jpg"
+              headers=$(curl --fail --silent --show-error --location --head "$base/$name.jpg")
+              printf '%s\n' "$headers" | grep -qi '^content-type: image/jpeg'
+            done
+
+            echo '=== LINE OA 完整測試 ==='
+            npm test
+            npm run check:catalog
+            echo 'PASS LINE OA 正式完整小老闆圖片與全系統測試'
+          ) > artifacts/line-mascot-install.log 2>&1
+          status=$?
+          tail -n 260 artifacts/line-mascot-install.log
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: 發布精確失敗診斷
+        if: steps.pipeline.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+          EXIT_CODE: ${{ steps.pipeline.outputs.exit_code }}
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('.github/workflows/ci.yml')
-          text = path.read_text(encoding='utf-8')
-          old = '''      - name: Run complete LINE OA, social, review and schedule tests
-        run: npm test
-'''
-          new = '''      - name: Run complete LINE OA, social, review and schedule tests
-        run: |
-          npm test
-          node tests/line-approved-mascot-contract.js
-'''
-          if 'node tests/line-approved-mascot-contract.js' not in text:
-              if text.count(old) != 1:
-                  raise SystemExit('找不到主 CI 的 npm test 步驟')
-              text = text.replace(old, new)
-              path.write_text(text, encoding='utf-8')
-          PY
-
-      - name: 驗證程式、正式圖片 URL 與完整互動主測試
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --check server.js
-          node --check line-image-safety.js
-          node --check tests/line-approved-mascot-contract.js
-          node tests/line-approved-mascot-contract.js
-
-          base='https://ts15825868.github.io/xianjiawei/images/brand/line-oa'
-          for name in welcome products recommend combo usage faq service brand; do
-            headers=$(curl --fail --silent --show-error --location --head "$base/$name.jpg")
-            printf '%s\n' "$headers" | grep -qi '^content-type: image/jpeg'
-          done
-
-          npm test
-          npm run check:catalog
+          title='[CI 診斷] LINE OA 正式小老闆圖片安裝失敗'
+          {
+            echo '## LINE OA 正式小老闆圖片安裝失敗'
+            echo
+            echo "- 提交：\`${SOURCE_SHA}\`"
+            echo "- Exit code：\`${EXIT_CODE}\`"
+            echo "- 時間：$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo
+            echo '```text'
+            tail -c 24000 artifacts/line-mascot-install.log
+            echo
+            echo '```'
+          } > artifacts/line-mascot-diagnostic.md
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --search "$title in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue reopen "$number" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || true
+            gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body-file artifacts/line-mascot-diagnostic.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file artifacts/line-mascot-diagnostic.md
+          fi
 
       - name: 清除一次性安裝器並提交 main
+        if: steps.pipeline.outputs.exit_code == '0'
         shell: bash
         run: |
           set -euo pipefail
           rm -f tools/install_official_line_mascot_scenes.js
+          rm -f tools/patch_line_ci_mascot_contract.js
           rm -f .github/workflows/install-official-line-mascot-scenes.yml
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add server.js line-image-safety.js tests/line-approved-mascot-contract.js .github/workflows/ci.yml
-          git add -u -- tools/install_official_line_mascot_scenes.js .github/workflows/install-official-line-mascot-scenes.yml
+          git add -u -- tools/install_official_line_mascot_scenes.js tools/patch_line_ci_mascot_contract.js .github/workflows/install-official-line-mascot-scenes.yml
           git diff --cached --quiet && { echo '沒有需要提交的變更'; exit 0; }
           git commit -m 'feat(line): enable approved complete mascot scenes'
 
@@ -105,3 +131,20 @@ jobs:
           done
           echo '三次重試後仍無法提交 LINE OA 正式圖片' >&2
           exit 1
+
+      - name: 關閉已解決診斷
+        if: steps.pipeline.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          title='[CI 診斷] LINE OA 正式小老闆圖片安裝失敗'
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --search "$title in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment '正式完整小老闆圖片與 LINE OA 全系統測試已通過。' >/dev/null 2>&1 || true
+          fi
+
+      - name: 強制安裝結果
+        shell: bash
+        run: test "${{ steps.pipeline.outputs.exit_code }}" = '0'
