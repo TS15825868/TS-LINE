@@ -1,12 +1,21 @@
-commit=7853cf687d32d335db358dffdb8ee6547a0e8fe4
-recorded_at=2026-07-28T15:50:55Z
+commit=3e112cf8262d9618ef7ee1c2678af2b30f9b5cbf
+recorded_at=2026-08-01T18:37:44Z
 
 
 > xianjiawei-lineoa@6.1.1 check:catalog
 > node tools/sync_website_catalog.js --check && node tools/sync_sales_master.js
 
 LINE OA data.json 與官網共用目錄不同步：
-$.products[1].specification: actual="30cc／罐（小玻璃罐）" expected=undefined
+$.products[1].description: actual="30cc小玻璃瓶，把龜鹿系列整理成方便即飲的液態型態，適合輕巧即飲、外出攜帶與工作空檔安排。" expected="30cc小玻璃罐，把龜鹿膏的成分方向整理成方便即飲的液態型態。適合輕巧即飲、外出攜帶與工作空檔安排。"
+$.products[1].displayName: actual="龜鹿飲30cc玻璃瓶" expected="龜鹿飲30cc玻璃罐"
+$.products[1].name: actual="龜鹿飲30cc玻璃瓶" expected="龜鹿飲30cc玻璃罐"
+$.products[1].purposeDirection: actual="適合外出攜帶、工作空檔或偏好小玻璃瓶即飲的人。" expected="適合外出攜帶、工作空檔或偏好小玻璃罐即飲的人。"
+$.products[1].size: actual="30cc／瓶（小玻璃瓶）" expected="30cc／罐（小玻璃罐）"
+$.products[1].specification: actual="30cc／瓶（小玻璃瓶）" expected=undefined
+$.products[1].storage[2]: actual="開瓶後請儘速飲用完畢" expected="開罐後請儘速飲用完畢"
+$.products[1].usage[0]: actual="每日一瓶" expected="每日一罐"
+$.products[1].usage[1]: actual="開瓶即可飲用" expected="開罐即可飲用"
+$.products[1].usage[4]: actual="開瓶後請儘速飲用完畢" expected="開罐後請儘速飲用完畢"
 $.products[3].name: actual="龜鹿湯塊75g" expected="龜鹿湯塊"
 $.products[3].specification: actual="75g／盒｜8塊裝｜每塊約9.375g" expected=undefined
 $.products[4].specification: actual="600g／盒（1斤）｜32塊裝｜每塊約18.75g" expected=undefined
