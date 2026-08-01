@@ -18,7 +18,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -44,9 +44,12 @@ jobs:
           from pathlib import Path
           from PIL import Image
 
-          for name in ('usage', 'faq', 'brand'):
+          names = ('recommend', 'combo', 'usage', 'faq')
+          for name in names:
               source = Path(f'.asset-upload/{name}-approved.b64')
               target = Path(f'public/mascot/{name}.jpg')
+              if not source.exists():
+                  raise SystemExit(f'Missing approved source: {source}')
               text = ''.join(source.read_text(encoding='utf-8').split())
               padding = '=' * (-len(text) % 4)
               data = base64.b64decode(text + padding, validate=False)
@@ -56,8 +59,8 @@ jobs:
               with Image.open(target) as image:
                   image.verify()
               with Image.open(target) as image:
-                  if image.size != (800, 600):
-                      raise SystemExit(f'{target}: expected 800x600, got {image.size}')
+                  if image.size != (1200, 1200):
+                      raise SystemExit(f'{target}: expected 1200x1200, got {image.size}')
                   if image.format != 'JPEG':
                       raise SystemExit(f'{target}: expected JPEG, got {image.format}')
                   print(source, len(text), 'chars ->', target, len(data), 'bytes', image.size, image.format)
@@ -69,12 +72,12 @@ jobs:
           set -euo pipefail
           git config user.name "仙加味正式素材發布"
           git config user.email "actions@users.noreply.github.com"
-          git add public/mascot/usage.jpg public/mascot/faq.jpg public/mascot/brand.jpg
-          git rm -f .asset-upload/usage-approved.b64 .asset-upload/faq-approved.b64 .asset-upload/brand-approved.b64
+          git add public/mascot/recommend.jpg public/mascot/combo.jpg public/mascot/usage.jpg public/mascot/faq.jpg
+          git rm -f .asset-upload/recommend-approved.b64 .asset-upload/combo-approved.b64 .asset-upload/usage-approved.b64 .asset-upload/faq-approved.b64
           if git diff --cached --quiet; then
             echo "No asset changes"
             exit 0
           fi
-          git commit -m "feat: publish approved LINE OA usage FAQ and brand images"
+          git commit -m "feat: publish approved LINE OA Issue 146 images"
           git pull --rebase origin main
           git push origin main
