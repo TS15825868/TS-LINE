@@ -13,10 +13,7 @@ const BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/m
 const APPROVED_MASCOT_NAMES = ["recommend", "combo", "usage", "faq"];
 const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg"];
 const BLOCKED_MASCOT_ASSETS = [...LEGACY_MASCOT_NAMES];
-const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({
-  name,
-  url: `${BASE}/${name}.jpg?v=${VERSION}`,
-}));
+const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({ name, url: `${BASE}/${name}.jpg?v=${VERSION}` }));
 
 function approvedUrl(name) {
   return `${BASE}/${name}.jpg?v=${VERSION}`;
@@ -45,32 +42,20 @@ function sceneForTitle(title) {
 }
 
 function approvedHero(scene) {
-  return {
-    type: "image",
-    url: approvedUrl(scene),
-    size: "full",
-    aspectRatio: "1:1",
-    aspectMode: "cover",
-  };
+  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "1:1", aspectMode: "cover" };
 }
 
 function applyImageSafety(node) {
   if (!node || typeof node !== "object") return node;
-
   if (Array.isArray(node)) {
     for (const item of node) applyImageSafety(item);
     return node;
   }
-
   if (node.type === "bubble") {
     const scene = sceneForTitle(bubbleTitle(node));
-    if (scene) {
-      node.hero = approvedHero(scene);
-    } else if (node.hero?.type === "image" && isBlockedMascotUrl(node.hero.url)) {
-      delete node.hero;
-    }
+    if (scene) node.hero = approvedHero(scene);
+    else if (node.hero?.type === "image" && isBlockedMascotUrl(node.hero.url)) delete node.hero;
   }
-
   for (const value of Object.values(node)) applyImageSafety(value);
   return node;
 }
@@ -78,16 +63,11 @@ function applyImageSafety(node) {
 const Client = line?.messagingApi?.MessagingApiClient;
 if (Client?.prototype?.replyMessage && !Client.prototype.__xjwImageSafetyInstalled) {
   const originalReplyMessage = Client.prototype.replyMessage;
-
   Client.prototype.replyMessage = function patchedReplyMessage(payload) {
     applyImageSafety(payload?.messages);
     return originalReplyMessage.call(this, payload);
   };
-
-  Object.defineProperty(Client.prototype, "__xjwImageSafetyInstalled", {
-    value: true,
-    enumerable: false,
-  });
+  Object.defineProperty(Client.prototype, "__xjwImageSafetyInstalled", { value: true, enumerable: false });
 }
 
 module.exports = {
