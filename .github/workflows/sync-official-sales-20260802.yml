@@ -1,4 +1,4 @@
-name: 同步 LINE OA 最新正式售價與驗證
+name: 同步 LINE OA 正式售價與驗證
 
 on:
   push:
@@ -39,12 +39,12 @@ jobs:
           const fs = require('fs');
 
           const official = {
-            'guilu-gao': { price: 2000, originalPrice: null, offers: [], promotionTexts: [], priceText: '$2,000 / 罐', priceLabel: '售價2,000元', originalPriceText: null },
-            'guilu-drink-30': { price: 100, originalPrice: null, offers: [], promotionTexts: [], priceText: '$100 / 罐', priceLabel: '售價100元', originalPriceText: null },
-            'guilu-drink-180': { price: 200, originalPrice: null, offers: [], promotionTexts: [], priceText: '$200 / 包', priceLabel: '售價200元', originalPriceText: null },
-            'guilu-tangkuai': { price: 2000, originalPrice: null, offers: [], promotionTexts: [], priceText: '$2,000 / 盒', priceLabel: '售價2,000元', originalPriceText: null },
+            'guilu-gao': { price: 1500, originalPrice: 1800, offers: [], promotionTexts: ['優惠價1,500元'], priceText: '$1,500 / 罐', priceLabel: '售價1,800元，優惠價1,500元', originalPriceText: '$1,800' },
+            'guilu-drink-30': { name: '龜鹿飲30cc玻璃瓶', displayName: '龜鹿飲30cc玻璃瓶', price: 50, originalPrice: null, offers: [{ qty: 12, total: 500, label: '買10送2' }], promotionTexts: ['買10送2'], priceText: '$50 / 瓶', priceLabel: '售價50元，買10送2', originalPriceText: null },
+            'guilu-drink-180': { price: 200, originalPrice: null, offers: [{ qty: 12, total: 2000, label: '買10送2' }], promotionTexts: ['買10送2'], priceText: '$200 / 包', priceLabel: '售價200元，買10送2', originalPriceText: null },
+            'guilu-tangkuai': { price: 1600, originalPrice: null, offers: [], promotionTexts: [], priceText: '$1,600 / 盒', priceLabel: '售價1,600元', originalPriceText: null },
             'luerong-fen': { price: 2000, originalPrice: null, offers: [], promotionTexts: [], priceText: '$2,000 / 罐', priceLabel: '售價2,000元', originalPriceText: null },
-            'guilu-jiao': { price: 8000, originalPrice: null, offers: [], promotionTexts: [], priceText: '$8,000 / 盒', priceLabel: '售價8,000元', originalPriceText: null }
+            'guilu-jiao': { price: 9600, originalPrice: 12000, offers: ['優惠價9,600元'], promotionTexts: ['優惠價9,600元'], priceText: '$9,600 / 盒', priceLabel: '售價12,000元，優惠價9,600元', originalPriceText: '$12,000' }
           };
 
           function applyProduct(product, patch) {
@@ -57,7 +57,7 @@ jobs:
 
           const masterPath = 'line-sales-master.json';
           const master = JSON.parse(fs.readFileSync(masterPath, 'utf8'));
-          master.version = '2026-08-02-v8';
+          master.version = '2026-08-02-v9';
           for (const [id, patch] of Object.entries(official)) applyProduct(master.products?.[id], patch);
           fs.writeFileSync(masterPath, JSON.stringify(master, null, 2) + '\n');
 
@@ -69,10 +69,10 @@ jobs:
           const packagePath = 'package.json';
           const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
           pkg.version = '6.1.2';
-          pkg.description = '仙加味 LINE OA 正式版｜最新正式售價與產品資料同步｜真實產品原圖｜人工審核後每週兩篇排程｜防止重複發布';
+          pkg.description = '仙加味 LINE OA 正式版｜正式售價與產品資料同步｜真實產品原圖｜人工審核後每週兩篇排程｜防止重複發布';
           pkg.scripts.test = pkg.scripts.test.replace(
-            /node -e \\"const m=require\('\.\/line-sales-master\.json'\);.*?process\.exit\(1\)\\" && /,
-            "node -e \\"const m=require('./line-sales-master.json');if(m.products['guilu-gao'].price!==2000||m.products['guilu-drink-30'].price!==100||m.products['guilu-drink-180'].price!==200||m.products['guilu-tangkuai'].price!==2000||m.products['luerong-fen'].price!==2000||m.products['guilu-jiao'].price!==8000||(m.comboOffers||[]).length!==3||!m.imagePolicy.partners.includes('小鹿娃娃')||!m.imagePolicy.partners.includes('小烏龜娃娃'))process.exit(1)\\" && "
+            /node -e \"const m=require\('\.\/line-sales-master\.json'\);.*?process\.exit\(1\)\" && /,
+            "node -e \"const m=require('./line-sales-master.json');if(m.products['guilu-gao'].price!==1500||m.products['guilu-gao'].originalPrice!==1800||m.products['guilu-drink-30'].price!==50||!m.products['guilu-drink-30'].offers.some(o=>(o.label||o)==='買10送2')||m.products['guilu-drink-180'].price!==200||!m.products['guilu-drink-180'].offers.some(o=>(o.label||o)==='買10送2')||m.products['guilu-tangkuai'].price!==1600||m.products['luerong-fen'].price!==2000||m.products['guilu-jiao'].price!==9600||m.products['guilu-jiao'].originalPrice!==12000||(m.comboOffers||[]).length!==3||!m.imagePolicy.partners.includes('小鹿娃娃')||!m.imagePolicy.partners.includes('小烏龜娃娃'))process.exit(1)\" && "
           );
           fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
           NODE
@@ -89,21 +89,24 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const expected = {
-            'guilu-gao': 2000,
-            'guilu-drink-30': 100,
-            'guilu-drink-180': 200,
-            'guilu-tangkuai': 2000,
-            'luerong-fen': 2000,
-            'guilu-jiao': 8000
+            'guilu-gao': [1500, 1800],
+            'guilu-drink-30': [50, null],
+            'guilu-drink-180': [200, null],
+            'guilu-tangkuai': [1600, null],
+            'luerong-fen': [2000, null],
+            'guilu-jiao': [9600, 12000]
           };
           for (const file of ['line-sales-master.json', 'data.json']) {
             const json = JSON.parse(fs.readFileSync(file, 'utf8'));
             const products = Array.isArray(json.products) ? Object.fromEntries(json.products.map(p => [p.id, p])) : json.products;
-            for (const [id, price] of Object.entries(expected)) {
-              if (!products[id] || products[id].price !== price) throw new Error(`${file}:${id} expected ${price}, got ${products[id]?.price}`);
+            for (const [id, values] of Object.entries(expected)) {
+              const [price, originalPrice] = values;
+              if (!products[id] || products[id].price !== price || (products[id].originalPrice ?? null) !== originalPrice) {
+                throw new Error(`${file}:${id} incorrect official price`);
+              }
             }
           }
-          console.log('PASS latest official prices synchronized');
+          console.log('PASS confirmed official prices synchronized');
           NODE
 
       - name: Commit verified canonical data and remove one-time workflow
@@ -114,6 +117,6 @@ jobs:
           git config user.name "仙加味正式資料同步"
           git config user.email "actions@users.noreply.github.com"
           git add data.json line-sales-master.json package.json package-lock.json .github/workflows/sync-official-sales-20260802.yml
-          git commit -m "fix: synchronize latest official LINE OA prices [skip ci]"
+          git commit -m "fix: restore confirmed official LINE OA prices [skip ci]"
           git pull --rebase origin main
           git push origin main
