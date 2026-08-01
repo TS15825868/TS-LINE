@@ -3,31 +3,30 @@
 /**
  * LINE OA image safety.
  *
- * The previous public/mascot JPG set contains damaged or retired artwork and is
- * intentionally blocked. Product cards continue to use the real product photos.
- * Purpose-specific mascot scenes will only be re-enabled after clean approved
- * independent LINE OA artwork files pass validation.
+ * Approved independent artwork is enabled for recommend, combo, usage and faq.
+ * Remaining damaged or retired mascot scenes stay blocked until replaced.
+ * Product cards continue to use real product photos only.
  */
 const line = require("@line/bot-sdk");
 
 const LEGACY_MASCOT_PATH = "/public/mascot/";
 const LEGACY_MASCOT_NAMES = [
   "welcome.jpg",
-  "recommend.jpg",
-  "combo.jpg",
-  "usage.jpg",
-  "faq.jpg",
   "service.jpg",
   "brand.jpg",
   "products.jpg",
   "cart.jpg",
 ];
 
-const BLOCKED_MASCOT_ASSETS = [LEGACY_MASCOT_PATH, "/mascot/", ...LEGACY_MASCOT_NAMES];
+const BLOCKED_MASCOT_ASSETS = [LEGACY_MASCOT_PATH, ...LEGACY_MASCOT_NAMES];
 const MASCOT_RULES = [];
 
 function isBlockedMascotUrl(value) {
   const url = String(value || "");
+  if (!url) return false;
+  if (["recommend.jpg", "combo.jpg", "usage.jpg", "faq.jpg"].some((name) => url.includes(`/mascot/${name}`))) {
+    return false;
+  }
   return BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(asset));
 }
 
