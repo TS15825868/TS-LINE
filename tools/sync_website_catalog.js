@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { applyMaster } = require("../product-sales-master");
 
 const ROOT = path.resolve(__dirname, "..");
 const DATA_PATH = path.join(ROOT, "data.json");
@@ -178,7 +179,7 @@ function mergeCatalog(localData, catalog) {
       : localData.mascotAssets,
   };
   normalizeComboItems(result);
-  return result;
+  return applyMaster(result);
 }
 
 function preview(value) {
@@ -240,7 +241,7 @@ async function main() {
     const differences = diffEntries(localData, merged);
     throw new Error(`LINE OA data.json 與官網共用目錄不同步：\n${differences.join("\n") || "無法定位差異"}`);
   }
-  console.log(`PASS shared catalog ${catalog.catalogVersion}: public product fields and LINE sales fields are consistent`);
+  console.log(`PASS shared catalog ${catalog.catalogVersion}: website fields plus confirmed LINE OA identity and sales fields are consistent`);
 }
 
 if (require.main === module) {
