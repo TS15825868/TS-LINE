@@ -57,7 +57,7 @@ jobs:
           const sales = require('./line-sales-master.json');
           if (pkg.version !== '6.1.1') throw new Error('package version must be 6.1.1');
           if (lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version) throw new Error('package lock version mismatch');
-          if (sales.version !== '2026-07-27-v5') throw new Error('正式售價主檔版本錯誤');
+          if (sales.version !== '2026-07-28-v7') throw new Error('正式售價主檔版本錯誤');
           if (sales.products?.['guilu-gao']?.price !== 1500 || sales.products?.['guilu-gao']?.originalPrice !== 1800) throw new Error('龜鹿膏售價與優惠價主檔錯誤');
           if (sales.products?.['guilu-drink-30']?.price !== 50 || !sales.products?.['guilu-drink-30']?.offers?.includes('買10送2')) throw new Error('龜鹿飲30cc售價或活動主檔錯誤');
           if (sales.products?.['guilu-drink-180']?.price !== 200 || !sales.products?.['guilu-drink-180']?.offers?.includes('買10送2')) throw new Error('龜鹿飲180cc售價或活動主檔錯誤');
