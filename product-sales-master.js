@@ -7,6 +7,20 @@ const originalReadFileSync = fs.readFileSync.bind(fs);
 const masterPath = path.join(__dirname, "line-sales-master.json");
 let master = null;
 
+// 售價主檔只管理計價與活動資料。
+// 名稱、規格、包裝、圖片與產品說明一律以官網共用目錄為準，
+// 避免 sync_sales_master 在官網同步完成後又覆寫公開產品資料。
+const SALES_OVERRIDE_FIELDS = Object.freeze([
+  "price",
+  "originalPrice",
+  "unit",
+  "offers",
+  "priceText",
+  "originalPriceText",
+  "priceLabel",
+  "quoteOnly",
+]);
+
 function getMaster() {
   if (master) return master;
   master = JSON.parse(originalReadFileSync(masterPath, "utf8"));
@@ -54,13 +68,22 @@ function normalizeProductOffers(product, override = {}) {
   return { offers, promotionTexts };
 }
 
+function salesOverride(override = {}) {
+  return Object.fromEntries(
+    SALES_OVERRIDE_FIELDS
+      .filter((field) => override[field] !== undefined)
+      .map((field) => [field, override[field]])
+  );
+}
+
 function applyMaster(data) {
   const policy = getMaster();
   const productOverrides = policy.products || {};
   const comboOffers = Array.isArray(policy.comboOffers) ? policy.comboOffers : [];
 
   data.products = (data.products || []).map((product) => {
-    const override = productOverrides[product.id] || {};
+    const rawOverride = productOverrides[product.id] || {};
+    const override = salesOverride(rawOverride);
     const normalized = normalizeProductOffers(product, override);
     const quantityOptions = [...new Set([
       ...(Array.isArray(product.quantityOptions) ? product.quantityOptions : [1, 2, 3, 5]),
@@ -123,4 +146,11 @@ fs.readFileSync = function patchedReadFileSync(file, ...args) {
   return result;
 };
 
-module.exports = { applyMaster, getMaster, rootCombos, normalizeProductOffers };
+module.exports = {
+  applyMaster,
+  getMaster,
+  rootCombos,
+  normalizeProductOffers,
+  salesOverride,
+  SALES_OVERRIDE_FIELDS,
+};
