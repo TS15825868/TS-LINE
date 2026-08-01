@@ -7,13 +7,23 @@ const originalReadFileSync = fs.readFileSync.bind(fs);
 const masterPath = path.join(__dirname, "line-sales-master.json");
 let master = null;
 
-// 售價主檔只管理計價與活動資料。
-// 名稱、規格、包裝、圖片與產品說明一律以官網共用目錄為準，
-// 避免 sync_sales_master 在官網同步完成後又覆寫公開產品資料。
+// 正式主檔管理售價、活動，以及已由老闆確認的產品名稱／包裝識別。
+// 產品圖片與一般介紹仍沿用官網共用目錄；只有明確列在主檔的欄位才會覆蓋。
 const SALES_OVERRIDE_FIELDS = Object.freeze([
+  "name",
+  "displayName",
+  "specification",
+  "size",
+  "spec",
+  "unit",
+  "description",
+  "usage",
+  "storage",
+  "fit",
+  "purposeDirection",
+  "aliases",
   "price",
   "originalPrice",
-  "unit",
   "offers",
   "priceText",
   "originalPriceText",
