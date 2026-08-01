@@ -43,7 +43,7 @@ for (const product of DATA.products) {
 }
 
 assert.strictEqual(detectProduct("龜鹿飲180cc鋁袋").id, "guilu-drink-180");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃瓶").id, "guilu-drink-30");
 assert.strictEqual(detectProduct("龜鹿膏怎麼使用").id, "guilu-gao");
 assert.strictEqual(detectProduct("龜鹿湯塊").id, "guilu-tangkuai");
 assert.strictEqual(detectProduct("龜鹿膠一斤裝").id, "guilu-jiao");
@@ -54,9 +54,9 @@ assert.strictEqual(gao.price, 1500);
 assert.strictEqual(gao.originalPrice, 1800);
 const drink30 = getProduct("guilu-drink-30");
 assert.strictEqual(drink30.price, 50);
-assert.strictEqual(drink30.unit, "罐");
-assert.strictEqual(drink30.size, "30cc／罐（小玻璃罐）");
-assert.deepStrictEqual(calcItem(drink30, 1), { total: 50, label: "單罐×1" });
+assert.strictEqual(drink30.unit, "瓶");
+assert.strictEqual(drink30.size, "30cc／瓶（小玻璃瓶）");
+assert.deepStrictEqual(calcItem(drink30, 1), { total: 50, label: "單瓶×1" });
 assert.deepStrictEqual(calcItem(drink30, 12), { total: 500, label: "買10送2×1" });
 assert.deepStrictEqual(calcItem(drink30, 24), { total: 1000, label: "買10送2×2" });
 const drink180 = getProduct("guilu-drink-180");
@@ -75,7 +75,7 @@ addCart(state, drink30, 12);
 addCart(state, drink30, 1);
 assert.strictEqual(state.cart.length, 1);
 assert.strictEqual(state.cart[0].qty, 13);
-assert.strictEqual(state.cart[0].label, "買10送2×1＋單罐×1");
+assert.strictEqual(state.cart[0].label, "買10送2×1＋單瓶×1");
 assert.strictEqual(cartTotal(state.cart), 550);
 
 const productCards = productCarousel();
