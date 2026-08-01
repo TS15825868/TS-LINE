@@ -208,12 +208,12 @@
     {
       "id": "guilu-drink-30",
       "series": "仙加味・龜鹿",
-      "name": "龜鹿飲30cc玻璃罐",
-      "displayName": "龜鹿飲30cc玻璃罐",
-      "size": "30cc／罐（小玻璃罐）",
+      "name": "龜鹿飲30cc玻璃瓶",
+      "displayName": "龜鹿飲30cc玻璃瓶",
+      "size": "30cc／瓶（小玻璃瓶）",
       "image": "images/products-v3/guilu-drink-30.jpg?v=408.9",
       "dmImage": "images/dm-final/02_guilu-drink-30cc-dm.jpg?v=408.9",
-      "description": "30cc小玻璃罐，把龜鹿膏的成分方向整理成方便即飲的液態型態。適合輕巧即飲、外出攜帶與工作空檔安排。",
+      "description": "30cc小玻璃瓶，把龜鹿系列整理成方便即飲的液態型態，適合輕巧即飲、外出攜帶與工作空檔安排。",
       "ingredients": [
         "水",
         "鹿角萃取物",
@@ -224,31 +224,32 @@
         "粉光蔘"
       ],
       "usage": [
-        "每日一罐",
-        "開罐即可飲用",
+        "每日一瓶",
+        "開瓶即可飲用",
         "可隔水加熱或溫熱後飲用",
         "避免冰飲",
-        "開罐後請儘速飲用完畢"
+        "開瓶後請儘速飲用完畢"
       ],
       "storage": [
         "未開封置於陰涼乾燥處",
         "避免高溫與日光直射",
-        "開罐後請儘速飲用完畢"
+        "開瓶後請儘速飲用完畢"
       ],
       "fit": "想方便即飲、外出攜帶或在工作空檔飲用的人",
       "page": "product-guilu-drink-30cc.html",
       "purpose": "輕巧即飲食補",
-      "purposeDirection": "適合外出攜帶、工作空檔或偏好小玻璃罐即飲的人。",
+      "purposeDirection": "適合外出攜帶、工作空檔或偏好小玻璃瓶即飲的人。",
       "aliases": [
         "龜鹿飲",
         "龜鹿飲30cc",
         "30cc",
-        "玻璃瓶"
+        "玻璃瓶",
+        "小玻璃瓶"
       ],
-      "spec": "30cc／罐（小玻璃罐）",
+      "spec": "30cc／瓶（小玻璃瓶）",
       "price": 50,
       "originalPrice": null,
-      "unit": "罐",
+      "unit": "瓶",
       "offers": [
         {
           "qty": 12,
@@ -265,9 +266,9 @@
         5,
         12
       ],
-      "priceText": "$50 / 罐",
+      "priceText": "$50 / 瓶",
       "priceLabel": "售價50元，買10送2",
-      "specification": "30cc／罐（小玻璃罐）"
+      "specification": "30cc／瓶（小玻璃瓶）"
     },
     {
       "id": "guilu-drink-180",
@@ -1271,6 +1272,6 @@
       }
     }
   },
-  "salesMasterVersion": "2026-07-28-v7",
+  "salesMasterVersion": "2026-08-02-v11",
   "salesMasterSource": "仙加味・龜鹿系列最新正式售價、優惠、活動、包裝與角色政策"
 }
