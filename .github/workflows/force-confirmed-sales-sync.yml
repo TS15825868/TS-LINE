@@ -1,0 +1,57 @@
+name: 強制同步已確認正式售價
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/force-confirmed-sales-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: 套用正式售價
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const patch={
+            'guilu-gao':{price:1500,originalPrice:1800,offers:[],promotionTexts:['優惠價1,500元'],priceText:'$1,500 / 罐',priceLabel:'售價1,800元，優惠價1,500元',originalPriceText:'$1,800'},
+            'guilu-drink-30':{name:'龜鹿飲30cc玻璃瓶',displayName:'龜鹿飲30cc玻璃瓶',size:'30cc／瓶（小玻璃瓶）',spec:'30cc／瓶（小玻璃瓶）',unit:'瓶',price:50,originalPrice:null,offers:[{qty:12,total:500,label:'買10送2'}],promotionTexts:['買10送2'],priceText:'$50 / 瓶',priceLabel:'售價50元，買10送2'},
+            'guilu-drink-180':{price:200,originalPrice:null,offers:[{qty:12,total:2000,label:'買10送2'}],promotionTexts:['買10送2'],priceText:'$200 / 包',priceLabel:'售價200元，買10送2'},
+            'guilu-tangkuai':{price:1600,originalPrice:null,offers:[],promotionTexts:[],priceText:'$1,600 / 盒',priceLabel:'售價1,600元'},
+            'luerong-fen':{price:2000,originalPrice:null,offers:[],promotionTexts:[],priceText:'$2,000 / 罐',priceLabel:'售價2,000元'},
+            'guilu-jiao':{price:9600,originalPrice:12000,offers:['優惠價9,600元'],promotionTexts:['優惠價9,600元'],priceText:'$9,600 / 盒',priceLabel:'售價12,000元，優惠價9,600元',originalPriceText:'$12,000'}
+          };
+          const apply=(p,x)=>{if(!p)return;Object.assign(p,x);if(x.originalPrice===null)delete p.originalPriceText;};
+          const master=JSON.parse(fs.readFileSync('line-sales-master.json','utf8')); master.version='2026-08-02-v10'; for(const [id,x] of Object.entries(patch))apply(master.products[id],x); fs.writeFileSync('line-sales-master.json',JSON.stringify(master,null,2)+'\n');
+          const data=JSON.parse(fs.readFileSync('data.json','utf8')); for(const p of data.products||[])apply(p,patch[p.id]); fs.writeFileSync('data.json',JSON.stringify(data,null,2)+'\n');
+          const pkg=JSON.parse(fs.readFileSync('package.json','utf8')); pkg.version='6.1.2'; pkg.scripts.test=pkg.scripts.test.replace(/node -e \"const m=require\('\.\/line-sales-master\.json'\);.*?process\.exit\(1\)\" && /,"node -e \"const m=require('./line-sales-master.json');if(m.products['guilu-gao'].price!==1500||m.products['guilu-gao'].originalPrice!==1800||m.products['guilu-drink-30'].price!==50||m.products['guilu-drink-30'].name!=='龜鹿飲30cc玻璃瓶'||!m.products['guilu-drink-30'].offers.some(o=>(o.label||o)==='買10送2')||m.products['guilu-drink-180'].price!==200||!m.products['guilu-drink-180'].offers.some(o=>(o.label||o)==='買10送2')||m.products['guilu-tangkuai'].price!==1600||m.products['luerong-fen'].price!==2000||m.products['guilu-jiao'].price!==9600||m.products['guilu-jiao'].originalPrice!==12000)process.exit(1)\" && "); fs.writeFileSync('package.json',JSON.stringify(pkg,null,2)+'\n');
+          NODE
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - name: 驗證並提交
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          for(const f of ['line-sales-master.json','data.json']){const j=JSON.parse(fs.readFileSync(f));const p=Array.isArray(j.products)?Object.fromEntries(j.products.map(x=>[x.id,x])):j.products;if(p['guilu-gao'].price!==1500||p['guilu-drink-30'].price!==50||p['guilu-tangkuai'].price!==1600||p['guilu-jiao'].price!==9600)process.exit(1)}
+          NODE
+          rm -f .github/workflows/force-confirmed-sales-sync.yml .github/workflows/sync-official-sales-20260802.yml
+          git config user.name "仙加味正式資料同步"
+          git config user.email "actions@users.noreply.github.com"
+          git add data.json line-sales-master.json package.json package-lock.json .github/workflows
+          git commit -m "fix: apply confirmed official LINE OA prices [skip ci]"
+          git pull --rebase origin main
+          git push origin main
