@@ -30,7 +30,7 @@ const config = {
 
 const app = express();
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
-const MASCOT_VERSION = "401.6-20260714";
+const MASCOT_VERSION = "401.7-20260801-issue146";
 // LINE fetches images independently from the webhook. Use GitHub's CDN instead of
 // the sleeping Render instance so image cards appear faster and cache busting is reliable.
 const mascotAssetUrl = (name) =>
