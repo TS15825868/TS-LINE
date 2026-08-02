@@ -57,9 +57,11 @@ jobs:
           const sales = require('./line-sales-master.json');
           if (pkg.version !== '6.1.1') throw new Error('package version must be 6.1.1');
           if (lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version) throw new Error('package lock version mismatch');
-          if (sales.version !== '2026-07-28-v7') throw new Error('正式售價主檔版本錯誤');
+          if (sales.version !== '2026-08-02-v11') throw new Error('正式售價主檔版本錯誤');
           if (sales.products?.['guilu-gao']?.price !== 1500 || sales.products?.['guilu-gao']?.originalPrice !== 1800) throw new Error('龜鹿膏售價與優惠價主檔錯誤');
-          if (sales.products?.['guilu-drink-30']?.price !== 50 || !sales.products?.['guilu-drink-30']?.offers?.includes('買10送2')) throw new Error('龜鹿飲30cc售價或活動主檔錯誤');
+          const drink30 = sales.products?.['guilu-drink-30'];
+          if (drink30?.name !== '龜鹿飲30cc玻璃瓶' || drink30?.specification !== '30cc／瓶（小玻璃瓶）' || drink30?.unit !== '瓶') throw new Error('龜鹿飲30cc正式名稱或規格錯誤');
+          if (drink30?.price !== 50 || !drink30?.offers?.includes('買10送2')) throw new Error('龜鹿飲30cc售價或活動主檔錯誤');
           if (sales.products?.['guilu-drink-180']?.price !== 200 || !sales.products?.['guilu-drink-180']?.offers?.includes('買10送2')) throw new Error('龜鹿飲180cc售價或活動主檔錯誤');
           if (sales.products?.['guilu-tangkuai']?.price !== 1600) throw new Error('龜鹿湯塊售價主檔錯誤');
           if (sales.products?.['luerong-fen']?.price !== 2000) throw new Error('鹿茸粉售價主檔錯誤');
