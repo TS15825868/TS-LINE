@@ -76,9 +76,13 @@ const recommendActions = actions(sceneReplies[0][1]);
 assert(recommendActions.some((action) => action.text === "看產品"), "幫我推薦缺少看產品入口");
 assert(recommendActions.some((action) => action.text === "搭配組合"), "幫我推薦缺少搭配組合入口");
 
-const comboActions = actions(sceneReplies[1][1]);
+// 使用者實際輸入「搭配組合」會進 comboMenuReply；組數操作應在正式方案選單驗證。
+const comboMenu = bot.comboMenuReply();
+imageSafety.applyImageSafety(comboMenu);
+const comboActions = actions(comboMenu);
 assert(comboActions.some((action) => /搭配組數｜\d+/.test(String(action.text || ""))), "搭配組合缺少選擇組數操作");
 assert(comboActions.some((action) => action.text === "看產品"), "搭配組合缺少看產品入口");
+assert(carouselSize(comboMenu) <= 12, "搭配組合 Carousel 超過 LINE 上限");
 
 const usageActions = actions(sceneReplies[2][1]);
 assert(usageActions.some((action) => /產品詳情｜/.test(String(action.text || ""))), "怎麼使用缺少產品詳情操作");
