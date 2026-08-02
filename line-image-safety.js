@@ -7,7 +7,7 @@
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "401.7-20260801-issue146";
+const VERSION = "401.8-20260802-issue146";
 const BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
 const APPROVED_MASCOT_NAMES = ["recommend", "combo", "usage", "faq"];
 const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg"];
@@ -28,13 +28,26 @@ function isBlockedMascotUrl(value) {
   return BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(asset));
 }
 
+function collectBodyTexts(node, output = []) {
+  if (!node || typeof node !== "object") return output;
+  if (Array.isArray(node)) {
+    for (const item of node) collectBodyTexts(item, output);
+    return output;
+  }
+  if (node.type === "text") {
+    const text = String(node.text || "").trim();
+    if (text) output.push(text);
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "action" || key === "hero" || key === "footer") continue;
+    if (key === "text" && node.type === "text") continue;
+    collectBodyTexts(value, output);
+  }
+  return output;
+}
+
 function bubbleTexts(bubble) {
-  const contents = bubble?.body?.contents;
-  if (!Array.isArray(contents)) return [];
-  return contents
-    .filter((item) => item?.type === "text")
-    .map((item) => String(item.text || "").trim())
-    .filter(Boolean);
+  return collectBodyTexts(bubble?.body, []);
 }
 
 function sceneForBubble(bubble) {
@@ -100,6 +113,7 @@ module.exports = {
   MASCOT_RULES,
   approvedUrl,
   isBlockedMascotUrl,
+  bubbleTexts,
   sceneForBubble,
   applyImageSafety,
 };
