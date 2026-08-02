@@ -85,7 +85,9 @@ assert(comboActions.some((action) => action.text === "看產品"), "搭配組合
 assert(carouselSize(comboMenu) <= 12, "搭配組合 Carousel 超過 LINE 上限");
 
 const usageActions = actions(sceneReplies[2][1]);
-assert(usageActions.some((action) => /產品詳情｜/.test(String(action.text || ""))), "怎麼使用缺少產品詳情操作");
+assert(usageActions.some((action) => /^選擇數量｜/.test(String(action.text || ""))), "怎麼使用缺少選擇數量操作");
+assert(usageActions.some((action) => action.type === "uri" && /product-.*\.html/.test(String(action.uri || ""))), "怎麼使用缺少完整產品介紹連結");
+assert(usageActions.some((action) => action.type === "uri" && /dm|products-v3|images\//.test(String(action.uri || ""))), "怎麼使用缺少產品DM或正式圖片連結");
 
 const faqActions = actions(sceneReplies[3][1]);
 assert(faqActions.some((action) => action.text === "看產品" || action.text === "幫我推薦" || action.text === "我要人工客服"), "常見問題缺少後續操作");
