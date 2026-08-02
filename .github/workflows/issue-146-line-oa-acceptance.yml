@@ -53,7 +53,10 @@ jobs:
         id: flow
         if: steps.install.outcome == 'success'
         continue-on-error: true
-        run: node line-oa-issue146-flow.test.js
+        shell: bash
+        run: |
+          set -o pipefail
+          node line-oa-issue146-flow.test.js 2>&1 | tee /tmp/issue146-flow.log
 
       - name: Verify four public official scene images
         id: images
@@ -106,6 +109,10 @@ jobs:
             elif [ "$1" = 'skipped' ]; then printf '⏭️';
             else printf '❌'; fi
           }
+          flow_detail=''
+          if [ "$FLOW" != 'success' ] && [ -s /tmp/issue146-flow.log ]; then
+            flow_detail=$(tail -n 18 /tmp/issue146-flow.log | sed 's/`/\`/g')
+          fi
           body=$(cat <<EOF
           Issue #146 自動驗收結果：
 
@@ -119,6 +126,14 @@ jobs:
           未啟用任何自動核准、排程或發布。
           EOF
           )
+          if [ -n "$flow_detail" ]; then
+            body="$body
+
+          流程測試錯誤尾端：
+          \`\`\`
+          $flow_detail
+          \`\`\`"
+          fi
           gh issue comment 146 --repo TS15825868/TS-LINE --body "$body"
 
       - name: Close Issue 146 after full acceptance
@@ -145,4 +160,4 @@ jobs:
           test "$IMAGES" = 'success'
           test "$RENDER" = 'success'
 
-# retrigger: 2026-08-02T20:03+08:00
+# retrigger: 2026-08-02T20:09+08:00
