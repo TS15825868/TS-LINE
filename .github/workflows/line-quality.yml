@@ -63,8 +63,8 @@ jobs:
             if (!master.products?.[id]) throw new Error(`缺少正式產品：${id}`);
           }
           const drink30 = master.products['guilu-drink-30'];
-          if (drink30.name !== '龜鹿飲30cc玻璃罐') throw new Error('30cc產品名稱錯誤');
-          if (drink30.specification !== '30cc／罐（小玻璃罐）' || drink30.unit !== '罐') throw new Error('30cc產品規格錯誤');
+          if (drink30.name !== '龜鹿飲30cc玻璃瓶') throw new Error('30cc產品名稱錯誤');
+          if (drink30.specification !== '30cc／瓶（小玻璃瓶）' || drink30.unit !== '瓶') throw new Error('30cc產品規格錯誤');
           const tangkuai = master.products['guilu-tangkuai'];
           if (tangkuai.specification !== '75g／盒｜8塊裝｜每塊約9.375g') throw new Error('龜鹿湯塊正式規格錯誤');
           if (master.imagePolicy?.realProductImagesOnly !== true || master.imagePolicy?.noProductRedraw !== true || master.imagePolicy?.noPackageTextChange !== true) {
