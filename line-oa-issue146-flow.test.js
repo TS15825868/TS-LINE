@@ -63,7 +63,8 @@ const sceneReplies = [
 for (const [scene, response] of sceneReplies) {
   imageSafety.applyImageSafety(response);
   const urls = imageUrls(response);
-  assert(urls.some((url) => url.includes(`/mascot/${scene}.jpg`)), `${scene} 流程未使用正式完整入口圖`);
+  console.error(`[Issue146:${scene}] images=${JSON.stringify(urls)}`);
+  assert(urls.some((url) => url.includes(`/mascot/${scene}.jpg`)), `${scene} 流程未使用正式完整入口圖；實際圖片：${urls.join(", ") || "無"}`);
   assert(!urls.some((url) => /welcome\.jpg|service\.jpg|brand\.jpg|products\.jpg|cart\.jpg/.test(url)), `${scene} 流程仍包含舊拼湊圖`);
   const count = carouselSize(response);
   if (count) assert(count <= 12, `${scene} Carousel 超過 LINE 上限`);
