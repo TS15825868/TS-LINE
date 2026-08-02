@@ -85,3 +85,13 @@ jobs:
         shell: bash
         run: |
           gh issue close 146 --repo TS15825868/TS-LINE --reason completed --comment $'Issue #146 正式驗收完成：\n\n- 四張入口圖皆為正式完整圖，公開網址與檔案品質通過\n- 幫我推薦／搭配組合／怎麼使用／常見問題場景路由通過\n- 產品卡維持 products-v3 真實產品原圖、fit 等比例、不被小老闆圖覆蓋\n- Carousel 上限、操作按鈕、購物車、數量選擇與人工客服流程通過\n- Render /healthz 正式網址通過\n\n未啟用任何自動發布或未授權動作。'
+
+      - name: Report acceptance failure to Issue 146
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue comment 146 --repo TS15825868/TS-LINE --body $'Issue #146 自動驗收尚未通過。\n\n請查看本次「LINE OA Issue 146 正式驗收」Actions 的第一個失敗步驟；Issue 維持開啟，未自動核准、排程或發布任何內容。'
+
+# retrigger: 2026-08-02T19:55+08:00
