@@ -7,7 +7,7 @@
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "401.8-20260802-issue146";
+const VERSION = "401.9-20260802-issue146";
 const BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
 const APPROVED_MASCOT_NAMES = ["recommend", "combo", "usage", "faq"];
 const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg"];
@@ -55,8 +55,10 @@ function sceneForBubble(bubble) {
   if (!text) return "";
   if (/常見問題|FAQ/.test(text)) return "faq";
   if (/搭配組合|日常搭配導覽|組合推薦/.test(text)) return "combo";
-  if (/怎麼使用|使用方式|沖泡方式|燉湯方式/.test(text)) return "usage";
+  // A recommendation heading may also contain「使用方式」, so recommendation
+  // must win before the more general usage rule.
   if (/幫我推薦|幫你選|怎麼選|產品差異/.test(text)) return "recommend";
+  if (/怎麼使用|使用方式|沖泡方式|燉湯方式/.test(text)) return "usage";
   return "";
 }
 
