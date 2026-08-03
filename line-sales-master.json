@@ -1,16 +1,38 @@
 {
-  "version": "2026-08-02-v11",
+  "version": "2026-08-03-v12",
   "source": "仙加味・龜鹿系列最新正式售價、優惠、活動、包裝與角色政策",
   "products": {
     "guilu-gao": {
-      "price": 1500,
-      "originalPrice": 1800,
-      "offers": [
-        "優惠價1,500元"
+      "name": "龜鹿膏",
+      "specification": "100g／罐",
+      "unit": "罐",
+      "suggestedPrice": 2100,
+      "price": 1800,
+      "originalPrice": 2100,
+      "promotionalPrice": 1500,
+      "promotionRestricted": true,
+      "promotionEligibility": [
+        "來店客",
+        "熟客回購",
+        "限時活動"
       ],
-      "priceText": "$1,500 / 罐",
-      "originalPriceText": "$1,800",
-      "priceLabel": "售價1,800元，優惠價1,500元"
+      "offers": [
+        "一般優惠價1,800元",
+        "來店／熟客／限時活動另有專屬優惠"
+      ],
+      "priceText": "$1,800 / 罐",
+      "originalPriceText": "$2,100",
+      "promotionalPriceText": "$1,500",
+      "priceLabel": "建議售價2,100元，一般優惠價1,800元；來店、熟客或限時活動另有專屬優惠",
+      "publicPriceLabel": "建議售價2,100元；近期來店另有專屬優惠，詳情歡迎私訊詢問",
+      "privatePriceLabel": "建議售價2,100元，一般優惠價1,800元；來店、熟客或限時活動價1,500元",
+      "pricingPolicy": {
+        "public": 2100,
+        "privateOffer": 1800,
+        "restrictedPromotion": 1500,
+        "restrictedPromotionOnly": true,
+        "doNotPublish1500AsRegularPrice": true
+      }
     },
     "guilu-drink-30": {
       "name": "龜鹿飲30cc玻璃瓶",
