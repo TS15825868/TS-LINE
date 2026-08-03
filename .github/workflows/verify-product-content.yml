@@ -51,8 +51,12 @@ jobs:
           node - <<'NODE'
           const sales = require('./line-sales-master.json');
           const brand = require('./brand-content.json');
-          if (sales.version !== '2026-08-02-v11') throw new Error('正式售價版本錯誤');
-          if (sales.products?.['guilu-gao']?.price !== 1500 || sales.products?.['guilu-gao']?.originalPrice !== 1800) throw new Error('龜鹿膏售價錯誤');
+          if (sales.version !== '2026-08-03-v12') throw new Error('正式售價版本錯誤');
+          const gao = sales.products?.['guilu-gao'];
+          if (gao?.suggestedPrice !== 2100 || gao?.price !== 1800 || gao?.originalPrice !== 2100 || gao?.promotionalPrice !== 1500) throw new Error('龜鹿膏三層售價錯誤');
+          if (gao?.pricingPolicy?.public !== 2100 || gao?.pricingPolicy?.privateOffer !== 1800 || gao?.pricingPolicy?.restrictedPromotion !== 1500 || gao?.pricingPolicy?.restrictedPromotionOnly !== true || gao?.pricingPolicy?.doNotPublish1500AsRegularPrice !== true) throw new Error('龜鹿膏通路價格政策錯誤');
+          if (!String(gao?.publicPriceLabel || '').includes('建議售價2,100元') || String(gao?.publicPriceLabel || '').includes('1,500')) throw new Error('公開回覆不得把1,500元當常態價格');
+          if (!String(gao?.privatePriceLabel || '').includes('一般優惠價1,800元') || !String(gao?.privatePriceLabel || '').includes('活動價1,500元')) throw new Error('私訊價格分層錯誤');
           const drink30 = sales.products?.['guilu-drink-30'];
           if (drink30?.name !== '龜鹿飲30cc玻璃瓶' || drink30?.specification !== '30cc／瓶（小玻璃瓶）' || drink30?.unit !== '瓶') throw new Error('龜鹿飲30cc正式名稱或規格錯誤');
           if (drink30?.price !== 50 || !drink30?.offers?.includes('買10送2')) throw new Error('龜鹿飲30cc售價或活動錯誤');
