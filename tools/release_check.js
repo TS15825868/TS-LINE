@@ -122,9 +122,9 @@ assert.equal(trial.contents, "30cc小玻璃罐×3罐");
 assert.equal(Number(trial.productFee), 0);
 assert.equal(trial.active, true);
 assert.equal(trial.evergreen, true);
-assert.match(String(trial.fulfillmentRule || ""), /製作加工約需5～7個工作天/);
-assert.match(String(trial.fulfillmentRule || ""), /完成後才安排出貨/);
-assert.match(String(trial.leadTimeDefinition || ""), /不包含完成後的物流配送時間/);
+assert.match(String(trial.fulfillmentRule || ""), /約5～7個工作天出貨/);
+assert.match(String(trial.fulfillmentRule || ""), /不含例假日及物流配送時間/);
+assert.match(String(trial.leadTimeDefinition || ""), /約5～7個工作天出貨/);
 
 assert.equal(sales.comboOffers?.length, 3);
 assert.equal(sales.combos?.length, 3);
@@ -185,7 +185,14 @@ assert(read("social-publish-guard.js").includes("withPostLock"));
 assert(read("social-publish-guard.js").includes("recordPublication"));
 
 const serialized = JSON.stringify({ data, sales });
-for (const legacy of ["買10送2", "共12罐500元", "共12包2,000元", "30cc／瓶（小玻璃瓶）", "約5～7個工作天出貨"]) {
+for (const legacy of [
+  "買10送2",
+  "共12罐500元",
+  "共12包2,000元",
+  "30cc／瓶（小玻璃瓶）",
+  "製作加工約需5～7個工作天",
+  "5～7個工作天只計製作加工",
+]) {
   assert(!serialized.includes(legacy), `正式資料仍含舊內容：${legacy}`);
 }
 
