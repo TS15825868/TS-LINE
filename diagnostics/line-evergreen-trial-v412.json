@@ -3,7 +3,8 @@
   "drink30": "50元／罐，買10送1，共11罐500元",
   "drink180": "200元／包，買10送1，共11包2,000元",
   "trial": "30cc小玻璃罐3罐免費，運費自付",
-  "lead_time": "5～7個工作天",
+  "lead_time": "製作加工約需5～7個工作天，完成後才安排出貨",
   "conversion_channel": "LINE OA",
-  "legacy_records": 0
+  "legacy_records": 0,
+  "lead_time_definition": "5～7個工作天僅指製作加工，不含出貨後物流配送時間"
 }

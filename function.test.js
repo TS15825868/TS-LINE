@@ -88,8 +88,8 @@ for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組�
 
 const expectedSales = {
   "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5], offers: [] },
-  "guilu-drink-30": { price: 50, options: [1, 3, 5, 12], offers: [{ qty: 12, total: 500, label: "買10送2" }] },
-  "guilu-drink-180": { price: 200, options: [1, 3, 5, 12], offers: [{ qty: 12, total: 2000, label: "買10送2" }] },
+  "guilu-drink-30": { price: 50, options: [1, 3, 5, 11], offers: [{ qty: 11, total: 500, label: "買10送1" }] },
+  "guilu-drink-180": { price: 200, options: [1, 3, 5, 11], offers: [{ qty: 11, total: 2000, label: "買10送1" }] },
   "guilu-tangkuai": { price: 1600, options: [1, 2, 3, 5], offers: [] },
   "guilu-jiao": { price: 9600, originalPrice: 12000, quoteOnly: false, options: [1, 2, 3, 5], offers: [] },
   "luerong-fen": { price: 2000, options: [1, 2, 3, 5], offers: [] },

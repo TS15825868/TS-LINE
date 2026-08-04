@@ -59,7 +59,7 @@ data.trialCampaign = {
   shippingOptions: [{id:'store',label:'7-11店到店',fee:60},{id:'home',label:'郵局宅配',fee:100}],
   limitRule: '每位顧客、聯絡電話及收件地址限申請一次',
   paymentRule: '試喝運費需先確認並完成付款，試喝組不使用貨到付款',
-  fulfillmentRule: '資料及運費確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間',
+  fulfillmentRule: '資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間',
   publicPrice: '龜鹿飲30cc售價50元／罐；買10送1，共11罐500元',
   lineOnly: true, lineId: '@762jybnm', lineUrl: data.lineUrl || 'https://lin.ee/sHZW7NkR'
 };
@@ -88,7 +88,7 @@ if (existsSync('package.json')) {
     pkg.scripts[key] = value;
   }
   pkg.version = '6.1.3';
-  pkg.description = '仙加味 LINE OA 正式版｜FB、IG與官網統一導入長期試喝與下單｜30cc三罐試喝品免費、運費自付｜30cc與180cc買10送1｜接單後5～7工作天｜人工審核後發布';
+  pkg.description = '仙加味 LINE OA 正式版｜FB、IG與官網統一導入長期試喝與下單｜30cc三罐試喝品免費、運費自付｜30cc與180cc買10送1｜製作加工約5～7工作天，完成後出貨｜人工審核後發布';
   writeFileSync('package.json',JSON.stringify(pkg,null,2)+'\n');
 }
 
