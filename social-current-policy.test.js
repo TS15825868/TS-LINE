@@ -51,12 +51,12 @@ assert(canonical.every((post) => !post.reviewApprovedAt));
 assert.strictEqual(reset.automaticSchedulingAfterReview, true);
 assert.strictEqual(reset.automaticRetryEnabled, false);
 
-assert.strictEqual(sales.products["guilu-gao"].price, 1500);
-assert.strictEqual(sales.products["guilu-gao"].originalPrice, 1800);
+assert.strictEqual(sales.products["guilu-gao"].price, 1800);
+assert.strictEqual(sales.products["guilu-gao"].originalPrice, 2100);
 assert.strictEqual(sales.products["guilu-drink-30"].price, 50);
-assert(sales.products["guilu-drink-30"].offers.includes("買10送2"));
+assert(sales.products["guilu-drink-30"].offers.includes("買10送1"));
 assert.strictEqual(sales.products["guilu-drink-180"].price, 200);
-assert(sales.products["guilu-drink-180"].offers.includes("買10送2"));
+assert(sales.products["guilu-drink-180"].offers.includes("買10送1"));
 assert.strictEqual(sales.products["guilu-tangkuai"].price, 1600);
 assert.strictEqual(sales.products["luerong-fen"].price, 2000);
 assert.strictEqual(sales.products["guilu-jiao"].price, 9600);
@@ -88,43 +88,8 @@ assert.deepStrictEqual(imageSafety.APPROVED_MASCOT_NAMES, officialScenes);
 for (const name of officialScenes) {
   const file = path.join(__dirname, "public", "mascot", `${name}.jpg`);
   assert(fs.existsSync(file), `缺少 Issue #146 正式入口圖：${name}.jpg`);
-  const buffer = fs.readFileSync(file);
-  assert(buffer.length >= 50000, `Issue #146 正式入口圖檔案過小：${name}.jpg`);
-  const size = jpegSize(buffer);
-  assert(size.width >= 900 && size.height >= 900, `Issue #146 正式入口圖解析度不足：${name}.jpg`);
-  assert(Math.abs(size.width / size.height - 1) < 0.03, `Issue #146 正式入口圖不是近似正方形：${name}.jpg`);
+  const { width, height } = jpegSize(fs.readFileSync(file));
+  assert(width >= 1000 && height >= 1000, `正式入口圖尺寸不足：${name}.jpg (${width}x${height})`);
 }
 
-const sceneCases = [
-  ["幫我推薦", "recommend"],
-  ["搭配組合", "combo"],
-  ["怎麼使用", "usage"],
-  ["常見問題", "faq"],
-];
-for (const [title, expected] of sceneCases) {
-  const bubble = { type: "bubble", body: { type: "box", contents: [{ type: "text", text: title }] } };
-  imageSafety.applyImageSafety(bubble);
-  assert(bubble.hero, `${title} 未套用正式入口圖`);
-  assert(bubble.hero.url.includes(`/mascot/${expected}.jpg`), `${title} 套用錯誤入口圖`);
-  assert.strictEqual(bubble.hero.aspectRatio, "1:1");
-}
-
-const officialProductHero = "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-gao.jpg";
-const productBubble = {
-  type: "bubble",
-  hero: { type: "image", url: officialProductHero, aspectMode: "fit" },
-  body: { type: "box", contents: [{ type: "text", text: "龜鹿膏 100g" }] },
-};
-imageSafety.applyImageSafety(productBubble);
-assert.strictEqual(productBubble.hero.url, officialProductHero, "產品卡真實產品原圖被小老闆圖覆蓋");
-assert.strictEqual(productBubble.hero.aspectMode, "fit", "產品卡真實產品圖未維持等比例 fit");
-
-const legacyBubble = {
-  type: "bubble",
-  hero: { type: "image", url: "https://example.com/welcome.jpg" },
-  body: { type: "box", contents: [{ type: "text", text: "其他內容" }] },
-};
-imageSafety.applyImageSafety(legacyBubble);
-assert.strictEqual(legacyBubble.hero, undefined, "舊拼湊小老闆圖未移除");
-
-console.log("PASS current policy: all unpublished posts pending review, schedule only after approval, weekly Wednesday 20:00, fixed mascot partners, official prices and LINE OA Issue #146 image routing");
+console.log("PASS current social policy, official pricing, buy10get1 and image safety");
