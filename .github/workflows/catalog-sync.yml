@@ -1,5 +1,5 @@
 name: 仙加味資料同步與驗收
-run-name: 仙加味資料同步與驗收｜${{ github.event_name }}｜${{ github.ref_name }}
+run-name: 仙加味資料同步與驗收 v417｜${{ github.event_name }}｜${{ github.ref_name }}
 
 on:
   workflow_dispatch:
