@@ -1,5 +1,5 @@
-commit=4a62dcc91be9053f79efb5c5fb8f730319367bfd
-recorded_at=2026-08-04T18:10:20Z
+commit=1865aaa8519592d543ffc90dd9393c11bc7c1a32
+recorded_at=2026-08-04T18:18:03Z
 workflow=仙加味資料同步與驗收
-run_id=30937229533
+run_id=30937832650
 
