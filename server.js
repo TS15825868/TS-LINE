@@ -16,7 +16,7 @@ const path = require("path");
 
 const VERSION = "v401.6";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
-const ORDER_NOTICE = "訂單資料與付款方式確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間。";
+const ORDER_NOTICE = "訂單資料與付款方式確認後安排製作加工，約5～7個工作天出貨，不含例假日及物流配送時間。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
 const STATE_TTL_MS = Number(process.env.STATE_TTL_MS || 24 * 60 * 60 * 1000);
@@ -868,7 +868,7 @@ function trialCampaignReply() {
         "郵局宅配運費100元",
         "",
         trial.limitRule || "每位顧客、聯絡電話及收件地址限申請一次",
-        trial.fulfillmentRule || "資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間",
+        trial.fulfillmentRule || "資料及運費確認完成後採接單安排製作，約5～7個工作天出貨，不含例假日及物流配送時間",
         "",
         trial.publicPrice || "正式售價50元／罐；買10送1，共11罐500元",
       ].join("\n"),
@@ -1134,6 +1134,7 @@ function detectWebsiteIntent(text) {
   if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
+  if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/我看了產品整理|幫我比較產品|產品差異|規格比較|想請你幫我比較|哪一種比較適合|適合我的|我目前是/.test(value)) return "recommend";
   if (/官網套餐|套餐搭配|搭配組合|搭配方式|料理搭配|熱飲.*燉湯|燉湯.*調飲/.test(value)) return "combo";
   if (/官網怎麼使用|產品使用方式|想了解.*使用方式|怎麼使用頁/.test(value)) return "usage";
@@ -1256,6 +1257,7 @@ async function handleMessage(event) {
   }
 
   const websiteIntent = detectWebsiteIntent(text);
+  if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
   if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
   if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
   if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
