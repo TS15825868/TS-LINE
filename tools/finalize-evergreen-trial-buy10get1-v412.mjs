@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
+const FINALIZER = 'node tools/finalize-evergreen-trial-buy10get1-v412.mjs';
 const files = ['server.js','test.js','function.test.js','catalog.test.js','security.test.js','README.md','package.json','line-sales-master.json'];
 const replacements = [
   ['買10送2（共12罐500元）','買10送1（共11罐500元）'],
@@ -18,11 +19,10 @@ const replacements = [
   ['calcItem(drink30, 24)', 'calcItem(drink30, 22)'],
   ['addCart(state, drink30, 12)', 'addCart(state, drink30, 11)'],
   ['state.cart[0].qty, 13', 'state.cart[0].qty, 12'],
-  ['cartTotal(state.cart), 550', 'cartTotal(state.cart), 550'],
   ['買10送2×1＋單罐×1', '買10送1×1＋單罐×1'],
   ['買10送2×1', '買10送1×1'],
   ['買10送2×2', '買10送1×2'],
-  ['offers.includes(\'買10送2\')', 'offers.includes(\'買10送1\')'],
+  ["offers.includes('買10送2')", "offers.includes('買10送1')"],
 ];
 
 for (const file of files) {
@@ -73,6 +73,23 @@ if (existsSync('line-sales-master.json')) {
   if (m180) Object.assign(m180,{price:200,offers:['買10送1'],quantityOptions:[1,3,5,11],offer:{qty:11,total:2000,label:'買10送1'}});
   master.trialCampaign = data.trialCampaign;
   writeFileSync('line-sales-master.json',JSON.stringify(master,null,2)+'\n');
+}
+
+if (existsSync('package.json')) {
+  const pkg = JSON.parse(readFileSync('package.json','utf8'));
+  for (const key of ['prestart','pretest']) {
+    const current = String(pkg.scripts?.[key] || '');
+    if (!current.includes(FINALIZER)) pkg.scripts[key] = current ? `${current} && ${FINALIZER}` : FINALIZER;
+  }
+  for (const key of ['test','start','postinstall']) {
+    if (!pkg.scripts?.[key]) continue;
+    let value = String(pkg.scripts[key]);
+    for (const [from,to] of replacements) value = value.split(from).join(to);
+    pkg.scripts[key] = value;
+  }
+  pkg.version = '6.1.3';
+  pkg.description = '仙加味 LINE OA 正式版｜FB、IG與官網統一導入長期試喝與下單｜30cc三罐試喝品免費、運費自付｜30cc與180cc買10送1｜接單後5～7工作天｜人工審核後發布';
+  writeFileSync('package.json',JSON.stringify(pkg,null,2)+'\n');
 }
 
 const verification = JSON.stringify(data);
