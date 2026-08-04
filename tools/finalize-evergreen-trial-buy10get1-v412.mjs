@@ -29,16 +29,34 @@ const replacements = [
   ['資料與運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計', OFFICIAL_FULFILLMENT],
   ['資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間', OFFICIAL_FULFILLMENT],
   ['資料與運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間', OFFICIAL_FULFILLMENT],
+  ['正式訂單資料與付款方式確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間', ORDER_FULFILLMENT],
+  ['訂單資料與付款方式確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間', ORDER_FULFILLMENT],
   ['製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計', '約5～7個工作天出貨；不含例假日及物流配送時間'],
   ['製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間', '約5～7個工作天出貨；不含例假日及物流配送時間'],
+  ['製作加工約需5～7個工作天，完成後才安排出貨', '約5～7個工作天出貨'],
   ['5～7個工作天僅指製作加工，不包含完成後的物流配送時間', '接單安排製作後約5～7個工作天出貨，不含例假日及物流配送時間'],
+  ['5～7個工作天只計製作加工，不含例假日及完成後的物流配送時間', '接單安排製作後約5～7個工作天出貨，不含例假日及物流配送時間'],
+  ['約5～7個工作天安排出貨', '約5～7個工作天出貨'],
 ];
+
+function normalizeOfficialText(value) {
+  let text = String(value);
+  for (const [from, to] of replacements) text = text.split(from).join(to);
+  return text;
+}
+
+function normalizeDeep(value) {
+  if (typeof value === 'string') return normalizeOfficialText(value);
+  if (Array.isArray(value)) return value.map(normalizeDeep);
+  if (value && typeof value === 'object') {
+    for (const key of Object.keys(value)) value[key] = normalizeDeep(value[key]);
+  }
+  return value;
+}
 
 for (const file of textFiles) {
   if (!existsSync(file)) continue;
-  let text = readFileSync(file, 'utf8');
-  for (const [from, to] of replacements) text = text.split(from).join(to);
-  writeFileSync(file, text);
+  writeFileSync(file, normalizeOfficialText(readFileSync(file, 'utf8')));
 }
 
 const data = JSON.parse(readFileSync('data.json', 'utf8'));
@@ -79,6 +97,7 @@ data.shippingNotes = {
   宅配: `${ORDER_FULFILLMENT}。試喝組郵局宅配運費100元。`,
   '7-11賣貨便': `${ORDER_FULFILLMENT}。試喝組7-11店到店運費60元。`,
 };
+normalizeDeep(data);
 writeFileSync('data.json', JSON.stringify(data, null, 2) + '\n');
 
 if (existsSync('line-sales-master.json')) {
@@ -94,6 +113,7 @@ if (existsSync('line-sales-master.json')) {
     offers: ['買10送1'], quantityOptions: [1, 3, 5, 11], offer: { qty: 11, total: 2000, label: '買10送1' }, priceText: '$200 / 包', priceLabel: '售價200元，買10送1（共11包2,000元）',
   });
   master.trialCampaign = data.trialCampaign;
+  normalizeDeep(master);
   writeFileSync('line-sales-master.json', JSON.stringify(master, null, 2) + '\n');
 }
 
@@ -108,7 +128,7 @@ if (existsSync('package.json')) {
 }
 
 const verification = JSON.stringify(data);
-for (const bad of ['買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）', '製作加工約需5～7個工作天']) {
+for (const bad of ['買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）', '製作加工約需5～7個工作天', '5～7個工作天只計製作加工']) {
   if (verification.includes(bad)) throw new Error(`LINE母本仍有舊資料：${bad}`);
 }
 if (!verification.includes('買10送1') || !verification.includes('約5～7個工作天出貨')) throw new Error('LINE母本缺少正式活動或出貨規則');
