@@ -99,7 +99,10 @@
         "qty": 11,
         "total": 2000,
         "label": "買10送1"
-      }
+      },
+      "displayName": "龜鹿飲180cc鋁袋",
+      "size": "180cc／包（鋁袋）",
+      "spec": "180cc／包（鋁袋）"
     },
     "guilu-tangkuai": {
       "name": "龜鹿湯塊75g",
@@ -160,11 +163,12 @@
     ],
     "limitRule": "每位顧客、聯絡電話及收件地址限申請一次",
     "paymentRule": "試喝運費需先確認並完成付款，試喝組不使用貨到付款",
-    "fulfillmentRule": "資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間",
-    "publicPrice": "龜鹿飲30cc售價50元／罐；買10送1，共11罐500元",
+    "fulfillmentRule": "資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計",
+    "publicPrice": "龜鹿飲30cc售價50元／罐；買10送1，共11罐500元；另有180cc鋁袋單包200元，買10送1，共11包2,000元",
     "lineOnly": true,
     "lineId": "@762jybnm",
-    "lineUrl": "https://lin.ee/sHZW7NkR"
+    "lineUrl": "https://lin.ee/sHZW7NkR",
+    "leadTimeDefinition": "5～7個工作天只計製作加工；完成後的物流配送時間另計"
   },
   "comboOffers": [
     {

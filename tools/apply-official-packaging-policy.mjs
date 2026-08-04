@@ -7,7 +7,7 @@ const activeRoots = ['.', 'assets', 'public', 'internal-social-site', 'supabase'
 const skipDirs = new Set(['.git', 'node_modules', '.asset-upload', 'tools', '.github', 'docs', 'deploy-status']);
 
 const replacements = [
-  ['龜鹿飲30cc玻璃瓶', '龜鹿飲30cc玻璃罐'],
+  ['龜鹿飲30cc玻璃罐', '龜鹿飲30cc玻璃罐'],
   ['龜鹿飲 30cc 玻璃瓶', '龜鹿飲 30cc 玻璃罐'],
   ['30cc／瓶（玻璃瓶）', '30cc／罐（小玻璃罐）'],
   ['30cc / 瓶（玻璃瓶）', '30cc／罐（小玻璃罐）'],
@@ -112,7 +112,7 @@ for (const file of files) {
 const violations = [];
 for (const file of files) {
   const text = fs.readFileSync(file, 'utf8');
-  if (text.includes('龜鹿飲30cc玻璃瓶') || text.includes('30cc／瓶（玻璃瓶）')) violations.push(`${path.relative(root, file)}：仍有玻璃瓶舊稱`);
+  if (text.includes('龜鹿飲30cc玻璃罐') || text.includes('30cc／瓶（玻璃瓶）')) violations.push(`${path.relative(root, file)}：仍有玻璃瓶舊稱`);
   if (/龜鹿湯塊[\s\S]{0,40}(?:300|600)\s*g|(?:300|600)\s*g[\s\S]{0,40}龜鹿湯塊/i.test(text)) violations.push(`${path.relative(root, file)}：仍有龜鹿湯塊 300g／600g 舊規格`);
 }
 if (violations.length) throw new Error(violations.join('\n'));

@@ -82,12 +82,12 @@ assert.strictEqual(comboMenuReply().contents.contents.length, DATA.offers.comboO
 assert.strictEqual(usageChooserReply().contents.contents.length, DATA.products.length + 1);
 
 const source = fs.readFileSync("server.js", "utf8");
-for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
+for (const command of ["申請試喝", "看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"]) {
   assert.ok(source.includes(command), `missing command: ${command}`);
 }
 
 const expectedSales = {
-  "guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5], offers: [] },
+  "guilu-gao": { price: 1800, originalPrice: 2100, options: [1, 2, 3, 5], offers: [] },
   "guilu-drink-30": { price: 50, options: [1, 3, 5, 11], offers: [{ qty: 11, total: 500, label: "買10送1" }] },
   "guilu-drink-180": { price: 200, options: [1, 3, 5, 11], offers: [{ qty: 11, total: 2000, label: "買10送1" }] },
   "guilu-tangkuai": { price: 1600, options: [1, 2, 3, 5], offers: [] },
@@ -119,11 +119,11 @@ const websiteIntentCases = [
 ];
 for (const [message, expected] of websiteIntentCases) assert.strictEqual(detectWebsiteIntent(message), expected);
 
-const expectedComboPrices = [2500, 3600, 6100];
+const expectedComboPrices = [2800, 3600, 6400];
 const expectedComboPromotions = [
-  ["龜鹿膏：已套用優惠價 $1,500"],
+  ["龜鹿膏：已套用優惠價 $1,800"],
   [],
-  ["龜鹿膏：已套用優惠價 $1,500"],
+  ["龜鹿膏：已套用優惠價 $1,800"],
 ];
 for (let index = 0; index < expectedComboPrices.length; index += 1) {
   const combo = getCombo(index);
@@ -137,8 +137,8 @@ for (let index = 0; index < expectedComboPrices.length; index += 1) {
 assert.strictEqual(getCombo(3), null);
 const comboState = { cart: [], checkout: null };
 addComboCart(comboState, getCombo(2), 2, 3);
-assert.strictEqual(comboState.cart[0].total, 18300);
-assert.ok(comboState.cart[0].label.includes("$6,100"));
+assert.strictEqual(comboState.cart[0].total, 19200);
+assert.ok(comboState.cart[0].label.includes("$6,400"));
 
 for (const message of [mascotWelcomeReply(), recommendReply(), usageChooserReply(), faqReply()]) {
   const bubble = message.contents.type === "carousel" ? message.contents.contents[0] : message.contents;

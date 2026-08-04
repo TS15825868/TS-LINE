@@ -55,7 +55,7 @@ assert.strictEqual(combos.length, 3);
 assert.deepStrictEqual(combos.map((combo) => combo.name), ["日常節奏組", "料理搭配組", "完整體驗組"]);
 const comboItems = combos.flatMap((combo) => combo.items || []);
 assert.ok(comboItems.includes("龜鹿飲180cc 5 包"));
-assert.ok(!comboItems.some((item) => item.includes("買10送2")));
+assert.ok(!comboItems.some((item) => item.includes("買10送1")));
 assert.ok(!comboItems.includes("龜鹿飲 5 包"));
 assert.ok(!comboItems.includes("龜鹿飲 10 包"));
 assert.ok(!comboItems.includes("龜鹿飲180cc 10 包"));

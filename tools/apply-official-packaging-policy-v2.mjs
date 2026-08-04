@@ -7,7 +7,7 @@ const activeRoots = ['.', 'assets', 'public', 'internal-social-site', 'supabase'
 const skipped = new Set(['.git', 'node_modules', '.asset-upload', 'tools', '.github', 'docs', 'deploy-status']);
 
 const replacements = [
-  ['龜鹿飲30cc玻璃瓶', '龜鹿飲30cc玻璃罐'],
+  ['龜鹿飲30cc玻璃罐', '龜鹿飲30cc玻璃罐'],
   ['龜鹿飲 30cc 玻璃瓶', '龜鹿飲 30cc 玻璃罐'],
   ['30cc／瓶（玻璃瓶）', '30cc／罐（小玻璃罐）'],
   ['30cc / 瓶（玻璃瓶）', '30cc／罐（小玻璃罐）'],
@@ -100,7 +100,7 @@ for (const file of files) {
 }
 
 const allText = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
-if (allText.includes('龜鹿飲30cc玻璃瓶') || allText.includes('30cc／瓶（玻璃瓶）')) throw new Error('仍有龜鹿飲30cc玻璃瓶舊稱');
+if (allText.includes('龜鹿飲30cc玻璃罐') || allText.includes('30cc／瓶（玻璃瓶）')) throw new Error('仍有龜鹿飲30cc玻璃罐舊稱');
 if (/龜鹿湯塊\s*(?:300|600)\s*g/i.test(allText)) throw new Error('仍有龜鹿湯塊300g／600g舊規格');
 
 console.log(`LINE 同步完成：${changed.length} 個檔案`);

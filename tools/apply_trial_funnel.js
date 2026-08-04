@@ -30,21 +30,21 @@ assign("guilu-drink-30", {
   storage: ["未開封置於陰涼乾燥處", "避免高溫與日光直射", "開罐後請儘速飲用完畢"],
   price: 50,
   originalPrice: null,
-  offers: [{ qty: 12, total: 500, label: "買10送2" }],
-  promotionTexts: ["買10送2"],
+  offers: [{ qty: 12, total: 500, label: "買10送1" }],
+  promotionTexts: ["買10送1"],
   quantityOptions: [1, 3, 5, 12],
   priceText: "$50 / 罐",
-  priceLabel: "售價50元，買10送2",
+  priceLabel: "售價50元，買10送1",
 });
 
 assign("guilu-drink-180", {
   price: 200,
   originalPrice: null,
-  offers: [{ qty: 12, total: 2000, label: "買10送2" }],
-  promotionTexts: ["買10送2"],
+  offers: [{ qty: 12, total: 2000, label: "買10送1" }],
+  promotionTexts: ["買10送1"],
   quantityOptions: [1, 3, 5, 12],
   priceText: "$200 / 包",
-  priceLabel: "售價200元，買10送2",
+  priceLabel: "售價200元，買10送1",
 });
 
 assign("guilu-gao", {
@@ -95,14 +95,14 @@ data.trialOffer = {
   postalShipping: 100,
   limit: "每位顧客、電話及地址限申請一次",
   payment: "運費需先付款，試喝組不使用貨到付款",
-  productionLeadTime: "運費與收件資料確認後安排製作，約5～7個工作天出貨，不含例假日及物流配送時間",
+  productionLeadTime: "運費與收件資料確認後安排製作，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計",
   keyword: "我要試喝"
 };
 
 data.shippingNotes = {
   ...(data.shippingNotes || {}),
-  "宅配": "郵局宅配運費100元；訂單資料與付款確認後安排製作，約5～7個工作天出貨，不含例假日及物流配送時間。",
-  "7-11賣貨便": "超商店到店運費60元；訂單資料與付款確認後安排製作，約5～7個工作天出貨，不含例假日及物流配送時間。",
+  "宅配": "郵局宅配運費100元；訂單資料與付款確認後安排製作，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。",
+  "7-11賣貨便": "超商店到店運費60元；訂單資料與付款確認後安排製作，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。",
   "雙北親送": "雙北親送區域與時間由客服另行確認；正式訂單採接單後安排製作。",
   "貨到付款": "一般正式訂單可由客服確認是否適用貨到付款；免費試喝組僅收取運費，運費需先付款。"
 };
@@ -113,12 +113,12 @@ let server = fs.readFileSync(serverPath, "utf8");
 server = server.replace(/const VERSION = "v[^"]+";/, 'const VERSION = "v401.7";');
 server = server.replace(
   /const ORDER_NOTICE = "[^"]*";/,
-  'const ORDER_NOTICE = "仙加味採接單後安排製作；訂單資料與付款確認後，約5～7個工作天出貨，不含例假日及物流配送時間。";'
+  'const ORDER_NOTICE = "仙加味採接單後安排製作；訂單資料與付款確認後，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。";'
 );
 
 server = server
-  .replaceAll("龜鹿飲30cc玻璃瓶", "龜鹿飲30cc玻璃罐")
-  .replaceAll("30cc／瓶（小玻璃瓶）", "30cc／罐（小玻璃罐）")
+  .replaceAll("龜鹿飲30cc玻璃罐", "龜鹿飲30cc玻璃罐")
+  .replaceAll("30cc／罐（小玻璃罐）", "30cc／罐（小玻璃罐）")
   .replaceAll("30cc小玻璃瓶", "30cc小玻璃罐")
   .replaceAll("小玻璃瓶", "小玻璃罐")
   .replaceAll("每日一瓶", "每日一罐")
@@ -175,7 +175,7 @@ function trialApplicationReply(mode) {
       \`配送方式：\${shipping}\`,
       destination,
       "",
-      "資料確認後會提供運費付款方式。運費確認後安排製作，約5～7個工作天出貨，不含例假日及物流配送時間。每位顧客、電話及地址限申請一次。"
+      "資料確認後會提供運費付款方式。運費確認後安排製作，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。每位顧客、電話及地址限申請一次。"
     ].join("\\n"),
     [
       { label: "重新選配送", text: "我要試喝" },
@@ -225,8 +225,8 @@ for (const file of ["test.js", "function.test.js", "catalog.test.js", "security.
   if (!fs.existsSync(target)) continue;
   let text = fs.readFileSync(target, "utf8");
   text = text
-    .replaceAll("龜鹿飲30cc玻璃瓶", "龜鹿飲30cc玻璃罐")
-    .replaceAll("30cc／瓶（小玻璃瓶）", "30cc／罐（小玻璃罐）")
+    .replaceAll("龜鹿飲30cc玻璃罐", "龜鹿飲30cc玻璃罐")
+    .replaceAll("30cc／罐（小玻璃罐）", "30cc／罐（小玻璃罐）")
     .replaceAll("30cc小玻璃瓶", "30cc小玻璃罐")
     .replaceAll("小玻璃瓶", "小玻璃罐");
   fs.writeFileSync(target, text);

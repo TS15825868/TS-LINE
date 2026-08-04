@@ -194,8 +194,8 @@ writeFileSync(serverPath, server);
 for (const file of ['test.js','function.test.js','catalog.test.js','security.test.js','README.md']) {
   if (!existsSync(file)) continue;
   let text = readFileSync(file, 'utf8');
-  text = text.replace(/龜鹿飲30cc玻璃瓶/g, '龜鹿飲30cc玻璃罐')
-    .replace(/30cc／瓶（小玻璃瓶）/g, '30cc／罐（小玻璃罐）')
+  text = text.replace(/龜鹿飲30cc玻璃罐/g, '龜鹿飲30cc玻璃罐')
+    .replace(/30cc／罐（小玻璃罐）/g, '30cc／罐（小玻璃罐）')
     .replace(/小玻璃瓶/g, '小玻璃罐');
   writeFileSync(file, text);
 }
