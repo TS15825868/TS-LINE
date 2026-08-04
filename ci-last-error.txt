@@ -1,7 +1,7 @@
-commit=dd9793b55e0330b3f37a191e1f56d25b2940f77c
-recorded_at=2026-08-04T19:19:37Z
+commit=cc5c45482765333e98e342f63be5eeb45597e4a3
+recorded_at=2026-08-04T19:34:10Z
 workflow=仙加味資料同步與驗收
-run_id=30942733738
+run_id=30943861873
 normalize_result=success
 sync_result=success
 renormalize_result=success
@@ -41,7 +41,7 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T19:21:36.910Z
+Social weather automation rate limited; next check 2026-08-04T19:36:10.146Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
