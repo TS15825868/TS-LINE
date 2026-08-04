@@ -10,9 +10,9 @@ const DEFAULT_CATALOG_URL = "https://raw.githubusercontent.com/TS15825868/xianji
 const WEBSITE_BASE = "https://ts15825868.github.io/xianjiawei/";
 const LINE_DATA_VERSION = "401.6";
 const EXPECTED_IDS = [
-  "guilu-gao",
   "guilu-drink-30",
   "guilu-drink-180",
+  "guilu-gao",
   "guilu-tangkuai",
   "guilu-jiao",
   "luerong-fen",
