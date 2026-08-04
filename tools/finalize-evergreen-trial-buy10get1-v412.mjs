@@ -86,7 +86,6 @@ Object.assign(d180, {
 });
 
 data.trialCampaign = {
-  ...(data.trialCampaign || {}),
   id: 'guilu-drink-30-evergreen-trial',
   active: true,
   evergreen: true,
@@ -144,10 +143,10 @@ if (existsSync('package.json')) {
 }
 
 const verification = JSON.stringify(data);
-for (const bad of ['買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）', '約5～7個工作天出貨']) {
+for (const bad of ['買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）']) {
   if (verification.includes(bad)) throw new Error(`LINE母本仍有舊資料：${bad}`);
 }
-if (!verification.includes('買10送1') || !verification.includes('製作加工約需5～7個工作天')) {
-  throw new Error('LINE母本缺少正式活動或製作加工說明');
+if (!verification.includes('買10送1') || !verification.includes(OFFICIAL_FULFILLMENT) || !verification.includes('物流配送時間另計')) {
+  throw new Error('LINE母本缺少正式活動、製作加工時間或物流時間說明');
 }
 console.log('PASS LINE OA：長期試喝、30cc／180cc買10送1，以及製作加工5～7個工作天後才出貨的規則已完成。');
