@@ -30,7 +30,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Apply, test and always record result
+      - name: Apply, repair tests and always record result
         id: trial
         shell: bash
         run: |
@@ -38,8 +38,13 @@ jobs:
           : > /tmp/trial.log
           node tools/apply-evergreen-trial-campaign.mjs >> /tmp/trial.log 2>&1
           APPLY_STATUS=$?
+          REPAIR_STATUS=99
           TEST_STATUS=99
           if [ "$APPLY_STATUS" -eq 0 ]; then
+            node tools/repair-evergreen-trial-tests.mjs >> /tmp/trial.log 2>&1
+            REPAIR_STATUS=$?
+          fi
+          if [ "$APPLY_STATUS" -eq 0 ] && [ "$REPAIR_STATUS" -eq 0 ]; then
             node --check server.js >> /tmp/trial.log 2>&1
             SYNTAX_STATUS=$?
             if [ "$SYNTAX_STATUS" -eq 0 ]; then
@@ -50,13 +55,14 @@ jobs:
             fi
           fi
           STATUS="failure"
-          if [ "$APPLY_STATUS" -eq 0 ] && [ "$TEST_STATUS" -eq 0 ]; then STATUS="success"; fi
+          if [ "$APPLY_STATUS" -eq 0 ] && [ "$REPAIR_STATUS" -eq 0 ] && [ "$TEST_STATUS" -eq 0 ]; then STATUS="success"; fi
           node --input-type=module <<NODE
           import { writeFileSync, readFileSync } from 'node:fs';
           const log = readFileSync('/tmp/trial.log','utf8');
           writeFileSync('trial-campaign-diagnostic.json', JSON.stringify({
             status: '${STATUS}',
             applyStatus: Number('${APPLY_STATUS}'),
+            repairStatus: Number('${REPAIR_STATUS}'),
             testStatus: Number('${TEST_STATUS}'),
             commit: process.env.GITHUB_SHA,
             checkedAt: new Date().toISOString(),
