@@ -1,5 +1,5 @@
 name: 仙加味資料同步與驗收
-run-name: 仙加味資料同步與驗收 v418｜${{ github.event_name }}｜${{ github.ref_name }}
+run-name: 仙加味資料同步與驗收 v419｜${{ github.event_name }}｜${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -60,33 +60,10 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Lock user-confirmed trial wording and package version
-        shell: bash
+      - name: Apply confirmed trial, price and production rules
         run: |
-          set -euo pipefail
-          node - <<'NODE'
-          const fs = require('fs');
-          const finalizerPath = 'tools/finalize-evergreen-trial-buy10get1-v412.mjs';
-          let source = fs.readFileSync(finalizerPath, 'utf8');
-          const official = '資料及運費確認完成後採接單安排製作，約5～7個工作天出貨，不含例假日及物流配送時間';
-          source = source
-            .replace(/const OFFICIAL_FULFILLMENT = '[^']*';/, `const OFFICIAL_FULFILLMENT = '${official}';`)
-            .replace(/^const LEAD_TIME_DEFINITION = .*\n/m, '')
-            .replace(/^\s*pkg\.version\s*=\s*['"][^'"]+['"];\s*\n/m, '')
-            .replaceAll('製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計', '約5～7個工作天出貨，不含例假日及物流配送時間')
-            .replaceAll('製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間', '約5～7個工作天出貨，不含例假日及物流配送時間');
-          fs.writeFileSync(finalizerPath, source);
-
-          const pkgPath = 'package.json';
-          const lockPath = 'package-lock.json';
-          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-          const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
-          pkg.version = lock.version;
-          pkg.description = '仙加味 LINE OA 正式版｜30cc三罐試喝品免費、運費自付｜30cc與180cc買10送1｜接單後安排製作，約5～7個工作天出貨｜人工審核後發布';
-          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-          NODE
-          node --check tools/finalize-evergreen-trial-buy10get1-v412.mjs
-          node -e "const p=require('./package.json');const l=require('./package-lock.json');if(p.version!==l.version)process.exit(1)"
+          node tools/finalize-evergreen-trial-buy10get1-v412.mjs
+          node tools/finalize-trial-production-lead-time-v415.mjs
 
       - name: Synchronize website catalog with retry
         id: catalog_sync
@@ -104,6 +81,12 @@ jobs:
             sleep $((attempt * 5))
           done
           test "$success" -eq 1
+
+      - name: Reapply confirmed rules after catalog synchronization
+        if: steps.catalog_sync.outcome == 'success'
+        run: |
+          node tools/finalize-evergreen-trial-buy10get1-v412.mjs
+          node tools/finalize-trial-production-lead-time-v415.mjs
 
       - name: Run complete release, cart and ERP order checks
         id: release_checks
@@ -123,24 +106,47 @@ jobs:
             node internal-line-order-sync.test.js
           } 2>&1 | tee /tmp/xjw-test.log
 
+      - name: Verify final official contract
+        id: final_contract
+        if: steps.catalog_sync.outcome == 'success' && steps.release_checks.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/finalize-evergreen-trial-buy10get1-v412.mjs
+          node tools/finalize-trial-production-lead-time-v415.mjs
+          node - <<'NODE'
+          const fs = require('fs');
+          for (const file of ['data.json','line-sales-master.json']) {
+            const data = JSON.parse(fs.readFileSync(file,'utf8'));
+            const text = JSON.stringify(data);
+            if (!String(data.trialCampaign?.fulfillmentRule || '').includes('製作加工約需5～7個工作天')) throw new Error(`${file} 缺少製作加工天數`);
+            if (!String(data.trialCampaign?.fulfillmentRule || '').includes('完成後才安排出貨')) throw new Error(`${file} 缺少完成後才出貨`);
+            for (const bad of ['約5～7個工作天出貨','買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）']) {
+              if (text.includes(bad)) throw new Error(`${file} 仍含舊內容：${bad}`);
+            }
+          }
+          NODE
+          git diff --check
+
       - name: Persist synchronized files and validation result
         if: always()
         shell: bash
         env:
           SYNC_RESULT: ${{ steps.catalog_sync.outcome }}
           CHECK_RESULT: ${{ steps.release_checks.outcome }}
+          CONTRACT_RESULT: ${{ steps.final_contract.outcome }}
         run: |
           set -euo pipefail
           git config user.name "仙加味自動驗收"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           SUCCESS=false
-          if [ "$SYNC_RESULT" = success ] && [ "$CHECK_RESULT" = success ]; then SUCCESS=true; fi
+          if [ "$SYNC_RESULT" = success ] && [ "$CHECK_RESULT" = success ] && [ "$CONTRACT_RESULT" = success ]; then SUCCESS=true; fi
 
-          git add tools/finalize-evergreen-trial-buy10get1-v412.mjs package.json
           if [ "$SUCCESS" = true ]; then
             rm -f ci-last-error.txt
-            git add -A ci-last-error.txt data.json line-sales-master.json package-lock.json
+            git add -A data.json line-sales-master.json server.js README.md package.json package-lock.json tools diagnostics ci-last-error.txt
           else
             {
               echo "commit=$(git rev-parse HEAD)"
@@ -149,6 +155,7 @@ jobs:
               echo "run_id=${GITHUB_RUN_ID}"
               echo "sync_result=${SYNC_RESULT}"
               echo "check_result=${CHECK_RESULT}"
+              echo "contract_result=${CONTRACT_RESULT}"
               echo
               echo "=== catalog sync ==="
               tail -n 160 /tmp/xjw-sync.log 2>/dev/null || true
@@ -161,12 +168,12 @@ jobs:
 
           if ! git diff --cached --quiet; then
             if [ "$SUCCESS" = true ]; then
-              git commit -m "chore(line): persist verified catalog and clear resolved CI failure"
+              git commit -m "chore(line): persist verified catalog and production lead time"
             else
-              git commit -m "chore(line): persist confirmed trial rules and validation failure"
+              git commit -m "chore(line): persist validation failure diagnostics"
             fi
             for attempt in 1 2 3 4; do
-              git pull --rebase origin main && git push origin HEAD:main && break
+              git pull --rebase --autostash origin main && git push origin HEAD:main && break
               if [ "$attempt" -eq 4 ]; then exit 1; fi
               sleep $((attempt * 5))
             done
@@ -178,6 +185,8 @@ jobs:
         env:
           SYNC_RESULT: ${{ steps.catalog_sync.outcome }}
           CHECK_RESULT: ${{ steps.release_checks.outcome }}
+          CONTRACT_RESULT: ${{ steps.final_contract.outcome }}
         run: |
           test "$SYNC_RESULT" = success
           test "$CHECK_RESULT" = success
+          test "$CONTRACT_RESULT" = success
