@@ -1,0 +1,64 @@
+name: 套用LINE OA龜鹿飲長期試喝
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/apply-evergreen-trial-campaign.mjs'
+      - 'docs/evergreen-trial-trigger.md'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ts-line-evergreen-trial
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Apply trial campaign
+        run: node tools/apply-evergreen-trial-campaign.mjs
+      - name: Verify syntax, data and trial flow
+        run: |
+          node --check server.js
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const data = JSON.parse(readFileSync('data.json','utf8'));
+          const server = readFileSync('server.js','utf8');
+          const drink = data.products.find(p => p.id === 'guilu-drink-30');
+          if (!drink || drink.name !== '龜鹿飲30cc玻璃罐') throw new Error('30cc名稱未統一為玻璃罐');
+          if (drink.spec !== '30cc／罐（小玻璃罐）' || drink.unit !== '罐') throw new Error('30cc規格或單位錯誤');
+          if (drink.price !== 50 || drink.offers?.[0]?.qty !== 12 || drink.offers?.[0]?.total !== 500) throw new Error('30cc售價活動錯誤');
+          if (!data.trialCampaign?.active || data.trialCampaign.contents !== '30cc小玻璃罐×3罐') throw new Error('試喝活動未啟用');
+          for (const marker of ['function trialCampaignReply()','function startTrialCheckout','試喝配送｜7-11','試喝配送｜宅配','5～7個工作天','orderType: checkout.trial']) {
+            if (!server.includes(marker)) throw new Error('LINE OA缺少試喝流程：' + marker);
+          }
+          if (/龜鹿飲30cc玻璃瓶|30cc／瓶（小玻璃瓶）/.test(JSON.stringify(data))) throw new Error('data.json仍有30cc玻璃瓶舊稱');
+          console.log('PASS：LINE OA長期試喝、價格、運費、交期與玻璃罐名稱一致。');
+          NODE
+          npm test
+      - name: Commit verified result
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server.js data.json test.js function.test.js catalog.test.js security.test.js README.md
+          if git diff --cached --quiet; then
+            echo 'No LINE OA changes.'
+          else
+            git commit -m 'feat(line): add evergreen guilu drink trial sales flow'
+            git push origin HEAD:main
+          fi
