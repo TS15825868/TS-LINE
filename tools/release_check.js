@@ -46,10 +46,10 @@ assert.equal(trial.contents, '30cc小玻璃罐×3罐');
 assert.equal(Number(trial.productFee), 0);
 assert.equal(trial.active, true);
 assert.equal(trial.evergreen, true);
-assert.match(String(trial.fulfillmentRule || ''), /製作加工約需5～7個工作天/);
-assert.match(String(trial.fulfillmentRule || ''), /完成後才安排出貨/);
-assert.match(String(trial.fulfillmentRule || ''), /物流配送時間另計/);
-assert.match(String(trial.leadTimeDefinition || ''), /5～7個工作天.*製作加工/);
+assert.match(String(trial.fulfillmentRule || ''), /約5～7個工作天出貨/);
+assert.match(String(trial.fulfillmentRule || ''), /接單安排製作/);
+assert.match(String(trial.fulfillmentRule || ''), /不含例假日及物流配送時間/);
+assert.match(String(trial.leadTimeDefinition || ''), /約5～7個工作天出貨/);
 
 assert.equal(sales.comboOffers?.length, 3);
 assert.equal(sales.combos?.length, 3);
@@ -63,4 +63,4 @@ for (const label of ['品牌故事', '品牌由來', '選料理念', '品質把�
   assert(brand.quickReplies[label].trim().length >= 20, `品牌內容過短：${label}`);
 }
 
-console.log('PASS release check：產品、試喝、買10送1、製作完成後出貨與四位固定夥伴均符合正式規則');
+console.log('PASS release check：產品、試喝、買10送1、約5～7個工作天出貨與四位固定夥伴均符合正式規則');
