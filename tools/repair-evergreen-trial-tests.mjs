@@ -19,7 +19,8 @@ patch('test.js', [
   ['assert.strictEqual(drink30.unit, "瓶");', 'assert.strictEqual(drink30.unit, "罐");'],
   ['assert.strictEqual(drink30.size, "30cc／瓶（小玻璃瓶）");', 'assert.strictEqual(drink30.size, "30cc／罐（小玻璃罐）");'],
   ['{ total: 50, label: "單瓶×1" }', '{ total: 50, label: "單罐×1" }'],
-  ['"買10送2×1＋單瓶×1"', '"買10送2×1＋單罐×1"'],
+  ['"買10送2×1＋單瓶×1"', '"買10送1×1＋單罐×1"'],
+  ['"買10送2×1＋單罐×1"', '"買10送1×1＋單罐×1"'],
 ]);
 
 patch('function.test.js', [
@@ -31,8 +32,16 @@ patch('function.test.js', [
   ['for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"])', 'for (const command of ["申請試喝", "看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"])'],
 ]);
 
-patch('data.json', [
-  ['"orderNotice": "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。"', '"orderNotice": "訂單資料與付款方式確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間。"'],
+patch('social-current-policy.test.js', [
+  ['assert.strictEqual(sales.products["guilu-gao"].price, 1500);', 'assert.strictEqual(sales.products["guilu-gao"].price, 1800);'],
+  ['assert.strictEqual(sales.products["guilu-gao"].originalPrice, 1800);', 'assert.strictEqual(sales.products["guilu-gao"].originalPrice, 2100);'],
+  ['assert(sales.products["guilu-drink-30"].offers.includes("買10送2"));', 'assert(sales.products["guilu-drink-30"].offers.includes("買10送1"));'],
+  ['assert(sales.products["guilu-drink-180"].offers.includes("買10送2"));', 'assert(sales.products["guilu-drink-180"].offers.includes("買10送1"));'],
 ]);
 
-console.log('PASS：LINE OA測試已同步龜鹿膏2,100／1,800、30cc小玻璃罐、12罐500元及長期試喝入口。');
+patch('data.json', [
+  ['"orderNotice": "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。"', '"orderNotice": "訂單資料與付款方式確認完成後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。"'],
+  ['"orderNotice": "訂單資料與付款方式確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間。"', '"orderNotice": "訂單資料與付款方式確認完成後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。"'],
+]);
+
+console.log('PASS：LINE OA測試已同步龜鹿膏2,100／1,800、30cc小玻璃罐、30cc與180cc買10送1，以及製作完成後才出貨。');
