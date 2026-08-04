@@ -1,0 +1,117 @@
+name: ERP發布橋接線上健康檢查
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - erp-publish-bridge.js
+      - facebook-token-health-route.js
+      - server.js
+      - package.json
+      - docs/publish-bridge-health-trigger.md
+      - .github/workflows/erp-publish-bridge-live-health.yml
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ts-line-erp-publish-bridge-live-health
+  cancel-in-progress: true
+
+jobs:
+  verify-live-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 檢查 Render 線上發布橋接
+        id: health
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://ts-line.onrender.com/internal/api/v2/publish-bridge/healthz'
+          rm -f health.json
+          status=''
+          for attempt in 1 2 3 4 5 6 7 8; do
+            echo "線上健康檢查 ${attempt}/8"
+            status="$(curl --silent --show-error --location --max-time 60 --output health.json --write-out '%{http_code}' "$URL?t=$(date +%s)" || true)"
+            if [ "$status" = '200' ]; then
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          test "$status" = '200' || { echo "Render healthz HTTP $status"; cat health.json 2>/dev/null || true; exit 1; }
+          cat health.json
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const health = JSON.parse(readFileSync('health.json', 'utf8'));
+          const required = [
+            ['ok', health.ok === true],
+            ['service', health.service === '仙加味 ERP 發布橋接'],
+            ['authenticationConfigured', health.authenticationConfigured === true],
+            ['Facebook', health.platforms?.Facebook === true],
+            ['Instagram', health.platforms?.Instagram === true],
+            ['LINE OA 廣播', health.platforms?.['LINE OA 廣播'] === true],
+            ['LINE VOOM 不可自動發文', health.platforms?.['LINE VOOM'] === false],
+            ['LINE VOOM 人工模式', health.lineVoomManualOnly === true],
+          ];
+          const failed = required.filter(([, ok]) => !ok).map(([name]) => name);
+          if (failed.length) throw new Error(`線上發布橋接狀態不完整：${failed.join('、')}`);
+          console.log(`PASS 線上發布橋接：${health.service} v${health.version}；Facebook、Instagram、LINE OA 已設定；LINE VOOM 人工發布。`);
+          NODE
+
+      - name: 更新發布橋接診斷 Issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '[發布橋接診斷] 最新線上健康結果';
+            const success = '${{ job.status }}' === 'success';
+            const body = [
+              `## 仙加味 ERP 發布橋接線上健康檢查${success ? '成功' : '失敗'}`,
+              '',
+              `- 結果：\`${success ? 'success' : 'failure'}\``,
+              `- 提交：\`${context.sha}\``,
+              `- 執行網址：https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              `- 線上端點：\`/internal/api/v2/publish-bridge/healthz\``,
+              `- 檢查時間：${new Date().toISOString()}`,
+              '',
+              success
+                ? 'Facebook、Instagram、LINE OA 廣播與橋接驗證均已在線；LINE VOOM 維持人工發布。'
+                : '線上發布橋接尚未通過，請依執行日志修正 Render 部署、環境變數或平台憑證。',
+            ].join('\n');
+            const { data } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100,
+            });
+            const issue = data.find((item) => item.title === title && !item.pull_request);
+            const state = success ? 'closed' : 'open';
+            if (issue) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                title,
+                body,
+                state,
+              });
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+              if (success) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: created.data.number,
+                  state: 'closed',
+                });
+              }
+            }
