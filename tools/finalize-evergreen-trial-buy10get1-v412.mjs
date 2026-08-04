@@ -77,6 +77,7 @@ data.trialCampaign = {
   publicPrice: '龜鹿飲30cc售價50元／罐；買10送1，共11罐500元；另有180cc鋁袋單包200元，買10送1，共11包2,000元',
   lineOnly: true, lineId: '@762jybnm', lineUrl: data.lineUrl || 'https://lin.ee/sHZW7NkR',
 };
+data.orderNotice = `${ORDER_FULFILLMENT}。`;
 data.shippingNotes = {
   ...(data.shippingNotes || {}),
   宅配: `${ORDER_FULFILLMENT}。試喝組郵局宅配運費100元。`,
@@ -111,10 +112,15 @@ if (existsSync('package.json')) {
 }
 
 const verification = JSON.stringify(data);
-for (const bad of ['買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）', '約5～7個工作天出貨']) {
+for (const bad of [
+  '買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）',
+  '資料及運費確認後約5～7個工作天出貨',
+  '資料與運費確認後約5～7個工作天出貨',
+  '接單後約5～7個工作天出貨',
+]) {
   if (verification.includes(bad)) throw new Error(`LINE母本仍有舊資料：${bad}`);
 }
-if (!verification.includes('買10送1') || !verification.includes('製作加工約需5～7個工作天') || !verification.includes('完成後才安排出貨')) {
-  throw new Error('LINE母本缺少正式活動或製作完成後出貨規則');
+if (!verification.includes('買10送1') || !verification.includes('製作加工約需5～7個工作天') || !verification.includes('完成後才安排出貨') || !verification.includes('物流配送時間')) {
+  throw new Error('LINE母本缺少正式活動、製作時間或完成後物流說明');
 }
 console.log('PASS LINE OA：長期試喝、30cc／180cc買10送1；製作加工約需5～7個工作天，完成後才安排出貨。');
