@@ -1,7 +1,7 @@
-commit=bdb973d7adc2f24c7c20d5c7b008633053491d13
-recorded_at=2026-08-04T18:56:56Z
+commit=d2762959fd3b3bd83c856885171a346b363aadaf
+recorded_at=2026-08-04T18:57:46Z
 workflow=仙加味資料同步與驗收
-run_id=30940967420
+run_id=30941038290
 normalize_result=success
 sync_result=success
 renormalize_result=success
@@ -29,7 +29,7 @@ PASS v423：只整理正式母本；製作加工約需5～7個工作天，完成
 > node tools/apply-evergreen-trial-campaign.mjs && node tools/repair-evergreen-trial-tests.mjs && node tools/lock-confirmed-trial-shipping-v423.mjs
 
 PASS：LINE OA長期試喝、正式售價、5～7個工作天與小玻璃罐名稱已套用。
-PASS：LINE OA測試已同步龜鹿膏2,100／1,800、30cc小玻璃罐、30cc與180cc買10送1，以及製作加工約需5～7個工作天、完成後才出貨。
+PASS：LINE OA測試已同步產品排序、龜鹿膏2,100／1,800、30cc小玻璃罐、30cc與180cc買10送1，以及製作完成後才出貨。
 PASS v423：只整理正式母本；製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。
 
 > xianjiawei-lineoa@6.1.1 test
@@ -41,7 +41,7 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T18:58:55.282Z
+Social weather automation rate limited; next check 2026-08-04T18:59:45.338Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
@@ -60,17 +60,14 @@ node:assert:150
 AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
 + actual - expected
 
-  [
--   'guilu-gao',
-    'guilu-drink-30',
-    'guilu-drink-180',
-+   'guilu-gao',
-    'guilu-tangkuai',
-    'guilu-jiao',
-    'luerong-fen'
-  ]
+  {
++   label: '買10送1×1＋單包×1',
++   total: 2200
+-   label: '買10送1×1',
+-   total: 2000
+  }
 
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/test.js:28:8)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/test.js:79:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
@@ -80,22 +77,8 @@ AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
     at node:internal/main/run_main_module:36:49 {
   generatedMessage: true,
   code: 'ERR_ASSERTION',
-  actual: [
-    'guilu-drink-30',
-    'guilu-drink-180',
-    'guilu-gao',
-    'guilu-tangkuai',
-    'guilu-jiao',
-    'luerong-fen'
-  ],
-  expected: [
-    'guilu-gao',
-    'guilu-drink-30',
-    'guilu-drink-180',
-    'guilu-tangkuai',
-    'guilu-jiao',
-    'luerong-fen'
-  ],
+  actual: { total: 2200, label: '買10送1×1＋單包×1' },
+  expected: { total: 2000, label: '買10送1×1' },
   operator: 'deepStrictEqual',
   diff: 'simple'
 }
