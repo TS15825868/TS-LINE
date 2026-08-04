@@ -186,10 +186,10 @@ assert(read("social-publish-guard.js").includes("recordPublication"));
 
 const serialized = JSON.stringify({ data, sales });
 for (const legacy of [
-  "買10送2",
-  "共12罐500元",
-  "共12包2,000元",
-  "30cc／瓶（小玻璃瓶）",
+  "買10送1",
+  "共11罐500元",
+  "共11包2,000元",
+  "30cc／罐（小玻璃罐）",
   "約5～7個工作天出貨",
 ]) {
   assert(!serialized.includes(legacy), `正式資料仍含舊內容：${legacy}`);

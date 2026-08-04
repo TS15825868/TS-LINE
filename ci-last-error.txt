@@ -1,7 +1,7 @@
-commit=34e507b135dcdbdf193cda17230c4c85f9d78d66
-recorded_at=2026-08-04T18:50:21Z
+commit=2d008d7ec44f6a7697ede1e7774fb9269bc9e628
+recorded_at=2026-08-04T18:52:37Z
 workflow=仙加味資料同步與驗收
-run_id=30940456749
+run_id=30940634727
 normalize_result=success
 sync_result=success
 renormalize_result=success
@@ -41,22 +41,33 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T18:52:21.070Z
+Social weather automation rate limited; next check 2026-08-04T18:54:37.500Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish remains protected and the first suggested fixed slot is Wednesday 20:00
-node:assert:883
-    throw err;
-    ^
+node:assert:150
+  throw new AssertionError(obj);
+  ^
 
-AssertionError [ERR_ASSERTION]: The input did not match the regular expression /約5～7個工作天出貨/. Input:
+AssertionError [ERR_ASSERTION]: Expected values to be loosely deep-equal:
 
-'資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計'
+[
+  '小鹿娃娃',
+  '小烏龜娃娃',
+  '灰色小河馬娃娃',
+  '米色小鹿安撫巾'
+]
 
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:125:8)
+should loosely deep-equal
+
+[
+  '小鹿娃娃',
+  '小烏龜娃娃'
+]
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:131:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at node:internal/modules/cjs/loader:1913:10
     at Object.loadWithWeeklyOnceSchedule (/home/runner/work/TS-LINE/TS-LINE/social-weekly-schedule-override.js:93:55)
@@ -67,9 +78,9 @@ AssertionError [ERR_ASSERTION]: The input did not match the regular expression /
     at node:internal/main/run_main_module:36:49 {
   generatedMessage: true,
   code: 'ERR_ASSERTION',
-  actual: '資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計',
-  expected: /約5～7個工作天出貨/,
-  operator: 'match',
+  actual: [ '小鹿娃娃', '小烏龜娃娃', '灰色小河馬娃娃', '米色小鹿安撫巾' ],
+  expected: [ '小鹿娃娃', '小烏龜娃娃' ],
+  operator: 'deepEqual',
   diff: 'simple'
 }
 
