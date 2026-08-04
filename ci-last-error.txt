@@ -1,7 +1,7 @@
-commit=d2762959fd3b3bd83c856885171a346b363aadaf
-recorded_at=2026-08-04T18:57:46Z
+commit=8dec73fc08a3825d1c177acb72c29e4840bfa1f6
+recorded_at=2026-08-04T19:00:18Z
 workflow=仙加味資料同步與驗收
-run_id=30941038290
+run_id=30941173432
 normalize_result=success
 sync_result=success
 renormalize_result=success
@@ -41,7 +41,7 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T18:59:45.338Z
+Social weather automation rate limited; next check 2026-08-04T19:02:17.528Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
@@ -53,21 +53,18 @@ PASS early runtime stabilizer restores exactly ten canonical unreviewed posts wi
 PASS Supabase persistence normalization, stale Render writer blocking, timeout, retries, backoff, schema and local fallback
 PASS centralized Supabase queue and early ten-post review stabilizer installation
 LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS LINE OA catalog 410.4: website fields, official sales fields, six products and three combos
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
+PASS full LINE OA function matrix v401.6 with official prices, combo promotion labels, buy-ten-get-two offers and three combos
 node:assert:150
   throw new AssertionError(obj);
   ^
 
-AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
-+ actual - expected
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
 
-  {
-+   label: '買10送1×1＋單包×1',
-+   total: 2200
--   label: '買10送1×1',
--   total: 2000
-  }
+5100 !== 4500
 
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/test.js:79:8)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/line-order-cart.test.js:22:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
@@ -77,9 +74,9 @@ AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
     at node:internal/main/run_main_module:36:49 {
   generatedMessage: true,
   code: 'ERR_ASSERTION',
-  actual: { total: 2200, label: '買10送1×1＋單包×1' },
-  expected: { total: 2000, label: '買10送1×1' },
-  operator: 'deepStrictEqual',
+  actual: 5100,
+  expected: 4500,
+  operator: 'strictEqual',
   diff: 'simple'
 }
 
