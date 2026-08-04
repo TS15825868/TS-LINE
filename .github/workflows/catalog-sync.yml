@@ -1,5 +1,5 @@
 name: 仙加味資料同步與驗收
-run-name: 仙加味資料同步與驗收 v421｜${{ github.event_name }}｜${{ github.ref_name }}
+run-name: 仙加味資料同步與驗收 v423｜${{ github.event_name }}｜${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -38,13 +38,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: xianjiawei-main-sync
+  group: xianjiawei-main-sync-v423
   cancel-in-progress: true
 
 jobs:
   validate-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Checkout latest main
         uses: actions/checkout@v4
@@ -61,23 +61,19 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Apply confirmed rules before synchronization
-        run: |
-          node tools/repair-evergreen-trial-tests.mjs
-          node tools/finalize-evergreen-trial-buy10get1-v412.mjs
-          node tools/finalize-trial-production-lead-time-v415.mjs
+      - name: Apply one authoritative confirmed rule set
+        run: node tools/lock-confirmed-trial-shipping-v423.mjs
 
-      - name: Synchronize website catalog
+      - name: Synchronize website catalog and formal sales master
         run: npm run sync:catalog
 
-      - name: Reapply confirmed rules after synchronization
-        run: |
-          node tools/repair-evergreen-trial-tests.mjs
-          node tools/finalize-evergreen-trial-buy10get1-v412.mjs
-          node tools/finalize-trial-production-lead-time-v415.mjs
+      - name: Reapply authoritative rules after synchronization
+        run: node tools/lock-confirmed-trial-shipping-v423.mjs
 
       - name: Run complete LINE OA validation
+        shell: bash
         run: |
+          set -euo pipefail
           npm test
           node test.js
           node catalog.test.js
@@ -87,25 +83,29 @@ jobs:
           node internal-order-pricing.test.js
           node internal-line-order-sync.test.js
 
-      - name: Verify final official contract
+      - name: Verify final public and ordering contract
         shell: bash
         run: |
           set -euo pipefail
+          node tools/lock-confirmed-trial-shipping-v423.mjs
           node - <<'NODE'
           const fs = require('fs');
-          for (const file of ['data.json','line-sales-master.json']) {
-            const data = JSON.parse(fs.readFileSync(file,'utf8'));
+          const official = '資料及運費確認完成後採接單安排製作，約5～7個工作天出貨，不含例假日及物流配送時間';
+          for (const file of ['data.json', 'line-sales-master.json']) {
+            const data = JSON.parse(fs.readFileSync(file, 'utf8'));
             const text = JSON.stringify(data);
-            const fulfillment = String(data.trialCampaign?.fulfillmentRule || '');
-            if (!fulfillment.includes('製作加工約需5～7個工作天')) throw new Error(`${file} 缺少製作加工天數`);
-            if (!fulfillment.includes('完成後才安排出貨')) throw new Error(`${file} 缺少完成後才出貨`);
-            for (const bad of ['約5～7個工作天出貨','買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）']) {
+            if (data.trialCampaign?.fulfillmentRule !== official) throw new Error(`${file} 出貨規則不一致`);
+            for (const bad of ['製作加工約需5～7個工作天', '5～7個工作天只計製作加工', '買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）']) {
               if (text.includes(bad)) throw new Error(`${file} 仍含舊內容：${bad}`);
             }
             const d30 = data.products?.find?.((item) => item.id === 'guilu-drink-30') || data.products?.['guilu-drink-30'];
             const d180 = data.products?.find?.((item) => item.id === 'guilu-drink-180') || data.products?.['guilu-drink-180'];
-            if (d30 && Array.isArray(d30.offers) && d30.offers[0]?.qty !== 11) throw new Error(`${file} 30cc買10送1錯誤`);
-            if (d180 && Array.isArray(d180.offers) && d180.offers[0]?.qty !== 11) throw new Error(`${file} 180cc買10送1錯誤`);
+            if (!d30 || d30.name !== '龜鹿飲30cc玻璃罐' || d30.unit !== '罐') throw new Error(`${file} 30cc正式身分錯誤`);
+            if (Array.isArray(d30.offers) && d30.offers[0]?.qty !== 11) throw new Error(`${file} 30cc買10送1錯誤`);
+            if (d30.offer && d30.offer.qty !== 11) throw new Error(`${file} 30cc銷售母本買10送1錯誤`);
+            if (!d180 || d180.name !== '龜鹿飲180cc鋁袋') throw new Error(`${file} 180cc正式身分錯誤`);
+            if (Array.isArray(d180.offers) && d180.offers[0]?.qty !== 11) throw new Error(`${file} 180cc買10送1錯誤`);
+            if (d180.offer && d180.offer.qty !== 11) throw new Error(`${file} 180cc銷售母本買10送1錯誤`);
           }
           NODE
           git diff --check
@@ -117,9 +117,12 @@ jobs:
           rm -f ci-last-error.txt
           git config user.name "仙加味自動驗收"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data.json line-sales-master.json server.js README.md package.json package-lock.json tools diagnostics ci-last-error.txt
+          git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "chore(line): persist verified catalog and production-before-shipping rules"
-            git pull --rebase --autostash origin main
-            git push origin HEAD:main
+            git commit -m "chore(line): persist verified catalog and confirmed trial rules v423"
+            for attempt in 1 2 3 4; do
+              git pull --rebase --autostash origin main && git push origin HEAD:main && break
+              if [ "$attempt" -eq 4 ]; then exit 1; fi
+              sleep $((attempt * 5))
+            done
           fi
