@@ -1,0 +1,38 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+
+function patch(path, replacements) {
+  let text = readFileSync(path, 'utf8');
+  for (const [from, to] of replacements) {
+    if (text.includes(from)) text = text.replaceAll(from, to);
+  }
+  writeFileSync(path, text);
+}
+
+patch('server.js', [
+  ['if (/龜鹿飲.*30|30cc|玻璃罐/.test(raw))', 'if (/龜鹿飲.*30|30cc|玻璃罐|玻璃瓶/.test(raw))'],
+]);
+
+patch('test.js', [
+  ['assert.strictEqual(detectProduct("龜鹿飲30cc玻璃瓶").id, "guilu-drink-30");', 'assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");\nassert.strictEqual(detectProduct("龜鹿飲30cc玻璃瓶").id, "guilu-drink-30");'],
+  ['assert.strictEqual(gao.price, 1500);', 'assert.strictEqual(gao.price, 1800);'],
+  ['assert.strictEqual(gao.originalPrice, 1800);', 'assert.strictEqual(gao.originalPrice, 2100);'],
+  ['assert.strictEqual(drink30.unit, "瓶");', 'assert.strictEqual(drink30.unit, "罐");'],
+  ['assert.strictEqual(drink30.size, "30cc／瓶（小玻璃瓶）");', 'assert.strictEqual(drink30.size, "30cc／罐（小玻璃罐）");'],
+  ['{ total: 50, label: "單瓶×1" }', '{ total: 50, label: "單罐×1" }'],
+  ['"買10送2×1＋單瓶×1"', '"買10送2×1＋單罐×1"'],
+]);
+
+patch('function.test.js', [
+  ['"guilu-gao": { price: 1500, originalPrice: 1800, options: [1, 2, 3, 5], offers: [] }', '"guilu-gao": { price: 1800, originalPrice: 2100, options: [1, 2, 3, 5], offers: [] }'],
+  ['const expectedComboPrices = [2500, 3600, 6100];', 'const expectedComboPrices = [2800, 3600, 6400];'],
+  ['["龜鹿膏：已套用優惠價 $1,500"]', '["龜鹿膏：已套用優惠價 $1,800"]'],
+  ['assert.strictEqual(comboState.cart[0].total, 18300);', 'assert.strictEqual(comboState.cart[0].total, 19200);'],
+  ['assert.ok(comboState.cart[0].label.includes("$6,100"));', 'assert.ok(comboState.cart[0].label.includes("$6,400"));'],
+  ['for (const command of ["看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"])', 'for (const command of ["申請試喝", "看產品", "直接下單", "幫我推薦", "搭配組合", "怎麼使用", "查看購買清單", "開始結帳"])'],
+]);
+
+patch('data.json', [
+  ['"orderNotice": "全系列已開放詢問與下單；實際庫存與出貨時間由客服確認。"', '"orderNotice": "訂單資料與付款方式確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間。"'],
+]);
+
+console.log('PASS：LINE OA測試已同步龜鹿膏2,100／1,800、30cc小玻璃罐、12罐500元及長期試喝入口。');
