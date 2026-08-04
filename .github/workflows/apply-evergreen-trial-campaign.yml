@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'tools/apply-evergreen-trial-campaign.mjs'
+      - 'tools/repair-evergreen-trial-tests.mjs'
       - 'docs/evergreen-trial-trigger.md'
 
 permissions:
@@ -30,8 +31,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Apply trial campaign
-        run: node tools/apply-evergreen-trial-campaign.mjs
+      - name: Apply trial campaign and align tests
+        run: |
+          node tools/apply-evergreen-trial-campaign.mjs
+          node tools/repair-evergreen-trial-tests.mjs
       - name: Verify syntax, data and trial flow
         run: |
           node --check server.js
@@ -40,9 +43,11 @@ jobs:
           const data = JSON.parse(readFileSync('data.json','utf8'));
           const server = readFileSync('server.js','utf8');
           const drink = data.products.find(p => p.id === 'guilu-drink-30');
+          const gao = data.products.find(p => p.id === 'guilu-gao');
           if (!drink || drink.name !== '龜鹿飲30cc玻璃罐') throw new Error('30cc名稱未統一為玻璃罐');
           if (drink.spec !== '30cc／罐（小玻璃罐）' || drink.unit !== '罐') throw new Error('30cc規格或單位錯誤');
           if (drink.price !== 50 || drink.offers?.[0]?.qty !== 12 || drink.offers?.[0]?.total !== 500) throw new Error('30cc售價活動錯誤');
+          if (gao?.price !== 1800 || gao?.originalPrice !== 2100) throw new Error('龜鹿膏售價與優惠價錯誤');
           if (!data.trialCampaign?.active || data.trialCampaign.contents !== '30cc小玻璃罐×3罐') throw new Error('試喝活動未啟用');
           for (const marker of ['function trialCampaignReply()','function startTrialCheckout','試喝配送｜7-11','試喝配送｜宅配','5～7個工作天','orderType: checkout.trial']) {
             if (!server.includes(marker)) throw new Error('LINE OA缺少試喝流程：' + marker);
