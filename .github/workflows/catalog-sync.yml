@@ -129,11 +129,15 @@ jobs:
             const d30 = data.products?.find?.((item) => item.id === 'guilu-drink-30') || data.products?.['guilu-drink-30'];
             const d180 = data.products?.find?.((item) => item.id === 'guilu-drink-180') || data.products?.['guilu-drink-180'];
             if (!d30 || d30.name !== '龜鹿飲30cc玻璃罐' || d30.unit !== '罐') throw new Error(`${file} 30cc正式身分錯誤`);
-            if (Array.isArray(d30.offers) && d30.offers[0]?.qty !== 11) throw new Error(`${file} 30cc買10送1錯誤`);
-            if (d30.offer && d30.offer.qty !== 11) throw new Error(`${file} 30cc銷售母本買10送1錯誤`);
+            const d30CatalogOffer = Array.isArray(d30.offers) ? d30.offers.find((offer) => offer && typeof offer === 'object') : null;
+            if (d30CatalogOffer && (d30CatalogOffer.qty !== 11 || d30CatalogOffer.total !== 500 || d30CatalogOffer.label !== '買10送1')) throw new Error(`${file} 30cc目錄優惠錯誤`);
+            if (d30.offer && (d30.offer.qty !== 11 || d30.offer.total !== 500 || d30.offer.label !== '買10送1')) throw new Error(`${file} 30cc銷售母本優惠錯誤`);
+            if (Array.isArray(d30.offers) && d30.offers.every((offer) => typeof offer === 'string') && !d30.offers.includes('買10送1')) throw new Error(`${file} 30cc優惠文字錯誤`);
             if (!d180 || d180.name !== '龜鹿飲180cc鋁袋') throw new Error(`${file} 180cc正式身分錯誤`);
-            if (Array.isArray(d180.offers) && d180.offers[0]?.qty !== 11) throw new Error(`${file} 180cc買10送1錯誤`);
-            if (d180.offer && d180.offer.qty !== 11) throw new Error(`${file} 180cc銷售母本買10送1錯誤`);
+            const d180CatalogOffer = Array.isArray(d180.offers) ? d180.offers.find((offer) => offer && typeof offer === 'object') : null;
+            if (d180CatalogOffer && (d180CatalogOffer.qty !== 11 || d180CatalogOffer.total !== 2000 || d180CatalogOffer.label !== '買10送1')) throw new Error(`${file} 180cc目錄優惠錯誤`);
+            if (d180.offer && (d180.offer.qty !== 11 || d180.offer.total !== 2000 || d180.offer.label !== '買10送1')) throw new Error(`${file} 180cc銷售母本優惠錯誤`);
+            if (Array.isArray(d180.offers) && d180.offers.every((offer) => typeof offer === 'string') && !d180.offers.includes('買10送1')) throw new Error(`${file} 180cc優惠文字錯誤`);
           }
           NODE
           git diff --check
