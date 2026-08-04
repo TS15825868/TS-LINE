@@ -1,7 +1,7 @@
-commit=ef96388dc6580ab2fd7b96a2097ce581e02e7e5e
-recorded_at=2026-08-04T18:31:30Z
+commit=99676ae6bcbc0a5d595ff1638d1dd982a793c7e3
+recorded_at=2026-08-04T18:31:55Z
 workflow=仙加味資料同步與驗收
-run_id=30938972695
+run_id=30939000040
 sync_result=success
 check_result=failure
 contract_result=skipped
