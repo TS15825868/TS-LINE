@@ -1,7 +1,7 @@
-commit=2d008d7ec44f6a7697ede1e7774fb9269bc9e628
-recorded_at=2026-08-04T18:52:37Z
+commit=56a0d54dfc0885cff479ad5390c00dadf6365f9a
+recorded_at=2026-08-04T18:54:27Z
 workflow=仙加味資料同步與驗收
-run_id=30940634727
+run_id=30940770194
 normalize_result=success
 sync_result=success
 renormalize_result=success
@@ -41,7 +41,7 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T18:54:37.500Z
+Social weather automation rate limited; next check 2026-08-04T18:56:27.572Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
@@ -67,7 +67,7 @@ should loosely deep-equal
   '小鹿娃娃',
   '小烏龜娃娃'
 ]
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:131:8)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:132:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at node:internal/modules/cjs/loader:1913:10
     at Object.loadWithWeeklyOnceSchedule (/home/runner/work/TS-LINE/TS-LINE/social-weekly-schedule-override.js:93:55)
