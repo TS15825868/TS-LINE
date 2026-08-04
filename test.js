@@ -10,18 +10,8 @@ const {
   addCart,
   cartTotal,
   productCarousel,
-  productMenuReply,
   priceCarousel,
   recommendReply,
-  comboReply,
-  comboMenuReply,
-  comboDetailReply,
-  usageChooserReply,
-  usageReply,
-  doctorReferralReply,
-  huangdiNeijingReply,
-  brandStoryReply,
-  isSensitiveHealthQuestion,
 } = require("./server");
 
 assert.strictEqual(VERSION, "v401.6");
@@ -44,21 +34,6 @@ for (const product of DATA.products) {
 
 assert.strictEqual(detectProduct("龜鹿飲180cc鋁袋").id, "guilu-drink-180");
 assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
-assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
 assert.strictEqual(detectProduct("龜鹿膏怎麼使用").id, "guilu-gao");
 assert.strictEqual(detectProduct("龜鹿湯塊").id, "guilu-tangkuai");
 assert.strictEqual(detectProduct("龜鹿膠一斤裝").id, "guilu-jiao");
@@ -76,7 +51,8 @@ assert.deepStrictEqual(calcItem(drink30, 11), { total: 500, label: "買10送1×1
 assert.deepStrictEqual(calcItem(drink30, 22), { total: 1000, label: "買10送1×2" });
 const drink180 = getProduct("guilu-drink-180");
 assert.strictEqual(drink180.price, 200);
-assert.deepStrictEqual(calcItem(drink180, 12), { total: 2000, label: "買10送1×1" });
+assert.deepStrictEqual(calcItem(drink180, 11), { total: 2000, label: "買10送1×1" });
+assert.deepStrictEqual(calcItem(drink180, 12), { total: 2200, label: "買10送1×1＋單包×1" });
 assert.strictEqual(getProduct("guilu-tangkuai").price, 1600);
 assert.strictEqual(getProduct("luerong-fen").price, 2000);
 assert.strictEqual(getProduct("guilu-jiao").price, 9600);
