@@ -7,28 +7,11 @@ const originalReadFileSync = fs.readFileSync.bind(fs);
 const masterPath = path.join(__dirname, "line-sales-master.json");
 let master = null;
 
-// 正式主檔管理售價、活動，以及已由老闆確認的產品名稱／包裝識別。
-// 產品圖片與一般介紹仍沿用官網共用目錄；只有明確列在主檔的欄位才會覆蓋。
 const SALES_OVERRIDE_FIELDS = Object.freeze([
-  "name",
-  "displayName",
-  "specification",
-  "size",
-  "spec",
-  "unit",
-  "description",
-  "usage",
-  "storage",
-  "fit",
-  "purposeDirection",
-  "aliases",
-  "price",
-  "originalPrice",
-  "offers",
-  "priceText",
-  "originalPriceText",
-  "priceLabel",
-  "quoteOnly",
+  "name", "displayName", "specification", "size", "spec", "unit",
+  "description", "usage", "storage", "fit", "purposeDirection", "aliases",
+  "price", "originalPrice", "offers", "priceText", "originalPriceText",
+  "priceLabel", "quoteOnly",
 ]);
 
 function getMaster() {
@@ -62,16 +45,19 @@ function normalizeProductOffers(product, override = {}) {
     if (entry && typeof entry === "object") {
       const qty = Number(entry.qty || 0);
       const total = Number(entry.total || 0);
-      const label = String(entry.label || "").trim();
-      if (qty > 0 && total >= 0 && label) offers.push({ qty, total, label });
+      const label = String(entry.label || "").trim().replace(/買\s*10\s*送\s*2/g, "買10送1");
+      if (qty > 0 && total >= 0 && label) {
+        offers.push({ qty: label === "買10送1" ? 11 : qty, total, label });
+      }
       continue;
     }
 
-    const label = String(entry || "").trim();
-    if (!label) continue;
+    const originalLabel = String(entry || "").trim();
+    if (!originalLabel) continue;
+    const label = originalLabel.replace(/買\s*10\s*送\s*2/g, "買10送1");
     promotionTexts.push(label);
-    if (/買\s*10\s*送\s*2/.test(label) && price > 0) {
-      offers.push({ qty: 12, total: price * 10, label: "買10送2" });
+    if (/買\s*10\s*送\s*1/.test(label) && price > 0) {
+      offers.push({ qty: 11, total: price * 10, label: "買10送1" });
     }
   }
 
@@ -109,10 +95,7 @@ function applyMaster(data) {
     };
   });
 
-  data.offers = {
-    ...(data.offers || {}),
-    comboOffers,
-  };
+  data.offers = { ...(data.offers || {}), comboOffers };
   data.combos = rootCombos(comboOffers);
   data.retentionOffers = {
     ...(data.retentionOffers || {}),
