@@ -1,0 +1,62 @@
+name: LINE OA長期試喝與買10送1正式化
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/finalize-evergreen-trial-v412.trigger'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: line-evergreen-trial-v412
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply final LINE policy
+        run: |
+          node tools/apply-evergreen-trial-campaign.mjs
+          node tools/repair-evergreen-trial-tests.mjs
+          node tools/finalize-evergreen-trial-buy10get1-v412.mjs
+      - name: Verify final data and tests
+        run: |
+          node --check server.js
+          node --check tools/finalize-evergreen-trial-buy10get1-v412.mjs
+          npm run test --ignore-scripts
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const data=JSON.parse(readFileSync('data.json','utf8'));
+          const d30=data.products.find(x=>x.id==='guilu-drink-30');
+          const d180=data.products.find(x=>x.id==='guilu-drink-180');
+          if(d30.offers?.[0]?.qty!==11||d30.offers?.[0]?.total!==500) throw new Error('30cc買10送1錯誤');
+          if(d180.offers?.[0]?.qty!==11||d180.offers?.[0]?.total!==2000) throw new Error('180cc買10送1錯誤');
+          if(data.trialCampaign?.contents!=='30cc小玻璃罐×3罐') throw new Error('試喝內容錯誤');
+          const all=[readFileSync('server.js','utf8'),readFileSync('package.json','utf8'),JSON.stringify(data)].join('\n');
+          if(/買10送2|共12罐500元|共12包2,000元/.test(all)) throw new Error('仍有舊活動資料');
+          NODE
+      - name: Commit verified LINE result
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data.json line-sales-master.json server.js package.json test.js function.test.js catalog.test.js security.test.js README.md tools/finalize-evergreen-trial-buy10get1-v412.mjs
+          if git diff --cached --quiet; then
+            echo 'No LINE changes.'
+          else
+            git commit -m 'feat(line): activate final evergreen trial and buy ten get one'
+            git push origin HEAD:main
+          fi
