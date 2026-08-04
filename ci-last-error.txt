@@ -1,7 +1,7 @@
-commit=5ec6643d572f37aa8a2c3c1fd7df50a05a12f8fb
-recorded_at=2026-08-04T19:04:19Z
+commit=0fcccb955128f9c783062701de73587a56ad693a
+recorded_at=2026-08-04T19:06:21Z
 workflow=仙加味資料同步與驗收
-run_id=30941549668
+run_id=30941707556
 normalize_result=success
 sync_result=success
 renormalize_result=success
@@ -41,7 +41,7 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T19:06:17.919Z
+Social weather automation rate limited; next check 2026-08-04T19:08:19.994Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
@@ -58,7 +58,7 @@ LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET
 PASS full LINE OA function matrix v401.6 with official prices, combo promotion labels, buy-ten-get-two offers and three combos
 PASS LINE combo expansion, buy-ten-get-one pricing and ERP order subtotals
 PASS ERP inventory keeps stock while synchronizing six official prices and buy-ten-get-one promotions
-PASS ERP order pricing, official buy-ten-get-two promotion, manual overrides and total normalization
+PASS ERP order pricing, official buy-ten-get-one promotion, manual overrides and total normalization
 PASS priced orders, buy-ten-get-two subtotal, reservations, shipment and cancellation lifecycle
 
 === contract ===
