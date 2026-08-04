@@ -1,11 +1,9 @@
-import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { extname, join, relative } from 'node:path';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const root = process.cwd();
-const self = 'tools/lock-confirmed-trial-shipping-v423.mjs';
 const OFFICIAL_FULFILLMENT = '資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計';
 const ORDER_FULFILLMENT = '訂單資料與付款方式確認完成後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計';
-const allowedExtensions = new Set(['.js', '.mjs', '.json', '.md', '.txt', '.yml', '.yaml', '.html']);
 
 const replacements = [
   ['買10送2（共12罐500元）', '買10送1（共11罐500元）'],
@@ -24,14 +22,11 @@ const replacements = [
   ['資料與運費確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間', OFFICIAL_FULFILLMENT],
   ['資料及運費確認後約5～7個工作天出貨', OFFICIAL_FULFILLMENT],
   ['資料與運費確認後約5～7個工作天出貨', OFFICIAL_FULFILLMENT],
-  ['接單後安排製作，約5～7個工作天出貨，不含例假日及物流配送時間', '安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計'],
   ['接單後約5～7個工作天出貨', '安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計'],
   ['訂單資料與付款方式確認完成後採接單安排製作，約5～7個工作天出貨，不含例假日及物流配送時間', ORDER_FULFILLMENT],
   ['訂單資料與付款方式確認後約5～7個工作天出貨，不含例假日及物流配送時間', ORDER_FULFILLMENT],
   ['約5～7個工作天出貨；不含例假日及物流配送時間', '製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計'],
   ['約5～7個工作天出貨，不含例假日及物流配送時間', '製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計'],
-  ['製作加工約5～7工作天，完成後出貨', '製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計'],
-  ['製作加工約5～7個工作天，完成後出貨', '製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計'],
 ];
 
 function normalizeText(value) {
@@ -47,26 +42,6 @@ function normalizeDeep(value) {
     for (const key of Object.keys(value)) value[key] = normalizeDeep(value[key]);
   }
   return value;
-}
-
-function walk(directory) {
-  const files = [];
-  for (const name of readdirSync(directory)) {
-    if (name === '.git' || name === 'node_modules') continue;
-    const full = join(directory, name);
-    const info = statSync(full);
-    if (info.isDirectory()) files.push(...walk(full));
-    else if (allowedExtensions.has(extname(full).toLowerCase())) files.push(full);
-  }
-  return files;
-}
-
-for (const file of walk(root)) {
-  const rel = relative(root, file).replaceAll('\\', '/');
-  if (rel === self || rel === 'ci-last-error.txt') continue;
-  const before = readFileSync(file, 'utf8');
-  const after = normalizeText(before);
-  if (after !== before) writeFileSync(file, after);
 }
 
 const dataPath = join(root, 'data.json');
@@ -148,9 +123,7 @@ writeFileSync(join(root, 'tools/finalize-evergreen-trial-buy10get1-v412.mjs'), w
 writeFileSync(join(root, 'tools/finalize-trial-production-lead-time-v415.mjs'), wrapper);
 rmSync(join(root, 'ci-last-error.txt'), { force: true });
 
-const finalData = JSON.parse(readFileSync(dataPath, 'utf8'));
-const finalMaster = JSON.parse(readFileSync(masterPath, 'utf8'));
-for (const [label, value] of [['data.json', finalData], ['line-sales-master.json', finalMaster]]) {
+for (const [label, value] of [['data.json', data], ['line-sales-master.json', master]]) {
   const text = JSON.stringify(value);
   for (const legacy of ['買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）', '資料及運費確認後約5～7個工作天出貨', '接單後約5～7個工作天出貨']) {
     if (text.includes(legacy)) throw new Error(`${label} 仍含舊正式資料：${legacy}`);
@@ -160,4 +133,4 @@ for (const [label, value] of [['data.json', finalData], ['line-sales-master.json
   }
 }
 
-console.log('PASS v423：LINE OA 唯一正式規則已鎖定為製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。');
+console.log('PASS v423：只整理正式母本；製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。');
