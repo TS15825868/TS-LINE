@@ -1,7 +1,7 @@
-commit=56a0d54dfc0885cff479ad5390c00dadf6365f9a
-recorded_at=2026-08-04T18:54:27Z
+commit=4464a520455990561c6a1e4c6f3a5ff97b3594dc
+recorded_at=2026-08-04T18:55:36Z
 workflow=仙加味資料同步與驗收
-run_id=30940770194
+run_id=30940861228
 normalize_result=success
 sync_result=success
 renormalize_result=success
@@ -41,46 +41,62 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T18:56:27.572Z
+Social weather automation rate limited; next check 2026-08-04T18:57:35.841Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
 manual social schedule override tests passed
 PASS persistent fingerprint ledger and per-post lock prevent duplicate social publishing
 PASS immediate publish remains protected and the first suggested fixed slot is Wednesday 20:00
+PASS release check：產品、試喝、買10送1、製作完成後出貨與四位固定夥伴均符合正式規則
+PASS early runtime stabilizer restores exactly ten canonical unreviewed posts without active schedules
+PASS Supabase persistence normalization, stale Render writer blocking, timeout, retries, backoff, schema and local fallback
+PASS centralized Supabase queue and early ten-post review stabilizer installation
+LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
 node:assert:150
   throw new AssertionError(obj);
   ^
 
-AssertionError [ERR_ASSERTION]: Expected values to be loosely deep-equal:
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
 
-[
-  '小鹿娃娃',
-  '小烏龜娃娃',
-  '灰色小河馬娃娃',
-  '米色小鹿安撫巾'
-]
+  [
+-   'guilu-gao',
+    'guilu-drink-30',
+    'guilu-drink-180',
++   'guilu-gao',
+    'guilu-tangkuai',
+    'guilu-jiao',
+    'luerong-fen'
+  ]
 
-should loosely deep-equal
-
-[
-  '小鹿娃娃',
-  '小烏龜娃娃'
-]
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/tools/release_check.js:132:8)
+    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/test.js:28:8)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at node:internal/modules/cjs/loader:1913:10
-    at Object.loadWithWeeklyOnceSchedule (/home/runner/work/TS-LINE/TS-LINE/social-weekly-schedule-override.js:93:55)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1309:12)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
     at node:internal/main/run_main_module:36:49 {
   generatedMessage: true,
   code: 'ERR_ASSERTION',
-  actual: [ '小鹿娃娃', '小烏龜娃娃', '灰色小河馬娃娃', '米色小鹿安撫巾' ],
-  expected: [ '小鹿娃娃', '小烏龜娃娃' ],
-  operator: 'deepEqual',
+  actual: [
+    'guilu-drink-30',
+    'guilu-drink-180',
+    'guilu-gao',
+    'guilu-tangkuai',
+    'guilu-jiao',
+    'luerong-fen'
+  ],
+  expected: [
+    'guilu-gao',
+    'guilu-drink-30',
+    'guilu-drink-180',
+    'guilu-tangkuai',
+    'guilu-jiao',
+    'luerong-fen'
+  ],
+  operator: 'deepStrictEqual',
   diff: 'simple'
 }
 

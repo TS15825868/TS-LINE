@@ -51,6 +51,14 @@ assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30")
 assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
 assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
 assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
+assert.strictEqual(detectProduct("龜鹿飲30cc玻璃罐").id, "guilu-drink-30");
 assert.strictEqual(detectProduct("龜鹿膏怎麼使用").id, "guilu-gao");
 assert.strictEqual(detectProduct("龜鹿湯塊").id, "guilu-tangkuai");
 assert.strictEqual(detectProduct("龜鹿膠一斤裝").id, "guilu-jiao");
