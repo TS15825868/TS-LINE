@@ -1,5 +1,5 @@
 name: 仙加味資料同步與驗收
-run-name: 仙加味資料同步與驗收 v417｜${{ github.event_name }}｜${{ github.ref_name }}
+run-name: 仙加味資料同步與驗收 v418｜${{ github.event_name }}｜${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -60,6 +60,34 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
+      - name: Lock user-confirmed trial wording and package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const finalizerPath = 'tools/finalize-evergreen-trial-buy10get1-v412.mjs';
+          let source = fs.readFileSync(finalizerPath, 'utf8');
+          const official = '資料及運費確認完成後採接單安排製作，約5～7個工作天出貨，不含例假日及物流配送時間';
+          source = source
+            .replace(/const OFFICIAL_FULFILLMENT = '[^']*';/, `const OFFICIAL_FULFILLMENT = '${official}';`)
+            .replace(/^const LEAD_TIME_DEFINITION = .*\n/m, '')
+            .replace(/^\s*pkg\.version\s*=\s*['"][^'"]+['"];\s*\n/m, '')
+            .replaceAll('製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計', '約5～7個工作天出貨，不含例假日及物流配送時間')
+            .replaceAll('製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間', '約5～7個工作天出貨，不含例假日及物流配送時間');
+          fs.writeFileSync(finalizerPath, source);
+
+          const pkgPath = 'package.json';
+          const lockPath = 'package-lock.json';
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+          pkg.version = lock.version;
+          pkg.description = '仙加味 LINE OA 正式版｜30cc三罐試喝品免費、運費自付｜30cc與180cc買10送1｜接單後安排製作，約5～7個工作天出貨｜人工審核後發布';
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+          node --check tools/finalize-evergreen-trial-buy10get1-v412.mjs
+          node -e "const p=require('./package.json');const l=require('./package-lock.json');if(p.version!==l.version)process.exit(1)"
+
       - name: Synchronize website catalog with retry
         id: catalog_sync
         continue-on-error: true
@@ -109,6 +137,7 @@ jobs:
           SUCCESS=false
           if [ "$SYNC_RESULT" = success ] && [ "$CHECK_RESULT" = success ]; then SUCCESS=true; fi
 
+          git add tools/finalize-evergreen-trial-buy10get1-v412.mjs package.json
           if [ "$SUCCESS" = true ]; then
             rm -f ci-last-error.txt
             git add -A ci-last-error.txt data.json line-sales-master.json package-lock.json
@@ -134,7 +163,7 @@ jobs:
             if [ "$SUCCESS" = true ]; then
               git commit -m "chore(line): persist verified catalog and clear resolved CI failure"
             else
-              git commit -m "chore(line): record complete catalog validation failure"
+              git commit -m "chore(line): persist confirmed trial rules and validation failure"
             fi
             for attempt in 1 2 3 4; do
               git pull --rebase origin main && git push origin HEAD:main && break
