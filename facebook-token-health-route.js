@@ -2,8 +2,9 @@
 
 const { app } = require("./server");
 const { facebookAuthHealth } = require("./facebook-page-token-bridge");
+require("./erp-publish-bridge");
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 let cached = {
   ok: false,
   configured: false,
