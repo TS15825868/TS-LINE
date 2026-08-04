@@ -21,20 +21,20 @@ Object.assign(drink30, {
   unit: '罐',
   price: 50,
   originalPrice: null,
-  offers: [{ qty: 12, total: 500, label: '買10送2' }],
-  promotionTexts: ['買10送2'],
-  quantityOptions: [1, 3, 5, 12],
+  offers: [{ qty: 11, total: 500, label: '買10送1' }],
+  promotionTexts: ['買10送1'],
+  quantityOptions: [1, 3, 5, 11],
   priceText: '$50 / 罐',
-  priceLabel: '售價50元，買10送2（共12罐500元）',
+  priceLabel: '售價50元，買10送1（共11罐500元）',
 });
 
 const drink180 = data.products.find((item) => item.id === 'guilu-drink-180');
 if (drink180) Object.assign(drink180, {
   price: 200,
-  offers: [{ qty: 12, total: 2000, label: '買10送2' }],
-  promotionTexts: ['買10送2'],
+  offers: [{ qty: 11, total: 2000, label: '買10送1' }],
+  promotionTexts: ['買10送1'],
   priceText: '$200 / 包',
-  priceLabel: '售價200元，買10送2（共12包2,000元）',
+  priceLabel: '售價200元，買10送1（共11包2,000元）',
 });
 const gao = data.products.find((item) => item.id === 'guilu-gao');
 if (gao) Object.assign(gao, {
@@ -74,7 +74,7 @@ data.trialCampaign = {
   limitRule: '每位顧客、聯絡電話及收件地址限申請一次',
   paymentRule: '試喝運費需先確認，以匯款方式完成',
   fulfillmentRule: '資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間',
-  publicPrice: '龜鹿飲30cc售價50元／罐；買10送2，共12罐500元',
+  publicPrice: '龜鹿飲30cc售價50元／罐；買10送1，共11罐500元',
   lineOnly: true,
   lineId: '@762jybnm',
   lineUrl: data.lineUrl || 'https://lin.ee/sHZW7NkR',
@@ -120,7 +120,7 @@ function trialCampaignReply() {
         trial.limitRule || "每位顧客、聯絡電話及收件地址限申請一次",
         trial.fulfillmentRule || "資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，另加物流配送時間",
         "",
-        trial.publicPrice || "正式售價50元／罐；買10送2，共12罐500元",
+        trial.publicPrice || "正式售價50元／罐；買10送1，共11罐500元",
       ].join("\\n"),
       [
         { label: "7-11運費60元", text: "試喝配送｜7-11" },

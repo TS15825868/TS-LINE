@@ -3,26 +3,26 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 const FINALIZER = 'node tools/finalize-evergreen-trial-buy10get1-v412.mjs';
 const files = ['server.js','test.js','function.test.js','catalog.test.js','security.test.js','README.md','package.json','line-sales-master.json'];
 const replacements = [
-  ['買10送2（共12罐500元）','買10送1（共11罐500元）'],
-  ['買10送2（共12包2,000元）','買10送1（共11包2,000元）'],
-  ['買10送2，共12罐500元','買10送1，共11罐500元'],
-  ['買10送2，共12包2,000元','買10送1，共11包2,000元'],
-  ['買10送2', '買10送1'],
-  ['共12罐500元','共11罐500元'],
-  ['共12包2,000元','共11包2,000元'],
+  ['買10送1（共11罐500元）','買10送1（共11罐500元）'],
+  ['買10送1（共11包2,000元）','買10送1（共11包2,000元）'],
+  ['買10送1，共11罐500元','買10送1，共11罐500元'],
+  ['買10送1，共11包2,000元','買10送1，共11包2,000元'],
+  ['買10送1', '買10送1'],
+  ['共11罐500元','共11罐500元'],
+  ['共11包2,000元','共11包2,000元'],
   ['12罐優惠組500元','11罐優惠組500元'],
   ['12包優惠組2,000元','11包優惠組2,000元'],
-  ['qty: 12, total: 500', 'qty: 11, total: 500'],
-  ['qty: 12, total: 2000', 'qty: 11, total: 2000'],
-  ['[1, 3, 5, 12]', '[1, 3, 5, 11]'],
+  ['qty: 11, total: 500', 'qty: 11, total: 500'],
+  ['qty: 11, total: 2000', 'qty: 11, total: 2000'],
+  ['[1, 3, 5, 11]', '[1, 3, 5, 11]'],
   ['calcItem(drink30, 12)', 'calcItem(drink30, 11)'],
   ['calcItem(drink30, 24)', 'calcItem(drink30, 22)'],
   ['addCart(state, drink30, 12)', 'addCart(state, drink30, 11)'],
   ['state.cart[0].qty, 13', 'state.cart[0].qty, 12'],
-  ['買10送2×1＋單罐×1', '買10送1×1＋單罐×1'],
-  ['買10送2×1', '買10送1×1'],
-  ['買10送2×2', '買10送1×2'],
-  ["offers.includes('買10送2')", "offers.includes('買10送1')"],
+  ['買10送1×1＋單罐×1', '買10送1×1＋單罐×1'],
+  ['買10送1×1', '買10送1×1'],
+  ['買10送1×2', '買10送1×2'],
+  ["offers.includes('買10送1')", "offers.includes('買10送1')"],
 ];
 
 for (const file of files) {
@@ -93,7 +93,7 @@ if (existsSync('package.json')) {
 }
 
 const verification = JSON.stringify(data);
-for (const bad of ['買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）']) {
+for (const bad of ['買10送1','共11罐500元','共11包2,000元','30cc／瓶（小玻璃瓶）']) {
   if (verification.includes(bad)) throw new Error(`LINE母本仍有舊資料：${bad}`);
 }
 console.log('PASS LINE OA v412：長期試喝與買10送1正式政策已完成。');
