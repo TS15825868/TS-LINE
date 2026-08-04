@@ -1,5 +1,5 @@
-name: LINE OA 正式試喝規則守門 v423
-run-name: LINE OA v423｜30cc玻璃罐・買10送1・約5至7個工作天出貨
+name: LINE OA 使用者確認試喝規則守門 v426
+run-name: LINE OA v426｜30cc玻璃罐・買10送1・約5至7個工作天出貨
 
 on:
   workflow_dispatch:
@@ -15,19 +15,19 @@ on:
       - 'package.json'
       - '.github/workflows/confirmed-trial-shipping-v423.yml'
   schedule:
-    - cron: '33 3 * * *'
+    - cron: '33 */6 * * *'
 
 permissions:
   contents: write
 
 concurrency:
-  group: line-confirmed-trial-shipping-v423
+  group: line-user-confirmed-trial-v426
   cancel-in-progress: true
 
 jobs:
   normalize-and-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -44,13 +44,13 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Apply confirmed LINE OA rules
+      - name: Apply user-confirmed LINE OA rules
         run: node tools/lock-confirmed-trial-shipping-v423.mjs
 
       - name: Synchronize website catalog
         run: npm run sync:catalog
 
-      - name: Reapply confirmed rules after synchronization
+      - name: Reapply user-confirmed rules after synchronization
         run: node tools/lock-confirmed-trial-shipping-v423.mjs
 
       - name: Run complete LINE OA validation
@@ -68,18 +68,19 @@ jobs:
           node tools/lock-confirmed-trial-shipping-v423.mjs
           git diff --check
 
-      - name: Persist official LINE OA state
+      - name: Persist final LINE OA state
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f ci-last-error.txt
           git add -A
           if git diff --cached --quiet; then
-            echo 'LINE OA is already aligned with the confirmed rules.'
+            echo 'LINE OA is already aligned with the user-confirmed rules.'
             exit 0
           fi
-          git commit -m 'chore(line): persist confirmed trial shipping rule v423'
+          git commit -m 'chore(line): persist user-confirmed trial rules v426'
           for attempt in 1 2 3 4; do
             git pull --rebase --autostash origin main && git push origin HEAD:main && break
             if [ "$attempt" -eq 4 ]; then exit 1; fi
