@@ -1128,6 +1128,7 @@ function detectWebsiteIntent(text) {
   if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
+  if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/我看了產品整理|幫我比較產品|產品差異|規格比較|想請你幫我比較|哪一種比較適合|適合我的|我目前是/.test(value)) return "recommend";
   if (/官網套餐|套餐搭配|搭配組合|搭配方式|料理搭配|熱飲.*燉湯|燉湯.*調飲/.test(value)) return "combo";
   if (/官網怎麼使用|產品使用方式|想了解.*使用方式|怎麼使用頁/.test(value)) return "usage";
@@ -1250,6 +1251,7 @@ async function handleMessage(event) {
   }
 
   const websiteIntent = detectWebsiteIntent(text);
+  if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
   if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
   if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
   if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
