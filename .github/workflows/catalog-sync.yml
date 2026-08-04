@@ -43,7 +43,7 @@ concurrency:
 jobs:
   validate-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 24
+    timeout-minutes: 30
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -58,28 +58,28 @@ jobs:
           cache: npm
 
       - name: Install locked dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Synchronize website catalog with retry
+        id: catalog_sync
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           success=0
-          for attempt in 1 2 3 4; do
-            echo "Catalog synchronization attempt ${attempt}/4"
-            if npm run sync:catalog; then
+          for attempt in 1 2 3; do
+            echo "Catalog synchronization attempt ${attempt}/3"
+            if npm run sync:catalog 2>&1 | tee -a /tmp/xjw-sync.log; then
               success=1
               break
             fi
-            sleep $((attempt * 8))
+            sleep $((attempt * 5))
           done
           test "$success" -eq 1
 
       - name: Run complete release, cart and ERP order checks
         id: release_checks
+        if: steps.catalog_sync.outcome == 'success'
         continue-on-error: true
         shell: bash
         run: |
@@ -99,38 +99,46 @@ jobs:
         if: always()
         shell: bash
         env:
+          SYNC_RESULT: ${{ steps.catalog_sync.outcome }}
           CHECK_RESULT: ${{ steps.release_checks.outcome }}
         run: |
           set -euo pipefail
           git config user.name "仙加味自動驗收"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if [ "$CHECK_RESULT" != "success" ]; then
+          SUCCESS=false
+          if [ "$SYNC_RESULT" = success ] && [ "$CHECK_RESULT" = success ]; then SUCCESS=true; fi
+
+          if [ "$SUCCESS" = true ]; then
+            rm -f ci-last-error.txt
+            git add -A ci-last-error.txt data.json line-sales-master.json package-lock.json
+          else
             {
               echo "commit=$(git rev-parse HEAD)"
               echo "recorded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
               echo "workflow=${GITHUB_WORKFLOW}"
               echo "run_id=${GITHUB_RUN_ID}"
+              echo "sync_result=${SYNC_RESULT}"
+              echo "check_result=${CHECK_RESULT}"
               echo
+              echo "=== catalog sync ==="
+              tail -n 160 /tmp/xjw-sync.log 2>/dev/null || true
+              echo
+              echo "=== complete checks ==="
               tail -n 240 /tmp/xjw-test.log 2>/dev/null || true
             } > ci-last-error.txt
             git add ci-last-error.txt
-          else
-            rm -f ci-last-error.txt
-            git add -A ci-last-error.txt data.json line-sales-master.json package-lock.json
           fi
 
-          if git diff --cached --quiet; then
-            echo "No synchronized or diagnostic changes."
-          else
-            if [ "$CHECK_RESULT" = "success" ]; then
+          if ! git diff --cached --quiet; then
+            if [ "$SUCCESS" = true ]; then
               git commit -m "chore(line): persist verified catalog and clear resolved CI failure"
             else
               git commit -m "chore(line): record complete catalog validation failure"
             fi
-            for attempt in 1 2 3; do
+            for attempt in 1 2 3 4; do
               git pull --rebase origin main && git push origin HEAD:main && break
-              if [ "$attempt" -eq 3 ]; then exit 1; fi
+              if [ "$attempt" -eq 4 ]; then exit 1; fi
               sleep $((attempt * 5))
             done
           fi
@@ -139,5 +147,8 @@ jobs:
         if: always()
         shell: bash
         env:
+          SYNC_RESULT: ${{ steps.catalog_sync.outcome }}
           CHECK_RESULT: ${{ steps.release_checks.outcome }}
-        run: test "$CHECK_RESULT" = "success"
+        run: |
+          test "$SYNC_RESULT" = success
+          test "$CHECK_RESULT" = success
