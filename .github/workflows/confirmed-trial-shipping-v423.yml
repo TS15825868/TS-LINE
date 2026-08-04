@@ -1,0 +1,87 @@
+name: LINE OA 正式試喝規則守門 v423
+run-name: LINE OA v423｜30cc玻璃罐・買10送1・約5至7個工作天出貨
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/lock-confirmed-trial-shipping-v423.mjs'
+      - 'tools/finalize-evergreen-trial-buy10get1-v412.mjs'
+      - 'tools/finalize-trial-production-lead-time-v415.mjs'
+      - 'tools/apply-evergreen-trial-campaign.mjs'
+      - 'data.json'
+      - 'line-sales-master.json'
+      - 'package.json'
+      - '.github/workflows/confirmed-trial-shipping-v423.yml'
+  schedule:
+    - cron: '33 3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: line-confirmed-trial-shipping-v423
+  cancel-in-progress: true
+
+jobs:
+  normalize-and-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Apply confirmed LINE OA rules
+        run: node tools/lock-confirmed-trial-shipping-v423.mjs
+
+      - name: Synchronize website catalog
+        run: npm run sync:catalog
+
+      - name: Reapply confirmed rules after synchronization
+        run: node tools/lock-confirmed-trial-shipping-v423.mjs
+
+      - name: Run complete LINE OA validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+          node test.js
+          node catalog.test.js
+          node function.test.js
+          node line-order-cart.test.js
+          node internal-inventory-seed.test.js
+          node internal-order-pricing.test.js
+          node internal-line-order-sync.test.js
+          node tools/lock-confirmed-trial-shipping-v423.mjs
+          git diff --check
+
+      - name: Persist official LINE OA state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'LINE OA is already aligned with the confirmed rules.'
+            exit 0
+          fi
+          git commit -m 'chore(line): persist confirmed trial shipping rule v423'
+          for attempt in 1 2 3 4; do
+            git pull --rebase --autostash origin main && git push origin HEAD:main && break
+            if [ "$attempt" -eq 4 ]; then exit 1; fi
+            sleep $((attempt * 5))
+          done
