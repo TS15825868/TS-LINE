@@ -1,5 +1,5 @@
 name: 仙加味資料同步與驗收
-run-name: 仙加味資料同步與驗收 v419｜${{ github.event_name }}｜${{ github.ref_name }}
+run-name: 仙加味資料同步與驗收 v420｜${{ github.event_name }}｜${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -60,7 +60,7 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Apply confirmed trial, price and production rules
+      - name: Apply confirmed trial and price rules
         run: |
           node tools/finalize-evergreen-trial-buy10get1-v412.mjs
           node tools/finalize-trial-production-lead-time-v415.mjs
@@ -117,14 +117,18 @@ jobs:
           node tools/finalize-trial-production-lead-time-v415.mjs
           node - <<'NODE'
           const fs = require('fs');
+          const official = '資料及運費確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間';
           for (const file of ['data.json','line-sales-master.json']) {
             const data = JSON.parse(fs.readFileSync(file,'utf8'));
             const text = JSON.stringify(data);
-            if (!String(data.trialCampaign?.fulfillmentRule || '').includes('製作加工約需5～7個工作天')) throw new Error(`${file} 缺少製作加工天數`);
-            if (!String(data.trialCampaign?.fulfillmentRule || '').includes('完成後才安排出貨')) throw new Error(`${file} 缺少完成後才出貨`);
-            for (const bad of ['約5～7個工作天出貨','買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）']) {
+            if (data.trialCampaign?.fulfillmentRule !== official) throw new Error(`${file} 出貨規則不一致`);
+            for (const bad of ['製作加工約需5～7個工作天','買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）']) {
               if (text.includes(bad)) throw new Error(`${file} 仍含舊內容：${bad}`);
             }
+            const d30 = data.products?.find?.((item) => item.id === 'guilu-drink-30') || data.products?.['guilu-drink-30'];
+            const d180 = data.products?.find?.((item) => item.id === 'guilu-drink-180') || data.products?.['guilu-drink-180'];
+            if (d30 && Array.isArray(d30.offers) && d30.offers[0]?.qty !== 11) throw new Error(`${file} 30cc買10送1錯誤`);
+            if (d180 && Array.isArray(d180.offers) && d180.offers[0]?.qty !== 11) throw new Error(`${file} 180cc買10送1錯誤`);
           }
           NODE
           git diff --check
@@ -168,7 +172,7 @@ jobs:
 
           if ! git diff --cached --quiet; then
             if [ "$SUCCESS" = true ]; then
-              git commit -m "chore(line): persist verified catalog and production lead time"
+              git commit -m "chore(line): persist verified catalog and confirmed trial shipping"
             else
               git commit -m "chore(line): persist validation failure diagnostics"
             fi
