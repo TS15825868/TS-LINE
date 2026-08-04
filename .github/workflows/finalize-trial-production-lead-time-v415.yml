@@ -1,0 +1,73 @@
+name: LINE OA 試喝製作天數正式同步
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "tools/finalize-trial-production-lead-time-v415.mjs"
+      - ".github/workflows/finalize-trial-production-lead-time-v415.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: line-trial-production-lead-time-v415
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply existing final campaign rules
+        run: |
+          node tools/apply-evergreen-trial-campaign.mjs
+          node tools/finalize-evergreen-trial-buy10get1-v412.mjs
+
+      - name: Apply final production lead-time wording
+        run: node tools/finalize-trial-production-lead-time-v415.mjs
+
+      - name: Verify LINE source and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check server.js
+          node --check tools/apply-evergreen-trial-campaign.mjs
+          node --check tools/finalize-evergreen-trial-buy10get1-v412.mjs
+          node --check tools/finalize-trial-production-lead-time-v415.mjs
+          node -e "const d=require('./data.json');if(!d.trialCampaign?.fulfillmentRule?.includes('製作加工約需5～7個工作天'))process.exit(1);if(/約5～7個工作天出貨/.test(JSON.stringify(d)))process.exit(1)"
+          node -e "const d=require('./line-sales-master.json');if(!d.trialCampaign?.fulfillmentRule?.includes('製作加工約需5～7個工作天'))process.exit(1)"
+          git diff --check
+
+      - name: Commit final LINE data
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data.json line-sales-master.json server.js package.json README.md diagnostics/line-evergreen-trial-v412.json
+          git add tools/apply-evergreen-trial-campaign.mjs tools/finalize-evergreen-trial-buy10get1-v412.mjs tools/finalize-trial-production-lead-time-v415.mjs
+          git add test.js function.test.js catalog.test.js security.test.js 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'LINE wording is already final.'
+          else
+            git commit -m 'fix(line): state production takes 5–7 business days before shipping'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
