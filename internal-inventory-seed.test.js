@@ -7,7 +7,7 @@ const catalog = readCatalog();
 assert.strictEqual(catalog.length, 6);
 const drink30 = catalog.find((product) => product.id === "guilu-drink-30");
 const fields = promotionFields(drink30);
-assert.deepStrictEqual(fields.offers, [{ qty: 12, total: 500, label: "買10送2" }]);
+assert.deepStrictEqual(fields.offers, [{ qty: 11, total: 500, label: "買10送1" }]);
 assert.strictEqual(fields.quoteOnly, false);
 
 let writes = 0;
@@ -35,14 +35,14 @@ const seededDrink30 = store.inventory.find((item) => item.productId === "guilu-d
 assert.strictEqual(seededDrink30.price, 50);
 assert.strictEqual(seededDrink30.stock, 24);
 assert.strictEqual(seededDrink30.reserved, 3);
-assert.deepStrictEqual(seededDrink30.offers, [{ qty: 12, total: 500, label: "買10送2" }]);
+assert.deepStrictEqual(seededDrink30.offers, [{ qty: 11, total: 500, label: "買10送1" }]);
 const paste = store.inventory.find((item) => item.productId === "guilu-gao");
-assert.strictEqual(paste.price, 1500);
-assert.strictEqual(paste.originalPrice, 1800);
+assert.strictEqual(paste.price, 1800);
+assert.strictEqual(paste.originalPrice, 2100);
 const jiao = store.inventory.find((item) => item.productId === "guilu-jiao");
 assert.strictEqual(jiao.price, 9600);
 assert.strictEqual(jiao.originalPrice, 12000);
 assert.strictEqual(jiao.quoteOnly, false);
 assert.ok(store.activities.at(-1).detail.includes("價格、優惠與規格"));
 
-console.log("PASS ERP inventory keeps stock while synchronizing six official prices and buy-ten-get-two promotions");
+console.log("PASS ERP inventory keeps stock while synchronizing six official prices and buy-ten-get-one promotions");
