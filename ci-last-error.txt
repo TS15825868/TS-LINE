@@ -1,12 +1,12 @@
-commit=085d02c65a24059477754054188292414a55db2c
-recorded_at=2026-08-04T19:03:07Z
+commit=5ec6643d572f37aa8a2c3c1fd7df50a05a12f8fb
+recorded_at=2026-08-04T19:04:19Z
 workflow=仙加味資料同步與驗收
-run_id=30941458748
+run_id=30941549668
 normalize_result=success
 sync_result=success
 renormalize_result=success
-check_result=failure
-contract_result=skipped
+check_result=success
+contract_result=failure
 
 === normalize ===
 PASS v423：只整理正式母本；製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。
@@ -41,7 +41,7 @@ PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留
 PASS current social policy, official pricing, buy10get1 and image safety
 PASS review gate resets all unpublished posts to pending review, clears live schedules, preserves published records, and schedules only after App approval
 PASS corrected post is pending review with a Wednesday 20:00 suggested slot
-Social weather automation rate limited; next check 2026-08-04T19:05:06.455Z
+Social weather automation rate limited; next check 2026-08-04T19:06:17.919Z
 PASS first 10 posts keep weekly Wednesday 20:00, review-gated weather checks, weekday 20:00 activation and HTTP 429 backoff
 PASS schedule repair installs 10 unique posts with one Wednesday 20:00 post per week
 PASS weekly Wednesday 20:00, conditional weather on other weekdays, and no weekend publishing
@@ -57,39 +57,25 @@ PASS LINE OA catalog 410.4: website fields, official sales fields, six products 
 LINE credentials are not configured. Set CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in the deployment environment.
 PASS full LINE OA function matrix v401.6 with official prices, combo promotion labels, buy-ten-get-two offers and three combos
 PASS LINE combo expansion, buy-ten-get-one pricing and ERP order subtotals
-node:assert:150
-  throw new AssertionError(obj);
-  ^
-
-AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
-+ actual - expected
-
-  [
-    {
-+     label: '買10送1',
-+     qty: 11,
--     label: '買10送2',
--     qty: 12,
-      total: 500
-    }
-  ]
-
-    at Object.<anonymous> (/home/runner/work/TS-LINE/TS-LINE/internal-inventory-seed.test.js:10:8)
-    at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at Object..js (node:internal/modules/cjs/loader:1913:10)
-    at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function._load (node:internal/modules/cjs/loader:1309:12)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
-  generatedMessage: true,
-  code: 'ERR_ASSERTION',
-  actual: [ { qty: 11, total: 500, label: '買10送1' } ],
-  expected: [ { qty: 12, total: 500, label: '買10送2' } ],
-  operator: 'deepStrictEqual',
-  diff: 'simple'
-}
-
-Node.js v22.23.1
+PASS ERP inventory keeps stock while synchronizing six official prices and buy-ten-get-one promotions
+PASS ERP order pricing, official buy-ten-get-two promotion, manual overrides and total normalization
+PASS priced orders, buy-ten-get-two subtotal, reservations, shipment and cancellation lifecycle
 
 === contract ===
+[stdin]:16
+  if (Array.isArray(d30.offers) && d30.offers[0]?.qty !== 11) throw new Error(`${file} 30cc買10送1錯誤`);
+                                                              ^
+
+Error: line-sales-master.json 30cc買10送1錯誤
+    at [stdin]:16:69
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [stdin]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_stdin:53:5
+    at Socket.<anonymous> (node:internal/process/execution:201:5)
+    at Socket.emit (node:events:531:35)
+
+Node.js v22.23.1
