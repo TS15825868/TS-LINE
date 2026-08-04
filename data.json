@@ -148,72 +148,14 @@
   },
   "products": [
     {
-      "id": "guilu-gao",
-      "series": "仙加味・龜鹿",
-      "name": "龜鹿膏",
-      "displayName": "龜鹿膏",
-      "size": "100g／罐",
-      "image": "images/products-v3/guilu-gao.jpg?v=408.9",
-      "dmImage": "images/dm-final/01_guilu-gao-100g-dm.jpg?v=408.9",
-      "description": "100g小罐設計，將鹿角、龜板與枸杞、紅棗、黃耆、粉光蔘整理成方便取用的膏狀型態。用途方向以固定日常食補為主，可直接取用，也可用熱水化開。",
-      "ingredients": [
-        "鹿角萃取物",
-        "龜板萃取物",
-        "枸杞",
-        "紅棗",
-        "黃耆",
-        "粉光蔘"
-      ],
-      "usage": [
-        "每天一次，每次一小匙",
-        "初次食用可先從半匙開始",
-        "可直接食用",
-        "或加入熱水化開",
-        "調至適合溫度後飲用",
-        "可安排於早上或空腹前後",
-        "避免睡前食用"
-      ],
-      "storage": [
-        "未開封置於陰涼乾燥處",
-        "也可保存於5°C以下冷藏",
-        "開封後請密封冷藏，並使用乾淨湯匙取用"
-      ],
-      "fit": "想固定安排、喜歡小匙取用或熱水化開的人",
-      "page": "product-guilu-gao.html",
-      "purpose": "固定日常食補",
-      "purposeDirection": "適合希望建立固定日常節奏的人；可直接食用或以熱水化開，建議安排於早上或空腹前後，避免睡前食用。",
-      "aliases": [
-        "龜鹿膏",
-        "膏",
-        "龜鹿膏100g"
-      ],
-      "spec": "100g",
-      "price": 1800,
-      "originalPrice": 2100,
-      "unit": "罐",
-      "offers": [],
-      "promotionTexts": [
-        "優惠價1,800元"
-      ],
-      "quantityOptions": [
-        1,
-        2,
-        3,
-        5
-      ],
-      "priceText": "$1,800 / 罐",
-      "priceLabel": "售價2,100元，優惠價1,800元",
-      "originalPriceText": "$2,100"
-    },
-    {
       "id": "guilu-drink-30",
       "series": "仙加味・龜鹿",
       "name": "龜鹿飲30cc玻璃罐",
       "displayName": "龜鹿飲30cc玻璃罐",
       "size": "30cc／罐（小玻璃罐）",
-      "image": "images/products-v3/guilu-drink-30.jpg?v=408.9",
-      "dmImage": "images/dm-final/02_guilu-drink-30cc-dm.jpg?v=408.9",
-      "description": "30cc小玻璃罐，把龜鹿系列整理成方便即飲的液態型態，適合第一次接觸、外出攜帶與工作空檔安排。",
+      "image": "images/products-v3/guilu-drink-30.jpg?v=410.4",
+      "dmImage": "images/dm-final/02_guilu-drink-30cc-dm.jpg?v=410.4",
+      "description": "30cc小玻璃罐，維持原有尺寸、裸罐、無貼紙，適合第一次接觸、外出攜帶與工作空檔安排。",
       "ingredients": [
         "水",
         "鹿角萃取物",
@@ -244,7 +186,8 @@
         "龜鹿飲30cc",
         "30cc",
         "玻璃罐",
-        "小玻璃罐"
+        "小玻璃罐",
+        "玻璃瓶"
       ],
       "spec": "30cc／罐（小玻璃罐）",
       "price": 50,
@@ -276,8 +219,8 @@
       "name": "龜鹿飲180cc鋁袋",
       "displayName": "龜鹿飲180cc鋁袋",
       "size": "180cc／包（鋁袋）",
-      "image": "images/products-v3/guilu-drink-180.jpg?v=408.9",
-      "dmImage": "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=408.9",
+      "image": "images/products-v3/guilu-drink-180.jpg?v=410.4",
+      "dmImage": "images/dm-final/03_guilu-drink-180cc-dm.jpg?v=410.4",
       "description": "180cc鋁袋包裝，把龜鹿膏的成分方向整理成方便即飲的液態型態。適合居家、工作空檔或偏好一次安排較完整份量的人。",
       "ingredients": [
         "水",
@@ -333,7 +276,67 @@
         11
       ],
       "priceText": "$200 / 包",
-      "priceLabel": "售價200元，買10送1（共11包2,000元）"
+      "priceLabel": "售價200元，買10送1（共11包2,000元）",
+      "specification": "180cc／包（鋁袋）"
+    },
+    {
+      "id": "guilu-gao",
+      "series": "仙加味・龜鹿",
+      "name": "龜鹿膏",
+      "displayName": "龜鹿膏",
+      "size": "100g／罐",
+      "image": "images/products-v3/guilu-gao.jpg?v=410.4",
+      "dmImage": "images/dm-final/01_guilu-gao-100g-dm.jpg?v=410.4",
+      "description": "100g小罐設計，將鹿角、龜板與枸杞、紅棗、黃耆、粉光蔘整理成方便取用的膏狀型態。用途方向以固定日常食補為主，可直接取用，也可用熱水化開。",
+      "ingredients": [
+        "鹿角萃取物",
+        "龜板萃取物",
+        "枸杞",
+        "紅棗",
+        "黃耆",
+        "粉光蔘"
+      ],
+      "usage": [
+        "每天一次，每次一小匙",
+        "初次食用可先從半匙開始",
+        "可直接食用",
+        "或加入熱水化開",
+        "調至適合溫度後飲用",
+        "可安排於早上或空腹前後",
+        "避免睡前食用"
+      ],
+      "storage": [
+        "未開封置於陰涼乾燥處",
+        "也可保存於5°C以下冷藏",
+        "開封後請密封冷藏，並使用乾淨湯匙取用"
+      ],
+      "fit": "想固定安排、喜歡小匙取用或熱水化開的人",
+      "page": "product-guilu-gao.html",
+      "purpose": "固定日常食補",
+      "purposeDirection": "適合希望建立固定日常節奏的人；可直接食用或以熱水化開，建議安排於早上或空腹前後，避免睡前食用。",
+      "aliases": [
+        "龜鹿膏",
+        "膏",
+        "龜鹿膏100g"
+      ],
+      "spec": "100g",
+      "price": 1800,
+      "originalPrice": 2100,
+      "unit": "罐",
+      "offers": [],
+      "promotionTexts": [
+        "優惠價1,800元"
+      ],
+      "quantityOptions": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "priceText": "$1,800 / 罐",
+      "priceLabel": "售價2,100元，優惠價1,800元",
+      "originalPriceText": "$2,100",
+      "specification": "100g／罐"
     },
     {
       "id": "guilu-tangkuai",
@@ -341,8 +344,8 @@
       "name": "龜鹿湯塊75g",
       "displayName": "龜鹿湯塊",
       "size": "75g／盒｜8塊裝｜每塊約9.375g",
-      "image": "images/products-v3/guilu-tangkuai.jpg?v=408.9",
-      "dmImage": "images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=408.9",
+      "image": "images/products-v3/guilu-tangkuai.jpg?v=410.4",
+      "dmImage": "images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=410.4",
       "description": "75g盒裝、8塊設計，每塊約9.375g。用途方向以沖泡與燉湯食補為主，可用熱水、保溫壺或家常湯品安排。",
       "ingredients": [
         "鹿角萃取物",
@@ -391,8 +394,8 @@
       "name": "龜鹿膠",
       "displayName": "龜鹿膠",
       "size": "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
-      "image": "images/products-v3/guilu-jiao.jpg?v=408.9",
-      "dmImage": "images/dm-final/06_guilu-jiao-600g-dm.jpg?v=408.9",
+      "image": "images/products-v3/guilu-jiao.jpg?v=410.4",
+      "dmImage": "images/dm-final/06_guilu-jiao-600g-dm.jpg?v=410.4",
       "description": "600g一斤裝、32塊設計，每塊約18.75g。用途方向以傳統大規格食補為主，適合固定備用、家庭安排、熱水化開或燉湯。",
       "ingredients": [
         "鹿角萃取物",
@@ -442,11 +445,11 @@
     {
       "id": "luerong-fen",
       "series": "仙加味・鹿茸",
-      "name": "鹿茸粉",
+      "name": "鹿茸粉75g",
       "displayName": "鹿茸粉",
       "size": "75g／罐",
-      "image": "images/products-v3/luerong-fen.jpg?v=408.9",
-      "dmImage": "images/dm-final/04_luerong-fen-75g-dm.jpg?v=408.9",
+      "image": "images/products-v3/luerong-fen.jpg?v=410.4",
+      "dmImage": "images/dm-final/04_luerong-fen-75g-dm.jpg?v=410.4",
       "description": "75g單方鹿茸粉，粉狀型態方便自行調整。用途方向以自行搭配食補為主，可加入溫開水、牛奶、豆漿或其他飲品。",
       "ingredients": [
         "鹿茸"
@@ -483,7 +486,8 @@
         5
       ],
       "priceText": "$2,000 / 罐",
-      "priceLabel": "售價2,000元"
+      "priceLabel": "售價2,000元",
+      "specification": "75g／罐"
     }
   ],
   "recipes": [
@@ -1005,7 +1009,7 @@
   ],
   "version": "401.6",
   "websiteFlow": "官網只導入 LINE OA，不使用 Tidio 網站聊天。",
-  "updatedAt": "2026-07-25",
+  "updatedAt": "2026-08-04",
   "referenceKnowledge": {
     "updatedAt": "2026-07-08",
     "sourcesPage": "https://ts15825868.github.io/xianjiawei/sources.html",
@@ -1040,14 +1044,14 @@
       "sourceUrl": "https://ts15825868.github.io/xianjiawei/sources.html"
     }
   },
-  "catalogVersion": "408.9",
+  "catalogVersion": "410.4",
   "catalogSource": {
     "repository": "TS15825868/xianjiawei",
     "branch": "main",
     "file": "data.json",
     "role": "官網與 LINE OA 共用公開產品資料來源"
   },
-  "catalogSyncedAt": "2026-07-25",
+  "catalogSyncedAt": "2026-08-04",
   "lineAssetsVersion": "401.6",
   "lineBotVersion": "v401.6",
   "runtime": {
@@ -1093,7 +1097,9 @@
       "mascot": "官網正式版仙加味小老闆",
       "partners": [
         "小鹿娃娃",
-        "小烏龜娃娃"
+        "小烏龜娃娃",
+        "灰色小河馬娃娃",
+        "米色小鹿安撫巾"
       ],
       "realProductImagesOnly": true,
       "noProductRedraw": true,
@@ -1205,7 +1211,7 @@
     "version": "401.6",
     "scope": "TS-LINE/main LINE OA dedicated mascot assets",
     "aspectRatio": "1:1",
-    "verifiedAt": "2026-07-25",
+    "verifiedAt": "2026-08-04",
     "images": {
       "brand": {
         "file": "public/mascot/brand.jpg",
@@ -1272,8 +1278,8 @@
       }
     }
   },
-  "salesMasterVersion": "2026-08-02-v11",
-  "salesMasterSource": "仙加味・龜鹿系列最新正式售價、優惠、活動、包裝與角色政策",
+  "salesMasterVersion": "2026-08-04-v14-buy10get1",
+  "salesMasterSource": "仙加味・龜鹿系列最新正式售價、長期試喝、買10送1、包裝與角色政策",
   "trialCampaign": {
     "id": "guilu-drink-30-evergreen-trial",
     "active": true,
