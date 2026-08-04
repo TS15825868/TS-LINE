@@ -14,10 +14,10 @@
     "雙北親送"
   ],
   "shippingNotes": {
-    "宅配": "可安排宅配寄送，實際出貨與到貨時間會依訂單順序確認，也可視情況安排貨到付款。",
-    "7-11賣貨便": "可走 7-11 賣貨便店到店，也可安排貨到付款，適合超商取貨。",
+    "宅配": "正式訂單資料與付款方式確認後採接單安排製作，約5～7個工作天出貨；試喝組郵局宅配運費100元。",
+    "7-11賣貨便": "正式訂單資料與付款方式確認後採接單安排製作，約5～7個工作天出貨；試喝組7-11店到店運費60元。",
     "雙北親送": "雙北地區可協助親送，實際區域與時間請先私訊確認。",
-    "貨到付款": "目前可配合宅配或 7-11 賣貨便店到店貨到付款；若要安排，請先告知想購買的品項與數量。"
+    "貨到付款": "正式訂單可由客服確認是否安排貨到付款；試喝組僅收運費並需先確認，不使用貨到付款。"
   },
   "offers": {
     "comboOffers": [
@@ -188,12 +188,12 @@
         "龜鹿膏100g"
       ],
       "spec": "100g",
-      "price": 1500,
-      "originalPrice": 1800,
+      "price": 1800,
+      "originalPrice": 2100,
       "unit": "罐",
       "offers": [],
       "promotionTexts": [
-        "優惠價1,500元"
+        "優惠價1,800元"
       ],
       "quantityOptions": [
         1,
@@ -201,19 +201,19 @@
         3,
         5
       ],
-      "priceText": "$1,500 / 罐",
-      "priceLabel": "售價1,800元，優惠價1,500元",
-      "originalPriceText": "$1,800"
+      "priceText": "$1,800 / 罐",
+      "priceLabel": "售價2,100元，優惠價1,800元",
+      "originalPriceText": "$2,100"
     },
     {
       "id": "guilu-drink-30",
       "series": "仙加味・龜鹿",
-      "name": "龜鹿飲30cc玻璃瓶",
-      "displayName": "龜鹿飲30cc玻璃瓶",
-      "size": "30cc／瓶（小玻璃瓶）",
+      "name": "龜鹿飲30cc玻璃罐",
+      "displayName": "龜鹿飲30cc玻璃罐",
+      "size": "30cc／罐（小玻璃罐）",
       "image": "images/products-v3/guilu-drink-30.jpg?v=408.9",
       "dmImage": "images/dm-final/02_guilu-drink-30cc-dm.jpg?v=408.9",
-      "description": "30cc小玻璃瓶，把龜鹿系列整理成方便即飲的液態型態，適合輕巧即飲、外出攜帶與工作空檔安排。",
+      "description": "30cc小玻璃罐，維持原有尺寸、裸罐、無貼紙，適合第一次接觸、外出攜帶與工作空檔安排。",
       "ingredients": [
         "水",
         "鹿角萃取物",
@@ -224,51 +224,51 @@
         "粉光蔘"
       ],
       "usage": [
-        "每日一瓶",
-        "開瓶即可飲用",
+        "每日一罐",
+        "開罐即可飲用",
         "可隔水加熱或溫熱後飲用",
         "避免冰飲",
-        "開瓶後請儘速飲用完畢"
+        "開罐後請儘速飲用完畢"
       ],
       "storage": [
         "未開封置於陰涼乾燥處",
         "避免高溫與日光直射",
-        "開瓶後請儘速飲用完畢"
+        "開罐後請儘速飲用完畢"
       ],
-      "fit": "想方便即飲、外出攜帶或在工作空檔飲用的人",
+      "fit": "想方便即飲、第一次接觸、外出攜帶或在工作空檔飲用的人",
       "page": "product-guilu-drink-30cc.html",
       "purpose": "輕巧即飲食補",
-      "purposeDirection": "適合外出攜帶、工作空檔或偏好小玻璃瓶即飲的人。",
+      "purposeDirection": "適合第一次接觸、外出攜帶、工作空檔或偏好小玻璃罐即飲的人。",
       "aliases": [
         "龜鹿飲",
         "龜鹿飲30cc",
         "30cc",
-        "玻璃瓶",
-        "小玻璃瓶"
+        "玻璃罐",
+        "小玻璃罐"
       ],
-      "spec": "30cc／瓶（小玻璃瓶）",
+      "spec": "30cc／罐（小玻璃罐）",
       "price": 50,
       "originalPrice": null,
-      "unit": "瓶",
+      "unit": "罐",
       "offers": [
         {
-          "qty": 12,
+          "qty": 11,
           "total": 500,
-          "label": "買10送2"
+          "label": "買10送1"
         }
       ],
       "promotionTexts": [
-        "買10送2"
+        "買10送1"
       ],
       "quantityOptions": [
         1,
         3,
         5,
-        12
+        11
       ],
-      "priceText": "$50 / 瓶",
-      "priceLabel": "售價50元，買10送2",
-      "specification": "30cc／瓶（小玻璃瓶）"
+      "priceText": "$50 / 罐",
+      "priceLabel": "售價50元，買10送1（共11罐500元）",
+      "specification": "30cc／罐（小玻璃罐）"
     },
     {
       "id": "guilu-drink-180",
@@ -318,22 +318,22 @@
       "unit": "包",
       "offers": [
         {
-          "qty": 12,
+          "qty": 11,
           "total": 2000,
-          "label": "買10送2"
+          "label": "買10送1"
         }
       ],
       "promotionTexts": [
-        "買10送2"
+        "買10送1"
       ],
       "quantityOptions": [
         1,
         3,
         5,
-        12
+        11
       ],
       "priceText": "$200 / 包",
-      "priceLabel": "售價200元，買10送2"
+      "priceLabel": "售價200元，買10送1（共11包2,000元）"
     },
     {
       "id": "guilu-tangkuai",
@@ -1273,5 +1273,33 @@
     }
   },
   "salesMasterVersion": "2026-08-02-v11",
-  "salesMasterSource": "仙加味・龜鹿系列最新正式售價、優惠、活動、包裝與角色政策"
+  "salesMasterSource": "仙加味・龜鹿系列最新正式售價、優惠、活動、包裝與角色政策",
+  "trialCampaign": {
+    "id": "guilu-drink-30-evergreen-trial",
+    "active": true,
+    "evergreen": true,
+    "title": "龜鹿飲30cc試喝組",
+    "contents": "30cc小玻璃罐×3罐",
+    "productFee": 0,
+    "productFeeText": "試喝品免費",
+    "shippingOptions": [
+      {
+        "id": "store",
+        "label": "7-11店到店",
+        "fee": 60
+      },
+      {
+        "id": "home",
+        "label": "郵局宅配",
+        "fee": 100
+      }
+    ],
+    "limitRule": "每位顧客、聯絡電話及收件地址限申請一次",
+    "paymentRule": "試喝運費需先確認並完成付款，試喝組不使用貨到付款",
+    "fulfillmentRule": "資料及運費確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間",
+    "publicPrice": "龜鹿飲30cc售價50元／罐；買10送1，共11罐500元",
+    "lineOnly": true,
+    "lineId": "@762jybnm",
+    "lineUrl": "https://lin.ee/sHZW7NkR"
+  }
 }

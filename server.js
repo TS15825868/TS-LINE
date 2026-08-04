@@ -16,7 +16,7 @@ const path = require("path");
 
 const VERSION = "v401.6";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
-const ORDER_NOTICE = "仙加味五大產品型態、六項正式規格皆可詢問與下單；實際庫存、活動與出貨時間由客服確認。";
+const ORDER_NOTICE = "訂單資料與付款方式確認後採接單安排製作，約5～7個工作天出貨；不含例假日及物流配送時間。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
 const STATE_TTL_MS = Number(process.env.STATE_TTL_MS || 24 * 60 * 60 * 1000);
@@ -193,6 +193,7 @@ function buttonAction(button) {
 
 function mainQuick() {
   return [
+    { label: "申請試喝", text: "申請試喝" },
     { label: "看產品", text: "看產品" },
     { label: "價格方案", text: "價格方案" },
     { label: "幫我推薦", text: "幫我推薦" },
@@ -844,12 +845,71 @@ function faqReply() {
 function detectProduct(text) {
   const raw = String(text || "").replace(/[【】\[\]（）()「」『』\s]/g, "");
   if (/龜鹿飲.*180|180cc|鋁袋/.test(raw)) return getProduct("guilu-drink-180");
-  if (/龜鹿飲.*30|30cc|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");
+  if (/龜鹿飲.*30|30cc|玻璃罐|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");
   if (/龜鹿膏/.test(raw)) return getProduct("guilu-gao");
   if (/龜鹿湯塊|湯塊/.test(raw)) return getProduct("guilu-tangkuai");
   if (/龜鹿膠|一斤裝|600g/.test(raw)) return getProduct("guilu-jiao");
   if (/鹿茸粉/.test(raw)) return getProduct("luerong-fen");
   return null;
+}
+
+
+function trialCampaignReply() {
+  const trial = DATA.trialCampaign || {};
+  return {
+    type: "flex",
+    altText: trial.title || "龜鹿飲30cc試喝組",
+    contents: mascotBubble(
+      trial.title || "龜鹿飲30cc試喝組",
+      [
+        "內容：" + (trial.contents || "30cc小玻璃罐×3罐"),
+        trial.productFeeText || "試喝品免費",
+        "7-11店到店運費60元",
+        "郵局宅配運費100元",
+        "",
+        trial.limitRule || "每位顧客、聯絡電話及收件地址限申請一次",
+        trial.fulfillmentRule || "資料及運費確認後約5～7個工作天出貨",
+        "",
+        trial.publicPrice || "正式售價50元／罐；買10送1，共11罐500元",
+      ].join("\n"),
+      [
+        { label: "7-11運費60元", text: "試喝配送｜7-11" },
+        { label: "宅配運費100元", text: "試喝配送｜宅配" },
+        { label: "看正式售價", text: "價格方案" },
+      ],
+      "service"
+    ),
+  };
+}
+
+function startTrialCheckout(state, shippingChoice) {
+  const isStore = /7-11/.test(shippingChoice);
+  const shipping = isStore ? "7-11賣貨便" : "宅配";
+  const fee = isStore ? 60 : 100;
+  state.cart = [{
+    id: "guilu-drink-30-trial",
+    name: "龜鹿飲30cc試喝組（3罐）",
+    qty: 1,
+    unit: "組",
+    total: fee,
+    label: "試喝品免費｜" + shipping + "運費" + fee + "元",
+    trial: true,
+  }];
+  state.checkout = {
+    step: "name",
+    name: "",
+    phone: "",
+    payment: "匯款",
+    shipping,
+    address: "",
+    trial: true,
+    trialFee: fee,
+  };
+  return flexCard(
+    "申請試喝｜第一步",
+    "龜鹿飲30cc小玻璃罐×3罐，試喝品免費；本次僅收" + shipping + "運費" + fee + "元。\n\n請直接回覆收件人姓名。",
+    [{ label: "取消", text: "取消" }]
+  );
 }
 
 function startCheckout(state) {
@@ -914,6 +974,14 @@ async function continueCheckout(event, state, text) {
       return reply(event.replyToken, textMsg("電話格式不完整，請輸入台灣手機或市內電話，例如 0912345678。", [{ label: "取消", text: "取消" }]));
     }
     checkout.phone = phone;
+    if (checkout.trial) {
+      checkout.step = "address";
+      return reply(event.replyToken, flexCard(
+        "第三步｜地址或門市",
+        checkout.shipping === "7-11賣貨便" ? "請回覆7-11門市名稱或門市地址。" : "請回覆完整收件地址。",
+        [{ label: "取消", text: "取消" }]
+      ));
+    }
     checkout.step = "payment";
     return reply(event.replyToken, textMsg("請選擇付款方式。", [
       { label: "現金付款", text: "現金付款" },
@@ -983,6 +1051,8 @@ async function continueCheckout(event, state, text) {
       cart: state.cart,
       total: cartTotal(state.cart),
       ...checkout,
+      orderType: checkout.trial ? "trial" : "purchase",
+      campaignId: checkout.trial ? "guilu-drink-30-evergreen-trial" : "",
       createdAt: new Date().toISOString(),
     };
 
@@ -1048,6 +1118,7 @@ function detectWebsiteIntent(text) {
   const value = String(text || "").trim();
   if (!value) return "";
 
+  if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/我看了產品整理|幫我比較產品|產品差異|規格比較|想請你幫我比較|哪一種比較適合|適合我的|我目前是/.test(value)) return "recommend";
   if (/官網套餐|套餐搭配|搭配組合|搭配方式|料理搭配|熱飲.*燉湯|燉湯.*調飲/.test(value)) return "combo";
   if (/官網怎麼使用|產品使用方式|想了解.*使用方式|怎麼使用頁/.test(value)) return "usage";
@@ -1075,6 +1146,13 @@ async function handleMessage(event) {
 
   const comboDetailMatch = text.match(/^(?:搭配方案|搭配組數)｜(\d+)$/);
   if (comboDetailMatch) return reply(event.replyToken, comboQtyMenu(comboDetailMatch[1]));
+
+  const trialShippingMatch = text.match(/^試喝配送｜(.+)$/);
+  if (trialShippingMatch) return reply(event.replyToken, startTrialCheckout(state, trialShippingMatch[1]));
+
+  if (/^(申請試喝|我要試喝|試喝|試喝組|龜鹿飲試喝)$/.test(text)) {
+    return reply(event.replyToken, trialCampaignReply());
+  }
 
   if (state.checkout) return continueCheckout(event, state, text);
 
@@ -1163,6 +1241,7 @@ async function handleMessage(event) {
   }
 
   const websiteIntent = detectWebsiteIntent(text);
+  if (websiteIntent === "trial") return reply(event.replyToken, trialCampaignReply());
   if (websiteIntent === "recommend") return reply(event.replyToken, recommendReply());
   if (websiteIntent === "combo") return reply(event.replyToken, comboMenuReply());
   if (websiteIntent === "usage") return reply(event.replyToken, usageChooserReply());
