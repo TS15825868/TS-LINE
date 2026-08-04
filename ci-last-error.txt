@@ -1,5 +1,35 @@
-commit=1865aaa8519592d543ffc90dd9393c11bc7c1a32
-recorded_at=2026-08-04T18:18:03Z
+commit=b0b31455dd53951af2734a5532dec364dad6dd52
+recorded_at=2026-08-04T18:25:53Z
 workflow=仙加味資料同步與驗收
-run_id=30937832650
+run_id=30938449368
+sync_result=success
+check_result=failure
+contract_result=skipped
 
+=== catalog sync ===
+
+> xianjiawei-lineoa@6.1.5 sync:catalog
+> node tools/sync_website_catalog.js --write && node tools/sync_sales_master.js --write && node tools/finalize-evergreen-trial-buy10get1-v412.mjs
+
+SYNCED LINE OA data.json 401.6 from website catalog 410.4
+SYNCED LINE OA sales master 2026-08-04-v14-buy10get1
+PASS LINE OA：長期試喝、30cc／180cc買10送1，以及製作加工5～7個工作天後才出貨的規則已完成。
+
+=== complete checks ===
+
+> xianjiawei-lineoa@6.1.5 pretest
+> node tools/apply-evergreen-trial-campaign.mjs && node tools/repair-evergreen-trial-tests.mjs && node tools/finalize-evergreen-trial-buy10get1-v412.mjs
+
+PASS：LINE OA長期試喝、正式售價、5～7個工作天與小玻璃罐名稱已套用。
+PASS：LINE OA測試已同步龜鹿膏2,100／1,800、30cc小玻璃罐、12罐500元及長期試喝入口。
+file:///home/runner/work/TS-LINE/TS-LINE/tools/finalize-evergreen-trial-buy10get1-v412.mjs:148
+  if (verification.includes(bad)) throw new Error(`LINE母本仍有舊資料：${bad}`);
+                                        ^
+
+Error: LINE母本仍有舊資料：約5～7個工作天出貨
+    at file:///home/runner/work/TS-LINE/TS-LINE/tools/finalize-evergreen-trial-buy10get1-v412.mjs:148:41
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.1
