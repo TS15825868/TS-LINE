@@ -31,6 +31,7 @@ patch('test.js', [
   ['{ total: 50, label: "單瓶×1" }', '{ total: 50, label: "單罐×1" }'],
   ['"買10送2×1＋單瓶×1"', '"買10送1×1＋單罐×1"'],
   ['"買10送2×1＋單罐×1"', '"買10送1×1＋單罐×1"'],
+  ['assert.deepStrictEqual(calcItem(drink180, 12), { total: 2000, label: "買10送1×1" });', 'assert.deepStrictEqual(calcItem(drink180, 11), { total: 2000, label: "買10送1×1" });'],
 ]);
 
 patch('function.test.js', [
