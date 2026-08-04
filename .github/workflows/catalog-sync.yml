@@ -1,4 +1,5 @@
 name: 仙加味資料同步與驗收
+run-name: 仙加味資料同步與驗收｜${{ github.event_name }}｜${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -42,7 +43,7 @@ concurrency:
 jobs:
   validate-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 16
+    timeout-minutes: 24
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -56,31 +57,33 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install and repair dependency lock
-        run: npm install --ignore-scripts --no-audit --no-fund
-
-      - name: Sync website catalog
-        run: npm run sync:catalog
-
-      - name: Commit synchronized files immediately
+      - name: Install locked dependencies
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- data.json package-lock.json; then
-            echo "Catalog and dependency lock already synchronized"
-            exit 0
-          fi
-          git config user.name "仙加味自動同步"
-          git config user.email "actions@users.noreply.github.com"
-          git add data.json package-lock.json
-          git commit -m "chore: auto-sync catalog and dependency lock"
-          git pull --rebase origin main
-          git push origin main
+          npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Run complete release, cart and ERP order checks
+      - name: Synchronize website catalog with retry
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
+          success=0
+          for attempt in 1 2 3 4; do
+            echo "Catalog synchronization attempt ${attempt}/4"
+            if npm run sync:catalog; then
+              success=1
+              break
+            fi
+            sleep $((attempt * 8))
+          done
+          test "$success" -eq 1
+
+      - name: Run complete release, cart and ERP order checks
+        id: release_checks
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
           {
             npm test &&
             node test.js &&
@@ -91,29 +94,50 @@ jobs:
             node internal-order-pricing.test.js &&
             node internal-line-order-sync.test.js
           } 2>&1 | tee /tmp/xjw-test.log
-          status=${PIPESTATUS[0]}
-          set -e
 
+      - name: Persist synchronized files and validation result
+        if: always()
+        shell: bash
+        env:
+          CHECK_RESULT: ${{ steps.release_checks.outcome }}
+        run: |
+          set -euo pipefail
           git config user.name "仙加味自動驗收"
-          git config user.email "actions@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if [ "$status" -ne 0 ]; then
+          if [ "$CHECK_RESULT" != "success" ]; then
             {
               echo "commit=$(git rev-parse HEAD)"
               echo "recorded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo "workflow=${GITHUB_WORKFLOW}"
+              echo "run_id=${GITHUB_RUN_ID}"
               echo
-              tail -n 200 /tmp/xjw-test.log
+              tail -n 240 /tmp/xjw-test.log 2>/dev/null || true
             } > ci-last-error.txt
             git add ci-last-error.txt
-            git commit -m "chore: record latest CI failure" || true
-            git pull --rebase origin main
-            git push origin main
-            exit "$status"
+          else
+            rm -f ci-last-error.txt
+            git add -A ci-last-error.txt data.json line-sales-master.json package-lock.json
           fi
 
-          if [ -f ci-last-error.txt ]; then
-            git rm ci-last-error.txt
-            git commit -m "chore: clear resolved CI failure"
-            git pull --rebase origin main
-            git push origin main
+          if git diff --cached --quiet; then
+            echo "No synchronized or diagnostic changes."
+          else
+            if [ "$CHECK_RESULT" = "success" ]; then
+              git commit -m "chore(line): persist verified catalog and clear resolved CI failure"
+            else
+              git commit -m "chore(line): record complete catalog validation failure"
+            fi
+            for attempt in 1 2 3; do
+              git pull --rebase origin main && git push origin HEAD:main && break
+              if [ "$attempt" -eq 3 ]; then exit 1; fi
+              sleep $((attempt * 5))
+            done
           fi
+
+      - name: Fail only after diagnostics are persisted
+        if: always()
+        shell: bash
+        env:
+          CHECK_RESULT: ${{ steps.release_checks.outcome }}
+        run: test "$CHECK_RESULT" = "success"
