@@ -9,6 +9,8 @@ on:
       - 'config/official-products.json'
       - 'data.json'
       - 'line-sales-master.json'
+      - 'package.json'
+      - 'package-lock.json'
       - 'product-sales-master.js'
       - 'server.js'
       - 'line-image-safety.js'
@@ -31,12 +33,15 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: npm
+      - name: 安裝正式依賴
+        run: npm ci --ignore-scripts
       - name: 套用正式出貨政策
         run: node tools/lock-confirmed-trial-shipping-v423.mjs
       - name: 正規化六項正式產品
