@@ -10,6 +10,8 @@ const {
   CLEAN_DRINK_IMAGE_URL,
   applyImageSafety,
   patchMessages,
+  healthPayload,
+  HEALTH_PATH,
 } = require("./line-image-safety");
 
 const legacy = "訂單資料與付款方式確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。";
@@ -97,4 +99,14 @@ assert(plainStock[0].text.includes(STOCK_FULFILLMENT_NOTICE));
 assert(!plainStock[0].text.includes(GENERAL_FULFILLMENT_NOTICE));
 assert(!plainStock[0].text.includes("製作加工約需5～7個工作天"));
 
-console.log("LINE product fulfillment, mixed-copy cleanup, plain-text replies, and 30cc artwork safety verified.");
+const health = healthPayload(core);
+assert.equal(HEALTH_PATH, "/internal/api/v2/fulfillment-policy/healthz");
+assert.equal(health.ok, true);
+assert.deepEqual(health.drinkProductIds, ["guilu-drink-30", "guilu-drink-180"]);
+assert.deepEqual(health.readyStockProductIds, ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]);
+assert(health.drinkNotice.includes("5～7個工作天"));
+assert(!health.readyStockNotice.includes("5～7個工作天"));
+assert.equal(health.unapprovedPostPublishingAllowed, false);
+assert.equal(health.lineVoomManualOnly, true);
+
+console.log("LINE product fulfillment, live health contract, mixed-copy cleanup, plain-text replies, and 30cc artwork safety verified.");
