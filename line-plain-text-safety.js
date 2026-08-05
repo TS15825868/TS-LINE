@@ -2,6 +2,10 @@
 
 const line = require("@line/bot-sdk");
 
+const POLICY_VERSION = "2026-08-05-v1";
+const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
+const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
+const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
 const LEGACY_NOTICE = /(?:訂單資料與付款方式|資料及運費)確認後安排製作加工[，,；;\s]*製作加工約需\s*5\s*[～~〜－-]\s*7\s*個工作天[；;，,\s]*完成後才安排出貨[，,；;\s]*物流配送時間另計[。.]?/g;
 const DRINK_PATTERN = /龜鹿飲|30\s*cc|180\s*cc/i;
 const STOCK_PATTERN = /龜鹿膏|龜鹿湯塊|龜鹿膠|鹿茸粉/;
@@ -86,7 +90,57 @@ function patchMessages(messages, core) {
   return messages;
 }
 
+function healthPayload(core) {
+  return {
+    ok: true,
+    policyVersion: POLICY_VERSION,
+    drinkProductIds: DRINK_PRODUCT_IDS,
+    readyStockProductIds: READY_STOCK_PRODUCT_IDS,
+    drinkNotice: core.DRINK_FULFILLMENT_NOTICE,
+    readyStockNotice: core.STOCK_FULFILLMENT_NOTICE,
+    generalNotice: core.GENERAL_FULFILLMENT_NOTICE,
+    cleanDrinkImagePath: core.CLEAN_DRINK_IMAGE_PATH,
+    cleanDrinkImageUrl: core.CLEAN_DRINK_IMAGE_URL,
+    ownerReviewRequired: true,
+    unapprovedPostPublishingAllowed: false,
+    lineVoomManualOnly: true,
+  };
+}
+
+function installHealthRoute(core) {
+  let express;
+  try {
+    express = require("express");
+  } catch (_) {
+    return;
+  }
+  const appPrototype = express?.application;
+  if (!appPrototype?.listen || appPrototype.__xjwFulfillmentHealthInstalled) return;
+  const previousListen = appPrototype.listen;
+
+  appPrototype.listen = function patchedFulfillmentHealthListen(...args) {
+    if (!this.locals.__xjwFulfillmentHealthRegistered) {
+      this.get(HEALTH_PATH, (_req, res) => {
+        res.set({
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+          "X-XJW-Fulfillment-Policy": POLICY_VERSION,
+        });
+        res.status(200).json(healthPayload(core));
+      });
+      this.locals.__xjwFulfillmentHealthRegistered = true;
+    }
+    return previousListen.apply(this, args);
+  };
+
+  Object.defineProperty(appPrototype, "__xjwFulfillmentHealthInstalled", {
+    value: true,
+    enumerable: false,
+  });
+}
+
 function install(core) {
+  installHealthRoute(core);
   const Client = line?.messagingApi?.MessagingApiClient;
   if (!Client?.prototype?.replyMessage || Client.prototype.__xjwPlainTextFulfillmentSafetyInstalled) return;
   const previous = Client.prototype.replyMessage;
@@ -103,11 +157,17 @@ function install(core) {
 }
 
 module.exports = {
+  POLICY_VERSION,
+  HEALTH_PATH,
+  DRINK_PRODUCT_IDS,
+  READY_STOCK_PRODUCT_IDS,
   kindFromText,
   collectContextText,
   replaceKnownNotices,
   replacePlainTextNotice,
   patchTextNodes,
   patchMessages,
+  healthPayload,
+  installHealthRoute,
   install,
 };
