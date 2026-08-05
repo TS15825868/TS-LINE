@@ -1,85 +1,13 @@
-name: 仙加味正式服務自動監控
+name: 【暫停】LINE OA正式服務自動監控
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/keep-render-warm.yml"
-      - "package.json"
-      - "internal-app*.js"
-      - "internal-entry.js"
-      - "supabase-state-bridge.js"
-      - "social-server.js"
-      - "server.js"
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: xianjiawei-live-monitor
-  cancel-in-progress: true
-
 jobs:
-  monitor:
+  paused:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
-      - name: Wake Render and verify every service
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE="https://ts-line.onrender.com"
-
-          request() {
-            local path="$1"
-            local output="$2"
-            for attempt in 1 2 3 4; do
-              if curl --fail --silent --show-error --max-time 60 \
-                "${BASE}${path}?monitor=$(date +%s)" > "$output"; then
-                return 0
-              fi
-              sleep 10
-            done
-            return 1
-          }
-
-          request "/healthz" /tmp/line.json
-          request "/internal/healthz" /tmp/internal.json
-          request "/internal/db-healthz" /tmp/database.json
-          request "/social/healthz" /tmp/social.json
-
-          node - <<'NODE'
-          const fs = require('fs');
-          const read = (name) => JSON.parse(fs.readFileSync(`/tmp/${name}.json`, 'utf8'));
-          const line = read('line');
-          const internal = read('internal');
-          const database = read('database');
-          const social = read('social');
-
-          if (line.ok !== true || line.version !== 'v401.6' || line.productCount !== 6) {
-            throw new Error(`LINE OA health failed: ${JSON.stringify(line)}`);
-          }
-          if (
-            internal.ok !== true ||
-            internal.app !== '仙加味內部管理 App' ||
-            internal.version !== '2.0.0'
-          ) {
-            throw new Error(`Internal app health failed: ${JSON.stringify(internal)}`);
-          }
-          if (
-            database.ok !== true ||
-            database.enabled !== true ||
-            database.connected !== true ||
-            database.storage !== 'supabase'
-          ) {
-            throw new Error(`Supabase health failed: ${JSON.stringify(database)}`);
-          }
-          if (social.ok !== true || social.service !== '仙加味 LINE OA 社群發布系統') {
-            throw new Error(`Social service health failed: ${JSON.stringify(social)}`);
-          }
-
-          console.log(JSON.stringify({ line, internal, database, social }, null, 2));
-          NODE
+      - run: echo 'Render自動暖機與正式服務監控已暫停，待全部系統完善後再開啟。'
