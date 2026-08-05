@@ -5,6 +5,7 @@ const line = require("@line/bot-sdk");
 const LEGACY_NOTICE = /(?:訂單資料與付款方式|資料及運費)確認後安排製作加工[，,；;\s]*製作加工約需\s*5\s*[～~〜－-]\s*7\s*個工作天[；;，,\s]*完成後才安排出貨[，,；;\s]*物流配送時間另計[。.]?/g;
 const DRINK_PATTERN = /龜鹿飲|30\s*cc|180\s*cc/i;
 const STOCK_PATTERN = /龜鹿膏|龜鹿湯塊|龜鹿膠|鹿茸粉/;
+const NOTICE_MARKER = /製作加工約需|接單後安排製作加工|預先製作備貨商品|實際出貨時間依訂單品項|依現貨狀況安排出貨/;
 
 function kindFromText(value) {
   const text = String(value || "");
@@ -16,13 +17,51 @@ function kindFromText(value) {
   return "general";
 }
 
+function collectContextText(node, output = []) {
+  if (!node || typeof node !== "object") return output;
+  if (Array.isArray(node)) {
+    for (const item of node) collectContextText(item, output);
+    return output;
+  }
+  if (node.type === "text" && typeof node.text === "string" && !NOTICE_MARKER.test(node.text)) {
+    output.push(node.text);
+  }
+  for (const value of Object.values(node)) collectContextText(value, output);
+  return output;
+}
+
+function replaceKnownNotices(text, replacement, core) {
+  let value = String(text || "");
+  LEGACY_NOTICE.lastIndex = 0;
+  value = value.replace(LEGACY_NOTICE, replacement);
+  for (const known of [
+    core.DRINK_FULFILLMENT_NOTICE,
+    core.STOCK_FULFILLMENT_NOTICE,
+    core.MIXED_FULFILLMENT_NOTICE,
+    core.GENERAL_FULFILLMENT_NOTICE,
+  ]) {
+    if (known && value.includes(known)) value = value.split(known).join(replacement);
+  }
+  return value;
+}
+
 function replacePlainTextNotice(text, core) {
   const value = String(text || "");
-  LEGACY_NOTICE.lastIndex = 0;
-  if (!LEGACY_NOTICE.test(value)) return value;
-  LEGACY_NOTICE.lastIndex = 0;
-  const kind = kindFromText(value);
-  return value.replace(LEGACY_NOTICE, core.fulfillmentNotice(kind));
+  const context = value.replace(LEGACY_NOTICE, "").replace(NOTICE_MARKER, "");
+  const replacement = core.fulfillmentNotice(kindFromText(context));
+  return replaceKnownNotices(value, replacement, core);
+}
+
+function patchTextNodes(node, replacement, core) {
+  if (!node || typeof node !== "object") return;
+  if (Array.isArray(node)) {
+    for (const item of node) patchTextNodes(item, replacement, core);
+    return;
+  }
+  if (node.type === "text" && typeof node.text === "string") {
+    node.text = replaceKnownNotices(node.text, replacement, core);
+  }
+  for (const value of Object.values(node)) patchTextNodes(value, replacement, core);
 }
 
 function patchMessages(messages, core) {
@@ -31,6 +70,17 @@ function patchMessages(messages, core) {
     if (!message || typeof message !== "object") continue;
     if (message.type === "text" && typeof message.text === "string") {
       message.text = replacePlainTextNotice(message.text, core);
+      continue;
+    }
+
+    const bubbles = message.type === "flex"
+      ? (message.contents?.type === "carousel" ? message.contents.contents || [] : [message.contents])
+      : message.type === "bubble" ? [message] : [];
+
+    for (const bubble of bubbles) {
+      if (!bubble || typeof bubble !== "object") continue;
+      const context = collectContextText(bubble, []).join("\n");
+      patchTextNodes(bubble, core.fulfillmentNotice(kindFromText(context)), core);
     }
   }
   return messages;
@@ -54,7 +104,10 @@ function install(core) {
 
 module.exports = {
   kindFromText,
+  collectContextText,
+  replaceKnownNotices,
   replacePlainTextNotice,
+  patchTextNodes,
   patchMessages,
   install,
 };
