@@ -15,6 +15,7 @@ on:
       - 'line-image-safety-core.js'
       - 'line-plain-text-safety.js'
       - 'line-product-fulfillment-safety.test.js'
+      - 'tools/lock-confirmed-trial-shipping-v423.mjs'
       - 'tools/normalize-official-products.mjs'
       - 'tools/sync_sales_master.js'
       - 'tools/validate-official-products.mjs'
@@ -36,6 +37,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: 套用正式出貨政策
+        run: node tools/lock-confirmed-trial-shipping-v423.mjs
       - name: 正規化六項正式產品
         run: node tools/normalize-official-products.mjs
       - name: 驗證六項正式產品
