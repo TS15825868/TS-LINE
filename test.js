@@ -58,7 +58,7 @@ assert.strictEqual(getProduct("luerong-fen").price, 2000);
 assert.strictEqual(getProduct("guilu-jiao").price, 9600);
 assert.strictEqual(getProduct("guilu-jiao").originalPrice, 12000);
 assert.strictEqual(getProduct("guilu-jiao").quoteOnly, false);
-assert.strictEqual(getProduct("guilu-jiao").size, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
+assert.strictEqual(getProduct("guilu-jiao").size, "600g（1斤）／盒｜32塊裝｜每塊約18.75g");
 assert.strictEqual(getProduct("guilu-jiao").unit, "盒");
 
 const state = { cart: [], checkout: null };

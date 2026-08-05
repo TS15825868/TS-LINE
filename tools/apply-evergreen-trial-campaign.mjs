@@ -135,9 +135,9 @@ server = server.replace(
   `const ORDER_NOTICE = ${JSON.stringify(GENERAL_NOTICE)};`,
 );
 server = server
-  .replaceAll('龜鹿飲30cc玻璃瓶', '龜鹿飲30cc玻璃罐')
-  .replaceAll('30cc／瓶（小玻璃瓶）', '30cc／罐（小玻璃罐）')
-  .replaceAll('30cc小玻璃瓶', '30cc小玻璃罐');
+  .replaceAll('龜鹿飲30cc玻璃罐', '龜鹿飲30cc玻璃罐')
+  .replaceAll('30cc／罐（小玻璃罐）', '30cc／罐（小玻璃罐）')
+  .replaceAll('30cc小玻璃罐', '30cc小玻璃罐');
 
 for (const required of [
   'function trialCampaignReply()',

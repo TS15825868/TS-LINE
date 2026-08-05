@@ -119,10 +119,10 @@ server = server.replace(
 server = server
   .replaceAll("龜鹿飲30cc玻璃罐", "龜鹿飲30cc玻璃罐")
   .replaceAll("30cc／罐（小玻璃罐）", "30cc／罐（小玻璃罐）")
-  .replaceAll("30cc小玻璃瓶", "30cc小玻璃罐")
-  .replaceAll("小玻璃瓶", "小玻璃罐")
+  .replaceAll("30cc小玻璃罐", "30cc小玻璃罐")
+  .replaceAll("小玻璃罐", "小玻璃罐")
   .replaceAll("每日一瓶", "每日一罐")
-  .replaceAll("開瓶即可飲用", "開罐即可飲用")
+  .replaceAll("開罐即可飲用", "開罐即可飲用")
   .replaceAll("開瓶後", "開罐後");
 
 if (!server.includes('{ label: "申請試喝", text: "我要試喝" }')) {
@@ -227,8 +227,8 @@ for (const file of ["test.js", "function.test.js", "catalog.test.js", "security.
   text = text
     .replaceAll("龜鹿飲30cc玻璃罐", "龜鹿飲30cc玻璃罐")
     .replaceAll("30cc／罐（小玻璃罐）", "30cc／罐（小玻璃罐）")
-    .replaceAll("30cc小玻璃瓶", "30cc小玻璃罐")
-    .replaceAll("小玻璃瓶", "小玻璃罐");
+    .replaceAll("30cc小玻璃罐", "30cc小玻璃罐")
+    .replaceAll("小玻璃罐", "小玻璃罐");
   fs.writeFileSync(target, text);
 }
 

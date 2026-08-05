@@ -36,7 +36,7 @@ const TOPICS = [
     image: "images/dm-final/02_guilu-drink-30cc-dm.jpg?v=408.7",
     title: "龜鹿飲 30cc｜小瓶即飲，外出更順手",
     lead: "30cc小玻璃罐，把龜鹿膏的成分方向整理成方便即飲的液態型態，適合外出、工作空檔或想簡單安排的人。",
-    bullets: ["30cc小玻璃罐", "開瓶即可飲用", "可依習慣溫熱後飲用"],
+    bullets: ["30cc小玻璃罐", "開罐即可飲用", "可依習慣溫熱後飲用"],
   },
   {
     number: 4,

@@ -35,7 +35,7 @@ assert.equal(tangkuai.price, 1600);
 
 const jiao = sales.products['guilu-jiao'];
 assert(jiao, '缺少龜鹿膠');
-assert.equal(jiao.specification, '600g／盒（1斤）｜32塊裝｜每塊約18.75g');
+assert.equal(jiao.specification, '600g（1斤）／盒｜32塊裝｜每塊約18.75g');
 assert.equal(jiao.size, jiao.specification, '龜鹿膠 size 必須同步完整正式規格');
 assert.equal(jiao.spec, jiao.specification, '龜鹿膠 spec 必須同步完整正式規格');
 assert.equal(jiao.priceText, '$9,600 / 盒', '龜鹿膠價格單位必須使用盒');

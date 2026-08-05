@@ -98,7 +98,7 @@ function healthPayload(core) {
     cleanDrinkImageSource: core.OFFICIAL_DRINK_SOURCE,
     cleanDrinkImagePolicy: "official-original-contain-no-crop",
     guiluDrink30Specification: "30cc／罐（小玻璃罐）",
-    guiluJiaoSpecification: "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
+    guiluJiaoSpecification: "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
     ownerReviewRequired: true,
     unapprovedPostPublishingAllowed: false,
     lineVoomManualOnly: true,

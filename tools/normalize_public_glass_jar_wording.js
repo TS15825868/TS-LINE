@@ -5,8 +5,8 @@ const fs = require("node:fs");
 const rules = {
   "social-first-batch-202607.js": [
     ["龜鹿飲30cc｜輕巧瓶裝，外出攜帶方便", "龜鹿飲30cc｜小玻璃罐，外出攜帶方便"],
-    ["龜鹿飲30cc為矮胖的小玻璃瓶裝，輕巧好攜帶。", "龜鹿飲30cc為小玻璃罐裝，輕巧好攜帶。"],
-    ["龜鹿飲30cc是矮胖的小玻璃瓶裝，適合需要輕巧攜帶的日常情境。", "龜鹿飲30cc為小玻璃罐裝，適合需要輕巧攜帶的日常情境。"],
+    ["龜鹿飲30cc為矮胖的小玻璃罐裝，輕巧好攜帶。", "龜鹿飲30cc為小玻璃罐裝，輕巧好攜帶。"],
+    ["龜鹿飲30cc是矮胖的小玻璃罐裝，適合需要輕巧攜帶的日常情境。", "龜鹿飲30cc為小玻璃罐裝，適合需要輕巧攜帶的日常情境。"],
     ["#仙加味 #龜鹿飲 #30cc #玻璃瓶 #日常攜帶", "#仙加味 #龜鹿飲 #30cc #小玻璃罐 #日常攜帶"]
   ],
   "social-final-reconcile.js": [
@@ -22,7 +22,7 @@ for (const [file, replacements] of Object.entries(rules)) {
   for (const [from, to] of replacements) next = next.split(from).join(to);
 
   const forbiddenPublicTerms = [
-    "矮胖的小玻璃瓶裝",
+    "矮胖的小玻璃罐裝",
     "矮胖玻璃瓶",
     "#玻璃瓶",
     "龜鹿飲30cc｜輕巧瓶裝"

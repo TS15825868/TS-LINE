@@ -9,12 +9,12 @@ const skipped = new Set(['.git', 'node_modules', '.asset-upload', 'tools', '.git
 const replacements = [
   ['龜鹿飲30cc玻璃罐', '龜鹿飲30cc玻璃罐'],
   ['龜鹿飲 30cc 玻璃瓶', '龜鹿飲 30cc 玻璃罐'],
-  ['30cc／瓶（玻璃瓶）', '30cc／罐（小玻璃罐）'],
+  ['30cc／罐（小玻璃罐）', '30cc／罐（小玻璃罐）'],
   ['30cc / 瓶（玻璃瓶）', '30cc／罐（小玻璃罐）'],
   ['30cc / 瓶 (玻璃瓶)', '30cc／罐（小玻璃罐）'],
   ['30cc玻璃小瓶', '30cc小玻璃罐'],
-  ['30cc玻璃瓶每日一瓶', '30cc玻璃罐每日一罐'],
-  ['30cc玻璃瓶較輕巧', '30cc小玻璃罐較輕巧'],
+  ['30cc玻璃罐每日一瓶', '30cc玻璃罐每日一罐'],
+  ['30cc玻璃罐較輕巧', '30cc小玻璃罐較輕巧'],
   ['偏好小瓶即飲', '偏好小玻璃罐即飲'],
   ['$50 / 瓶', '$50 / 罐'],
 ];
@@ -22,11 +22,11 @@ const replacements = [
 function replaceText(input) {
   let output = String(input ?? '');
   for (const [from, to] of replacements) output = output.split(from).join(to);
-  output = output.split('30cc玻璃瓶').join('30cc玻璃罐');
+  output = output.split('30cc玻璃罐').join('30cc玻璃罐');
   if (output.includes('30cc玻璃罐') || output.includes('30cc／罐（小玻璃罐）')) {
     output = output.split('30cc每日一瓶').join('30cc每日一罐');
     output = output.split('每日一瓶；180cc').join('每日一罐；180cc');
-    output = output.split('開瓶即可飲用').join('開罐即可飲用');
+    output = output.split('開罐即可飲用').join('開罐即可飲用');
     output = output.split('開瓶後請儘速飲用完畢').join('開罐後請儘速飲用完畢');
   }
   return output;
@@ -100,7 +100,7 @@ for (const file of files) {
 }
 
 const allText = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
-if (allText.includes('龜鹿飲30cc玻璃罐') || allText.includes('30cc／瓶（玻璃瓶）')) throw new Error('仍有龜鹿飲30cc玻璃罐舊稱');
+if (allText.includes('龜鹿飲30cc玻璃罐') || allText.includes('30cc／罐（小玻璃罐）')) throw new Error('仍有龜鹿飲30cc玻璃罐舊稱');
 if (/龜鹿湯塊\s*(?:300|600)\s*g/i.test(allText)) throw new Error('仍有龜鹿湯塊300g／600g舊規格');
 
 console.log(`LINE 同步完成：${changed.length} 個檔案`);
