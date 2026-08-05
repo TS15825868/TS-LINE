@@ -7,9 +7,13 @@ on:
     paths:
       - 'assets/data/official-products.json'
       - 'config/official-products.json'
+      - 'data.json'
       - 'line-sales-master.json'
       - 'product-sales-master.js'
       - 'server.js'
+      - 'line-image-safety.js'
+      - 'line-product-fulfillment-safety.test.js'
+      - 'tools/normalize-official-products.mjs'
       - 'tools/sync_sales_master.js'
       - 'tools/validate-official-products.mjs'
       - '.github/workflows/official-products.yml'
@@ -30,7 +34,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: 正規化六項正式產品
+        run: node tools/normalize-official-products.mjs
       - name: 驗證六項正式產品
         run: node tools/validate-official-products.mjs
+      - name: 驗證出貨說明與30cc圖片安全
+        run: node line-product-fulfillment-safety.test.js
       - name: 執行 LINE OA 正式測試
         run: npm test
