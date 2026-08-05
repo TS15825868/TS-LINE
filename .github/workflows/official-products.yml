@@ -1,39 +1,14 @@
-name: 六項正式產品驗證
+name: 【暫停自動】LINE OA 六項產品與出貨政策手動驗證
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'assets/data/official-products.json'
-      - 'config/official-products.json'
-      - 'data.json'
-      - 'line-sales-master.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'product-sales-master.js'
-      - 'product-quote-only-guard.js'
-      - 'product-quote-only-guard.test.js'
-      - 'server.js'
-      - 'line-image-safety.js'
-      - 'line-image-safety-core.js'
-      - 'line-plain-text-safety.js'
-      - 'line-product-fulfillment-safety.test.js'
-      - 'social-current-policy.test.js'
-      - 'social-review-only-mode.test.js'
-      - 'social-publish-guard.test.js'
-      - 'tools/lock-confirmed-trial-shipping-v423.mjs'
-      - 'tools/normalize-official-products.mjs'
-      - 'tools/sync_sales_master.js'
-      - 'tools/validate-official-products.mjs'
-      - '.github/workflows/official-products.yml'
 
 permissions:
   contents: read
   issues: write
 
 concurrency:
-  group: official-products-line-${{ github.ref }}
+  group: official-products-line-manual
   cancel-in-progress: true
 
 jobs:
@@ -52,7 +27,7 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          npm ci --ignore-scripts
+          npm ci --ignore-scripts --no-audit --no-fund
           node tools/lock-confirmed-trial-shipping-v423.mjs
           node tools/normalize-official-products.mjs
           node tools/validate-official-products.mjs
@@ -114,8 +89,6 @@ jobs:
           - 執行網址：https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
           - 本地完整測試：\`${LOCAL_OUTCOME}\`
           - Render健康與正確圖片：\`${RENDER_OUTCOME}\`
-          - 健康端點：\`/internal/api/v2/fulfillment-policy/healthz\`
-          - 30cc圖片端點：\`/assets/guilu-drink-30-clean.jpg\`
           - 檢查時間：${checked_at}
 
           正式規則：龜鹿飲30cc與180cc採接單製作，製作加工約需5～7個工作天；龜鹿膏、龜鹿湯塊、龜鹿膠與鹿茸粉為預先製作備貨商品。未經逐張人工核准的貼文不可排程或發布，LINE VOOM維持人工發布。
