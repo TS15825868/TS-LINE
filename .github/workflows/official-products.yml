@@ -12,6 +12,8 @@ on:
       - 'product-sales-master.js'
       - 'server.js'
       - 'line-image-safety.js'
+      - 'line-image-safety-core.js'
+      - 'line-plain-text-safety.js'
       - 'line-product-fulfillment-safety.test.js'
       - 'tools/normalize-official-products.mjs'
       - 'tools/sync_sales_master.js'
