@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const core = require("./line-image-safety-core");
 const {
   DRINK_FULFILLMENT_NOTICE,
@@ -8,10 +9,12 @@ const {
   MIXED_FULFILLMENT_NOTICE,
   GENERAL_FULFILLMENT_NOTICE,
   CLEAN_DRINK_IMAGE_URL,
+  OFFICIAL_DRINK_SOURCE,
   applyImageSafety,
   patchMessages,
   healthPayload,
   HEALTH_PATH,
+  POLICY_VERSION,
 } = require("./line-image-safety");
 
 const legacy = "訂單資料與付款方式確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。";
@@ -56,6 +59,13 @@ function texts(value, output = []) {
   return output;
 }
 
+assert.equal(POLICY_VERSION, "2026-08-05-v2");
+assert(OFFICIAL_DRINK_SOURCE.includes("/images/guilu-drink-30cc-glass.jpg"));
+const imageCoreSource = fs.readFileSync("line-image-safety-core.js", "utf8");
+assert(!imageCoreSource.includes(".extract("), "30cc正式圖不得從舊DM裁切");
+assert(imageCoreSource.includes('fit: "contain"'), "30cc正式圖必須等比例完整呈現");
+assert(imageCoreSource.includes("official-original-no-crop"), "30cc圖片端點缺少正式原圖來源標記");
+
 const drink30 = bubble("龜鹿飲30cc玻璃罐");
 applyImageSafety(drink30);
 assert(texts(drink30).includes(DRINK_FULFILLMENT_NOTICE));
@@ -67,13 +77,13 @@ for (const title of ["龜鹿膏", "龜鹿湯塊", "龜鹿膠", "鹿茸粉"]) {
   const item = bubble(title, "https://example.com/product.jpg");
   applyImageSafety(item);
   assert(texts(item).includes(STOCK_FULFILLMENT_NOTICE), `${title} 必須使用備貨商品出貨說明`);
-  assert(!texts(item).some((text) => text.includes("製作加工約需5～7個工作天")), `${title} 不得顯示龜鹿飲交期`);
+  assert(!texts(item).some((text) => /5\s*[～~〜－-]\s*7/.test(text)), `${title} 不得顯示龜鹿飲交期`);
 
   const flex = { type: "flex", altText: title, contents: bubble(title, "https://example.com/product.jpg", GENERAL_FULFILLMENT_NOTICE) };
   patchMessages([flex], core);
   assert(texts(flex).includes(STOCK_FULFILLMENT_NOTICE), `${title} 的全域說明必須在送出前改為備貨說明`);
   assert(!texts(flex).includes(GENERAL_FULFILLMENT_NOTICE), `${title} 不得保留全域混合說明`);
-  assert(!texts(flex).some((text) => text.includes("製作加工約需5～7個工作天")), `${title} 送出前不得顯示龜鹿飲交期`);
+  assert(!texts(flex).some((text) => /5\s*[～~〜－-]\s*7/.test(text)), `${title} 送出前不得顯示龜鹿飲交期`);
 }
 
 const drinkFlex = { type: "flex", altText: "龜鹿飲30cc", contents: bubble("龜鹿飲30cc玻璃罐", undefined, GENERAL_FULFILLMENT_NOTICE) };
@@ -97,16 +107,21 @@ const plainStock = [{ type: "text", text: `龜鹿膏\n${GENERAL_FULFILLMENT_NOTI
 patchMessages(plainStock, core);
 assert(plainStock[0].text.includes(STOCK_FULFILLMENT_NOTICE));
 assert(!plainStock[0].text.includes(GENERAL_FULFILLMENT_NOTICE));
-assert(!plainStock[0].text.includes("製作加工約需5～7個工作天"));
+assert(!/5\s*[～~〜－-]\s*7/.test(plainStock[0].text));
 
 const health = healthPayload(core);
 assert.equal(HEALTH_PATH, "/internal/api/v2/fulfillment-policy/healthz");
 assert.equal(health.ok, true);
+assert.equal(health.policyVersion, "2026-08-05-v2");
 assert.deepEqual(health.drinkProductIds, ["guilu-drink-30", "guilu-drink-180"]);
 assert.deepEqual(health.readyStockProductIds, ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]);
 assert(health.drinkNotice.includes("5～7個工作天"));
-assert(!health.readyStockNotice.includes("5～7個工作天"));
+assert(!/5\s*[～~〜－-]\s*7/.test(health.readyStockNotice));
+assert(health.cleanDrinkImageSource.includes("guilu-drink-30cc-glass.jpg"));
+assert.equal(health.cleanDrinkImagePolicy, "official-original-contain-no-crop");
+assert.equal(health.guiluDrink30Specification, "30cc／罐（小玻璃罐）");
+assert.equal(health.guiluJiaoSpecification, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
 assert.equal(health.unapprovedPostPublishingAllowed, false);
 assert.equal(health.lineVoomManualOnly, true);
 
-console.log("LINE product fulfillment, live health contract, mixed-copy cleanup, plain-text replies, and 30cc artwork safety verified.");
+console.log("LINE fulfillment v2, official-original 30cc artwork, product-card/plain-text separation and publishing safety verified.");
