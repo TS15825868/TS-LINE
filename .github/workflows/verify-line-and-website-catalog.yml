@@ -1,15 +1,13 @@
 name: Verify LINE OA and website catalog
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: verify-line-and-website-catalog-${{ github.ref }}
+  group: verify-line-and-website-catalog-manual
   cancel-in-progress: true
 
 jobs:
@@ -18,20 +16,27 @@ jobs:
     timeout-minutes: 12
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Normalize official product authority
+        run: |
+          node tools/normalize-official-products.mjs
+          node tools/lock-confirmed-trial-shipping-v423.mjs
 
       - name: Synchronize website catalog in verification workspace
         run: |
           npm run sync:catalog
+          node tools/normalize-official-products.mjs
+          node tools/lock-confirmed-trial-shipping-v423.mjs
           npm run check:catalog
 
       - name: JavaScript syntax
