@@ -8,6 +8,7 @@ const {
   GENERAL_FULFILLMENT_NOTICE,
   CLEAN_DRINK_IMAGE_URL,
   applyImageSafety,
+  patchMessages,
 } = require("./line-image-safety");
 
 const legacy = "訂單資料與付款方式確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。";
@@ -74,4 +75,13 @@ const general = bubble("歡迎來到仙加味", "https://example.com/welcome.jpg
 applyImageSafety(general);
 assert(texts(general).includes(GENERAL_FULFILLMENT_NOTICE));
 
-console.log("LINE product fulfillment and 30cc artwork safety verified.");
+const plainGeneral = [{ type: "text", text: `${legacy}\n可先選擇產品。` }];
+patchMessages(plainGeneral, require("./line-image-safety-core"));
+assert(plainGeneral[0].text.includes(GENERAL_FULFILLMENT_NOTICE));
+
+const plainStock = [{ type: "text", text: `龜鹿膏\n${legacy}` }];
+patchMessages(plainStock, require("./line-image-safety-core"));
+assert(plainStock[0].text.includes(STOCK_FULFILLMENT_NOTICE));
+assert(!plainStock[0].text.includes("製作加工約需5～7個工作天"));
+
+console.log("LINE product fulfillment, plain-text replies, and 30cc artwork safety verified.");
