@@ -2,7 +2,7 @@
 
 const line = require("@line/bot-sdk");
 
-const POLICY_VERSION = "2026-08-05-v1";
+const POLICY_VERSION = "2026-08-05-v2";
 const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
 const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
 const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
@@ -27,9 +27,7 @@ function collectContextText(node, output = []) {
     for (const item of node) collectContextText(item, output);
     return output;
   }
-  if (node.type === "text" && typeof node.text === "string" && !NOTICE_MARKER.test(node.text)) {
-    output.push(node.text);
-  }
+  if (node.type === "text" && typeof node.text === "string" && !NOTICE_MARKER.test(node.text)) output.push(node.text);
   for (const value of Object.values(node)) collectContextText(value, output);
   return output;
 }
@@ -62,9 +60,7 @@ function patchTextNodes(node, replacement, core) {
     for (const item of node) patchTextNodes(item, replacement, core);
     return;
   }
-  if (node.type === "text" && typeof node.text === "string") {
-    node.text = replaceKnownNotices(node.text, replacement, core);
-  }
+  if (node.type === "text" && typeof node.text === "string") node.text = replaceKnownNotices(node.text, replacement, core);
   for (const value of Object.values(node)) patchTextNodes(value, replacement, core);
 }
 
@@ -76,11 +72,9 @@ function patchMessages(messages, core) {
       message.text = replacePlainTextNotice(message.text, core);
       continue;
     }
-
     const bubbles = message.type === "flex"
       ? (message.contents?.type === "carousel" ? message.contents.contents || [] : [message.contents])
       : message.type === "bubble" ? [message] : [];
-
     for (const bubble of bubbles) {
       if (!bubble || typeof bubble !== "object") continue;
       const context = collectContextText(bubble, []).join("\n");
@@ -101,6 +95,10 @@ function healthPayload(core) {
     generalNotice: core.GENERAL_FULFILLMENT_NOTICE,
     cleanDrinkImagePath: core.CLEAN_DRINK_IMAGE_PATH,
     cleanDrinkImageUrl: core.CLEAN_DRINK_IMAGE_URL,
+    cleanDrinkImageSource: core.OFFICIAL_DRINK_SOURCE,
+    cleanDrinkImagePolicy: "official-original-contain-no-crop",
+    guiluDrink30Specification: "30cc／罐（小玻璃罐）",
+    guiluJiaoSpecification: "600g／盒（1斤）｜32塊裝｜每塊約18.75g",
     ownerReviewRequired: true,
     unapprovedPostPublishingAllowed: false,
     lineVoomManualOnly: true,
@@ -125,6 +123,7 @@ function installHealthRoute(core) {
           "Cache-Control": "no-store",
           "X-Content-Type-Options": "nosniff",
           "X-XJW-Fulfillment-Policy": POLICY_VERSION,
+          "X-XJW-Drink-Image-Policy": "official-original-contain-no-crop",
         });
         res.status(200).json(healthPayload(core));
       });
@@ -133,10 +132,7 @@ function installHealthRoute(core) {
     return previousListen.apply(this, args);
   };
 
-  Object.defineProperty(appPrototype, "__xjwFulfillmentHealthInstalled", {
-    value: true,
-    enumerable: false,
-  });
+  Object.defineProperty(appPrototype, "__xjwFulfillmentHealthInstalled", { value: true, enumerable: false });
 }
 
 function install(core) {
@@ -144,16 +140,11 @@ function install(core) {
   const Client = line?.messagingApi?.MessagingApiClient;
   if (!Client?.prototype?.replyMessage || Client.prototype.__xjwPlainTextFulfillmentSafetyInstalled) return;
   const previous = Client.prototype.replyMessage;
-
   Client.prototype.replyMessage = function patchedPlainTextReply(payload) {
     patchMessages(payload?.messages, core);
     return previous.call(this, payload);
   };
-
-  Object.defineProperty(Client.prototype, "__xjwPlainTextFulfillmentSafetyInstalled", {
-    value: true,
-    enumerable: false,
-  });
+  Object.defineProperty(Client.prototype, "__xjwPlainTextFulfillmentSafetyInstalled", { value: true, enumerable: false });
 }
 
 module.exports = {
