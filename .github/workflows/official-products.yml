@@ -41,19 +41,23 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: 安裝正式依賴
-        run: npm ci --ignore-scripts
-      - name: 套用正式出貨政策
-        run: node tools/lock-confirmed-trial-shipping-v423.mjs
-      - name: 正規化六項正式產品
-        run: node tools/normalize-official-products.mjs
-      - name: 驗證六項正式產品
-        run: node tools/validate-official-products.mjs
-      - name: 驗證出貨說明與30cc圖片安全
-        run: node line-product-fulfillment-safety.test.js
-      - name: 執行 LINE OA 正式測試
-        run: npm test
+
+      - name: 本地完整驗證
+        id: local
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          node tools/lock-confirmed-trial-shipping-v423.mjs
+          node tools/normalize-official-products.mjs
+          node tools/validate-official-products.mjs
+          node line-product-fulfillment-safety.test.js
+          npm test
+
       - name: 等待並驗證 Render 正式部署
+        id: render
+        if: steps.local.outcome == 'success'
+        continue-on-error: true
         env:
           HEALTH_URL: https://ts-line.onrender.com/internal/api/v2/fulfillment-policy/healthz
           IMAGE_URL: https://ts-line.onrender.com/assets/guilu-drink-30-clean.jpg
@@ -63,20 +67,7 @@ jobs:
           for attempt in $(seq 1 60); do
             echo "Render verification attempt ${attempt}/60"
             if curl --connect-timeout 10 --max-time 30 -fsS "$HEALTH_URL" -o /tmp/fulfillment-health.json; then
-              if node <<'NODE'
-          const fs = require('node:fs');
-          const value = JSON.parse(fs.readFileSync('/tmp/fulfillment-health.json', 'utf8'));
-          const expectedDrinks = ['guilu-drink-30', 'guilu-drink-180'];
-          const expectedStock = ['guilu-gao', 'guilu-tangkuai', 'guilu-jiao', 'luerong-fen'];
-          if (value.ok !== true || value.policyVersion !== '2026-08-05-v1') process.exit(1);
-          if (JSON.stringify(value.drinkProductIds) !== JSON.stringify(expectedDrinks)) process.exit(1);
-          if (JSON.stringify(value.readyStockProductIds) !== JSON.stringify(expectedStock)) process.exit(1);
-          if (!String(value.drinkNotice || '').includes('5～7個工作天')) process.exit(1);
-          if (String(value.readyStockNotice || '').includes('5～7個工作天')) process.exit(1);
-          if (value.ownerReviewRequired !== true || value.unapprovedPostPublishingAllowed !== false) process.exit(1);
-          if (value.lineVoomManualOnly !== true) process.exit(1);
-          NODE
-              then
+              if node -e "const fs=require('node:fs');const v=JSON.parse(fs.readFileSync('/tmp/fulfillment-health.json','utf8'));const d=['guilu-drink-30','guilu-drink-180'];const s=['guilu-gao','guilu-tangkuai','guilu-jiao','luerong-fen'];if(v.ok!==true||v.policyVersion!=='2026-08-05-v1'||JSON.stringify(v.drinkProductIds)!==JSON.stringify(d)||JSON.stringify(v.readyStockProductIds)!==JSON.stringify(s)||!String(v.drinkNotice||'').includes('5～7個工作天')||String(v.readyStockNotice||'').includes('5～7個工作天')||v.ownerReviewRequired!==true||v.unapprovedPostPublishingAllowed!==false||v.lineVoomManualOnly!==true)process.exit(1)"; then
                 image_code=$(curl --connect-timeout 10 --max-time 45 -sS -o /tmp/guilu-drink-30-clean.jpg -w '%{http_code}' "$IMAGE_URL" || true)
                 image_type=$(file -b --mime-type /tmp/guilu-drink-30-clean.jpg 2>/dev/null || true)
                 image_size=$(wc -c </tmp/guilu-drink-30-clean.jpg 2>/dev/null || echo 0)
@@ -92,30 +83,55 @@ jobs:
             echo 'Render did not expose the verified fulfillment policy and clean 30cc JPEG in time.' >&2
             exit 1
           fi
-      - name: 更新正式線上診斷 Issue
-        if: success()
+
+      - name: 更新出貨政策診斷 Issue
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          LOCAL_OUTCOME: ${{ steps.local.outcome }}
+          RENDER_OUTCOME: ${{ steps.render.outcome }}
         run: |
+          set -euo pipefail
           title='[出貨政策診斷] 最新線上健康結果'
           checked_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-          body=$(cat <<EOF
-          ## LINE OA 出貨政策與30cc圖片線上驗證成功
+          if [ "$LOCAL_OUTCOME" = "success" ] && [ "$RENDER_OUTCOME" = "success" ]; then
+            result='success'
+            headline='LINE OA 出貨政策與30cc圖片線上驗證成功'
+          else
+            result='failure'
+            headline='LINE OA 出貨政策仍有未通過項目'
+          fi
+          cat > /tmp/issue-body.md <<EOF
+          ## ${headline}
 
-          - 結果：\`success\`
+          - 結果：\`${result}\`
           - 提交：\`${GITHUB_SHA}\`
           - 執行網址：https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          - 本地完整測試：\`${LOCAL_OUTCOME}\`
+          - Render健康與正確圖片：\`${RENDER_OUTCOME}\`
           - 健康端點：\`/internal/api/v2/fulfillment-policy/healthz\`
           - 30cc圖片端點：\`/assets/guilu-drink-30-clean.jpg\`
           - 檢查時間：${checked_at}
 
-          龜鹿飲30cc與180cc採接單製作，製作加工約需5～7個工作天；龜鹿膏、龜鹿湯塊、龜鹿膠與鹿茸粉為預先製作備貨商品。未經逐張人工核准的貼文仍不可排程或發布，LINE VOOM維持人工發布。
+          正式規則：龜鹿飲30cc與180cc採接單製作，製作加工約需5～7個工作天；龜鹿膏、龜鹿湯塊、龜鹿膠與鹿茸粉為預先製作備貨商品。未經逐張人工核准的貼文不可排程或發布，LINE VOOM維持人工發布。
           EOF
-          )
           number=$(gh issue list --state all --search "$title in:title" --json number,title --jq "map(select(.title == \"$title\"))[0].number // empty")
           if [ -n "$number" ]; then
-            gh issue edit "$number" --title "$title" --body "$body"
-            gh issue close "$number" --reason completed || true
+            gh issue edit "$number" --title "$title" --body-file /tmp/issue-body.md
+            if [ "$result" = "success" ]; then
+              gh issue close "$number" --reason completed || true
+            else
+              gh issue reopen "$number" || true
+            fi
           else
-            gh issue create --title "$title" --body "$body"
+            gh issue create --title "$title" --body-file /tmp/issue-body.md
           fi
+
+      - name: 依驗證結果結束
+        if: always()
+        env:
+          LOCAL_OUTCOME: ${{ steps.local.outcome }}
+          RENDER_OUTCOME: ${{ steps.render.outcome }}
+        run: |
+          test "$LOCAL_OUTCOME" = 'success'
+          test "$RENDER_OUTCOME" = 'success'
