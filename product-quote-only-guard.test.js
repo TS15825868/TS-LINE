@@ -8,15 +8,16 @@ const sales = require("./line-sales-master.json");
 const source = fs.readFileSync("server.js", "utf8");
 const transformed = guard.transformServer(source);
 const jiao = sales.products["guilu-jiao"];
+const officialSpecification = "600g（1斤）／盒｜32塊裝｜每塊約18.75g";
 
 assert.strictEqual(guard.VERSION, "2026-07-25-quote-only-v2");
 assert.strictEqual(jiao.quoteOnly, false);
 assert.strictEqual(jiao.price, 9600);
 assert.strictEqual(jiao.originalPrice, 12000);
 assert.strictEqual(jiao.priceText, "$9,600 / 盒");
-assert.strictEqual(jiao.specification, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
-assert.strictEqual(jiao.size, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
-assert.strictEqual(jiao.spec, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
+assert.strictEqual(jiao.specification, officialSpecification);
+assert.strictEqual(jiao.size, officialSpecification);
+assert.strictEqual(jiao.spec, officialSpecification);
 assert.strictEqual(jiao.unit, "盒");
 assert.strictEqual(jiao.priceLabel, "售價12,000元，優惠價9,600元");
 
@@ -32,4 +33,4 @@ assert(transformed.includes('product.quoteOnly\n        ? { label: "LINE洽詢"'
 assert(transformed.includes('if (product.quoteOnly) return reply(event.replyToken, qtyMenu(product))'));
 assert(!transformed.includes('product.quoteOnly ? `售價 ${money(product.price)}'));
 
-console.log("PASS 龜鹿膠正式售價已開放，quote-only 安全守門仍保留");
+console.log("PASS 龜鹿膠正式售價與600g（1斤）／盒規格已鎖定，quote-only安全守門仍保留");
