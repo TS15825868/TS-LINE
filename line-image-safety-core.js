@@ -2,44 +2,35 @@
 
 /**
  * LINE OA outbound safety layer.
- *
- * Responsibilities:
- * 1. Keep approved mascot scenes on guide bubbles only.
- * 2. Never expose the obsolete 30cc「瓶」artwork in LINE product cards.
- * 3. Apply the 5～7 working-day production notice only to 龜鹿飲.
- * 4. Keep all unapproved publishing behaviour unchanged.
+ * - 30cc一律使用正式三罐裸小玻璃罐原圖，不從舊DM裁切。
+ * - 5～7個工作天只套用龜鹿飲30cc與180cc。
+ * - 龜鹿膏、龜鹿湯塊、龜鹿膠、鹿茸粉只顯示預先備貨說明。
+ * - 不變更未核准貼文不得發布、LINE VOOM人工等安全規則。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "402.0-20260805-product-safety";
+const VERSION = "403.0-20260805-official-original";
 const BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
 const APPROVED_MASCOT_NAMES = ["recommend", "combo", "usage", "faq"];
 const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg"];
 const BLOCKED_MASCOT_ASSETS = [...LEGACY_MASCOT_NAMES];
-const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({
-  name,
-  url: `${BASE}/${name}.jpg?v=${VERSION}`,
-}));
+const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({ name, url: `${BASE}/${name}.jpg?v=${VERSION}` }));
 
 const DRINK_PRODUCT_PATTERN = /龜鹿飲|30\s*cc|180\s*cc/i;
 const STOCK_PRODUCT_PATTERN = /龜鹿膏|龜鹿湯塊|龜鹿膠|鹿茸粉/;
 const DRINK_30_PATTERN = /龜鹿飲\s*30\s*cc|30\s*cc.*(?:小玻璃罐|玻璃罐)/i;
-const LEGACY_IMAGE_PATTERN = /(?:images\/products-v3\/guilu-drink-30\.jpg|images\/dm-final\/02_guilu-drink-30cc-dm\.jpg)/i;
+const LEGACY_IMAGE_PATTERN = /(?:images\/products-v3\/guilu-drink-30\.jpg|images\/dm-final\/02_guilu-drink-30cc-dm\.jpg|images\/products-v3\/guilu-drink-30-clean\.svg)/i;
 const LEGACY_ORDER_NOTICE_PATTERN = /(?:訂單資料與付款方式|資料及運費)確認後安排製作加工[，,；;\s]*製作加工約需\s*5\s*[～~〜－-]\s*7\s*個工作天[；;，,\s]*完成後才安排出貨[，,；;\s]*物流配送時間另計[。.]?/g;
 
 const DRINK_FULFILLMENT_NOTICE = "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
 const STOCK_FULFILLMENT_NOTICE = "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。";
 const MIXED_FULFILLMENT_NOTICE = `${DRINK_FULFILLMENT_NOTICE}\n${STOCK_FULFILLMENT_NOTICE}`;
-const GENERAL_FULFILLMENT_NOTICE = "龜鹿飲為接單後安排製作加工，約需5～7個工作天；龜鹿膏、龜鹿湯塊、龜鹿膠與鹿茸粉為預先製作備貨商品。實際出貨時間依訂單品項與現貨狀況確認，物流配送時間另計。";
+const GENERAL_FULFILLMENT_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作加工；龜鹿膏、龜鹿湯塊、龜鹿膠與鹿茸粉為預先製作備貨商品。實際出貨時間依訂單品項與現貨狀況確認，物流配送時間另計。";
 
-const PUBLIC_BASE_URL = String(
-  process.env.PUBLIC_BASE_URL ||
-  process.env.RENDER_EXTERNAL_URL ||
-  "https://ts-line.onrender.com"
-).replace(/\/$/, "");
+const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const CLEAN_DRINK_IMAGE_PATH = "/assets/guilu-drink-30-clean.jpg";
 const CLEAN_DRINK_IMAGE_URL = `${PUBLIC_BASE_URL}${CLEAN_DRINK_IMAGE_PATH}?v=${VERSION}`;
-const LEGACY_DRINK_SOURCE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/products-v3/guilu-drink-30.jpg";
+const OFFICIAL_DRINK_SOURCE = "https://ts15825868.github.io/xianjiawei/images/guilu-drink-30cc-glass.jpg?v=412.0";
 let cleanDrinkImagePromise = null;
 
 function approvedUrl(name) {
@@ -100,13 +91,7 @@ function sceneForBubble(bubble) {
 }
 
 function approvedHero(scene) {
-  return {
-    type: "image",
-    url: approvedUrl(scene),
-    size: "full",
-    aspectRatio: "1:1",
-    aspectMode: "cover",
-  };
+  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "1:1", aspectMode: "cover" };
 }
 
 function fulfillmentKind(bubble) {
@@ -152,41 +137,31 @@ function rewriteDrink30Artwork(node) {
     for (const item of node) rewriteDrink30Artwork(item);
     return;
   }
-
   if (node.type === "image" && typeof node.url === "string" && LEGACY_IMAGE_PATTERN.test(node.url)) {
     node.url = CLEAN_DRINK_IMAGE_URL;
     node.aspectMode = "fit";
     node.backgroundColor = "#EFE4D2";
   }
-
   if (node.action && typeof node.action === "object" && typeof node.action.uri === "string" && LEGACY_IMAGE_PATTERN.test(node.action.uri)) {
     node.action.uri = CLEAN_DRINK_IMAGE_URL;
     if (node.action.label === "看產品DM") node.action.label = "看正確產品圖";
   }
-
   for (const value of Object.values(node)) rewriteDrink30Artwork(value);
 }
 
 function applyImageSafety(node) {
   if (!node || typeof node !== "object") return node;
-
   if (Array.isArray(node)) {
     for (const item of node) applyImageSafety(item);
     return node;
   }
-
   if (node.type === "bubble") {
     const scene = sceneForBubble(node);
-    if (scene) {
-      node.hero = approvedHero(scene);
-    } else if (node.hero?.type === "image" && isBlockedMascotUrl(node.hero.url)) {
-      delete node.hero;
-    }
-
+    if (scene) node.hero = approvedHero(scene);
+    else if (node.hero?.type === "image" && isBlockedMascotUrl(node.hero.url)) delete node.hero;
     replaceLegacyOrderNotice(node, fulfillmentNotice(fulfillmentKind(node)));
     if (isDrink30Bubble(node)) rewriteDrink30Artwork(node);
   }
-
   for (const value of Object.values(node)) applyImageSafety(value);
   return node;
 }
@@ -195,25 +170,16 @@ async function buildCleanDrinkImage() {
   if (cleanDrinkImagePromise) return cleanDrinkImagePromise;
   cleanDrinkImagePromise = (async () => {
     const sharp = require("sharp");
-    const response = await fetch(LEGACY_DRINK_SOURCE, {
+    const response = await fetch(OFFICIAL_DRINK_SOURCE, {
       headers: { "user-agent": "xianjiawei-line-image-safety" },
       signal: AbortSignal.timeout(15000),
     });
     if (!response.ok) throw new Error(`official drink image fetch failed: ${response.status}`);
     const input = Buffer.from(await response.arrayBuffer());
-    const metadata = await sharp(input).metadata();
-    const width = Number(metadata.width || 1122);
-    const height = Number(metadata.height || 1402);
-    const left = Math.max(0, Math.round(width * 0.185));
-    const top = Math.max(0, Math.round(height * 0.286));
-    const cropWidth = Math.min(width - left, Math.max(1, Math.round(width * 0.635)));
-    const cropHeight = Math.min(height - top, Math.max(1, Math.round(height * 0.488)));
-
     return sharp(input)
-      .extract({ left, top, width: cropWidth, height: cropHeight })
-      .resize(900, 900, { fit: "contain", background: "#EFE4D2" })
+      .resize(900, 900, { fit: "contain", background: "#EFE4D2", withoutEnlargement: false })
       .flatten({ background: "#EFE4D2" })
-      .jpeg({ quality: 90, progressive: true })
+      .jpeg({ quality: 92, progressive: true })
       .toBuffer();
   })().catch((error) => {
     cleanDrinkImagePromise = null;
@@ -231,7 +197,6 @@ function installCleanDrinkRoute() {
   }
   const appPrototype = express?.application;
   if (!appPrototype?.listen || appPrototype.__xjwCleanDrinkRouteInstalled) return;
-
   const originalListen = appPrototype.listen;
   appPrototype.listen = function patchedListen(...args) {
     if (!this.locals.__xjwCleanDrinkRouteRegistered) {
@@ -242,10 +207,11 @@ function installCleanDrinkRoute() {
             "Content-Type": "image/jpeg",
             "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
             "X-Content-Type-Options": "nosniff",
+            "X-XJW-Image-Source": "official-original-no-crop",
           });
           res.status(200).send(image);
         } catch (error) {
-          console.error("30cc正確產品圖產生失敗：", error?.message || error);
+          console.error("30cc正式產品圖產生失敗：", error?.message || error);
           res.status(503).type("text/plain").send("image temporarily unavailable");
         }
       });
@@ -253,11 +219,7 @@ function installCleanDrinkRoute() {
     }
     return originalListen.apply(this, args);
   };
-
-  Object.defineProperty(appPrototype, "__xjwCleanDrinkRouteInstalled", {
-    value: true,
-    enumerable: false,
-  });
+  Object.defineProperty(appPrototype, "__xjwCleanDrinkRouteInstalled", { value: true, enumerable: false });
 }
 
 installCleanDrinkRoute();
@@ -265,16 +227,11 @@ installCleanDrinkRoute();
 const Client = line?.messagingApi?.MessagingApiClient;
 if (Client?.prototype?.replyMessage && !Client.prototype.__xjwImageSafetyInstalled) {
   const originalReplyMessage = Client.prototype.replyMessage;
-
   Client.prototype.replyMessage = function patchedReplyMessage(payload) {
     applyImageSafety(payload?.messages);
     return originalReplyMessage.call(this, payload);
   };
-
-  Object.defineProperty(Client.prototype, "__xjwImageSafetyInstalled", {
-    value: true,
-    enumerable: false,
-  });
+  Object.defineProperty(Client.prototype, "__xjwImageSafetyInstalled", { value: true, enumerable: false });
 }
 
 module.exports = {
@@ -288,6 +245,7 @@ module.exports = {
   GENERAL_FULFILLMENT_NOTICE,
   CLEAN_DRINK_IMAGE_PATH,
   CLEAN_DRINK_IMAGE_URL,
+  OFFICIAL_DRINK_SOURCE,
   approvedUrl,
   isBlockedMascotUrl,
   bubbleTexts,
