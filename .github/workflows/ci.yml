@@ -27,11 +27,6 @@ jobs:
       - name: Install exact dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Normalize current official authority
-        run: |
-          node tools/normalize-official-products.mjs
-          node tools/lock-confirmed-trial-shipping-v423.mjs
-
       - name: Run complete LINE OA, social, review and schedule tests
         run: npm test
 
@@ -77,3 +72,6 @@ jobs:
           }
           console.log(`PASS TS-LINE ${pkg.version}: official products, drink-only lead time, trial and owner review policy`);
           NODE
+
+      - name: Ensure audit remains read-only
+        run: git diff --exit-code
