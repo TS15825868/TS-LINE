@@ -67,18 +67,19 @@ function main() {
   }
 
   const drink30 = merged.products.find((item) => item.id === "guilu-drink-30");
-  if (!String(drink30?.image || "").includes("/assets/guilu-drink-30-clean.jpg")) throw new Error("30cc商品圖未使用Render正式原圖端點");
-  if (!String(drink30?.officialOriginalImage || "").includes("/images/guilu-drink-30cc-glass.jpg")) throw new Error("30cc缺少官網正式產品原圖來源");
+  const expectedImagePath = "/images/products-v3/guilu-drink-30.jpg";
+  if (!String(drink30?.image || "").includes(expectedImagePath)) throw new Error("30cc商品圖未使用官網正式產品原圖");
+  if (!String(drink30?.officialOriginalImage || "").includes(expectedImagePath)) throw new Error("30cc缺少官網正式產品原圖來源");
   if (drink30?.imagePolicy !== "official-original-contain-no-crop") throw new Error("30cc圖片政策不同步");
-  if (merged.fulfillmentPolicy?.version !== "2026-08-05-v2") throw new Error("出貨政策版本不同步");
+  if (merged.fulfillmentPolicy?.version !== "2026-08-05-v3") throw new Error("出貨政策版本不同步");
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version} with fulfillment v2`);
+    console.log(`SYNCED LINE OA sales master ${master.version} with fulfillment v3`);
     return;
   }
 
-  console.log(`PASS LINE OA sales master ${master.version}: six products, cart-safe offers, fulfillment v2 and official 30cc image`);
+  console.log(`PASS LINE OA sales master ${master.version}: six products, cart-safe offers, fulfillment v3 and official 30cc image`);
 }
 
 if (require.main === module) {
