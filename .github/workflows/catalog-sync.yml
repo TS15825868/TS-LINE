@@ -116,7 +116,10 @@ jobs:
           rm -f ci-last-error.txt
           git config user.name "仙加味自動驗收"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data.json line-sales-master.json package.json package-lock.json tools server.js test.js function.test.js catalog.test.js security.test.js README.md ci-last-error.txt
+          git add -A -- data.json line-sales-master.json package.json package-lock.json tools server.js test.js function.test.js catalog.test.js security.test.js README.md
+          if git ls-files --error-unmatch ci-last-error.txt >/dev/null 2>&1; then
+            git add -A -- ci-last-error.txt
+          fi
           if git diff --cached --quiet; then
             echo "All authoritative files are already current."
             exit 0
