@@ -12,6 +12,8 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
   "description", "usage", "storage", "fit", "purposeDirection", "aliases",
   "price", "originalPrice", "offers", "priceText", "originalPriceText",
   "priceLabel", "quoteOnly",
+  "fulfillmentType", "fulfillmentNotice", "productionLeadTime", "readyStock",
+  "image", "imageUrl", "image_url", "dmImage", "officialOriginalImage", "imagePolicy",
 ]);
 
 function getMaster() {
@@ -105,6 +107,10 @@ function applyMaster(data) {
     ])),
   };
 
+  data.fulfillmentPolicy = {
+    ...(data.fulfillmentPolicy || {}),
+    ...(policy.fulfillmentPolicy || {}),
+  };
   data.runtime = {
     ...(data.runtime || {}),
     imagePolicy: {
