@@ -47,7 +47,7 @@ function replaceKnownNotices(text, replacement, core) {
 
 function replacePlainTextNotice(text, core) {
   const value = String(text || "");
-  const context = value.replace(LEGACY_NOTICE, "").replace(NOTICE_MARKER, "");
+  const context = replaceKnownNotices(value, "", core);
   const replacement = core.fulfillmentNotice(kindFromText(context));
   return replaceKnownNotices(value, replacement, core);
 }
