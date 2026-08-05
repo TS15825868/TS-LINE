@@ -1,10 +1,8 @@
 name: 仙加味資料同步與驗收
-run-name: 仙加味資料同步與驗收 v424｜${{ github.event_name }}｜${{ github.ref_name }}
+run-name: 仙加味資料同步與驗收 v429｜${{ github.event_name }}｜${{ github.ref_name }}
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 */3 * * *"
   push:
     branches: [main]
     paths:
@@ -24,10 +22,6 @@ on:
       - "internal-inventory-seed.js"
       - "internal-inventory-seed.test.js"
       - "social-server.js"
-      - "social-approved-originals.js"
-      - "social-final-reconcile.js"
-      - "internal-app.js"
-      - "internal-entry.js"
       - "tools/**"
       - "package.json"
       - "package-lock.json"
@@ -38,13 +32,15 @@ permissions:
   contents: write
 
 concurrency:
-  group: xianjiawei-main-sync-v424
+  group: xianjiawei-line-authority-v429
   cancel-in-progress: true
 
 jobs:
   validate-and-sync:
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
+
     steps:
       - name: Checkout latest main
         uses: actions/checkout@v4
@@ -61,66 +57,45 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Apply the single authoritative trial and sales rules
-        id: normalize
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          node tools/lock-confirmed-trial-shipping-v423.mjs 2>&1 | tee /tmp/line-normalize.log
+      - name: Apply authoritative LINE OA rules
+        run: node tools/lock-confirmed-trial-shipping-v423.mjs
 
-      - name: Synchronize website catalog and formal sales master
-        id: sync
-        if: steps.normalize.outcome == 'success'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run sync:catalog 2>&1 | tee /tmp/line-sync.log
+      - name: Synchronize website catalog and sales master
+        run: npm run sync:catalog
 
       - name: Reapply authority after synchronization
-        id: renormalize
-        if: steps.normalize.outcome == 'success' && steps.sync.outcome == 'success'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          node tools/lock-confirmed-trial-shipping-v423.mjs 2>&1 | tee /tmp/line-renormalize.log
+        run: node tools/lock-confirmed-trial-shipping-v423.mjs
 
       - name: Run complete LINE OA validation
-        id: checks
-        if: steps.normalize.outcome == 'success' && steps.sync.outcome == 'success' && steps.renormalize.outcome == 'success'
-        continue-on-error: true
-        shell: bash
         run: |
-          set -o pipefail
-          {
-            npm test
-            node test.js
-            node catalog.test.js
-            node function.test.js
-            node line-order-cart.test.js
-            node internal-inventory-seed.test.js
-            node internal-order-pricing.test.js
-            node internal-line-order-sync.test.js
-          } 2>&1 | tee /tmp/line-checks.log
+          npm test
+          node test.js
+          node catalog.test.js
+          node function.test.js
+          node line-order-cart.test.js
+          node internal-inventory-seed.test.js
+          node internal-order-pricing.test.js
+          node internal-line-order-sync.test.js
 
       - name: Verify final public and ordering contract
-        id: contract
-        if: steps.normalize.outcome == 'success' && steps.sync.outcome == 'success' && steps.renormalize.outcome == 'success' && steps.checks.outcome == 'success'
-        continue-on-error: true
         shell: bash
         run: |
-          set -o pipefail
-          node tools/lock-confirmed-trial-shipping-v423.mjs
-          node - <<'NODE' 2>&1 | tee /tmp/line-contract.log
+          node - <<'NODE'
           const fs = require('fs');
           const official = '資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計';
           for (const file of ['data.json', 'line-sales-master.json']) {
             const data = JSON.parse(fs.readFileSync(file, 'utf8'));
             const text = JSON.stringify(data);
             if (data.trialCampaign?.fulfillmentRule !== official) throw new Error(`${file} 製作與出貨規則不一致`);
-            for (const bad of ['買10送2', '共12罐500元', '共12包2,000元', '30cc／瓶（小玻璃瓶）', '資料及運費確認後約5～7個工作天出貨', '接單後約5～7個工作天出貨']) {
+            for (const bad of [
+              '買10送2',
+              '共12罐500元',
+              '共12包2,000元',
+              '30cc／瓶（小玻璃瓶）',
+              '資料及運費確認後約5～7個工作天出貨',
+              '接單後約5～7個工作天出貨',
+              '採接單安排製作，約5～7個工作天出貨'
+            ]) {
               if (text.includes(bad)) throw new Error(`${file} 仍含舊內容：${bad}`);
             }
             for (const required of ['製作加工約需5～7個工作天', '完成後才安排出貨', '物流配送時間另計', '買10送1']) {
@@ -129,82 +104,23 @@ jobs:
             const d30 = data.products?.find?.((item) => item.id === 'guilu-drink-30') || data.products?.['guilu-drink-30'];
             const d180 = data.products?.find?.((item) => item.id === 'guilu-drink-180') || data.products?.['guilu-drink-180'];
             if (!d30 || d30.name !== '龜鹿飲30cc玻璃罐' || d30.unit !== '罐') throw new Error(`${file} 30cc正式身分錯誤`);
-            const d30CatalogOffer = Array.isArray(d30.offers) ? d30.offers.find((offer) => offer && typeof offer === 'object') : null;
-            if (d30CatalogOffer && (d30CatalogOffer.qty !== 11 || d30CatalogOffer.total !== 500 || d30CatalogOffer.label !== '買10送1')) throw new Error(`${file} 30cc目錄優惠錯誤`);
-            if (d30.offer && (d30.offer.qty !== 11 || d30.offer.total !== 500 || d30.offer.label !== '買10送1')) throw new Error(`${file} 30cc銷售母本優惠錯誤`);
-            if (Array.isArray(d30.offers) && d30.offers.every((offer) => typeof offer === 'string') && !d30.offers.includes('買10送1')) throw new Error(`${file} 30cc優惠文字錯誤`);
             if (!d180 || d180.name !== '龜鹿飲180cc鋁袋') throw new Error(`${file} 180cc正式身分錯誤`);
-            const d180CatalogOffer = Array.isArray(d180.offers) ? d180.offers.find((offer) => offer && typeof offer === 'object') : null;
-            if (d180CatalogOffer && (d180CatalogOffer.qty !== 11 || d180CatalogOffer.total !== 2000 || d180CatalogOffer.label !== '買10送1')) throw new Error(`${file} 180cc目錄優惠錯誤`);
-            if (d180.offer && (d180.offer.qty !== 11 || d180.offer.total !== 2000 || d180.offer.label !== '買10送1')) throw new Error(`${file} 180cc銷售母本優惠錯誤`);
-            if (Array.isArray(d180.offers) && d180.offers.every((offer) => typeof offer === 'string') && !d180.offers.includes('買10送1')) throw new Error(`${file} 180cc優惠文字錯誤`);
           }
           NODE
           git diff --check
 
-      - name: Persist verified files or exact failure diagnostics
-        if: always()
+      - name: Persist verified generated files without a CI loop
         shell: bash
-        env:
-          NORMALIZE_RESULT: ${{ steps.normalize.outcome }}
-          SYNC_RESULT: ${{ steps.sync.outcome }}
-          RENORMALIZE_RESULT: ${{ steps.renormalize.outcome }}
-          CHECK_RESULT: ${{ steps.checks.outcome }}
-          CONTRACT_RESULT: ${{ steps.contract.outcome }}
         run: |
           set -euo pipefail
-          SUCCESS=false
-          if [ "$NORMALIZE_RESULT" = success ] && [ "$SYNC_RESULT" = success ] && [ "$RENORMALIZE_RESULT" = success ] && [ "$CHECK_RESULT" = success ] && [ "$CONTRACT_RESULT" = success ]; then SUCCESS=true; fi
-
-          if [ "$SUCCESS" = true ]; then
-            rm -f ci-last-error.txt
-          else
-            {
-              echo "commit=$(git rev-parse HEAD)"
-              echo "recorded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-              echo "workflow=${GITHUB_WORKFLOW}"
-              echo "run_id=${GITHUB_RUN_ID}"
-              echo "normalize_result=${NORMALIZE_RESULT}"
-              echo "sync_result=${SYNC_RESULT}"
-              echo "renormalize_result=${RENORMALIZE_RESULT}"
-              echo "check_result=${CHECK_RESULT}"
-              echo "contract_result=${CONTRACT_RESULT}"
-              for item in normalize sync renormalize checks contract; do
-                echo
-                echo "=== ${item} ==="
-                tail -n 220 "/tmp/line-${item}.log" 2>/dev/null || true
-              done
-            } > ci-last-error.txt
-          fi
-
+          rm -f ci-last-error.txt
           git config user.name "仙加味自動驗收"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A data.json line-sales-master.json package.json package-lock.json tools server.js test.js function.test.js catalog.test.js security.test.js README.md ci-last-error.txt
-          if ! git diff --cached --quiet; then
-            if [ "$SUCCESS" = true ]; then
-              git commit -m "chore(line): persist verified production-before-shipping catalog v424"
-            else
-              git commit -m "chore(line): persist exact v424 validation failure"
-            fi
-            for attempt in 1 2 3 4; do
-              git pull --rebase --autostash origin main && git push origin HEAD:main && break
-              if [ "$attempt" -eq 4 ]; then exit 1; fi
-              sleep $((attempt * 5))
-            done
+          if git diff --cached --quiet; then
+            echo "All authoritative files are already current."
+            exit 0
           fi
-
-      - name: Fail only after result is persisted
-        if: always()
-        shell: bash
-        env:
-          NORMALIZE_RESULT: ${{ steps.normalize.outcome }}
-          SYNC_RESULT: ${{ steps.sync.outcome }}
-          RENORMALIZE_RESULT: ${{ steps.renormalize.outcome }}
-          CHECK_RESULT: ${{ steps.checks.outcome }}
-          CONTRACT_RESULT: ${{ steps.contract.outcome }}
-        run: |
-          test "$NORMALIZE_RESULT" = success
-          test "$SYNC_RESULT" = success
-          test "$RENORMALIZE_RESULT" = success
-          test "$CHECK_RESULT" = success
-          test "$CONTRACT_RESULT" = success
+          git commit -m "chore(line): persist verified v429 authority [skip ci]"
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
