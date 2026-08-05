@@ -1,0 +1,36 @@
+name: 六項正式產品驗證
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/data/official-products.json'
+      - 'config/official-products.json'
+      - 'line-sales-master.json'
+      - 'product-sales-master.js'
+      - 'server.js'
+      - 'tools/sync_sales_master.js'
+      - 'tools/validate-official-products.mjs'
+      - '.github/workflows/official-products.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: official-products-line-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: 驗證六項正式產品
+        run: node tools/validate-official-products.mjs
+      - name: 執行 LINE OA 正式測試
+        run: npm test
