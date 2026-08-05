@@ -1,129 +1,13 @@
-name: 仙加味資料同步與驗收
-run-name: 仙加味資料同步與驗收 v430｜${{ github.event_name }}｜${{ github.ref_name }}
+name: 【暫停】LINE OA資料同步與驗收
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "data.json"
-      - "line-sales-master.json"
-      - "product-sales-master.js"
-      - "server.js"
-      - "test.js"
-      - "function.test.js"
-      - "line-order-cart.js"
-      - "line-order-cart.test.js"
-      - "internal-order-pricing.js"
-      - "internal-order-pricing.test.js"
-      - "internal-order-sync.js"
-      - "internal-line-order-sync.js"
-      - "internal-line-order-sync.test.js"
-      - "internal-inventory-seed.js"
-      - "internal-inventory-seed.test.js"
-      - "social-server.js"
-      - "tools/**"
-      - "package.json"
-      - "package-lock.json"
-      - "catalog.test.js"
-      - ".github/workflows/catalog-sync.yml"
 
 permissions:
-  contents: write
-
-concurrency:
-  group: xianjiawei-line-authority-v430
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  validate-and-sync:
-    if: github.event_name == 'workflow_dispatch' || github.actor != 'github-actions[bot]'
+  paused:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
     steps:
-      - name: Checkout latest main
-        uses: actions/checkout@v5
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install locked dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Apply authoritative LINE OA rules
-        run: node tools/lock-confirmed-trial-shipping-v423.mjs
-
-      - name: Synchronize website catalog and sales master
-        run: npm run sync:catalog
-
-      - name: Reapply authority after synchronization
-        run: node tools/lock-confirmed-trial-shipping-v423.mjs
-
-      - name: Run complete LINE OA validation
-        run: |
-          npm test
-          node test.js
-          node catalog.test.js
-          node function.test.js
-          node line-order-cart.test.js
-          node internal-inventory-seed.test.js
-          node internal-order-pricing.test.js
-          node internal-line-order-sync.test.js
-
-      - name: Verify final public and ordering contract
-        shell: bash
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const official = '資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計';
-          for (const file of ['data.json', 'line-sales-master.json']) {
-            const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-            const text = JSON.stringify(data);
-            if (data.trialCampaign?.fulfillmentRule !== official) throw new Error(`${file} 製作與出貨規則不一致`);
-            for (const bad of [
-              '買10送2',
-              '共12罐500元',
-              '共12包2,000元',
-              '30cc／瓶（小玻璃瓶）',
-              '資料及運費確認後約5～7個工作天出貨',
-              '接單後約5～7個工作天出貨',
-              '採接單安排製作，約5～7個工作天出貨'
-            ]) {
-              if (text.includes(bad)) throw new Error(`${file} 仍含舊內容：${bad}`);
-            }
-            for (const required of ['製作加工約需5～7個工作天', '完成後才安排出貨', '物流配送時間另計', '買10送1']) {
-              if (!text.includes(required)) throw new Error(`${file} 缺少正式內容：${required}`);
-            }
-            const d30 = data.products?.find?.((item) => item.id === 'guilu-drink-30') || data.products?.['guilu-drink-30'];
-            const d180 = data.products?.find?.((item) => item.id === 'guilu-drink-180') || data.products?.['guilu-drink-180'];
-            if (!d30 || d30.name !== '龜鹿飲30cc玻璃罐' || d30.unit !== '罐') throw new Error(`${file} 30cc正式身分錯誤`);
-            if (!d180 || d180.name !== '龜鹿飲180cc鋁袋') throw new Error(`${file} 180cc正式身分錯誤`);
-          }
-          NODE
-          git diff --check
-
-      - name: Persist verified generated files without a CI loop
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -f ci-last-error.txt
-          git config user.name "仙加味自動驗收"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- data.json line-sales-master.json package.json package-lock.json tools server.js test.js function.test.js catalog.test.js security.test.js README.md
-          if git ls-files --error-unmatch ci-last-error.txt >/dev/null 2>&1; then
-            git add -A -- ci-last-error.txt
-          fi
-          if git diff --cached --quiet; then
-            echo "All authoritative files are already current."
-            exit 0
-          fi
-          git commit -m "chore(line): persist verified v430 authority [skip ci]"
-          git pull --rebase --autostash origin main
-          git push origin HEAD:main
+      - run: echo 'LINE OA資料同步與驗收已暫停，待全部系統完善後再開啟。'
