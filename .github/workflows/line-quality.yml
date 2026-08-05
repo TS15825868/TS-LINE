@@ -84,10 +84,24 @@ jobs:
           if (drink30.specification !== '30cc／罐（小玻璃罐）' || drink30.unit !== '罐') throw new Error('30cc產品規格錯誤');
           const tangkuai = master.products['guilu-tangkuai'];
           if (tangkuai.specification !== '75g／盒｜8塊裝｜每塊約9.375g') throw new Error('龜鹿湯塊正式規格錯誤');
+          const jiao = master.products['guilu-jiao'];
+          const jiaoSpec = '600g／盒（1斤）｜32塊裝｜每塊約18.75g';
+          if (jiao.specification !== jiaoSpec || jiao.unit !== '盒') throw new Error('龜鹿膠正式規格錯誤');
+          for (const id of ['guilu-gao','guilu-tangkuai','guilu-jiao','luerong-fen']) {
+            const notice = String(master.products[id]?.fulfillmentNotice || '');
+            if (!notice.includes('預先製作備貨商品') || /5\s*[～~〜－-]\s*7/.test(notice)) {
+              throw new Error(`${id} 不得套用龜鹿飲5～7工作天交期`);
+            }
+          }
+          for (const id of ['guilu-drink-30','guilu-drink-180']) {
+            if (!String(master.products[id]?.fulfillmentNotice || '').includes('5～7個工作天')) {
+              throw new Error(`${id} 缺少龜鹿飲製作交期`);
+            }
+          }
           if (master.imagePolicy?.realProductImagesOnly !== true || master.imagePolicy?.noProductRedraw !== true || master.imagePolicy?.noPackageTextChange !== true) {
             throw new Error('產品原圖鎖定規則未啟用');
           }
-          console.log('PASS：LINE OA 正式產品、規格與產品原圖規則正確。');
+          console.log('PASS：LINE OA 正式產品、規格、龜鹿飲交期與產品原圖規則正確。');
           NODE
 
       - name: Verify final 15 post review package
