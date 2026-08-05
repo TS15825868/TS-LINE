@@ -3,6 +3,18 @@ name: 仙加味 LINE OA 品質守門員
 on:
   push:
     branches: [main]
+    paths:
+      - 'line-sales-master.json'
+      - 'data.json'
+      - 'assets/data/**'
+      - 'tools/**'
+      - 'server.js'
+      - 'social-*.js'
+      - 'runtime-social-stabilizer.js'
+      - 'product-*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/line-quality.yml'
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -21,16 +33,21 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Normalize official product authority
+        run: |
+          node tools/normalize-official-products.mjs
+          node tools/lock-confirmed-trial-shipping-v423.mjs
 
       - name: Validate GitHub Actions rules
         run: node tools/validate_github_workflows.js
@@ -63,8 +80,8 @@ jobs:
             if (!master.products?.[id]) throw new Error(`缺少正式產品：${id}`);
           }
           const drink30 = master.products['guilu-drink-30'];
-          if (drink30.name !== '龜鹿飲30cc玻璃瓶') throw new Error('30cc產品名稱錯誤');
-          if (drink30.specification !== '30cc／瓶（小玻璃瓶）' || drink30.unit !== '瓶') throw new Error('30cc產品規格錯誤');
+          if (drink30.name !== '龜鹿飲30cc玻璃罐') throw new Error('30cc產品名稱錯誤');
+          if (drink30.specification !== '30cc／罐（小玻璃罐）' || drink30.unit !== '罐') throw new Error('30cc產品規格錯誤');
           const tangkuai = master.products['guilu-tangkuai'];
           if (tangkuai.specification !== '75g／盒｜8塊裝｜每塊約9.375g') throw new Error('龜鹿湯塊正式規格錯誤');
           if (master.imagePolicy?.realProductImagesOnly !== true || master.imagePolicy?.noProductRedraw !== true || master.imagePolicy?.noPackageTextChange !== true) {
