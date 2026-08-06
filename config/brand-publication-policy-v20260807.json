@@ -1,0 +1,41 @@
+{
+  "version": "2026-08-07",
+  "brand": {
+    "publicName": "仙加味",
+    "publicSeriesName": "仙加味・龜鹿",
+    "tagline": "補養，是一種節奏。",
+    "hideLegalCompanyFromPublicMarketing": true,
+    "legalCompanyDisplay": "only-when-legally-or-commercially-required"
+  },
+  "lineOA": {
+    "officialAccount": "@762jybnm",
+    "publicCopyMustUseBrandOnly": true,
+    "trialKeyword": "申請試喝",
+    "approvalMeansAutoQueue": true,
+    "immediatePublishMustBypassSchedule": true,
+    "manualPlatforms": ["LINE VOOM", "Google 商家最新動態"]
+  },
+  "schedule": {
+    "timezone": "Asia/Taipei",
+    "weeklyFrequency": 2,
+    "slots": [
+      {"weekday": "TU", "time": "19:30"},
+      {"weekday": "SA", "time": "09:30"}
+    ]
+  },
+  "contentRules": {
+    "weatherAware": true,
+    "weatherLocation": "台北市萬華區",
+    "avoidDuplicateCopy": true,
+    "avoidDuplicateImage": true,
+    "avoidConsecutiveSameTopic": true,
+    "noMedicalClaims": true,
+    "publicCompanyNameForbidden": true
+  },
+  "mascot": {
+    "owner": "官網版Q版小老闆",
+    "primaryPartners": ["小鹿夥伴", "小烏龜夥伴"],
+    "contextPartners": ["灰色小河馬娃娃", "米色小鹿安撫巾"],
+    "apronRequiredArtwork": ["小鹿", "小烏龜"]
+  }
+}
