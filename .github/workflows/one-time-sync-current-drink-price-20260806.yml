@@ -1,0 +1,61 @@
+name: ONE_TIME_SYNC_CURRENT_DRINK_PRICE_20260806
+run-name: LINE OA 單次同步30cc最新價格｜${{ github.sha }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-time-sync-current-drink-price-20260806.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-time-line-current-drink-price-20260806
+  cancel-in-progress: false
+
+jobs:
+  sync-test-clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: 同步唯一正式售價主檔到data.json
+        run: node tools/sync_sales_master.js --write
+
+      - name: 驗證最新價格與社群安全鎖
+        run: |
+          set -euo pipefail
+          npm test
+          node - <<'NODE'
+          const data = require('./data.json');
+          const p30 = data.products.find((p) => p.id === 'guilu-drink-30');
+          const p180 = data.products.find((p) => p.id === 'guilu-drink-180');
+          if (p30?.price !== 60) throw new Error('30cc data.json售價不是60元');
+          const o30 = (p30.offers || []).find((o) => o.label === '買10送1');
+          if (o30?.qty !== 11 || o30?.total !== 600) throw new Error('30cc買10送1不是11罐600元');
+          if (p180?.price !== 200) throw new Error('180cc售價不是200元');
+          const o180 = (p180.offers || []).find((o) => o.label === '買10送1');
+          if (o180?.qty !== 11 || o180?.total !== 2000) throw new Error('180cc買10送1不是11包2,000元');
+          if (data.products.length !== 6) throw new Error('正式產品不是六項');
+          console.log('PASS LINE OA data.json最新價格與六項產品');
+          NODE
+          git diff --check
+
+      - name: 寫回同步資料並移除本次流程
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-time-sync-current-drink-price-20260806.yml
+          git add data.json
+          git commit -m 'chore(line): sync data mirror to 30cc price 60 and remove one-time workflow'
+          git push origin HEAD:main
