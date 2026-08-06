@@ -1,0 +1,52 @@
+name: ONE_TIME_SYNC_CURRENT_SALES_20260806
+run-name: LINE OA 單次同步最新售價鏡像｜${{ github.sha }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-time-sync-current-sales-20260806.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-time-sync-current-sales-20260806
+  cancel-in-progress: false
+
+jobs:
+  sync-and-remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: 同步正式銷售主檔到資料鏡像
+        run: |
+          set -euo pipefail
+          node tools/sync_sales_master.js --write
+          node tools/sync_sales_master.js
+          npm test
+
+      - name: 提交鏡像並移除本次流程
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin main
+          node tools/sync_sales_master.js --write
+          git add data.json
+          git rm --ignore-unmatch .github/workflows/one-time-sync-current-sales-20260806.yml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'chore(line): sync 30cc price 60 and remove one-time workflow'
+          git push origin HEAD:main
