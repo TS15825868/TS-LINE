@@ -1,0 +1,29 @@
+{
+  "version": "2026-08-06-v1",
+  "authority": "owner-confirmed",
+  "repositoryRole": "LINE OA公開程式與對外回覆內容",
+  "allowedPublicContent": [
+    "LINE Bot程式碼",
+    "公開產品名稱、規格、售價與活動",
+    "公開FAQ、試喝說明與官方LINE導流",
+    "已核准或已發布貼文的公開副本",
+    "Secret名稱與環境變數名稱"
+  ],
+  "forbiddenPublicContent": [
+    "LINE Channel Access Token與Channel Secret實際值",
+    "Webhook Token、Cloudflare Token、OpenAI API Key與任何Secret實際值",
+    "客戶姓名、電話、地址、訊息內容與訂單資料",
+    "供應商、採購、成本、毛利與批發底價",
+    "未核准貼文、內部備註、草稿與候選圖片"
+  ],
+  "runtimeRules": {
+    "secretValuesFromEnvironmentOnly": true,
+    "ownerApprovalRequiredForPublicCopy": true,
+    "publishedPostDuplicateLockRequired": true,
+    "automaticSocialPublishing": false,
+    "lineVoomManualOnly": true,
+    "googleBusinessManualOnly": true
+  },
+  "privateSystemOfRecord": "TS15825868/xianjiawei-internal",
+  "publicPublishedContentSource": "TS15825868/xianjiawei"
+}
