@@ -1,0 +1,106 @@
+name: ONE_TIME_UPDATE_DRINK_PRICING_20260806
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-time-update-drink-pricing-20260806.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Update 30cc official pricing everywhere
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('.')
+          master_path = root / 'line-sales-master.json'
+          master = json.loads(master_path.read_text(encoding='utf-8'))
+          master['version'] = '2026-08-06-canonical-v3'
+          p30 = master['products']['guilu-drink-30']
+          p30['price'] = 60
+          p30['offers'] = ['買10送1']
+          p30['priceText'] = '$60 / 罐'
+          p30['priceLabel'] = '售價60元，買10送1（共11罐600元）'
+          trial = master.get('trialCampaign', {})
+          trial['publicPrice'] = '龜鹿飲30cc售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元'
+          master_path.write_text(json.dumps(master, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          replacements = {
+            '"guilu-drink-30": { price: 50, buyTenGetOne: true }': '"guilu-drink-30": { price: 60, buyTenGetOne: true }',
+            'p[\'guilu-drink-30\'].price!==50': 'p[\'guilu-drink-30\'].price!==60',
+            '"guilu-drink-30": { price: 50, options: [1, 3, 5, 11], offers: [{ qty: 11, total: 500, label: "買10送1" }] }': '"guilu-drink-30": { price: 60, options: [1, 3, 5, 11], offers: [{ qty: 11, total: 600, label: "買10送1" }] }',
+            '{ productId: "guilu-drink-30", name: "龜鹿飲30cc玻璃罐", price: 50 }': '{ productId: "guilu-drink-30", name: "龜鹿飲30cc玻璃罐", price: 60 }',
+            '{ productId: "guilu-drink-30", name: "龜鹿飲30cc", price: 50 }': '{ productId: "guilu-drink-30", name: "龜鹿飲30cc", price: 60 }',
+            '"guilu-drink-30": { price: 50, offerQty: 11, offerTotal: 500': '"guilu-drink-30": { price: 60, offerQty: 11, offerTotal: 600',
+            '正式售價50元／罐': '正式售價60元／罐',
+            '售價50元，買10送1（共11罐500元）': '售價60元，買10送1（共11罐600元）',
+            '龜鹿飲30cc售價50元／罐；買10送1，共11罐500元': '龜鹿飲30cc售價60元／罐；買10送1，共11罐600元',
+          }
+          paths = [
+            Path('package.json'),
+            Path('tools/sync_sales_master.js'),
+            Path('function.test.js'),
+            Path('internal-order-pricing.test.js'),
+            Path('catalog.test.js'),
+            Path('test.js'),
+            Path('product-sales-master.js'),
+          ]
+          for path in paths:
+            if not path.exists():
+              continue
+            text = path.read_text(encoding='utf-8')
+            for old, new in replacements.items():
+              text = text.replace(old, new)
+            path.write_text(text, encoding='utf-8')
+          PY
+
+          node tools/sync_sales_master.js --write
+
+          node <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+          const master = JSON.parse(fs.readFileSync('line-sales-master.json', 'utf8'));
+          const p = data.products.find((item) => item.id === 'guilu-drink-30');
+          if (!p || p.price !== 60) throw new Error('data.json 30cc price must be 60');
+          if (!p.offers.some((offer) => offer.qty === 11 && offer.total === 600 && offer.label === '買10送1')) throw new Error('data.json 30cc offer must be 11 jars for 600');
+          if (master.products['guilu-drink-30'].price !== 60) throw new Error('sales master 30cc price must be 60');
+          if (!String(master.trialCampaign.publicPrice).includes('共11罐600元')) throw new Error('trial public price must be updated');
+          NODE
+
+      - name: Run LINE OA tests
+        run: |
+          set -euo pipefail
+          npm install --ignore-scripts --no-audit --no-fund
+          npm test
+          git diff --check
+
+      - name: Commit updates and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/one-time-update-drink-pricing-20260806.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(line): update 30cc price to 60 and 11 jars to 600'
+          git pull --rebase origin main
+          git push origin HEAD:main
