@@ -48,6 +48,8 @@ assert.ok(!drinkText.includes("選擇規格"));
 
 const soup = normalizeNode(bubble("龜鹿湯塊", "規格：75g／盒｜8塊裝｜每塊約9.375g"));
 const soupText = JSON.stringify(soup);
+assert.equal(soup.contents.body.contents[0].text, "龜鹿湯塊");
+assert.equal(soup.contents.body.contents[1].text, SOUP_VARIANTS);
 assert.ok(soupText.includes(READY_STOCK_NOTICE));
 assert.ok(soupText.includes(SOUP_VARIANTS));
 assert.ok(soupText.includes("選擇規格"));
@@ -74,6 +76,7 @@ assert.ok(drinkBubble.includes(DRINK_NOTICE));
 assert.ok(!drinkBubble.includes("選擇規格"));
 assert.ok(soupBubble.includes(SOUP_VARIANTS));
 assert.ok(soupBubble.includes("選擇規格"));
+assert.equal(bubbles[1].body.contents[0].text, "龜鹿湯塊");
 assert.ok(gaoBubble.includes(READY_STOCK_NOTICE));
 assert.ok(!gaoBubble.includes("選擇規格"));
 
@@ -83,4 +86,4 @@ const mixed = normalizeNode({
 });
 assert.ok(JSON.stringify(mixed).includes(MIXED_NOTICE));
 
-console.log("PASS：LINE OA 依產品區分接單製作與預先備貨；龜鹿湯塊顯示75g／300g／600g且不誤用75g價格，輪播內其他產品不受污染。");
+console.log("PASS：LINE OA 依產品區分接單製作與預先備貨；龜鹿湯塊標題維持精簡、規格列出75g／300g／600g且不誤用75g價格，輪播內其他產品不受污染。");
