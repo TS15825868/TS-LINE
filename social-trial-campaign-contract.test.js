@@ -17,17 +17,30 @@ const required = [
 for (const value of required) {
   if (!campaign.copy.includes(value)) throw new Error(`統一試喝文案缺漏：${value}`);
 }
-if (campaign.version !== "2026-08-06-trial-campaign-v1") throw new Error("試喝文案版本錯誤");
-if (campaign.posterUrl !== "https://ts15825868.github.io/xianjiawei/images/posts/approved-v413/guilu-drink-trial-60.svg") {
+if (campaign.version !== "2026-08-06-trial-campaign-v2-published-lock") throw new Error("試喝文案與發布鎖定版本錯誤");
+if (campaign.posterUrl !== "https://ts15825868.github.io/xianjiawei/images/posts/approved-v413/guilu-drink-trial-60.svg?v=20260806-published") {
   throw new Error("試喝海報網址錯誤");
 }
 if (campaign.officialLine?.label !== "官方LINE" || campaign.officialLine?.id !== "@762jybnm") {
   throw new Error("官方LINE資料錯誤");
 }
-if (campaign.publishingSafety?.ownerReviewRequired !== true || campaign.publishingSafety?.autoPublish !== false) {
-  throw new Error("試喝貼文人工審核安全鎖錯誤");
+if (campaign.ownerPublication?.confirmed !== true || campaign.ownerPublication?.publicationMode !== "manual") {
+  throw new Error("試喝貼文缺少老闆手動發布確認");
 }
-if (campaign.publishingSafety?.lineVoomManualOnly !== true || campaign.publishingSafety?.googleBusinessManualOnly !== true) {
+if (campaign.ownerPublication?.preventRepublish !== true || campaign.ownerPublication?.doNotRepublish !== true) {
+  throw new Error("試喝貼文缺少禁止重發鎖定");
+}
+const safety = campaign.publishingSafety || {};
+if (safety.approved !== true || safety.published !== true || safety.manualPublished !== true) {
+  throw new Error("試喝貼文發布狀態錯誤");
+}
+if (safety.publishAllowed !== false || safety.preventRepublish !== true || safety.doNotRepublish !== true) {
+  throw new Error("已發布試喝貼文不得再次發布");
+}
+if (safety.autoApprove !== false || safety.autoSchedule !== false || safety.autoPublish !== false) {
+  throw new Error("試喝貼文自動核准、排程或發布安全鎖錯誤");
+}
+if (safety.lineVoomManualOnly !== true || safety.googleBusinessManualOnly !== true) {
   throw new Error("LINE VOOM或Google商家必須維持人工發布");
 }
 
@@ -50,4 +63,4 @@ const offer180 = (data180?.offers || []).find((item) => item.label === "買10送
 if (data30?.price !== 60 || offer30?.qty !== 11 || offer30?.total !== 600) throw new Error("data.json 30cc價格鏡像錯誤");
 if (data180?.price !== 200 || offer180?.qty !== 11 || offer180?.total !== 2000) throw new Error("data.json 180cc價格鏡像錯誤");
 
-console.log("PASS：LINE OA統一試喝文案、正式海報、最新售價與人工發布安全鎖。");
+console.log("PASS：LINE OA統一試喝文案、正式海報、最新售價與老闆手動發布禁止重發鎖定。");
