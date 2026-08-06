@@ -18,7 +18,7 @@ for (const value of required) {
   if (!campaign.copy.includes(value)) throw new Error(`統一試喝文案缺漏：${value}`);
 }
 if (campaign.version !== "2026-08-06-trial-campaign-v2-published-lock") throw new Error("試喝文案與發布鎖定版本錯誤");
-if (campaign.posterUrl !== "https://ts15825868.github.io/xianjiawei/images/posts/approved-v413/guilu-drink-trial-60.svg?v=20260806-published") {
+if (campaign.posterUrl !== "https://ts15825868.github.io/xianjiawei/images/posts/approved-v413/guilu-drink-trial-60.svg") {
   throw new Error("試喝海報網址錯誤");
 }
 if (campaign.officialLine?.label !== "官方LINE" || campaign.officialLine?.id !== "@762jybnm") {
