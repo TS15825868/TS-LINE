@@ -41,8 +41,8 @@ function normalizeText(value, scopeText = "") {
   if (context.includes("龜鹿湯塊") && !text.includes("300g／盒｜16塊裝")) {
     const specLine = "規格：75g／盒｜8塊裝｜每塊約9.375g";
     if (text.includes(specLine)) {
-      text = text.replace(specLine, `${specLine}\n${SOUP_VARIANTS}`);
-    } else if (/龜鹿湯塊/.test(text) && text.length < 4500) {
+      text = text.replace(specLine, SOUP_VARIANTS);
+    } else if (/^規格[:：].*75g/m.test(text)) {
       text = `${text}\n${SOUP_VARIANTS}`;
     }
   }
