@@ -51,14 +51,17 @@ jobs:
           const pkg = require('./package.json');
           const lock = require('./package-lock.json');
           const sales = require('./line-sales-master.json');
-          if (lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version) throw new Error('package lock version mismatch');
+          const data = require('./data.json');
+          if (lock.lockfileVersion !== 3) throw new Error('package-lock格式錯誤');
+          if (JSON.stringify(lock.packages?.['']?.dependencies || {}) !== JSON.stringify(pkg.dependencies || {})) throw new Error('package與package-lock依賴不同步');
           const gao = sales.products?.['guilu-gao'];
-          if (gao?.price !== 1800 || gao?.originalPrice !== 2100 || gao?.promotionalPrice !== 1800) throw new Error('龜鹿膏售價與優惠價主檔錯誤');
+          if (gao?.price !== 1800 || gao?.originalPrice !== 2100 || gao?.priceLabel !== '售價2,100元，優惠價1,800元') throw new Error('龜鹿膏售價與優惠價主檔錯誤');
           const drink30 = sales.products?.['guilu-drink-30'];
           if (drink30?.name !== '龜鹿飲30cc玻璃罐' || drink30?.specification !== '30cc／罐（小玻璃罐）' || drink30?.unit !== '罐') throw new Error('龜鹿飲30cc正式名稱或規格錯誤');
-          if (drink30?.price !== 50 || !drink30?.offers?.includes('買10送1') || drink30?.offer?.qty !== 11 || drink30?.offer?.total !== 500) throw new Error('龜鹿飲30cc售價或買10送1錯誤');
+          if (drink30?.price !== 60 || !drink30?.offers?.includes('買10送1') || drink30?.priceLabel !== '正式售價60元／罐，買10送1（共11罐600元）') throw new Error('龜鹿飲30cc售價或買10送1錯誤');
           const drink180 = sales.products?.['guilu-drink-180'];
-          if (drink180?.price !== 200 || !drink180?.offers?.includes('買10送1') || drink180?.offer?.qty !== 11 || drink180?.offer?.total !== 2000) throw new Error('龜鹿飲180cc售價或買10送1錯誤');
+          if (drink180?.price !== 200 || !drink180?.offers?.includes('買10送1') || drink180?.priceLabel !== '售價200元，買10送1（共11包2,000元）') throw new Error('龜鹿飲180cc售價或買10送1錯誤');
+          if (sales.trialCampaign?.publicPrice !== '龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元') throw new Error('試喝頁公開價格不同步');
           if (sales.products?.['guilu-tangkuai']?.price !== 1600) throw new Error('龜鹿湯塊售價主檔錯誤');
           if (sales.products?.['luerong-fen']?.price !== 2000) throw new Error('鹿茸粉售價主檔錯誤');
           const jiao = sales.products?.['guilu-jiao'];
@@ -66,12 +69,21 @@ jobs:
           if (sales.trialCampaign?.contents !== '30cc小玻璃罐×3罐' || sales.trialCampaign?.productFee !== 0) throw new Error('長期試喝內容錯誤');
           if (!sales.imagePolicy?.partners?.includes('小鹿娃娃') || !sales.imagePolicy?.partners?.includes('小烏龜娃娃')) throw new Error('小老闆固定夥伴缺漏');
           if (sales.imagePolicy?.approvalRequiredBeforePublish !== true) throw new Error('人工審核規則未鎖定');
-          const all = JSON.stringify(sales);
-          for (const legacy of ['買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）','600g／盒（1斤）']) {
-            if (all.includes(legacy)) throw new Error(`正式母本仍含舊資料：${legacy}`);
+          const data30 = data.products?.find((item) => item.id === 'guilu-drink-30');
+          const data180 = data.products?.find((item) => item.id === 'guilu-drink-180');
+          const offer30 = (data30?.offers || []).find((item) => item.label === '買10送1');
+          const offer180 = (data180?.offers || []).find((item) => item.label === '買10送1');
+          if (data30?.price !== 60 || offer30?.qty !== 11 || offer30?.total !== 600) throw new Error('data.json 30cc鏡像未同步');
+          if (data180?.price !== 200 || offer180?.qty !== 11 || offer180?.total !== 2000) throw new Error('data.json 180cc鏡像未同步');
+          if (data.products?.length !== 6) throw new Error('data.json正式產品不是六項');
+          const all = JSON.stringify({sales, data});
+          for (const legacy of ['買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）','600g／盒（1斤）','買10送1，共11罐500元']) {
+            if (all.includes(legacy)) throw new Error(`正式執行資料仍含舊資料：${legacy}`);
           }
-          console.log(`PASS TS-LINE ${pkg.version}: official products, drink-only lead time, trial and owner review policy`);
+          console.log(`PASS TS-LINE ${pkg.version}: six products, 30cc 60/600, 180cc 200/2000, drink-only lead time and owner review policy`);
           NODE
 
-      - name: Ensure audit remains read-only
-        run: git diff --exit-code
+      - name: Restore generated mirror and ensure audit source remains read-only
+        run: |
+          git checkout -- data.json
+          git diff --exit-code
