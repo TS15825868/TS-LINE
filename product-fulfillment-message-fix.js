@@ -6,6 +6,7 @@
  * 2. 龜鹿膏、龜鹿湯塊、龜鹿膠、鹿茸粉顯示預先備貨說明。
  * 3. 龜鹿湯塊固定列出 75g／300g／600g 三種正式規格，避免只顯示 75g。
  * 4. 未建立各規格獨立計價前，龜鹿湯塊不直接把 300g／600g 當成 75g 加入購物車。
+ * 5. 每個 Flex bubble 獨立判斷，不讓龜鹿湯塊規則污染同一輪播的其他產品。
  */
 
 const line = require("@line/bot-sdk");
@@ -59,11 +60,26 @@ function normalizeAction(action, soupScope) {
   return next;
 }
 
+function directText(node) {
+  if (!node || typeof node !== "object" || Array.isArray(node)) return "";
+  return Object.entries(node)
+    .filter(([key, value]) => ["text", "altText", "label"].includes(key) && typeof value === "string")
+    .map(([, value]) => value)
+    .join("\n");
+}
+
 function normalizeNode(node, inheritedScope = "") {
   if (Array.isArray(node)) return node.map((item) => normalizeNode(item, inheritedScope));
   if (!node || typeof node !== "object") return node;
 
-  const localScope = `${inheritedScope}\n${JSON.stringify(node)}`;
+  const ownText = directText(node);
+  const isBubble = node.type === "bubble";
+  const isTextMessage = node.type === "text" && typeof node.text === "string";
+  const localScope = isBubble
+    ? JSON.stringify(node)
+    : isTextMessage
+      ? node.text
+      : `${inheritedScope}\n${ownText}`.trim();
   const soupScope = localScope.includes("龜鹿湯塊");
   const next = {};
 
