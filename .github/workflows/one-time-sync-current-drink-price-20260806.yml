@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: one-time-line-current-drink-price-20260806
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   sync-test-clean:
@@ -28,8 +28,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: 同步唯一正式售價主檔到data.json
-        run: node tools/sync_sales_master.js --write
+      - name: 重新取得最新main並同步唯一正式售價主檔
+        run: |
+          set -euo pipefail
+          git pull --rebase origin main
+          node tools/sync_sales_master.js --write
 
       - name: 驗證最新價格與社群安全鎖
         run: |
@@ -39,12 +42,10 @@ jobs:
           const data = require('./data.json');
           const p30 = data.products.find((p) => p.id === 'guilu-drink-30');
           const p180 = data.products.find((p) => p.id === 'guilu-drink-180');
-          if (p30?.price !== 60) throw new Error('30cc data.json售價不是60元');
-          const o30 = (p30.offers || []).find((o) => o.label === '買10送1');
-          if (o30?.qty !== 11 || o30?.total !== 600) throw new Error('30cc買10送1不是11罐600元');
-          if (p180?.price !== 200) throw new Error('180cc售價不是200元');
-          const o180 = (p180.offers || []).find((o) => o.label === '買10送1');
-          if (o180?.qty !== 11 || o180?.total !== 2000) throw new Error('180cc買10送1不是11包2,000元');
+          const o30 = (p30?.offers || []).find((o) => o.label === '買10送1');
+          const o180 = (p180?.offers || []).find((o) => o.label === '買10送1');
+          if (p30?.price !== 60 || o30?.qty !== 11 || o30?.total !== 600) throw new Error('30cc不是60元／11罐600元');
+          if (p180?.price !== 200 || o180?.qty !== 11 || o180?.total !== 2000) throw new Error('180cc不是200元／11包2,000元');
           if (data.products.length !== 6) throw new Error('正式產品不是六項');
           console.log('PASS LINE OA data.json最新價格與六項產品');
           NODE
@@ -58,4 +59,10 @@ jobs:
           git rm .github/workflows/one-time-sync-current-drink-price-20260806.yml
           git add data.json
           git commit -m 'chore(line): sync data mirror to 30cc price 60 and remove one-time workflow'
+          git pull --rebase origin main
+          node tools/sync_sales_master.js --write
+          git add data.json
+          if ! git diff --cached --quiet; then
+            git commit --amend --no-edit
+          fi
           git push origin HEAD:main
