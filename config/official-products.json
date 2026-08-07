@@ -1,28 +1,33 @@
 {
-  "version": "2026-08-05-user-authority-v4",
+  "version": "2026-08-08-six-products-single-spec-v1",
   "authority": "user-confirmed",
+  "rule": "LINE OA只允許6項正式規格，不得再建立或回覆湯塊300g／600g等舊規格。",
   "products": [
     {"id":"guilu-gao","name":"龜鹿膏","spec":"100g／罐","fulfillmentType":"ready-stock"},
-    {"id":"guilu-drink-30","name":"龜鹿飲30cc玻璃罐","spec":"30cc／罐（小玻璃罐）","package":"小玻璃罐","fulfillmentType":"made-to-order-drink","image":"https://ts-line.onrender.com/assets/guilu-drink-30-clean.jpg?v=403.0-20260805-official-original","officialOriginalImage":"https://ts15825868.github.io/xianjiawei/images/guilu-drink-30cc-glass.jpg?v=412.0","imagePolicy":"official-original-contain-no-crop"},
-    {"id":"guilu-drink-180","name":"龜鹿飲180cc鋁袋","spec":"180cc／包（鋁袋）","package":"鋁袋","fulfillmentType":"made-to-order-drink"},
-    {"id":"guilu-tangkuai","name":"龜鹿湯塊","spec":"75g／盒｜8塊裝｜每塊約9.375g","fulfillmentType":"ready-stock"},
-    {"id":"guilu-jiao","name":"龜鹿膠","spec":"600g（1斤）／盒｜32塊裝｜每塊約18.75g","fulfillmentType":"ready-stock"},
+    {"id":"guilu-drink-30","name":"龜鹿飲","spec":"30cc／罐","package":"小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋","fulfillmentType":"made-to-order-drink","officialOriginalImage":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260808","imagePolicy":"official-original-contain-no-crop"},
+    {"id":"guilu-drink-180","name":"龜鹿飲","spec":"180cc／包","package":"狹長鋁袋","fulfillmentType":"made-to-order-drink"},
+    {"id":"guilu-tangkuai","name":"龜鹿湯塊","spec":"75g／盒","fulfillmentType":"ready-stock"},
+    {"id":"guilu-jiao","name":"龜鹿膠","spec":"600g／盒","fulfillmentType":"ready-stock"},
     {"id":"luerong-fen","name":"鹿茸粉","spec":"75g／罐","fulfillmentType":"ready-stock"}
   ],
   "fulfillmentPolicy": {
-    "version": "2026-08-05-v2",
-    "drinkProductIds": ["guilu-drink-30", "guilu-drink-180"],
-    "readyStockProductIds": ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]
+    "version": "2026-08-08-v1",
+    "drinkProductIds": ["guilu-drink-30","guilu-drink-180"],
+    "readyStockProductIds": ["guilu-gao","guilu-tangkuai","guilu-jiao","luerong-fen"]
   },
-  "forbidden": [
-    "龜鹿飲30cc玻璃罐",
-    "30cc／罐（小玻璃罐）",
-    "小玻璃罐",
-    "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
+  "forbiddenDeprecatedSpecs": [
     "龜鹿湯塊150g",
     "龜鹿湯塊300g",
     "龜鹿湯塊600g",
-    "PROD-SOUP-300",
-    "PROD-SOUP-600"
-  ]
+    "300g／盒",
+    "600g／盒（龜鹿湯塊）",
+    "龜鹿飲30cc玻璃瓶",
+    "30cc／瓶"
+  ],
+  "imageLocks": {
+    "guiluDrink30":"裸罐無貼紙，高矮胖瘦照原圖",
+    "guiluDrink180":"狹長鋁袋，不拉寬不加高",
+    "guiluGao":"只用新版米白標籤",
+    "guiluJiao":"淡紫盒等比例，不橫向拉長"
+  }
 }
