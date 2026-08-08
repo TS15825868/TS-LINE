@@ -1,0 +1,24 @@
+"use strict";
+const assert = require("node:assert/strict");
+const rich = require("./line-rich-menu-sync");
+
+assert.equal(rich.VERSION, "20260808-rich-menu-website-chibi-v1");
+assert.ok(rich.MENU_NAME.includes("網站Q版"));
+assert.ok(rich.BASE_MENU.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
+assert.equal(rich.BOSS_SOURCES.length, 6);
+for (const url of rich.BOSS_SOURCES) {
+  assert.ok(url.includes("ts15825868.github.io/xianjiawei/images/brand/line-oa/"));
+  assert.ok(!url.includes("products-v3"));
+  assert.ok(!url.includes("dm-final"));
+}
+const menu = rich.menuDefinition();
+assert.deepEqual(menu.size, { width: 2500, height: 1686 });
+assert.equal(menu.selected, true);
+assert.equal(menu.areas.length, 6);
+const labels = menu.areas.map((area) => area.action.label);
+const texts = menu.areas.map((area) => area.action.text);
+assert.deepEqual(labels, ["看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]);
+assert.deepEqual(texts, ["看產品", "查看購買清單", "幫我推薦", "搭配組合", "怎麼使用", "開始結帳"]);
+assert.equal(menu.areas.reduce((sum, area) => sum + area.bounds.width * area.bounds.height, 0), 2500 * 1686);
+
+console.log("PASS：Rich Menu維持3×2六格功能，啟動同步只使用官網網站Q版小老闆來源，不混產品宣傳圖。");
