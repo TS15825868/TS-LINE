@@ -2,14 +2,14 @@
 
 /**
  * LINE OA outbound safety layer.
- * - 30cc一律使用正式三罐裸小玻璃罐原圖，不從舊DM裁切。
+ * - 30cc一律使用目前正式裸小玻璃罐原圖，不從舊DM裁切、不改成瓶型。
  * - 5～7個工作天只套用龜鹿飲30cc與180cc。
  * - 龜鹿膏、龜鹿湯塊、龜鹿膠、鹿茸粉只顯示預先備貨說明。
  * - 不變更未核准貼文不得發布、LINE VOOM人工等安全規則。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "403.0-20260805-official-original";
+const VERSION = "20260808-six-spec-official-original-v2";
 const BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
 const APPROVED_MASCOT_NAMES = ["recommend", "combo", "usage", "faq"];
 const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg"];
@@ -19,7 +19,7 @@ const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({ name, url: `${BASE}/
 const DRINK_PRODUCT_PATTERN = /龜鹿飲|30\s*cc|180\s*cc/i;
 const STOCK_PRODUCT_PATTERN = /龜鹿膏|龜鹿湯塊|龜鹿膠|鹿茸粉/;
 const DRINK_30_PATTERN = /龜鹿飲\s*30\s*cc|30\s*cc.*(?:小玻璃罐|玻璃罐)/i;
-const LEGACY_IMAGE_PATTERN = /(?:images\/products-v3\/guilu-drink-30\.jpg|images\/dm-final\/02_guilu-drink-30cc-dm\.jpg|images\/products-v3\/guilu-drink-30-clean\.svg)/i;
+const LEGACY_IMAGE_PATTERN = /(?:images\/guilu-drink-30cc-glass\.jpg|images\/dm-final\/02_guilu-drink-30cc-dm\.jpg|images\/products-v3\/guilu-drink-30-clean\.svg)/i;
 const LEGACY_ORDER_NOTICE_PATTERN = /(?:訂單資料與付款方式|資料及運費)確認後安排製作加工[，,；;\s]*製作加工約需\s*5\s*[～~〜－-]\s*7\s*個工作天[；;，,\s]*完成後才安排出貨[，,；;\s]*物流配送時間另計[。.]?/g;
 
 const DRINK_FULFILLMENT_NOTICE = "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
@@ -30,7 +30,7 @@ const GENERAL_FULFILLMENT_NOTICE = "龜鹿飲30cc與180cc為接單後安排製�
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const CLEAN_DRINK_IMAGE_PATH = "/assets/guilu-drink-30-clean.jpg";
 const CLEAN_DRINK_IMAGE_URL = `${PUBLIC_BASE_URL}${CLEAN_DRINK_IMAGE_PATH}?v=${VERSION}`;
-const OFFICIAL_DRINK_SOURCE = "https://ts15825868.github.io/xianjiawei/images/guilu-drink-30cc-glass.jpg?v=412.0";
+const OFFICIAL_DRINK_SOURCE = "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260805";
 let cleanDrinkImagePromise = null;
 
 function approvedUrl(name) {
