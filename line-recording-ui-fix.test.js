@@ -37,8 +37,9 @@ const recommend = {
 };
 fix.applyVisualFix(recommend);
 assert.ok(recommend.hero, "怎麼選卡片不得再出現空白 hero");
-assert.ok(recommend.hero.url.includes("/assets/mascot-clean/recommend.jpg"));
-assert.equal(recommend.hero.aspectRatio, "1:1");
+assert.ok(recommend.hero.url.includes("ts15825868.github.io/xianjiawei/images/brand/line-oa/brand.jpg"), "怎麼選卡必須使用GitHub Pages網站Q版小老闆靜態圖");
+assert.ok(!recommend.hero.url.includes("onrender.com"), "怎麼選hero不可再依賴Render即時產圖");
+assert.equal(recommend.hero.aspectRatio, "4:3");
 assert.equal(recommend.hero.aspectMode, "fit");
 
 const multi = {
@@ -46,6 +47,6 @@ const multi = {
   body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "龜鹿膏與龜鹿飲30cc怎麼選" }] },
 };
 fix.applyVisualFix(multi);
-assert.ok(multi.hero.url.includes("/assets/mascot-clean/recommend.jpg"), "多產品推薦卡應用小老闆，不可誤塞其中一項產品主圖");
+assert.ok(multi.hero.url.includes("/images/brand/line-oa/brand.jpg"), "多產品推薦卡應用網站Q版小老闆，不可誤塞其中一項產品主圖");
 
-console.log("PASS：LINE OA 六產品只用 products-v2 實際照片；DM按鈕改正式產品圖；怎麼選卡不再空白。");
+console.log("PASS：LINE OA 六產品只用 products-v2 實際照片；DM按鈕改正式產品圖；怎麼選卡改GitHub Pages小老闆靜態圖、不再依賴Render白框路由。");
