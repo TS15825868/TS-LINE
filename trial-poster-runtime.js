@@ -1,7 +1,9 @@
 "use strict";
 
 const line=require("@line/bot-sdk");
-const POSTER="https://ts15825868.github.io/xianjiawei/images/posts/approved-v412/guilu-drink-trial-evergreen.jpg?v=20260806";
+const visual=require("./content/trial-campaign-visual.json");
+const POSTER=visual.poster;
+const FINAL_ASSET_ID=visual.currentFinalAssetId||"guilu-drink-trial-final-20260808";
 const proto=line?.messagingApi?.MessagingApiClient?.prototype;
 const original=proto?.replyMessage;
 
@@ -10,7 +12,8 @@ function fixText(value){
   return value
     .replace(/正式售價50元／罐；買10送1，共11罐500元/g,"龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元")
     .replace(/11罐500元/g,"11罐600元")
-    .replace(/正式售價50元／罐/g,"正式售價60元／罐");
+    .replace(/正式售價50元／罐/g,"正式售價60元／罐")
+    .replace(/龜鹿湯塊\s*(300g|600g)/g,"龜鹿湯塊75g");
 }
 
 function walk(node){
@@ -48,4 +51,4 @@ if(proto&&typeof original==="function"&&!proto.__xjwTrialPosterPatched){
   proto.__xjwTrialPosterPatched=true;
 }
 
-module.exports={POSTER,fixTrialMessage};
+module.exports={POSTER,FINAL_ASSET_ID,visual,fixTrialMessage};
