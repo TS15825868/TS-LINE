@@ -1,10 +1,20 @@
 {
-  "version":"2026-08-07-v6",
+  "version":"2026-08-08-v8-six-single-specs",
   "publicRepository":"TS15825868/xianjiawei",
   "publishingCenter":"https://ts15825868.github.io/xianjiawei/publishing-center.html",
-  "postBankManifest":"https://ts15825868.github.io/xianjiawei/content/post-bank-v6-manifest.json",
+  "publicPostLibrary":"https://ts15825868.github.io/xianjiawei/content/public-post-library.json",
+  "officialProducts":"https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "visualSpec":"https://ts15825868.github.io/xianjiawei/content/visual-production-spec-v20260807.json",
-  "runtimePostCount":323,
+  "aiBrandControl":"https://ts15825868.github.io/xianjiawei/content/ai-brand-control-v20260807.json",
+  "imageGenerationQueue":"https://ts15825868.github.io/xianjiawei/content/image-generation-queue-v20260808.json",
+  "annualCalendar":"https://ts15825868.github.io/xianjiawei/content/annual-content-calendar-v2026.json",
+  "finalPublishedAssets":"https://ts15825868.github.io/xianjiawei/content/final-published-assets-v20260808.json",
+  "runtimeContentTarget":500,
+  "productCount":6,
+  "sellableSpecificationCount":6,
+  "soupBlockOnly":"75g／盒｜深藍盒",
   "reviewRequired":true,
-  "weatherLiveCheck":true
+  "brandGuardianMode":"advisory-until-system-acceptance",
+  "weatherLiveCheck":true,
+  "immediatePublishBypassesFixedSchedule":true
 }
