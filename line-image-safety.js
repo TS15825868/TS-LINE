@@ -5,7 +5,8 @@
  * server.js 第一行固定 require 本檔，因此即使 Render 繞過 npm start / prestart：
  * 1. data.json 讀入前就把六項產品圖片強制改成 products-v2 實際產品照片；
  * 2. Flex送出前仍套用錄影修正：舊DM按鈕→正式產品圖、推薦卡→網站Q版小老闆；
- * 3. 龜鹿飲製作5～7工作天／其他產品現貨與75g-only文字守門仍生效。
+ * 3. 龜鹿飲製作5～7工作天／其他產品現貨與75g-only文字守門仍生效；
+ * 4. 啟動後自動同步網站Q版小老闆 Rich Menu，舊v309不再作預設人物視覺。
  */
 const fs = require("fs");
 const path = require("path");
@@ -13,9 +14,10 @@ const core = require("./line-image-safety-core");
 const plainTextSafety = require("./line-plain-text-safety");
 const fulfillmentSafety = require("./product-fulfillment-message-fix");
 const recordingUiFix = require("./line-recording-ui-fix");
+const richMenuSync = require("./line-rich-menu-sync");
 const photoAuthority = require("./line-product-photo-authority.json");
 
-const VERSION = "20260808-direct-start-products-v2-v1";
+const VERSION = "20260808-direct-start-products-v2-v2-rich-menu";
 
 function normalizeProductPhotos(data) {
   if (!data || !Array.isArray(data.products)) return data;
@@ -39,6 +41,7 @@ function normalizeProductPhotos(data) {
     dmFallback: "actual-product-photo-until-new-dm-reviewed",
     productsV3Use: "marketing-layout-reference-only",
     directStartPhotoSafetyVersion: VERSION,
+    richMenuSyncVersion: richMenuSync.VERSION,
   };
   return data;
 }
@@ -63,11 +66,13 @@ function installDataReadGuard() {
 
 installDataReadGuard();
 plainTextSafety.install(core);
+richMenuSync.scheduleRichMenuSync();
 
 global.__XJW_LINE_DIRECT_START_SAFETY__ = Object.freeze({
   version: VERSION,
   photoAuthorityVersion: photoAuthority.version,
   recordingUiVersion: recordingUiFix.VERSION,
+  richMenuSyncVersion: richMenuSync.VERSION,
 });
 
 module.exports = {
@@ -75,6 +80,7 @@ module.exports = {
   ...plainTextSafety,
   fulfillmentSafety,
   recordingUiFix,
+  richMenuSync,
   photoAuthority,
   VERSION,
   normalizeProductPhotos,
