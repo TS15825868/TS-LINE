@@ -1,11 +1,18 @@
 {
-  "version":"2026-08-06-trial-visual-v1",
+  "version":"2026-08-08-trial-visual-v2-final-lock",
   "title":"龜鹿飲試喝組｜先試喝，再決定",
+  "currentFinalAssetId":"guilu-drink-trial-final-20260808",
+  "currentFinalManifest":"https://ts15825868.github.io/xianjiawei/content/final-published-assets-v20260808.json",
+  "currentFinalPreview":"https://ts15825868.github.io/xianjiawei/images/posts/final-published/guilu-drink-trial-final-20260808-preview.svg",
+  "currentFinalPublishedOn":"2026-08-08",
   "poster":"https://ts15825868.github.io/xianjiawei/images/posts/approved-v412/guilu-drink-trial-evergreen.jpg?v=20260806",
+  "posterRole":"line-compatible-fallback-only",
+  "posterNote":"LINE圖片訊息需要可直接讀取的JPEG/PNG；2026-08-08最終1254×1254原始JPEG尚未存入公開Git，因此LINE暫保留既有JPEG相容素材。活動最終版權威以currentFinalManifest為準，不得重發舊版本。",
   "trial":{"contents":"30cc小玻璃罐×3罐","productFee":0,"shipping711":60,"shippingPost":100,"leadTime":"5～7個工作天","limit":"每位顧客、電話及地址限申請一次"},
   "pricing":{"drink30":"正式售價60元／罐｜買10送1｜11罐600元","drink180":"單包200元｜買10送1｜11包2,000元"},
   "lineId":"@762jybnm",
   "lineUrl":"https://lin.ee/sHZW7NkR",
-  "imagePolicy":"owner-approved-poster-direct-jpg-no-svg-wrapper",
-  "preventRepublish":true
+  "imagePolicy":"final-published-authority-with-line-compatible-fallback",
+  "preventRepublish":true,
+  "doNotRegenerate":true
 }
