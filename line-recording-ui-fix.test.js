@@ -11,6 +11,7 @@ function productBubble(name, oldImage) {
   };
 }
 
+assert.ok(fix.VERSION.includes("recording-ui-v4"));
 const cases = [
   ["龜鹿膏｜100g／罐", "guilu-gao", "guilu-gao.jpeg"],
   ["龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）", "guilu-drink-30", "guilu-drink-30.jpeg"],
@@ -42,6 +43,20 @@ assert.ok(!recommend.hero.url.includes("onrender.com"), "怎麼選hero不可再�
 assert.equal(recommend.hero.aspectRatio, "4:3");
 assert.equal(recommend.hero.aspectMode, "fit");
 
+const combo = {
+  type: "bubble",
+  body: { type: "box", layout: "vertical", contents: [
+    { type: "text", text: "完整體驗組" },
+    { type: "text", text: "每組售價：$6,400\n可選組數：1、2、3、5組" },
+    { type: "text", text: "產品DM請看完整資訊" },
+  ] },
+};
+fix.applyVisualFix(combo);
+assert.ok(combo.body.contents[1].text.includes("商品合計：$6,400"));
+assert.ok(!combo.body.contents[1].text.includes("每組售價"));
+assert.equal(combo.body.contents[2].text, "實際產品照片請看完整資訊");
+assert.ok(combo.hero.url.includes("/images/brand/line-oa/brand.jpg"), "組合導覽卡使用網站Q版小老闆");
+
 const multi = {
   type: "bubble",
   body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "龜鹿膏與龜鹿飲30cc怎麼選" }] },
@@ -49,4 +64,4 @@ const multi = {
 fix.applyVisualFix(multi);
 assert.ok(multi.hero.url.includes("/images/brand/line-oa/brand.jpg"), "多產品推薦卡應用網站Q版小老闆，不可誤塞其中一項產品主圖");
 
-console.log("PASS：LINE OA 六產品只用 products-v2 實際照片；DM按鈕改正式產品圖；怎麼選卡改GitHub Pages小老闆靜態圖、不再依賴Render白框路由。");
+console.log("PASS：LINE OA 六產品只用 products-v2 實際照片；DM按鈕改正式產品圖；組合金額標示商品合計；非產品卡使用網站Q版小老闆。");
