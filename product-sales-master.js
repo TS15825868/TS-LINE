@@ -5,7 +5,9 @@ const path = require("path");
 
 const originalReadFileSync = fs.readFileSync.bind(fs);
 const masterPath = path.join(__dirname, "line-sales-master.json");
+const photoAuthorityPath = path.join(__dirname, "line-product-photo-authority.json");
 let master = null;
+let photoAuthority = null;
 
 const SALES_OVERRIDE_FIELDS = Object.freeze([
   "name", "displayName", "specification", "size", "spec", "unit",
@@ -20,6 +22,11 @@ function getMaster() {
   if (master) return master;
   master = JSON.parse(originalReadFileSync(masterPath, "utf8"));
   return master;
+}
+function getPhotoAuthority() {
+  if (photoAuthority) return photoAuthority;
+  photoAuthority = JSON.parse(originalReadFileSync(photoAuthorityPath, "utf8"));
+  return photoAuthority;
 }
 
 function rootCombos(comboOffers = []) {
@@ -64,6 +71,20 @@ function salesOverride(override = {}) {
   return Object.fromEntries(SALES_OVERRIDE_FIELDS.filter((field) => override[field] !== undefined).map((field) => [field, override[field]]));
 }
 
+function photoOverride(id) {
+  const authority = getPhotoAuthority();
+  const url = String(authority?.products?.[id] || "").trim();
+  if (!url) throw new Error(`${id} 缺少 products-v2 實際產品照片權威`);
+  return {
+    image: url,
+    imageUrl: url,
+    image_url: url,
+    dmImage: url,
+    officialOriginalImage: url,
+    imagePolicy: "actual-product-photo-contain-no-crop",
+  };
+}
+
 function applyMaster(data) {
   const policy = getMaster();
   const productOverrides = policy.products || {};
@@ -77,7 +98,14 @@ function applyMaster(data) {
       ...(Array.isArray(product.quantityOptions) ? product.quantityOptions : [1, 2, 3, 5]),
       ...normalized.offers.map((offer) => offer.qty),
     ].map(Number).filter((value) => Number.isFinite(value) && value > 0))];
-    const merged = { ...product, ...override, offers: normalized.offers, promotionTexts: normalized.promotionTexts, quantityOptions };
+    const merged = {
+      ...product,
+      ...override,
+      ...photoOverride(product.id),
+      offers: normalized.offers,
+      promotionTexts: normalized.promotionTexts,
+      quantityOptions,
+    };
     delete merged.variants;
     delete merged.variantSelectionMode;
     return merged;
@@ -95,7 +123,14 @@ function applyMaster(data) {
   data.trialCampaign = policy.trialCampaign ? { ...policy.trialCampaign } : data.trialCampaign;
   data.runtime = {
     ...(data.runtime || {}),
-    imagePolicy: { ...((data.runtime || {}).imagePolicy || {}), ...(policy.imagePolicy || {}) },
+    imagePolicy: {
+      ...((data.runtime || {}).imagePolicy || {}),
+      ...(policy.imagePolicy || {}),
+      actualProductPhotoAuthority: getPhotoAuthority().version,
+      productMainImageSource: "products-v2-actual-photos",
+      productsV3Use: "marketing-layout-reference-only",
+      dmFallback: "actual-product-photo-until-new-dm-reviewed",
+    },
     contentApproval: {
       mode: "review-only",
       defaultStatus: "pending_review",
@@ -106,6 +141,7 @@ function applyMaster(data) {
   };
   data.salesMasterVersion = policy.version;
   data.salesMasterSource = policy.source;
+  data.productPhotoAuthorityVersion = getPhotoAuthority().version;
   return data;
 }
 
@@ -125,4 +161,4 @@ fs.readFileSync = function patchedReadFileSync(file, ...args) {
   return result;
 };
 
-module.exports = { applyMaster, getMaster, rootCombos, normalizeProductOffers, salesOverride, SALES_OVERRIDE_FIELDS };
+module.exports = { applyMaster, getMaster, getPhotoAuthority, rootCombos, normalizeProductOffers, salesOverride, photoOverride, SALES_OVERRIDE_FIELDS };
