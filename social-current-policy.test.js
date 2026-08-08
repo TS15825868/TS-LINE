@@ -12,7 +12,6 @@ const imageSafety = require("./line-image-safety");
 assert.strictEqual(weekly.VERSION, "2026-08-08-tue-sat-v3");
 assert.strictEqual(weekly.FIXED_SCHEDULES.length, 7);
 assert.strictEqual(new Set(weekly.FIXED_SCHEDULES).size, weekly.FIXED_SCHEDULES.length);
-
 for (const scheduledAt of weekly.FIXED_SCHEDULES) {
   const parts = reviewGate.taipeiParts(scheduledAt);
   assert(parts, `無法解析建議排程：${scheduledAt}`);
@@ -55,10 +54,24 @@ const ingredientAuthority = {
   "guilu-jiao": ["龜板萃取物", "鹿角萃取物"],
   "luerong-fen": ["鹿茸"],
 };
-assert.strictEqual(sales.version, "2026-08-08-canonical-v6-six-single-specs");
+const officialImages = {
+  "guilu-gao": "/images/products-v3/guilu-gao.jpg",
+  "guilu-drink-30": "/images/products-v3/guilu-drink-30.jpg",
+  "guilu-drink-180": "/images/products-v3/guilu-drink-180.jpg",
+  "guilu-tangkuai": "/images/products-v3/guilu-tangkuai.jpg",
+  "guilu-jiao": "/images/products-v3/guilu-jiao.jpg",
+  "luerong-fen": "/images/products-v3/luerong-fen.jpg",
+};
+assert.strictEqual(sales.version, "2026-08-08-canonical-v7-official-originals");
 for (const [id, ingredients] of Object.entries(ingredientAuthority)) {
-  assert.deepStrictEqual(sales.products[id].ingredients, ingredients, `${id}成分或順序錯誤`);
+  const product = sales.products[id];
+  assert.deepStrictEqual(product.ingredients, ingredients, `${id}成分或順序錯誤`);
+  for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
+    assert(String(product[field] || "").includes(officialImages[id]), `${id}.${field}未使用正式產品原圖`);
+  }
+  assert.strictEqual(product.imagePolicy, "official-original-contain-no-crop", `${id}圖片政策錯誤`);
 }
+assert.strictEqual(sales.imagePolicy.dmFallback, "official-product-original-until-new-dm-reviewed");
 assert.strictEqual(sales.products["guilu-gao"].usage[0], "每日早上及下午各一小匙");
 assert(!sales.products["guilu-gao"].usage.some((line) => String(line).includes("每天一次，每次一小匙")));
 
@@ -103,4 +116,4 @@ for (const name of officialScenes) {
   assert(width >= 1000 && height >= 1000, `正式入口圖尺寸不足：${name}.jpg (${width}x${height})`);
 }
 
-console.log("PASS current social policy: Tue/Sat schedule, six specs, canonical product facts, 30cc/180cc pricing and image safety");
+console.log("PASS current social policy: Tue/Sat schedule, six specs, canonical facts, official-original DM fallback and image safety");
