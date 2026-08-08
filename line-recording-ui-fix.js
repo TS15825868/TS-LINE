@@ -1,17 +1,16 @@
 "use strict";
 
 /**
- * 2026-08-08 新錄影 LINE OA 畫面修正
+ * 2026-08-08 新錄影 LINE OA 畫面修正 v2
  * - 六項產品卡送出前一律使用官網 products-v2 實際產品照片，不使用DM/海報版面。
  * - 「看產品DM」一律改成「看正式產品圖」，連結同一張實際產品照片。
- * - 怎麼選／使用方向卡片如 hero 空白或舊圖失效，固定補網站同款Q版小老闆乾淨圖。
+ * - 怎麼選／使用方向卡片不再依賴 Render 即時裁圖；直接使用官網 approved-v405 衍生 LINE OA 圖，避免大白框。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260808-recording-ui-v1";
+const VERSION = "20260808-recording-ui-v2-static-mascot";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
-const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
-const RECOMMEND_HERO = `${PUBLIC_BASE_URL}/assets/mascot-clean/recommend.jpg?v=${VERSION}`;
+const RECOMMEND_HERO = `${SITE_BASE}images/brand/line-oa/brand.jpg?v=${VERSION}`;
 
 const PRODUCTS = Object.freeze({
   "guilu-drink-30": {
@@ -80,6 +79,17 @@ function productHero(key) {
   };
 }
 
+function mascotHero() {
+  return {
+    type: "image",
+    url: RECOMMEND_HERO,
+    size: "full",
+    aspectRatio: "4:3",
+    aspectMode: "fit",
+    backgroundColor: "#EFE4D2",
+  };
+}
+
 function rewriteProductImageActions(node, key) {
   if (!node || typeof node !== "object") return;
   if (Array.isArray(node)) {
@@ -119,15 +129,9 @@ function applyBubbleFix(bubble) {
     return bubble;
   }
   if (isRecommendationBubble(bubble)) {
-    bubble.hero = {
-      type: "image",
-      url: RECOMMEND_HERO,
-      size: "full",
-      aspectRatio: "1:1",
-      aspectMode: "fit",
-      backgroundColor: "#EFE4D2",
-    };
+    bubble.hero = mascotHero();
     bubble.xjwRecommendationHero = true;
+    bubble.xjwRecommendationHeroSource = "github-pages-approved-website-chibi";
   }
   return bubble;
 }
@@ -160,6 +164,7 @@ module.exports = {
   collectTexts,
   uniqueProductKey,
   productHero,
+  mascotHero,
   rewriteProductImageActions,
   isRecommendationBubble,
   applyBubbleFix,
