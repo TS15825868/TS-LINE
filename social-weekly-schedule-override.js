@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "2026-08-08-tue-sat-v2";
+const VERSION = "2026-08-08-tue-sat-v3";
 // Asia/Taipei：週二19:30、週六09:30；此批七篇依兩個固定時段輪替。
 const FIXED_SCHEDULES = Object.freeze([
   "2026-08-11T11:30:00.000Z",
@@ -27,10 +27,7 @@ const OLD_SCHEDULES = Object.freeze([
 ]);
 
 function transformFinalPosts(source) {
-  OLD_SCHEDULES.forEach((oldValue, index) => {
-    source = source.replaceAll(oldValue, FIXED_SCHEDULES[index]);
-  });
-  // 也處理曾被舊版覆寫成週三20:00的時間。
+  OLD_SCHEDULES.forEach((oldValue, index) => { source = source.replaceAll(oldValue, FIXED_SCHEDULES[index]); });
   const staleWed = [
     "2026-07-29T12:00:00.000Z","2026-08-05T12:00:00.000Z","2026-08-12T12:00:00.000Z",
     "2026-08-19T12:00:00.000Z","2026-08-26T12:00:00.000Z","2026-09-02T12:00:00.000Z","2026-09-09T12:00:00.000Z",
@@ -64,7 +61,7 @@ function transformApprovedBatch(source) {
     '${WEBSITE_ASSET_BASE}/product-guilu-jiao-600g.webp':'${WEBSITE_PRODUCT_BASE}/guilu-jiao.jpg',
   };
   for(const [from,to] of Object.entries(productSources))source=source.replaceAll(from,to);
-  source = source
+  return source
     .replaceAll("30cc 玻璃小瓶", "30cc 小玻璃罐")
     .replaceAll("每週1篇，週三20:00", "每週2篇，週二19:30、週六09:30")
     .replaceAll("週三固定貼文", "週二／週六固定貼文")
@@ -72,7 +69,42 @@ function transformApprovedBatch(source) {
     .replaceAll("非週三平日20:00", "非固定排程日的平日20:00")
     .replaceAll("氣候貼文只能安排於非週三平日20:00，週末不發布", "氣候貼文只在人工審核後依當日情況安排，並避開固定排程時段")
     .replaceAll('scheduleTimePolicy: "weather-condition-weekday-non-wed-20:00-no-weekend"', 'scheduleTimePolicy: "weather-live-check-non-fixed-slot"');
-  return source;
+}
+
+function transformReviewGate(source) {
+  source = source.replace(
+    'return Boolean(parts && parts.weekday === "Wed" && parts.hour === "20" && parts.minute === "00");',
+    'return Boolean(parts && ((parts.weekday === "Tue" && parts.hour === "19" && parts.minute === "30") || (parts.weekday === "Sat" && parts.hour === "09" && parts.minute === "30")));'
+  );
+  source = source.replace(
+    /function nextAvailableFixedSlot\(store = \{\}, postId = "", afterMs = Date\.now\(\)\) \{[\s\S]*?\n\}\n\nfunction clearPublishState/,
+    `function nextAvailableFixedSlot(store = {}, postId = "", afterMs = Date.now()) {
+  const occupied = new Set((store.posts || [])
+    .filter((post) => String(post.id || "") !== String(postId || "") && post.scheduledAt && ["approved", "publishing", "published", "partial", "failed"].includes(String(post.status || "")))
+    .map((post) => new Date(post.scheduledAt).toISOString()));
+  const local = taipeiParts(new Date(afterMs));
+  if (!local) return "";
+  for (let offset = 0; offset < 740; offset += 1) {
+    const localDate = new Date(Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day) + offset));
+    const weekday = localDate.getUTCDay();
+    if (weekday !== 2 && weekday !== 6) continue;
+    const candidate = weekday === 2
+      ? new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 11, 30, 0, 0))
+      : new Date(Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate(), 1, 30, 0, 0));
+    if (candidate.getTime() <= afterMs + 60 * 1000) continue;
+    if (occupied.has(candidate.toISOString())) continue;
+    return candidate.toISOString();
+  }
+  return "";
+}
+
+function clearPublishState`
+  );
+  return source
+    .replaceAll("找不到可用的週三晚上8:00排程，請先調整其他貼文時間", "找不到可用的週二19:30或週六09:30排程，請先調整其他貼文時間")
+    .replaceAll('overdueApprovalPolicy: "move-to-next-free-wed-20:00"', 'overdueApprovalPolicy: "move-to-next-free-tue-19:30-or-sat-09:30"')
+    .replaceAll("週三20:00", "週二19:30、週六09:30")
+    .replaceAll("週三晚上8:00", "週二19:30或週六09:30");
 }
 
 function transformRepair(source) {
@@ -88,6 +120,7 @@ function transformSource(filename, source) {
     case "social-final-posts.js": return transformFinalPosts(source);
     case "social-clear-republish-policy.js": return transformClearRepublish(source);
     case "social-final-approved-batch.js": return transformApprovedBatch(source);
+    case "social-review-only-mode.js": return transformReviewGate(source);
     case "social-schedule-repair-20260722.js": return transformRepair(source);
     default: return source;
   }
@@ -100,6 +133,7 @@ function install() {
     "social-final-posts.js",
     "social-clear-republish-policy.js",
     "social-final-approved-batch.js",
+    "social-review-only-mode.js",
     "social-schedule-repair-20260722.js",
   ]);
   const wrapped = function loadWithCurrentSchedule(module, filename) {
@@ -113,4 +147,4 @@ function install() {
 install();
 const EARLY_CLEAR_POLICY = require("./social-clear-republish-policy");
 
-module.exports = { VERSION, FIXED_SCHEDULES, OLD_SCHEDULES, EARLY_CLEAR_POLICY, transformFinalPosts, transformClearRepublish, transformApprovedBatch, transformRepair, transformSource, install };
+module.exports = { VERSION, FIXED_SCHEDULES, OLD_SCHEDULES, EARLY_CLEAR_POLICY, transformFinalPosts, transformClearRepublish, transformApprovedBatch, transformReviewGate, transformRepair, transformSource, install };
