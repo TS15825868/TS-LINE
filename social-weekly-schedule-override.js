@@ -4,15 +4,16 @@ const fs = require("fs");
 const path = require("path");
 const Module = require("module");
 
-const VERSION = "2026-07-25-weekly-once-v1";
+const VERSION = "2026-08-08-tue-sat-v2";
+// Asia/Taipei：週二19:30、週六09:30；此批七篇依兩個固定時段輪替。
 const FIXED_SCHEDULES = Object.freeze([
-  "2026-07-29T12:00:00.000Z",
-  "2026-08-05T12:00:00.000Z",
-  "2026-08-12T12:00:00.000Z",
-  "2026-08-19T12:00:00.000Z",
-  "2026-08-26T12:00:00.000Z",
-  "2026-09-02T12:00:00.000Z",
-  "2026-09-09T12:00:00.000Z",
+  "2026-08-11T11:30:00.000Z",
+  "2026-08-15T01:30:00.000Z",
+  "2026-08-18T11:30:00.000Z",
+  "2026-08-22T01:30:00.000Z",
+  "2026-08-25T11:30:00.000Z",
+  "2026-08-29T01:30:00.000Z",
+  "2026-09-01T11:30:00.000Z",
 ]);
 
 const OLD_SCHEDULES = Object.freeze([
@@ -29,45 +30,57 @@ function transformFinalPosts(source) {
   OLD_SCHEDULES.forEach((oldValue, index) => {
     source = source.replaceAll(oldValue, FIXED_SCHEDULES[index]);
   });
+  // 也處理曾被舊版覆寫成週三20:00的時間。
+  const staleWed = [
+    "2026-07-29T12:00:00.000Z","2026-08-05T12:00:00.000Z","2026-08-12T12:00:00.000Z",
+    "2026-08-19T12:00:00.000Z","2026-08-26T12:00:00.000Z","2026-09-02T12:00:00.000Z","2026-09-09T12:00:00.000Z",
+  ];
+  staleWed.forEach((oldValue,index)=>{source=source.replaceAll(oldValue,FIXED_SCHEDULES[index]);});
   return source;
 }
 
 function transformClearRepublish(source) {
-  source = source.replaceAll('const VERSION = "2.0.0";', 'const VERSION = "3.0.0";');
-  source = source.replaceAll('const SCHEDULED_AT = "2026-07-24T02:00:00.000Z"; // 台灣時間 2026/7/24 10:00', 'const SCHEDULED_AT = "2026-07-29T12:00:00.000Z"; // 台灣時間 2026/7/29 20:00，人工核准後才啟用');
-  source = source.replaceAll("找不到7/24上午首發的日常關心貼文", "找不到待重新發布的日常關心貼文");
-  source = source.replaceAll('scheduleTimePolicy: "fixed-wed-fri-10:00"', 'scheduleTimePolicy: "fixed-wed-20:00"');
-  source = source.replaceAll("7/24上午10:00開始正式發布；", "建議於週三晚上8:00重新發布；人工核准後才啟用；");
-  source = source.replaceAll("已由7/24上午10:00單一正式首發排程取代", "已由單一修正版待審貼文取代");
-  return source;
+  return source
+    .replaceAll('scheduleTimePolicy: "fixed-wed-fri-10:00"', 'scheduleTimePolicy: "fixed-tue-19:30-sat-09:30"')
+    .replaceAll('scheduleTimePolicy: "fixed-wed-20:00"', 'scheduleTimePolicy: "fixed-tue-19:30-sat-09:30"')
+    .replaceAll("週三晚上8:00", "週二19:30或週六09:30")
+    .replaceAll("週三20:00", "週二19:30、週六09:30")
+    .replaceAll("週三、週五10:00", "週二19:30、週六09:30");
 }
 
 function transformApprovedBatch(source) {
-  source = source.replaceAll('const FIXED_WEEKDAYS = new Set(["Wed", "Fri"]);', 'const FIXED_WEEKDAYS = new Set(["Wed"]);');
-  source = source.replaceAll("非週三、週五上午10:00", "非週三的平日晚上8:00");
-  source = source.replaceAll("非週三、週五10:00", "非週三平日20:00");
-  source = source.replaceAll("週三、週五固定貼文", "週三固定貼文");
-  source = source.replaceAll("週三、週五10:00", "週三20:00");
-  source = source.replaceAll("非週三、週五10:00加發", "其他平日20:00加發");
-  source = source.replaceAll('scheduleTimePolicy: "weather-condition-non-wed-fri-10:00"', 'scheduleTimePolicy: "weather-condition-weekday-non-wed-20:00"');
+  source = source.replace('const FIXED_WEEKDAYS = new Set(["Wed"]);', 'const FIXED_WEEKDAYS = new Set(["Tue", "Sat"]);');
+  source = source.replace('const FIXED_WEEKDAYS = new Set(["Wed", "Fri"]);', 'const FIXED_WEEKDAYS = new Set(["Tue", "Sat"]);');
   source = source.replace(
-    /function tenAt\(key\) \{ const match = \/\^\(\\d\{4\}\)-\(\\d\{2\}\)-\(\\d\{2\}\)\$\/\.exec\(String\(key \|\| ""\)\); return match \? new Date\(Date\.UTC\(Number\(match\[1\]\), Number\(match\[2\]\) - 1, Number\(match\[3\]\), 2, 0, 0, 0\)\)\.toISOString\(\) : ""; \}/,
-    'function tenAt(key) { const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(key || "")); return match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0)).toISOString() : ""; }'
+    'const WEBSITE_ASSET_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/approved-v405";',
+    'const WEBSITE_ASSET_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/approved-v405";\nconst WEBSITE_PRODUCT_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/products-v3";'
   );
-  source = source.replace("if (offset === 0 && minutes >= 570) continue; return key;", "if ([\"Sat\", \"Sun\"].includes(weekdayForKey(key))) continue; if (offset === 0 && minutes >= 1170) continue; return key;");
-  source = source.replaceAll('fixedRule: "週三、週五10:00"', 'fixedRule: "每週1篇，週三20:00"');
-  source = source.replaceAll('weatherRule: "依實際氣候於非週三、週五10:00加發；每週最多1篇"', 'weatherRule: "依實際氣候於其他平日20:00加發；每週最多1篇；週末不發布"');
+  const productSources = {
+    '${WEBSITE_ASSET_BASE}/product-guilu-gao-100g.webp':'${WEBSITE_PRODUCT_BASE}/guilu-gao.jpg',
+    '${WEBSITE_ASSET_BASE}/product-guilu-drink-30cc.webp':'${WEBSITE_PRODUCT_BASE}/guilu-drink-30.jpg',
+    '${WEBSITE_ASSET_BASE}/product-guilu-drink-180cc.webp':'${WEBSITE_PRODUCT_BASE}/guilu-drink-180.jpg',
+    '${WEBSITE_ASSET_BASE}/product-luerong-fen-75g.webp':'${WEBSITE_PRODUCT_BASE}/luerong-fen.jpg',
+    '${WEBSITE_ASSET_BASE}/product-guilu-tangkuai-75g.webp':'${WEBSITE_PRODUCT_BASE}/guilu-tangkuai.jpg',
+    '${WEBSITE_ASSET_BASE}/product-guilu-jiao-600g.webp':'${WEBSITE_PRODUCT_BASE}/guilu-jiao.jpg',
+  };
+  for(const [from,to] of Object.entries(productSources))source=source.replaceAll(from,to);
+  source = source
+    .replaceAll("30cc 玻璃小瓶", "30cc 小玻璃罐")
+    .replaceAll("每週1篇，週三20:00", "每週2篇，週二19:30、週六09:30")
+    .replaceAll("週三固定貼文", "週二／週六固定貼文")
+    .replaceAll("非週三平日發布日", "非固定排程日的平日發布日")
+    .replaceAll("非週三平日20:00", "非固定排程日的平日20:00")
+    .replaceAll("氣候貼文只能安排於非週三平日20:00，週末不發布", "氣候貼文只在人工審核後依當日情況安排，並避開固定排程時段")
+    .replaceAll('scheduleTimePolicy: "weather-condition-weekday-non-wed-20:00-no-weekend"', 'scheduleTimePolicy: "weather-live-check-non-fixed-slot"');
   return source;
 }
 
 function transformRepair(source) {
-  source = source.replaceAll('const VERSION = "2026-07-24-v5";', 'const VERSION = "2026-07-25-v6";');
-  source = source.replaceAll("2026/7/24上午10:00開始；固定週三、週五10:00；", "2026/7/29晚上20:00開始；固定每週三20:00；");
-  source = source.replaceAll("非固定日10:00加發", "其他平日20:00加發，週末不發布");
-  source = source.replaceAll("if (count > 2) issues.push(`${week} 這週固定貼文共有${count}篇，超過每週2篇`);", "if (count > 1) issues.push(`${week} 這週固定貼文共有${count}篇，超過每週1篇`);");
-  source = source.replaceAll('fixed: "每週三、週五 10:00"', 'fixed: "每週1篇，週三 20:00"');
-  source = source.replaceAll('weatherException: "符合萬華實際氣候時，於非週三、週五的上午10:00額外發布；每週最多1篇"', 'weatherException: "符合萬華實際氣候時，於其他平日晚上20:00額外發布；每週最多1篇；週末不發布"');
-  return source;
+  return source
+    .replaceAll('fixed: "每週1篇，週三 20:00"', 'fixed: "每週2篇，週二19:30、週六09:30"')
+    .replaceAll('fixed: "每週三、週五 10:00"', 'fixed: "每週2篇，週二19:30、週六09:30"')
+    .replaceAll("固定每週三20:00", "固定週二19:30、週六09:30")
+    .replaceAll("固定週三、週五10:00", "固定週二19:30、週六09:30");
 }
 
 function transformSource(filename, source) {
@@ -81,7 +94,7 @@ function transformSource(filename, source) {
 }
 
 function install() {
-  if (Module._extensions[".js"].__xjwWeeklyOnceSchedule) return;
+  if (Module._extensions[".js"].__xjwCurrentSchedule) return;
   const previous = Module._extensions[".js"];
   const targets = new Set([
     "social-final-posts.js",
@@ -89,16 +102,15 @@ function install() {
     "social-final-approved-batch.js",
     "social-schedule-repair-20260722.js",
   ]);
-  const wrapped = function loadWithWeeklyOnceSchedule(module, filename) {
+  const wrapped = function loadWithCurrentSchedule(module, filename) {
     if (!targets.has(path.basename(filename))) return previous(module, filename);
     return module._compile(transformSource(filename, fs.readFileSync(filename, "utf8")), filename);
   };
-  Object.defineProperty(wrapped, "__xjwWeeklyOnceSchedule", { value: true });
+  Object.defineProperty(wrapped, "__xjwCurrentSchedule", { value: true });
   Module._extensions[".js"] = wrapped;
 }
 
 install();
-// 先套用修正版貼文 ID 與時間，再讓審核閘門建立 canonical 清單，避免待審貼文遺漏。
 const EARLY_CLEAR_POLICY = require("./social-clear-republish-policy");
 
 module.exports = { VERSION, FIXED_SCHEDULES, OLD_SCHEDULES, EARLY_CLEAR_POLICY, transformFinalPosts, transformClearRepublish, transformApprovedBatch, transformRepair, transformSource, install };
