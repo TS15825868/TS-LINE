@@ -2,7 +2,7 @@
 
 const line = require("@line/bot-sdk");
 
-const POLICY_VERSION = "2026-08-05-v2";
+const POLICY_VERSION = "2026-08-08-v5-six-single-specs";
 const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
 const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
 const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
@@ -88,6 +88,8 @@ function healthPayload(core) {
   return {
     ok: true,
     policyVersion: POLICY_VERSION,
+    productCount: 6,
+    sellableSpecificationCount: 6,
     drinkProductIds: DRINK_PRODUCT_IDS,
     readyStockProductIds: READY_STOCK_PRODUCT_IDS,
     drinkNotice: core.DRINK_FULFILLMENT_NOTICE,
@@ -98,7 +100,12 @@ function healthPayload(core) {
     cleanDrinkImageSource: core.OFFICIAL_DRINK_SOURCE,
     cleanDrinkImagePolicy: "official-original-contain-no-crop",
     guiluDrink30Specification: "30cc／罐（小玻璃罐）",
+    guiluDrink180Specification: "180cc／包（鋁袋）",
+    guiluGaoSpecification: "100g／罐",
+    guiluTangkuaiSpecification: "75g／盒｜8塊裝｜每塊約9.375g",
+    guiluTangkuaiPackage: "深藍正式盒裝",
     guiluJiaoSpecification: "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
+    luerongFenSpecification: "75g／罐",
     ownerReviewRequired: true,
     unapprovedPostPublishingAllowed: false,
     lineVoomManualOnly: true,
@@ -107,15 +114,10 @@ function healthPayload(core) {
 
 function installHealthRoute(core) {
   let express;
-  try {
-    express = require("express");
-  } catch (_) {
-    return;
-  }
+  try { express = require("express"); } catch (_) { return; }
   const appPrototype = express?.application;
   if (!appPrototype?.listen || appPrototype.__xjwFulfillmentHealthInstalled) return;
   const previousListen = appPrototype.listen;
-
   appPrototype.listen = function patchedFulfillmentHealthListen(...args) {
     if (!this.locals.__xjwFulfillmentHealthRegistered) {
       this.get(HEALTH_PATH, (_req, res) => {
@@ -131,7 +133,6 @@ function installHealthRoute(core) {
     }
     return previousListen.apply(this, args);
   };
-
   Object.defineProperty(appPrototype, "__xjwFulfillmentHealthInstalled", { value: true, enumerable: false });
 }
 
