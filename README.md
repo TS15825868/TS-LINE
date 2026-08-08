@@ -1,46 +1,55 @@
-# 仙加味 LINE OA v6.0.6
+# 仙加味 LINE OA 正式版
 
-正式版以 `server.js` 為 LINE OA 主程式、`social-server.js` 為社群發布服務、`internal-entry.js` 為正式部署啟動器。
+正式部署以 `internal-entry.js` 啟動；LINE OA 主程式、社群發布服務與內部管理功能共用同一套正式產品與審核規則。
 
 ## 正式資料來源
 
 - 官網公開產品資料：`TS15825868/xianjiawei` 的 `catalog-public.json`
-- LINE OA 銷售資料與最新建議售價：`line-sales-master.json`
+- LINE OA 銷售與活動資料：`line-sales-master.json`
 - LINE OA 執行資料：`data.json`
+- 產品權威設定：`config/official-products.json`
 - 官網小老闆、夥伴與出圖規格：`MASCOT_CHARACTER_SPEC.md`
 - 社群內容：先進待審核，人工核准後才可排程或發布
 
-## 正式功能
+## 六個正式產品、六個正式規格
 
-- 五大產品型態、六項公開規格，與仙加味官網資料同步。
-- LINE OA 產品卡固定使用真實產品原圖。
-- 最新建議售價由 `product-sales-master.js` 在啟動時套用，避免舊活動價重新出現。
-- 價格方案、數量選擇、購物車、結帳、配送、付款與 CRM 訂單寫入。
-- Facebook／Instagram 草稿、人工審核、排程與發布。
-- 內部管理 App：營運儀表板、訂單、客戶 CRM、庫存異動、提醒、社群排程、期間報表、員工權限、操作紀錄與備份還原。
-- Supabase PostgreSQL 保存與還原內部 App、社群草稿及排程資料。
-- LINE、Meta 與 Supabase 憑證只從部署平台環境變數讀取，不寫入程式庫。
+1. 龜鹿膏：100g／罐。
+2. 龜鹿飲30cc玻璃罐：30cc／罐（小玻璃罐）；裸罐、無貼紙、無外盒、無外袋、金色蓋，不得稱瓶。
+3. 龜鹿飲180cc鋁袋：180cc／包（鋁袋）；狹長直立，產品圖維持正式原圖比例。
+4. 龜鹿湯塊：75g／盒｜8塊裝｜每塊約9.375g；深藍正式盒裝，只有此一規格。
+5. 龜鹿膠：600g（1斤）／盒｜32塊裝｜每塊約18.75g；淡紫正式盒裝，與龜鹿湯塊為不同產品。
+6. 鹿茸粉：75g／罐；白色塑膠罐。
 
-## 角色與圖片規則
+產品圖片一律使用正式原產品照片等比例呈現，不重畫、不裁切、不更換包裝文字或規格。
 
-- 唯一母版：仙加味官網正式版小老闆。
-- 固定夥伴：小鹿娃娃、小烏龜娃娃。
-- 人物臉型、髮型、服裝、圍裙紅色直式「仙加味」印章及夥伴造型不得更換。
-- 圖片不足時可依正式規格生成，但生成後先進待審核。
-- 產品只使用真實原圖，不重畫、不變形、不改包裝文字或規格。
-- 圖片文字只使用繁體中文，不顯示內部貼文編號。
+## 龜鹿飲試喝與正式價格
 
-## 社群發布規則
+- 30cc 試喝組：小玻璃罐 × 3 罐，試喝品免費、運費自付。
+- 7-11 店到店運費 60 元；郵局宅配運費 100 元。
+- 接單並確認資料與付款後安排製作，約 5～7 個工作天。
+- 30cc：正式售價 60 元／罐，買10送1，共11罐600元。
+- 180cc：200 元／包，買10送1，共11包2,000元。
+- 2026-08-08 已確認發布的最終試喝主圖維持發布鎖定，不自動重發或重生成。
 
-1. 先完成文案。
-2. 依文案選擇或生成對應圖片。
-3. 圖文一起進入待審核。
-4. 人工核准後才可啟用排程或立即發布。
-5. 文案、圖片、平台或時間修改後，必須撤銷核准並重新審核。
-6. 固定內容每週一篇，建議安排週三晚上 8:00（Asia/Taipei）。
-7. 週六、週日不發布固定或氣候貼文。
-8. 天氣內容不預先啟用；符合萬華實際氣候時，可於其他平日晚上 8:00 送審並加發，每週最多一篇。
-9. 失敗平台不自動補發，避免重複發布；確認後由人工處理。
+## 社群與審核規則
+
+1. 先完成文案與對應圖片。
+2. 圖文都先進入待審核。
+3. 人工完成品牌、產品、規格、價格／活動、季節、天氣、場合、地點、情境、環境、冷熱、表情、動作、小老闆與夥伴、比例尺寸、重複圖等檢查。
+4. 核准後才可排程或立即發布；立即發布不受固定時段限制。
+5. 固定排程為星期二 19:30、星期六 09:30（Asia/Taipei）。
+6. 天氣、颱風、寒流、高溫、空氣品質等即時型內容，發布前重新確認，不預先自動發布。
+7. 失敗平台不自動重複補發，避免重複發布；確認後再人工處理。
+8. LINE VOOM 維持人工發布備援。
+
+系統驗收期間，內容品牌守門員採提示模式；正式產品主檔寫入仍以六項正式規格做硬性檢查。
+
+## LINE OA 與社群功能
+
+- 產品卡、價格方案、數量選擇、購物車、結帳、配送、付款與 CRM 訂單流程。
+- Facebook／Instagram 草稿、人工審核、排程與可用官方 API 的發布流程。
+- 正式產品與試喝資料由母本同步，避免舊容量、舊價格或舊活動重新進入執行資料。
+- 憑證只從部署平台環境變數讀取，不寫入 GitHub 或公開前端。
 
 ## 必要環境變數
 
@@ -51,23 +60,7 @@
 - `INTERNAL_APP_PASSWORD`
 - `INTERNAL_APP_SECRET`
 
-## Supabase 免費資料庫
-
-在 Supabase SQL Editor 執行 `supabase/schema.sql`，並在 Render Environment 加入：
-
-```text
-SUPABASE_URL=https://你的專案代碼.supabase.co
-SUPABASE_SECRET_KEY=你的 Supabase Secret key
-```
-
-Secret key 只能放在 Render 環境變數，不可加入 GitHub、網頁前端或公開文件。
-
-可保留下列本機暫存路徑：
-
-```text
-INTERNAL_DATA_PATH=/tmp/xianjiawei-internal.json
-SOCIAL_DATA_PATH=/tmp/xianjiawei-social-posts.json
-```
+如使用 Supabase 持久化，相關 Secret 只放部署平台環境變數，不加入程式庫。
 
 ## 正式檢查
 
@@ -76,15 +69,16 @@ npm test
 npm run check:catalog
 ```
 
-GitHub Actions 會在推送到 `main` 時自動驗收，不建立其他分支。
+`npm test` 會驗證六個正式產品、龜鹿湯塊75g唯一規格、30cc玻璃罐命名、目前龜鹿飲價格／活動、試喝最終版防重發、人工審核閘門、星期二／星期六排程及產品圖片安全規則。
 
-健康檢查：
+## 健康檢查
 
 - LINE OA：`/healthz`
+- 產品與出貨規格：`/internal/api/v2/fulfillment-policy/healthz`
 - 社群發布：`/social/healthz`
 - 人工審核閘門：`/social/review-gate-status`
-- 每週一篇排程：`/social/schedule-status`
+- 排程狀態：`/social/schedule-status`
 - 社群管理網站：`/internal/social-center-healthz`
 - 繁體中文圖片：`/social/raster-healthz`
 - 內部管理 App：`/internal/healthz`
-- Supabase 持久化：`/internal/db-healthz`
+- 資料庫持久化：`/internal/db-healthz`
