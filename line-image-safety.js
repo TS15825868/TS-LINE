@@ -1,13 +1,14 @@
 "use strict";
 
 /*
- * LINE OA 穩定入口｜2026-08-08
+ * LINE OA 穩定入口｜2026-08-09
  * server.js 第一行固定 require 本檔，因此即使 Render 繞過 npm start / prestart：
- * 1. data.json 讀入前就把六項產品圖片強制改成 products-v2 實際產品照片；
- * 2. Flex送出前仍套用錄影修正：舊DM按鈕→正式產品圖、推薦卡→網站Q版小老闆；
- * 3. 龜鹿飲製作5～7工作天／其他產品現貨與75g-only文字守門仍生效；
- * 4. 固定社群排程先鎖週二19:30／週六09:30，直接啟動也不回舊週三／週五；
- * 5. 啟動後自動同步網站Q版小老闆 Rich Menu，舊v309不再作預設人物視覺。
+ * 1. data.json 讀入前就把六項產品圖片強制改成 products-v3 使用者確認的正式產品原圖；
+ * 2. Flex送出前仍套用錄影修正：舊DM按鈕→正式產品照片、推薦卡→網站Q版小老闆；
+ * 3. 所有產品 hero 一律 fit／contain，只能等比例顯示，不拉寬、不拉高、不裁切；
+ * 4. 龜鹿飲製作5～7工作天／其他產品現貨與75g-only文字守門仍生效；
+ * 5. 固定社群排程先鎖週二19:30／週六09:30；
+ * 6. 啟動後自動同步網站Q版小老闆 Rich Menu。
  */
 const fs = require("fs");
 const path = require("path");
@@ -19,7 +20,7 @@ const recordingUiFix = require("./line-recording-ui-fix");
 const richMenuSync = require("./line-rich-menu-sync");
 const photoAuthority = require("./line-product-photo-authority.json");
 
-const VERSION = "20260808-direct-start-products-v2-v3-schedule-rich-menu";
+const VERSION = "20260809-direct-start-products-v3-size-lock-v4";
 
 function normalizeProductPhotos(data) {
   if (!data || !Array.isArray(data.products)) return data;
@@ -33,15 +34,17 @@ function normalizeProductPhotos(data) {
       image_url: photo,
       dmImage: photo,
       officialOriginalImage: photo,
-      imagePolicy: "actual-product-photo-contain-no-crop",
+      imagePolicy: "approved-original-product-photo-contain-no-crop",
+      physicalScalePolicy: "uniform-only-preserve-realistic-product-scale",
     };
   });
   data.productPhotoAuthorityVersion = photoAuthority.version;
   data.runtime = {
     ...(data.runtime || {}),
-    productMainImageSource: "products-v2-actual-photos",
-    dmFallback: "actual-product-photo-until-new-dm-reviewed",
-    productsV3Use: "marketing-layout-reference-only",
+    productMainImageSource: "products-v3-user-approved-originals",
+    dmFallback: "approved-original-photo-until-current-dm-reviewed",
+    productsV2Use: "legacy-reference-only",
+    productScalePolicy: "uniform-only-no-equal-height-equal-width",
     directStartPhotoSafetyVersion: VERSION,
     schedulePolicyVersion: schedulePolicy.VERSION,
     richMenuSyncVersion: richMenuSync.VERSION,
@@ -50,7 +53,7 @@ function normalizeProductPhotos(data) {
 }
 
 function installDataReadGuard() {
-  if (fs.__xjwProductsV2DataGuardInstalled) return;
+  if (fs.__xjwProductsV3DataGuardInstalled) return;
   const nativeReadFileSync = fs.readFileSync.bind(fs);
   fs.readFileSync = function xjwReadFileSync(file, options) {
     const value = nativeReadFileSync(file, options);
@@ -60,11 +63,11 @@ function installDataReadGuard() {
       const parsed = JSON.parse(value);
       return JSON.stringify(normalizeProductPhotos(parsed), null, 2);
     } catch (error) {
-      console.warn("LINE data.json products-v2 安全層套用失敗", error.message);
+      console.warn("LINE data.json products-v3 正式產品圖安全層套用失敗", error.message);
       return value;
     }
   };
-  Object.defineProperty(fs, "__xjwProductsV2DataGuardInstalled", { value: true, enumerable: false });
+  Object.defineProperty(fs, "__xjwProductsV3DataGuardInstalled", { value: true, enumerable: false });
 }
 
 installDataReadGuard();
