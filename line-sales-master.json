@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-07-canonical-v4",
-  "source": "仙加味六個正式產品分類、龜鹿湯塊75g／300g／600g、最新售價、買10送1、試喝與產品別出貨政策",
+  "version": "2026-08-08-canonical-v5-six-single-specs",
+  "source": "仙加味六個正式產品、六個正式規格、最新售價、買10送1、試喝與產品別出貨政策；龜鹿湯塊只有75g深藍盒",
   "products": {
     "guilu-gao": {
       "name": "龜鹿膏",
@@ -28,7 +28,7 @@
       "size": "30cc／罐（小玻璃罐）",
       "spec": "30cc／罐（小玻璃罐）",
       "unit": "罐",
-      "description": "30cc小玻璃罐，維持原有尺寸、裸罐、無貼紙，適合第一次接觸、外出攜帶與工作空檔安排。",
+      "description": "30cc小玻璃罐，維持原有尺寸、裸罐、無貼紙、無外盒、無外袋、金色蓋，適合第一次接觸、外出攜帶與工作空檔安排。",
       "usage": ["每日一罐", "開罐即可飲用", "可隔水加熱或溫熱後飲用", "避免冰飲", "開罐後請儘速飲用完畢"],
       "storage": ["未開封置於陰涼乾燥處", "避免高溫與日光直射", "開罐後請儘速飲用完畢"],
       "fit": "想方便即飲、第一次接觸、外出攜帶或在工作空檔飲用的人",
@@ -76,36 +76,12 @@
       "size": "75g／盒｜8塊裝｜每塊約9.375g",
       "spec": "75g／盒｜8塊裝｜每塊約9.375g",
       "unit": "盒",
-      "variants": [
-        {
-          "id": "guilu-tangkuai-75",
-          "erpId": "PROD-SOUP-75",
-          "label": "75g／盒",
-          "specification": "75g／盒｜8塊裝｜每塊約9.375g",
-          "orderMode": "cart",
-          "price": 1600
-        },
-        {
-          "id": "guilu-tangkuai-300",
-          "erpId": "PROD-SOUP-300",
-          "label": "300g／盒",
-          "specification": "300g／盒｜16塊裝｜每塊約18.75g",
-          "orderMode": "manual-confirmation"
-        },
-        {
-          "id": "guilu-tangkuai-600",
-          "erpId": "PROD-SOUP-600",
-          "label": "600g／盒",
-          "specification": "600g／盒｜32塊裝｜每塊約18.75g",
-          "orderMode": "manual-confirmation"
-        }
-      ],
-      "variantSelectionMode": "75g可依現行售價加入購物車；300g與600g由人工確認價格、數量與出貨",
+      "description": "75g深藍盒、8塊裝、每塊約9.375g；龜鹿湯塊目前只有這一項正式規格。",
       "price": 1600,
       "originalPrice": null,
       "offers": [],
-      "priceText": "$1,600 / 盒（75g）",
-      "priceLabel": "75g售價1,600元；300g與600g請由人工客服確認",
+      "priceText": "$1,600 / 盒",
+      "priceLabel": "75g售價1,600元",
       "quoteOnly": false,
       "fulfillmentType": "ready-stock",
       "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
@@ -211,7 +187,7 @@
     }
   ],
   "fulfillmentPolicy": {
-    "version": "2026-08-07-v4",
+    "version": "2026-08-08-v5",
     "drinkProductIds": ["guilu-drink-30", "guilu-drink-180"],
     "readyStockProductIds": ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"],
     "drinkNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
@@ -219,11 +195,12 @@
   },
   "imagePolicy": {
     "mascot": "官網正式版仙加味小老闆",
-    "partners": ["小鹿娃娃", "小烏龜娃娃", "灰色小河馬娃娃", "米色小鹿安撫巾"],
+    "partners": ["小鹿", "小烏龜", "灰色小河馬娃娃", "米色小鹿安撫巾"],
     "realProductImagesOnly": true,
     "noProductRedraw": true,
     "noPackageTextChange": true,
     "traditionalChineseOnly": true,
-    "approvalRequiredBeforePublish": true
+    "approvalRequiredBeforePublish": true,
+    "soupBlockOnly": "75g深藍盒"
   }
 }
