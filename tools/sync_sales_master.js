@@ -2,7 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { applyMaster } = require("../product-sales-master");
+const { applyMaster, getPhotoAuthority } = require("../product-sales-master");
 
 const ROOT = path.resolve(__dirname, "..");
 const DATA_PATH = path.join(ROOT, "data.json");
@@ -20,12 +20,12 @@ const CANONICAL_INGREDIENTS = Object.freeze({
   "luerong-fen": ["鹿茸"],
 });
 const OFFICIAL_IMAGE_PATHS = Object.freeze({
-  "guilu-gao": "/images/products-v3/guilu-gao.jpg",
-  "guilu-drink-30": "/images/products-v3/guilu-drink-30.jpg",
-  "guilu-drink-180": "/images/products-v3/guilu-drink-180.jpg",
-  "guilu-tangkuai": "/images/products-v3/guilu-tangkuai.jpg",
-  "guilu-jiao": "/images/products-v3/guilu-jiao.jpg",
-  "luerong-fen": "/images/products-v3/luerong-fen.jpg",
+  "guilu-gao": "/images/products-v2/guilu-gao.jpeg",
+  "guilu-drink-30": "/images/products-v2/guilu-drink-30.jpeg",
+  "guilu-drink-180": "/images/products-v2/guilu-drink-180.jpeg",
+  "guilu-tangkuai": "/images/products-v2/guilu-tangkuai.jpeg",
+  "guilu-jiao": "/images/products-v2/guilu-jiao-open-new.jpg",
+  "luerong-fen": "/images/products-v2/luerong-fen.jpeg",
 });
 
 function hasBuyTenGetOne(product, unitPrice) {
@@ -38,11 +38,11 @@ function hasBuyTenGetOne(product, unitPrice) {
 function sameArray(left, right) { return JSON.stringify(left || []) === JSON.stringify(right || []); }
 function assertOfficialImageSlots(product, id) {
   const expected = OFFICIAL_IMAGE_PATHS[id];
-  if (!expected) throw new Error(`${id}缺少正式原圖權威路徑`);
+  if (!expected) throw new Error(`${id}缺少實際產品照片權威路徑`);
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
-    if (!String(product?.[field] || "").includes(expected)) throw new Error(`${id}.${field} 未使用正式產品原圖`);
+    if (!String(product?.[field] || "").includes(expected)) throw new Error(`${id}.${field} 未使用products-v2實際產品照片`);
   }
-  if (product.imagePolicy !== "official-original-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
+  if (product.imagePolicy !== "actual-product-photo-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
 }
 function assertSoupAuthority(product) {
   if (!product) throw new Error("龜鹿湯塊不存在");
@@ -60,9 +60,12 @@ function main() {
   const master = JSON.parse(fs.readFileSync(MASTER_PATH, "utf8"));
   const authority = JSON.parse(fs.readFileSync(AUTHORITY_PATH, "utf8"));
   const merged = applyMaster(data);
+  const photoAuthority = getPhotoAuthority();
 
   if (master.version !== merged.salesMasterVersion) throw new Error("正式銷售主檔版本套用失敗");
   if (master.version !== MASTER_VERSION) throw new Error(`正式主檔版本不是目前v7：${master.version}`);
+  if (photoAuthority.version !== "2026-08-08-products-v2-actual-photo-v1") throw new Error("實際產品照片權威版本不同步");
+  if (Object.keys(photoAuthority.products || {}).length !== 6) throw new Error("實際產品照片權威必須剛好6項");
   if ((merged.offers?.comboOffers || []).length !== 3) throw new Error("正式組合必須是3組");
   if ((merged.combos || []).length !== 3) throw new Error("根層正式組合資料必須是3組");
   if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6個分類，目前${merged.products?.length || 0}項`);
@@ -116,14 +119,15 @@ function main() {
   if (drink30?.priceLabel !== "正式售價60元／罐，買10送1（共11罐600元）") throw new Error("30cc正式價格文案不同步");
   if (merged.trialCampaign?.publicPrice !== "龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元") throw new Error("試喝方案公開價格不同步");
   if (merged.fulfillmentPolicy?.version !== "2026-08-08-v5") throw new Error("出貨政策版本不同步");
-  if (merged.runtime?.imagePolicy?.dmFallback !== "official-product-original-until-new-dm-reviewed") throw new Error("DM正式原圖回退政策未啟用");
+  if (merged.runtime?.imagePolicy?.dmFallback !== "actual-product-photo-until-new-dm-reviewed") throw new Error("DM實際產品照片回退政策未啟用");
+  if (merged.runtime?.imagePolicy?.productMainImageSource !== "products-v2-actual-photos") throw new Error("產品主圖沒有鎖到products-v2");
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts and all image/DM slots use official originals`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts and all image/DM slots use products-v2 actual photos`);
     return;
   }
-  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, fulfillment and official-original image policy aligned`);
+  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, fulfillment and products-v2 actual-photo policy aligned`);
 }
 
 if (require.main === module) {
