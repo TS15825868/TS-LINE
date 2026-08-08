@@ -9,17 +9,17 @@ const batch = require("./social-final-approved-batch");
 const sales = require("./line-sales-master.json");
 const imageSafety = require("./line-image-safety");
 
-assert.strictEqual(weekly.VERSION, "2026-07-25-weekly-once-v1");
-assert.strictEqual(reviewGate.VERSION, "2026-07-26-review-gate-v5");
+assert.strictEqual(weekly.VERSION, "2026-08-08-tue-sat-v3");
 assert.strictEqual(weekly.FIXED_SCHEDULES.length, 7);
 assert.strictEqual(new Set(weekly.FIXED_SCHEDULES).size, weekly.FIXED_SCHEDULES.length);
 
 for (const scheduledAt of weekly.FIXED_SCHEDULES) {
   const parts = reviewGate.taipeiParts(scheduledAt);
   assert(parts, `無法解析建議排程：${scheduledAt}`);
-  assert.strictEqual(parts.weekday, "Wed", `固定貼文建議排程不是週三：${scheduledAt}`);
-  assert.strictEqual(parts.hour, "20", `固定貼文建議排程不是晚上8點：${scheduledAt}`);
-  assert.strictEqual(parts.minute, "00", `固定貼文建議排程分鐘不正確：${scheduledAt}`);
+  const isTue = parts.weekday === "Tue" && parts.hour === "19" && parts.minute === "30";
+  const isSat = parts.weekday === "Sat" && parts.hour === "09" && parts.minute === "30";
+  assert(isTue || isSat, `固定貼文不是週二19:30或週六09:30：${scheduledAt}`);
+  assert(reviewGate.validFixedSlot(scheduledAt), `review gate不接受目前固定時段：${scheduledAt}`);
 }
 
 assert.strictEqual(batch.POSTS.length, 10);
@@ -32,11 +32,7 @@ assert(batch.POSTS.every((post) => post.deerPartnerPresent === true));
 assert(batch.POSTS.every((post) => post.turtlePartnerPresent === true));
 
 const reset = reviewGate.initialReset({
-  posts: batch.POSTS.map((post) => ({
-    ...post,
-    status: post.conditionalWeather ? "paused" : "approved",
-    assetLocked: true,
-  })),
+  posts: batch.POSTS.map((post) => ({...post,status: post.conditionalWeather ? "paused" : "approved",assetLocked: true})),
   publicationLedger: { facebook: {}, instagram: {} },
 });
 const canonical = reset.posts.filter((post) => reviewGate.CANONICAL_IDS.has(post.id));
@@ -53,19 +49,21 @@ assert.strictEqual(reset.automaticRetryEnabled, false);
 
 assert.strictEqual(sales.products["guilu-gao"].price, 1800);
 assert.strictEqual(sales.products["guilu-gao"].originalPrice, 2100);
-assert.strictEqual(sales.products["guilu-drink-30"].price, 50);
+assert.strictEqual(sales.products["guilu-drink-30"].price, 60);
 assert(sales.products["guilu-drink-30"].offers.includes("買10送1"));
 assert.strictEqual(sales.products["guilu-drink-180"].price, 200);
 assert(sales.products["guilu-drink-180"].offers.includes("買10送1"));
 assert.strictEqual(sales.products["guilu-tangkuai"].price, 1600);
+assert.strictEqual(sales.products["guilu-tangkuai"].specification, "75g／盒｜8塊裝｜每塊約9.375g");
+assert.ok(!sales.products["guilu-tangkuai"].variants);
 assert.strictEqual(sales.products["luerong-fen"].price, 2000);
 assert.strictEqual(sales.products["guilu-jiao"].price, 9600);
 assert.strictEqual(sales.products["guilu-jiao"].originalPrice, 12000);
 assert.strictEqual(sales.products["guilu-jiao"].quoteOnly, false);
 assert.strictEqual(sales.imagePolicy.approvalRequiredBeforePublish, true);
 assert.strictEqual(sales.imagePolicy.realProductImagesOnly, true);
-assert(sales.imagePolicy.partners.includes("小鹿娃娃"));
-assert(sales.imagePolicy.partners.includes("小烏龜娃娃"));
+assert(sales.imagePolicy.partners.includes("小鹿"));
+assert(sales.imagePolicy.partners.includes("小烏龜"));
 
 function jpegSize(buffer) {
   assert(buffer[0] === 0xff && buffer[1] === 0xd8, "正式入口圖不是 JPEG");
@@ -74,9 +72,7 @@ function jpegSize(buffer) {
     if (buffer[offset] !== 0xff) { offset += 1; continue; }
     const marker = buffer[offset + 1];
     const length = buffer.readUInt16BE(offset + 2);
-    if ([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)) {
-      return { height: buffer.readUInt16BE(offset + 5), width: buffer.readUInt16BE(offset + 7) };
-    }
+    if ([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)) return { height: buffer.readUInt16BE(offset + 5), width: buffer.readUInt16BE(offset + 7) };
     if (!Number.isFinite(length) || length < 2) break;
     offset += 2 + length;
   }
@@ -87,9 +83,9 @@ const officialScenes = ["recommend", "combo", "usage", "faq"];
 assert.deepStrictEqual(imageSafety.APPROVED_MASCOT_NAMES, officialScenes);
 for (const name of officialScenes) {
   const file = path.join(__dirname, "public", "mascot", `${name}.jpg`);
-  assert(fs.existsSync(file), `缺少 Issue #146 正式入口圖：${name}.jpg`);
+  assert(fs.existsSync(file), `缺少正式入口圖：${name}.jpg`);
   const { width, height } = jpegSize(fs.readFileSync(file));
   assert(width >= 1000 && height >= 1000, `正式入口圖尺寸不足：${name}.jpg (${width}x${height})`);
 }
 
-console.log("PASS current social policy, official pricing, buy10get1 and image safety");
+console.log("PASS current social policy: Tue/Sat schedule, six specs, 30cc/180cc pricing and image safety");
