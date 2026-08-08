@@ -4,9 +4,10 @@ const fs = require("fs");
 const path = require("path");
 const safety = require("./line-image-safety");
 
-assert.equal(safety.VERSION, "20260808-direct-start-products-v2-v1");
+assert.equal(safety.VERSION, "20260808-direct-start-products-v2-v2-rich-menu");
 assert.equal(safety.photoAuthority.version, "2026-08-08-products-v2-actual-photo-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v4"));
+assert.equal(safety.richMenuSync.VERSION, "20260808-rich-menu-website-chibi-v1");
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
 const data = JSON.parse(raw);
@@ -22,6 +23,7 @@ for (const product of data.products) {
 assert.equal(data.productPhotoAuthorityVersion, "2026-08-08-products-v2-actual-photo-v1");
 assert.equal(data.runtime.productMainImageSource, "products-v2-actual-photos");
 assert.equal(data.runtime.productsV3Use, "marketing-layout-reference-only");
+assert.equal(data.runtime.richMenuSyncVersion, "20260808-rich-menu-website-chibi-v1");
 
 const oldBubble = {
   type: "bubble",
@@ -37,4 +39,4 @@ assert.ok(oldBubble.hero.url.includes("/images/products-v2/guilu-drink-30.jpeg")
 assert.equal(oldBubble.footer.contents[0].action.label, "看正式產品圖");
 assert.equal(oldBubble.body.contents[1].text, "商品合計：$6,400");
 
-console.log("PASS：即使Render直接啟動server.js，六產品仍強制products-v2實際照片，舊DM按鈕與組合金額用詞也會被修正。");
+console.log("PASS：即使Render直接啟動server.js，products-v2、錄影UI修正與網站Q版Rich Menu同步都會載入。");
