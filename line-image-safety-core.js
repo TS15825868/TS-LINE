@@ -2,20 +2,30 @@
 
 /**
  * LINE OA outbound safety layer.
- * - 小老闆 hero 一律改寫到 xianjiawei 官網 repo 內的 LINE OA 專用 JPEG 集合；不再使用用途錯配的 TS-LINE/public/mascot 舊圖。
- * - 30cc一律使用目前正式裸小玻璃罐原圖，不從舊DM裁切、不改成瓶型。
+ * - 小老闆 hero 只使用官網 approved-v405 衍生的 LINE OA 專用圖，再由伺服器裁出角色區輸出乾淨 JPEG。
+ * - 角色 hero 不承載產品規格或包裝；產品只由正式產品原圖卡呈現。
+ * - 30cc 一律使用目前正式裸小玻璃罐原圖，不從舊DM裁切、不改成瓶型。
  * - 5～7個工作天只套用龜鹿飲30cc與180cc。
  * - 龜鹿膏、龜鹿湯塊、龜鹿膠、鹿茸粉只顯示預先備貨說明。
- * - 不變更未核准貼文不得發布、LINE VOOM人工等安全規則。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260808-line-oa-approved-mascot-v3";
-const BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/line-oa";
+const VERSION = "20260808-line-oa-clean-mascot-v4";
+const SOURCE_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/line-oa";
+const BASE = SOURCE_BASE;
 const APPROVED_MASCOT_NAMES = ["welcome", "products", "recommend", "combo", "usage", "faq", "service", "brand"];
+const MASCOT_SOURCE_MAP = Object.freeze({
+  welcome: "brand",
+  products: "brand",
+  recommend: "recommend",
+  combo: "recommend",
+  usage: "usage",
+  faq: "faq",
+  service: "brand",
+  brand: "brand",
+});
 const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg", "recommend.jpg", "combo.jpg", "usage.jpg", "faq.jpg"];
 const BLOCKED_MASCOT_ASSETS = [...LEGACY_MASCOT_NAMES];
-const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({ name, url: `${BASE}/${name}.jpg?v=${VERSION}` }));
 
 const DRINK_PRODUCT_PATTERN = /龜鹿飲|30\s*cc|180\s*cc/i;
 const STOCK_PRODUCT_PATTERN = /龜鹿膏|龜鹿湯塊|龜鹿膠|鹿茸粉/;
@@ -31,27 +41,40 @@ const GENERAL_FULFILLMENT_NOTICE = "龜鹿飲30cc與180cc為接單後安排製�
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const CLEAN_DRINK_IMAGE_PATH = "/assets/guilu-drink-30-clean.jpg";
 const CLEAN_DRINK_IMAGE_URL = `${PUBLIC_BASE_URL}${CLEAN_DRINK_IMAGE_PATH}?v=${VERSION}`;
+const CLEAN_MASCOT_PATH_PREFIX = "/assets/mascot-clean";
 const OFFICIAL_DRINK_SOURCE = "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260805";
 let cleanDrinkImagePromise = null;
+const cleanMascotImagePromises = new Map();
 
-function approvedUrl(name) {
-  return `${BASE}/${name}.jpg?v=${VERSION}`;
+function normalizeMascotName(value) {
+  const name = String(value || "").trim().toLowerCase();
+  if (name === "cart") return "welcome";
+  return APPROVED_MASCOT_NAMES.includes(name) ? name : "";
 }
+function approvedUrl(name) {
+  const safe = normalizeMascotName(name) || "brand";
+  return `${PUBLIC_BASE_URL}${CLEAN_MASCOT_PATH_PREFIX}/${safe}.jpg?v=${VERSION}`;
+}
+function mascotSourceUrl(name) {
+  const safe = normalizeMascotName(name) || "brand";
+  const sourceName = MASCOT_SOURCE_MAP[safe] || "brand";
+  return `${SOURCE_BASE}/${sourceName}.jpg?v=${VERSION}`;
+}
+const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({ name, url: approvedUrl(name), source: mascotSourceUrl(name) }));
 
 function mascotNameFromUrl(value) {
   const url = String(value || "");
-  const match = url.match(/\/(?:mascot|line-oa)\/(welcome|products|recommend|combo|usage|faq|service|brand|cart)\.jpg(?:[?#]|$)/i);
+  const match = url.match(/\/(?:mascot|line-oa|mascot-clean)\/(welcome|products|recommend|combo|usage|faq|service|brand|cart)\.jpg(?:[?#]|$)/i);
   if (!match) return "";
-  const name = match[1].toLowerCase();
-  return name === "cart" ? "welcome" : name;
+  return normalizeMascotName(match[1]);
 }
-
 function isBlockedMascotUrl(value) {
   const url = String(value || "");
   if (!url) return false;
-  const name = mascotNameFromUrl(url);
-  if (name && APPROVED_MASCOT_NAMES.includes(name) && url.includes("/images/brand/line-oa/")) return false;
-  return /TS15825868\/TS-LINE\/main\/public\/mascot\//i.test(url) || BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(asset));
+  if (url.includes(`${CLEAN_MASCOT_PATH_PREFIX}/`)) return false;
+  if (/TS15825868\/TS-LINE\/main\/public\/mascot\//i.test(url)) return true;
+  if (/TS15825868\/xianjiawei\/main\/images\/brand\/line-oa\//i.test(url)) return true;
+  return BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(`/mascot/${asset}`));
 }
 
 function collectBodyTexts(node, output = []) {
@@ -71,7 +94,6 @@ function collectBodyTexts(node, output = []) {
   }
   return output;
 }
-
 function collectAllTexts(node, output = []) {
   if (!node || typeof node !== "object") return output;
   if (Array.isArray(node)) {
@@ -85,11 +107,9 @@ function collectAllTexts(node, output = []) {
   for (const value of Object.values(node)) collectAllTexts(value, output);
   return output;
 }
-
 function bubbleTexts(bubble) {
   return collectBodyTexts(bubble?.body, []);
 }
-
 function sceneForBubble(bubble) {
   const text = bubbleTexts(bubble).join("\n");
   if (!text) return "";
@@ -102,11 +122,9 @@ function sceneForBubble(bubble) {
   if (/歡迎來到仙加味/.test(text)) return "welcome";
   return "";
 }
-
 function approvedHero(scene) {
-  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "4:3", aspectMode: "fit", backgroundColor: "#EFE4D2" };
+  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "1:1", aspectMode: "fit", backgroundColor: "#EFE4D2" };
 }
-
 function rewriteMascotHero(bubble) {
   if (!bubble || bubble.type !== "bubble") return;
   const semanticScene = sceneForBubble(bubble);
@@ -115,7 +133,7 @@ function rewriteMascotHero(bubble) {
     return;
   }
   const legacyName = mascotNameFromUrl(bubble.hero?.url);
-  if (legacyName && APPROVED_MASCOT_NAMES.includes(legacyName)) {
+  if (legacyName) {
     bubble.hero = approvedHero(legacyName);
   } else if (bubble.hero?.type === "image" && isBlockedMascotUrl(bubble.hero.url)) {
     delete bubble.hero;
@@ -131,14 +149,12 @@ function fulfillmentKind(bubble) {
   if (hasStock) return "stock";
   return "general";
 }
-
 function fulfillmentNotice(kind) {
   if (kind === "drink") return DRINK_FULFILLMENT_NOTICE;
   if (kind === "stock") return STOCK_FULFILLMENT_NOTICE;
   if (kind === "mixed") return MIXED_FULFILLMENT_NOTICE;
   return GENERAL_FULFILLMENT_NOTICE;
 }
-
 function replaceLegacyOrderNotice(node, replacement) {
   if (!node || typeof node !== "object") return;
   if (Array.isArray(node)) {
@@ -154,11 +170,9 @@ function replaceLegacyOrderNotice(node, replacement) {
   }
   for (const value of Object.values(node)) replaceLegacyOrderNotice(value, replacement);
 }
-
 function isDrink30Bubble(bubble) {
   return DRINK_30_PATTERN.test(collectAllTexts(bubble, []).join("\n"));
 }
-
 function rewriteDrink30Artwork(node) {
   if (!node || typeof node !== "object") return;
   if (Array.isArray(node)) {
@@ -176,7 +190,6 @@ function rewriteDrink30Artwork(node) {
   }
   for (const value of Object.values(node)) rewriteDrink30Artwork(value);
 }
-
 function applyImageSafety(node) {
   if (!node || typeof node !== "object") return node;
   if (Array.isArray(node)) {
@@ -192,16 +205,19 @@ function applyImageSafety(node) {
   return node;
 }
 
+async function fetchImageBuffer(url, label) {
+  const response = await fetch(url, {
+    headers: { "user-agent": "xianjiawei-line-image-safety" },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error(`${label} fetch failed: ${response.status}`);
+  return Buffer.from(await response.arrayBuffer());
+}
 async function buildCleanDrinkImage() {
   if (cleanDrinkImagePromise) return cleanDrinkImagePromise;
   cleanDrinkImagePromise = (async () => {
     const sharp = require("sharp");
-    const response = await fetch(OFFICIAL_DRINK_SOURCE, {
-      headers: { "user-agent": "xianjiawei-line-image-safety" },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!response.ok) throw new Error(`official drink image fetch failed: ${response.status}`);
-    const input = Buffer.from(await response.arrayBuffer());
+    const input = await fetchImageBuffer(OFFICIAL_DRINK_SOURCE, "official drink image");
     return sharp(input)
       .resize(900, 900, { fit: "contain", background: "#EFE4D2", withoutEnlargement: false })
       .flatten({ background: "#EFE4D2" })
@@ -213,8 +229,38 @@ async function buildCleanDrinkImage() {
   });
   return cleanDrinkImagePromise;
 }
+async function buildCleanMascotImage(name) {
+  const safe = normalizeMascotName(name);
+  if (!safe) throw new Error("unsupported mascot scene");
+  if (cleanMascotImagePromises.has(safe)) return cleanMascotImagePromises.get(safe);
+  const promise = (async () => {
+    const sharp = require("sharp");
+    const input = await fetchImageBuffer(mascotSourceUrl(safe), `mascot ${safe}`);
+    const image = sharp(input);
+    const metadata = await image.metadata();
+    const width = Number(metadata.width || 1024);
+    const height = Number(metadata.height || 768);
+    const left = Math.max(0, Math.min(width - 1, Math.round(width * 0.56)));
+    const top = Math.max(0, Math.min(height - 1, Math.round(height * 0.06)));
+    const rightMargin = Math.max(0, Math.round(width * 0.01));
+    const bottomMargin = Math.max(0, Math.round(height * 0.06));
+    const cropWidth = Math.max(1, width - left - rightMargin);
+    const cropHeight = Math.max(1, height - top - bottomMargin);
+    return sharp(input)
+      .extract({ left, top, width: cropWidth, height: cropHeight })
+      .resize(900, 900, { fit: "contain", background: "#EFE4D2", withoutEnlargement: false })
+      .flatten({ background: "#EFE4D2" })
+      .jpeg({ quality: 91, progressive: true })
+      .toBuffer();
+  })().catch((error) => {
+    cleanMascotImagePromises.delete(safe);
+    throw error;
+  });
+  cleanMascotImagePromises.set(safe, promise);
+  return promise;
+}
 
-function installCleanDrinkRoute() {
+function installImageRoutes() {
   let express;
   try {
     express = require("express");
@@ -222,10 +268,10 @@ function installCleanDrinkRoute() {
     return;
   }
   const appPrototype = express?.application;
-  if (!appPrototype?.listen || appPrototype.__xjwCleanDrinkRouteInstalled) return;
+  if (!appPrototype?.listen || appPrototype.__xjwImageRoutesInstalled) return;
   const originalListen = appPrototype.listen;
   appPrototype.listen = function patchedListen(...args) {
-    if (!this.locals.__xjwCleanDrinkRouteRegistered) {
+    if (!this.locals.__xjwImageRoutesRegistered) {
       this.get(CLEAN_DRINK_IMAGE_PATH, async (_req, res) => {
         try {
           const image = await buildCleanDrinkImage();
@@ -241,14 +287,31 @@ function installCleanDrinkRoute() {
           res.status(503).type("text/plain").send("image temporarily unavailable");
         }
       });
-      this.locals.__xjwCleanDrinkRouteRegistered = true;
+      this.get(`${CLEAN_MASCOT_PATH_PREFIX}/:name.jpg`, async (req, res) => {
+        const name = normalizeMascotName(req.params.name);
+        if (!name) return res.status(404).type("text/plain").send("Not Found");
+        try {
+          const image = await buildCleanMascotImage(name);
+          res.set({
+            "Content-Type": "image/jpeg",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "X-Content-Type-Options": "nosniff",
+            "X-XJW-Image-Source": "approved-website-chibi-character-crop",
+          });
+          return res.status(200).send(image);
+        } catch (error) {
+          console.error(`小老闆角色圖產生失敗 ${name}：`, error?.message || error);
+          return res.status(503).type("text/plain").send("image temporarily unavailable");
+        }
+      });
+      this.locals.__xjwImageRoutesRegistered = true;
     }
     return originalListen.apply(this, args);
   };
-  Object.defineProperty(appPrototype, "__xjwCleanDrinkRouteInstalled", { value: true, enumerable: false });
+  Object.defineProperty(appPrototype, "__xjwImageRoutesInstalled", { value: true, enumerable: false });
 }
 
-installCleanDrinkRoute();
+installImageRoutes();
 
 const Client = line?.messagingApi?.MessagingApiClient;
 if (Client?.prototype?.replyMessage && !Client.prototype.__xjwImageSafetyInstalled) {
@@ -263,7 +326,10 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwImageSafetyInstall
 module.exports = {
   VERSION,
   BASE,
+  SOURCE_BASE,
+  PUBLIC_BASE_URL,
   APPROVED_MASCOT_NAMES,
+  MASCOT_SOURCE_MAP,
   BLOCKED_MASCOT_ASSETS,
   MASCOT_RULES,
   DRINK_FULFILLMENT_NOTICE,
@@ -272,8 +338,11 @@ module.exports = {
   GENERAL_FULFILLMENT_NOTICE,
   CLEAN_DRINK_IMAGE_PATH,
   CLEAN_DRINK_IMAGE_URL,
+  CLEAN_MASCOT_PATH_PREFIX,
   OFFICIAL_DRINK_SOURCE,
+  normalizeMascotName,
   approvedUrl,
+  mascotSourceUrl,
   mascotNameFromUrl,
   isBlockedMascotUrl,
   bubbleTexts,
@@ -288,5 +357,6 @@ module.exports = {
   rewriteDrink30Artwork,
   applyImageSafety,
   buildCleanDrinkImage,
-  installCleanDrinkRoute,
+  buildCleanMascotImage,
+  installImageRoutes,
 };
