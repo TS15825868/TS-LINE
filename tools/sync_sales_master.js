@@ -10,12 +10,25 @@ const MASTER_PATH = path.join(ROOT, "line-sales-master.json");
 const AUTHORITY_PATH = path.join(ROOT, "assets/data/official-products.json");
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 
+const CANONICAL_INGREDIENTS = Object.freeze({
+  "guilu-gao": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
+  "guilu-drink-30": ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
+  "guilu-drink-180": ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
+  "guilu-tangkuai": ["龜板萃取物", "鹿角萃取物"],
+  "guilu-jiao": ["龜板萃取物", "鹿角萃取物"],
+  "luerong-fen": ["鹿茸"],
+});
+
 function hasBuyTenGetOne(product, unitPrice) {
   return (product.offers || []).some((offer) =>
     Number(offer.qty) === 11
     && Number(offer.total) === Number(unitPrice) * 10
     && String(offer.label) === "買10送1"
   );
+}
+
+function sameArray(left, right) {
+  return JSON.stringify(left || []) === JSON.stringify(right || []);
 }
 
 function assertSoupAuthority(product) {
@@ -36,6 +49,7 @@ function main() {
   const merged = applyMaster(data);
 
   if (master.version !== merged.salesMasterVersion) throw new Error("正式售價主檔版本套用失敗");
+  if (master.version !== "2026-08-08-canonical-v6-six-single-specs") throw new Error(`正式主檔版本不是目前v6：${master.version}`);
   if ((merged.offers?.comboOffers || []).length !== 3) throw new Error("正式組合必須是3組");
   if ((merged.combos || []).length !== 3) throw new Error("根層正式組合資料必須是3組");
   if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6個分類，目前${merged.products?.length || 0}項`);
@@ -60,6 +74,7 @@ function main() {
     if (!product || !official) throw new Error(`${id}不存在`);
     if (product.name !== official.name) throw new Error(`${id}正式名稱不同步：${product.name}`);
     if ((product.specification || product.size || product.spec) !== official.specification) throw new Error(`${id}正式規格不同步`);
+    if (!sameArray(product.ingredients, CANONICAL_INGREDIENTS[id])) throw new Error(`${id}正式成分或順序不同步`);
     if (Number(product.price) !== rule.price) throw new Error(`${id}正式售價不同步`);
     if (official.retailPrice !== undefined && Number(product.price) !== Number(official.retailPrice)) throw new Error(`${id}與唯一權威售價不同步`);
     if (rule.originalPrice !== undefined && Number(product.originalPrice) !== rule.originalPrice) throw new Error(`${id}正式原價不同步`);
@@ -79,6 +94,10 @@ function main() {
     }
   }
 
+  const gao = merged.products.find((item) => item.id === "guilu-gao");
+  if (gao?.usage?.[0] !== "每日早上及下午各一小匙") throw new Error("龜鹿膏正式使用方式不同步");
+  if ((gao?.usage || []).some((line) => String(line).includes("每天一次，每次一小匙"))) throw new Error("龜鹿膏仍含舊的一日一次用法");
+
   assertSoupAuthority(merged.products.find((item) => item.id === "guilu-tangkuai"));
 
   const drink30 = merged.products.find((item) => item.id === "guilu-drink-30");
@@ -92,11 +111,11 @@ function main() {
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version}: six products, six specs, soup 75g only`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, six specs, canonical ingredients and guilu-gao usage`);
     return;
   }
 
-  console.log(`PASS LINE OA sales master ${master.version}: six products, six specs, soup 75g only, prices and fulfillment aligned`);
+  console.log(`PASS LINE OA sales master ${master.version}: six products, six specs, canonical facts, prices and fulfillment aligned`);
 }
 
 if (require.main === module) {
@@ -107,4 +126,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority };
+module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, sameArray, CANONICAL_INGREDIENTS };
