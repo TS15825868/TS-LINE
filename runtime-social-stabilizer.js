@@ -5,7 +5,7 @@ const weekly = require("./social-weekly-schedule-override");
 const batch = require("./social-final-approved-batch");
 const reviewGate = require("./social-review-only-mode");
 
-const VERSION = "2026-07-26-runtime-stabilizer-v2";
+const VERSION = "2026-08-08-runtime-stabilizer-v3-tue-sat";
 const REVIEW_NOTE = "已上傳至 App，等待人工審核；未審核不會排程、發布或補發";
 const FORCE_REVIEW_TOPICS = new Set(["care-work-rest"]);
 const CANONICAL_IDS = new Set((batch.POSTS || []).map((post) => String(post.id || "")));
@@ -200,8 +200,9 @@ function mountCurrentHealth(app) {
       totalPosts: posts.length,
       fixedPosts: posts.filter((post) => post.conditionalWeather !== true).length,
       weatherStandbyPosts: posts.filter((post) => post.conditionalWeather === true).length,
-      fixedRule: "每週1篇，週三20:00",
-      weatherRule: "人工審核通過後，依實際氣候於其他平日20:00加發；每週最多1篇；週末不發布",
+      fixedRule: "每週2篇，週二19:30、週六09:30（Asia/Taipei）",
+      immediatePublishBypassesFixedSchedule: true,
+      weatherRule: "即時型內容僅在人工審核後依當日資訊判斷；發布前重新確認，並避開固定排程時段。",
       rateLimitBackoffMs: batch.WEATHER_RATE_LIMIT_BACKOFF_MS,
       assets,
       checkedAt: nowIso(),
