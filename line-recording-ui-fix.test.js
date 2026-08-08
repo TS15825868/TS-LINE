@@ -11,21 +11,23 @@ function productBubble(name, oldImage) {
   };
 }
 
-assert.ok(fix.VERSION.includes("recording-ui-v5"));
+assert.ok(fix.VERSION.includes("recording-ui-v6"));
 const cases = [
-  ["龜鹿膏｜100g／罐", "guilu-gao", "guilu-gao.jpeg"],
-  ["龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）", "guilu-drink-30", "guilu-drink-30.jpeg"],
-  ["龜鹿飲180cc鋁袋｜180cc／包（鋁袋）", "guilu-drink-180", "guilu-drink-180.jpeg"],
-  ["龜鹿湯塊｜75g／盒｜8塊裝", "guilu-tangkuai", "guilu-tangkuai.jpeg"],
-  ["龜鹿膠｜600g（1斤）／盒", "guilu-jiao", "guilu-jiao-open-new.jpg"],
-  ["鹿茸粉｜75g／罐", "luerong-fen", "luerong-fen.jpeg"],
+  ["龜鹿膏｜100g／罐", "guilu-gao", "guilu-gao.jpg"],
+  ["龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）", "guilu-drink-30", "guilu-drink-30.jpg"],
+  ["龜鹿飲180cc鋁袋｜180cc／包（鋁袋）", "guilu-drink-180", "guilu-drink-180.jpg"],
+  ["龜鹿湯塊｜75g／盒｜8塊裝", "guilu-tangkuai", "guilu-tangkuai.jpg"],
+  ["龜鹿膠｜600g（1斤）／盒", "guilu-jiao", "guilu-jiao.jpg"],
+  ["鹿茸粉｜75g／罐", "luerong-fen", "luerong-fen.jpg"],
 ];
 for (const [name, key, file] of cases) {
   const bubble = productBubble(name, "https://ts15825868.github.io/xianjiawei/images/dm-final/legacy.jpg");
   fix.applyVisualFix(bubble);
   assert.equal(bubble.xjwProductPhoto, key);
-  assert.ok(bubble.hero.url.includes(`/images/products-v2/${file}`), `${name} 未切回 products-v2 實際產品照片`);
+  assert.ok(bubble.hero.url.includes(`/images/products-v3/${file}`), `${name} 未切到 products-v3 使用者確認正式產品原圖`);
   assert.equal(bubble.hero.aspectMode, "fit");
+  assert.equal(bubble.xjwProductPhotoAuthority, "products-v3-user-approved-originals");
+  assert.equal(bubble.xjwProductScalePolicy, "uniform-only-no-crop-no-stretch");
   assert.equal(bubble.footer.contents[0].action.label, "看實際產品照片");
   assert.equal(bubble.footer.contents[0].action.uri, bubble.hero.url);
   assert.equal(bubble.hero.action.uri, "https://ts15825868.github.io/xianjiawei/products.html");
@@ -89,6 +91,6 @@ const carousel = {
 fix.applyVisualFix(carousel);
 assert.ok(carousel.contents[0].hero, "carousel 第一張導覽卡保留完整小老闆圖");
 assert.equal(carousel.contents[1].hero, undefined, "carousel 後續非產品說明卡移除重複小老闆 hero");
-assert.ok(carousel.contents[2].hero.url.includes("/images/products-v2/guilu-gao.jpeg"), "產品卡仍保留真實產品照片");
+assert.ok(carousel.contents[2].hero.url.includes("/images/products-v3/guilu-gao.jpg"), "產品卡仍保留使用者確認的正式產品原圖");
 
-console.log("PASS：LINE OA 產品只用實際照片；小老闆依文案情境配圖；carousel 不重複載入同一小老闆；所有 hero 使用 fit 不裁切。");
+console.log("PASS：LINE OA 產品使用 products-v3 正式原圖；產品只等比例fit不裁切；小老闆依文案情境配圖；carousel 不重複載入同一小老闆。");
