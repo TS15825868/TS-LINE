@@ -6,16 +6,16 @@
  * - 天氣／即時型內容保留 10:00 例外，但發布前仍需人工確認
  * - 立即發布不受固定排程限制
  *
- * 這個 preload 在載入 social-server / social-official-rebuild 前修正歷史核心，
- * 避免舊的週三／週五規則重新寫回 runtime。
+ * preload 會修正歷史核心；若核心未來已經正式改成新規則，則安全 no-op。
  */
 const fs = require("fs");
 const Module = require("module");
 
-const VERSION = "20260808-tue1930-sat0930-v1";
+const VERSION = "20260808-tue1930-sat0930-v2-idempotent";
 const originalLoader = Module._extensions[".js"];
 
 function replaceRequired(source, from, to, label) {
+  if (source.includes(to)) return source;
   if (!source.includes(from)) throw new Error(`社群排程政策修正失敗：找不到 ${label}`);
   return source.replace(from, to);
 }
