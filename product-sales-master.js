@@ -10,7 +10,6 @@ let master = null;
 const SALES_OVERRIDE_FIELDS = Object.freeze([
   "name", "displayName", "specification", "size", "spec", "unit",
   "description", "usage", "storage", "fit", "purposeDirection", "aliases",
-  "variants", "variantSelectionMode",
   "price", "originalPrice", "offers", "priceText", "originalPriceText",
   "priceLabel", "quoteOnly",
   "fulfillmentType", "fulfillmentNotice", "productionLeadTime", "readyStock",
@@ -78,7 +77,10 @@ function applyMaster(data) {
       ...(Array.isArray(product.quantityOptions) ? product.quantityOptions : [1, 2, 3, 5]),
       ...normalized.offers.map((offer) => offer.qty),
     ].map(Number).filter((value) => Number.isFinite(value) && value > 0))];
-    return { ...product, ...override, offers: normalized.offers, promotionTexts: normalized.promotionTexts, quantityOptions };
+    const merged = { ...product, ...override, offers: normalized.offers, promotionTexts: normalized.promotionTexts, quantityOptions };
+    delete merged.variants;
+    delete merged.variantSelectionMode;
+    return merged;
   });
 
   data.offers = { comboOffers };
