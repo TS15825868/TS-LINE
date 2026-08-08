@@ -1,24 +1,27 @@
 "use strict";
 
 /**
- * 仙加味 LINE Rich Menu 自動同步｜2026-08-08
- * 保留既有 3×2 六格選單的文字、圖示與操作邏輯，僅把舊小老闆視覺覆蓋為官網 approved-v405 衍生Q版。
- * 六格角色情境依功能對應：產品／購物車／推薦／搭配／使用／下單客服。
- * 不使用產品圖，因此不會把舊包裝或宣傳版面混進 Rich Menu。
- * 成功後透過 LINE Messaging API 設為預設 Rich Menu；失敗只記錄，不影響 webhook 回覆。
+ * 仙加味 LINE Rich Menu 自動同步｜2026-08-09
+ * - 保留 3×2 六格正式功能。
+ * - 六格依產品／購物車／推薦／搭配／使用／下單客服使用對應網站Q版小老闆場景。
+ * - 小老闆合成固定 contain，不再用 cover 裁頭、裁手、裁腳。
+ * - 「直接下單」送出「直接下單」，先進產品選擇；購物車有商品後才使用「開始結帳」。
+ * - 不使用產品宣傳圖作 Rich Menu 人物背景。
  */
 const sharp = require("sharp");
 
-const VERSION = "20260808-rich-menu-website-chibi-v2-semantic-scenes";
+const VERSION = "20260809-rich-menu-website-chibi-v3-no-crop-intent";
 const MENU_NAME = `仙加味正式選單｜網站Q版｜${VERSION}`;
 const BASE_MENU = "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg";
+const ASSET_VERSION = "20260809-01";
+const OVERLAY_FIT = "contain";
 const BOSS_SOURCES = [
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=20260808-24",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=20260808-24",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/recommend.jpg?v=20260808-24",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/combo.jpg?v=20260808-24",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/usage.jpg?v=20260808-24",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/service.jpg?v=20260808-24"
+  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
+  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
+  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/recommend.jpg?v=${ASSET_VERSION}`,
+  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/combo.jpg?v=${ASSET_VERSION}`,
+  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/usage.jpg?v=${ASSET_VERSION}`,
+  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/service.jpg?v=${ASSET_VERSION}`,
 ];
 const API = "https://api.line.me";
 const DATA_API = "https://api-data.line.me";
@@ -47,7 +50,12 @@ async function fetchBuffer(url) {
 
 async function bossOverlay(buffer, width = 350, height = 525) {
   return sharp(buffer)
-    .resize(width, height, { fit: "cover", position: "right" })
+    .resize(width, height, {
+      fit: OVERLAY_FIT,
+      position: "centre",
+      background: { r: 239, g: 228, b: 210, alpha: 1 },
+      withoutEnlargement: true,
+    })
     .jpeg({ quality: 88, mozjpeg: true })
     .toBuffer();
 }
@@ -81,7 +89,7 @@ function menuDefinition() {
     ["幫我推薦", "幫我推薦"],
     ["搭配組合", "搭配組合"],
     ["怎麼使用", "怎麼使用"],
-    ["直接下單", "開始結帳"],
+    ["直接下單", "直接下單"],
   ];
   const areas = [];
   let i = 0;
@@ -151,4 +159,15 @@ function scheduleRichMenuSync(delayMs = 7000) {
   if (typeof timer.unref === "function") timer.unref();
 }
 
-module.exports = { VERSION, MENU_NAME, BASE_MENU, BOSS_SOURCES, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
+module.exports = {
+  VERSION,
+  MENU_NAME,
+  BASE_MENU,
+  ASSET_VERSION,
+  OVERLAY_FIT,
+  BOSS_SOURCES,
+  menuDefinition,
+  buildRichMenuImage,
+  syncRichMenu,
+  scheduleRichMenuSync,
+};
