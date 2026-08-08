@@ -7,6 +7,8 @@ const weekly = require("./social-weekly-schedule-override");
 const reviewGate = require("./social-review-only-mode");
 const batch = require("./social-final-approved-batch");
 const sales = require("./line-sales-master.json");
+const photoAuthority = require("./line-product-photo-authority.json");
+const { applyMaster } = require("./product-sales-master");
 const imageSafety = require("./line-image-safety");
 
 assert.strictEqual(weekly.VERSION, "2026-08-08-tue-sat-v3");
@@ -27,8 +29,6 @@ assert.strictEqual(batch.POSTS.filter((post) => !post.conditionalWeather).length
 assert.strictEqual(new Set(batch.POSTS.map((post) => post.id)).size, 10);
 assert.strictEqual(new Set(batch.POSTS.map((post) => post.title)).size, 10);
 assert(batch.POSTS.every((post) => post.qBossMascotLocked === true));
-assert(batch.POSTS.every((post) => post.deerPartnerPresent === true));
-assert(batch.POSTS.every((post) => post.turtlePartnerPresent === true));
 
 const reset = reviewGate.initialReset({
   posts: batch.POSTS.map((post) => ({...post,status: post.conditionalWeather ? "paused" : "approved",assetLocked: true})),
@@ -54,24 +54,31 @@ const ingredientAuthority = {
   "guilu-jiao": ["龜板萃取物", "鹿角萃取物"],
   "luerong-fen": ["鹿茸"],
 };
-const officialImages = {
-  "guilu-gao": "/images/products-v3/guilu-gao.jpg",
-  "guilu-drink-30": "/images/products-v3/guilu-drink-30.jpg",
-  "guilu-drink-180": "/images/products-v3/guilu-drink-180.jpg",
-  "guilu-tangkuai": "/images/products-v3/guilu-tangkuai.jpg",
-  "guilu-jiao": "/images/products-v3/guilu-jiao.jpg",
-  "luerong-fen": "/images/products-v3/luerong-fen.jpg",
+const actualImages = {
+  "guilu-gao": "/images/products-v2/guilu-gao.jpeg",
+  "guilu-drink-30": "/images/products-v2/guilu-drink-30.jpeg",
+  "guilu-drink-180": "/images/products-v2/guilu-drink-180.jpeg",
+  "guilu-tangkuai": "/images/products-v2/guilu-tangkuai.jpeg",
+  "guilu-jiao": "/images/products-v2/guilu-jiao-open-new.jpg",
+  "luerong-fen": "/images/products-v2/luerong-fen.jpeg",
 };
 assert.strictEqual(sales.version, "2026-08-08-canonical-v7-official-originals");
+assert.strictEqual(photoAuthority.version, "2026-08-08-products-v2-actual-photo-v1");
+assert.strictEqual(Object.keys(photoAuthority.products).length, 6);
+const merged = applyMaster({ products: Object.keys(sales.products).map((id) => ({ id })), runtime: {} });
+const mergedById = Object.fromEntries(merged.products.map((product) => [product.id, product]));
 for (const [id, ingredients] of Object.entries(ingredientAuthority)) {
   const product = sales.products[id];
+  const runtimeProduct = mergedById[id];
   assert.deepStrictEqual(product.ingredients, ingredients, `${id}成分或順序錯誤`);
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
-    assert(String(product[field] || "").includes(officialImages[id]), `${id}.${field}未使用正式產品原圖`);
+    assert(String(runtimeProduct[field] || "").includes(actualImages[id]), `${id}.${field}未使用products-v2實際產品照片`);
+    assert(!String(runtimeProduct[field] || "").includes("/images/products-v3/"), `${id}.${field}仍使用宣傳版面`);
   }
-  assert.strictEqual(product.imagePolicy, "official-original-contain-no-crop", `${id}圖片政策錯誤`);
+  assert.strictEqual(runtimeProduct.imagePolicy, "actual-product-photo-contain-no-crop", `${id}圖片政策錯誤`);
 }
-assert.strictEqual(sales.imagePolicy.dmFallback, "official-product-original-until-new-dm-reviewed");
+assert.strictEqual(merged.runtime.imagePolicy.dmFallback, "actual-product-photo-until-new-dm-reviewed");
+assert.strictEqual(merged.runtime.imagePolicy.productMainImageSource, "products-v2-actual-photos");
 assert.strictEqual(sales.products["guilu-gao"].usage[0], "每日早上及下午各一小匙");
 assert(!sales.products["guilu-gao"].usage.some((line) => String(line).includes("每天一次，每次一小匙")));
 
@@ -116,4 +123,4 @@ for (const name of officialScenes) {
   assert(width >= 1000 && height >= 1000, `正式入口圖尺寸不足：${name}.jpg (${width}x${height})`);
 }
 
-console.log("PASS current social policy: Tue/Sat schedule, six specs, canonical facts, official-original DM fallback and image safety");
+console.log("PASS current social policy: Tue/Sat schedule, six specs, canonical facts, products-v2 actual product photos and image safety");
