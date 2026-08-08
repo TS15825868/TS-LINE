@@ -2,7 +2,7 @@
 
 const line = require("@line/bot-sdk");
 
-const POLICY_VERSION = "2026-08-08-v6-canonical-facts";
+const POLICY_VERSION = "2026-08-08-v7-canonical-copy-and-photo-policy";
 const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
 const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
 const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
@@ -10,6 +10,15 @@ const LEGACY_NOTICE = /(?:訂單資料與付款方式|資料及運費)確認後�
 const DRINK_PATTERN = /龜鹿飲|30\s*cc|180\s*cc/i;
 const STOCK_PATTERN = /龜鹿膏|龜鹿湯塊|龜鹿膠|鹿茸粉/;
 const NOTICE_MARKER = /製作加工約需|接單後安排製作加工|預先製作備貨商品|實際出貨時間依訂單品項|依現貨狀況安排出貨/;
+
+function normalizePublicCopy(value) {
+  return String(value || "")
+    .replaceAll("查看產品DM", "查看實際產品照片")
+    .replaceAll("看產品DM", "看實際產品照片")
+    .replaceAll("產品DM", "實際產品照片")
+    .replaceAll("每組售價：", "商品合計：")
+    .replaceAll("每組價格", "商品合計");
+}
 
 function kindFromText(value) {
   const text = String(value || "");
@@ -27,13 +36,13 @@ function collectContextText(node, output = []) {
     for (const item of node) collectContextText(item, output);
     return output;
   }
-  if (node.type === "text" && typeof node.text === "string" && !NOTICE_MARKER.test(node.text)) output.push(node.text);
+  if (node.type === "text" && typeof node.text === "string" && !NOTICE_MARKER.test(node.text)) output.push(normalizePublicCopy(node.text));
   for (const value of Object.values(node)) collectContextText(value, output);
   return output;
 }
 
 function replaceKnownNotices(text, replacement, core) {
-  let value = String(text || "");
+  let value = normalizePublicCopy(text);
   LEGACY_NOTICE.lastIndex = 0;
   value = value.replace(LEGACY_NOTICE, replacement);
   for (const known of [
@@ -48,7 +57,7 @@ function replaceKnownNotices(text, replacement, core) {
 }
 
 function replacePlainTextNotice(text, core) {
-  const value = String(text || "");
+  const value = normalizePublicCopy(text);
   const context = replaceKnownNotices(value, "", core);
   const replacement = core.fulfillmentNotice(kindFromText(context));
   return replaceKnownNotices(value, replacement, core);
@@ -61,7 +70,14 @@ function patchTextNodes(node, replacement, core) {
     return;
   }
   if (node.type === "text" && typeof node.text === "string") node.text = replaceKnownNotices(node.text, replacement, core);
-  for (const value of Object.values(node)) patchTextNodes(value, replacement, core);
+  if (node.action && typeof node.action === "object") {
+    if (typeof node.action.label === "string") node.action.label = normalizePublicCopy(node.action.label);
+    if (typeof node.action.text === "string") node.action.text = normalizePublicCopy(node.action.text);
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "action") continue;
+    patchTextNodes(value, replacement, core);
+  }
 }
 
 function patchMessages(messages, core) {
@@ -98,7 +114,9 @@ function healthPayload(core) {
     cleanDrinkImagePath: core.CLEAN_DRINK_IMAGE_PATH,
     cleanDrinkImageUrl: core.CLEAN_DRINK_IMAGE_URL,
     cleanDrinkImageSource: core.OFFICIAL_DRINK_SOURCE,
-    cleanDrinkImagePolicy: "official-original-contain-no-crop",
+    cleanDrinkImagePolicy: "actual-product-photo-contain-no-crop",
+    productMainImageSource: "products-v2-actual-photos",
+    productsV3Use: "marketing-layout-reference-only",
     guiluDrink30Specification: "30cc／罐（小玻璃罐）",
     guiluDrink180Specification: "180cc／包（鋁袋）",
     guiluGaoSpecification: "100g／罐",
@@ -131,7 +149,7 @@ function installHealthRoute(core) {
           "Cache-Control": "no-store",
           "X-Content-Type-Options": "nosniff",
           "X-XJW-Fulfillment-Policy": POLICY_VERSION,
-          "X-XJW-Drink-Image-Policy": "official-original-contain-no-crop",
+          "X-XJW-Drink-Image-Policy": "actual-product-photo-contain-no-crop",
         });
         res.status(200).json(healthPayload(core));
       });
@@ -159,6 +177,7 @@ module.exports = {
   HEALTH_PATH,
   DRINK_PRODUCT_IDS,
   READY_STOCK_PRODUCT_IDS,
+  normalizePublicCopy,
   kindFromText,
   collectContextText,
   replaceKnownNotices,
