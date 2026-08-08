@@ -1,18 +1,30 @@
 "use strict";
 
 /**
- * 2026-08-08 新錄影 LINE OA 畫面修正 v4
- * - 六項產品卡送出前一律使用官網 products-v2 實際產品照片，不使用DM/海報版面。
- * - 「看產品DM」一律改成「看正式產品圖」，連結同一張實際產品照片。
- * - 非產品的怎麼選／搭配／使用／FAQ／品牌／客服卡固定補網站Q版小老闆靜態hero；不再依賴Render即時裁圖，避免carousel大片白框。
- * - 搭配組合沒有另訂優惠組價時，金額只標示「商品合計」，避免把商品加總誤認為另設組合優惠價。
+ * 2026-08-09 LINE OA 正式畫面修正 v5
+ * - 六項產品卡一律使用官網 products-v2 實際產品照片，不使用DM/海報版面。
+ * - 「產品DM」一律改成「實際產品照片」。
+ * - 小老闆依文案語意選擇推薦／搭配／使用／FAQ／客服／品牌／歡迎正式場景，不再所有卡都塞同一張圖。
+ * - 同一 carousel 中，非產品說明卡只保留第一張必要小老闆 hero，避免重複下載與畫面過重。
+ * - 所有小老闆與產品 hero 使用 fit，不裁切人物或產品。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260808-recording-ui-v4-combo-total";
+const VERSION = "20260809-recording-ui-v5-semantic-fast";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
-const GENERIC_MASCOT_HERO = `${SITE_BASE}images/brand/line-oa/brand.jpg?v=${VERSION}`;
-const RECOMMEND_HERO = GENERIC_MASCOT_HERO;
+
+const MASCOT_HEROES = Object.freeze({
+  welcome: `${SITE_BASE}images/brand/line-oa/welcome.jpg?v=${VERSION}`,
+  products: `${SITE_BASE}images/brand/line-oa/products.jpg?v=${VERSION}`,
+  recommend: `${SITE_BASE}images/brand/line-oa/recommend.jpg?v=${VERSION}`,
+  combo: `${SITE_BASE}images/brand/line-oa/combo.jpg?v=${VERSION}`,
+  usage: `${SITE_BASE}images/brand/line-oa/usage.jpg?v=${VERSION}`,
+  faq: `${SITE_BASE}images/brand/line-oa/faq.jpg?v=${VERSION}`,
+  service: `${SITE_BASE}images/brand/line-oa/service.jpg?v=${VERSION}`,
+  brand: `${SITE_BASE}images/brand/line-oa/brand.jpg?v=${VERSION}`,
+});
+const GENERIC_MASCOT_HERO = MASCOT_HEROES.welcome;
+const RECOMMEND_HERO = MASCOT_HEROES.recommend;
 
 const PRODUCTS = Object.freeze({
   "guilu-drink-30": {
@@ -41,14 +53,14 @@ const PRODUCTS = Object.freeze({
   },
 });
 
-const MASCOT_CARD_PATTERN = /怎麼選|幫你選|幫我推薦|產品差異|固定節奏|方便快速|沖泡[、，,\s]*燉湯|家庭使用|自己搭配|依日常|依生活|搭配方案|搭配組合|日常搭配導覽|選擇適合|使用型態|怎麼使用|使用方式|沖泡方式|燉湯方式|常見問題|FAQ|品牌故事|四代傳承|萬華開始|人工客服|門市資訊|歡迎來到仙加味/;
-const RECOMMEND_PATTERN = MASCOT_CARD_PATTERN;
+const MASCOT_CARD_PATTERN = /怎麼選|幫你選|幫我推薦|產品差異|固定節奏|方便快速|沖泡[、，,\s]*燉湯|家庭使用|自己搭配|依日常|依生活|搭配方案|搭配組合|日常搭配導覽|選擇適合|使用型態|怎麼使用|使用方式|沖泡方式|燉湯方式|常見問題|FAQ|品牌故事|四代傳承|萬華開始|人工客服|門市資訊|歡迎來到仙加味|配送與付款/;
 
 function rewriteVisibleText(value) {
   return String(value || "")
     .replaceAll("每組售價：", "商品合計：")
     .replaceAll("每組價格", "商品合計")
     .replaceAll("查看產品DM", "查看實際產品照片")
+    .replaceAll("看產品DM", "看實際產品照片")
     .replaceAll("產品DM", "實際產品照片");
 }
 
@@ -108,10 +120,22 @@ function productHero(key) {
   };
 }
 
-function mascotHero() {
+function mascotSceneForText(value = "") {
+  const text = String(value || "");
+  if (/常見問題|FAQ|問題整理/.test(text)) return "faq";
+  if (/客服|聯絡|訂單|結帳|門市|配送|付款|下單/.test(text)) return "service";
+  if (/使用|沖泡|燉湯|料理/.test(text)) return "usage";
+  if (/搭配組合|搭配方案|組合/.test(text)) return "combo";
+  if (/推薦|幫你選|幫我推薦|怎麼選|產品差異|依日常|依生活/.test(text)) return "recommend";
+  if (/品牌|四代|萬華|傳承|故事|漢方|資料/.test(text)) return "brand";
+  if (/產品|商品/.test(text)) return "products";
+  return "welcome";
+}
+
+function mascotHero(scene = "welcome") {
   return {
     type: "image",
-    url: GENERIC_MASCOT_HERO,
+    url: MASCOT_HEROES[scene] || MASCOT_HEROES.welcome,
     size: "full",
     aspectRatio: "4:3",
     aspectMode: "fit",
@@ -128,7 +152,7 @@ function rewriteProductImageActions(node, key) {
   if (node.action && typeof node.action === "object") {
     const label = String(node.action.label || "");
     if (/看產品DM|看正確產品圖|看正式產品圖|看實際產品照片|產品大圖/.test(label)) {
-      node.action.label = "看正式產品圖";
+      node.action.label = "看實際產品照片";
       node.action.type = "uri";
       node.action.uri = PRODUCTS[key].image;
       delete node.action.text;
@@ -159,11 +183,31 @@ function applyBubbleFix(bubble) {
     return bubble;
   }
   if (isRecommendationBubble(bubble)) {
-    bubble.hero = mascotHero();
+    const text = collectTexts(bubble, []).join("\n");
+    const scene = mascotSceneForText(text);
+    bubble.hero = mascotHero(scene);
     bubble.xjwRecommendationHero = true;
-    bubble.xjwRecommendationHeroSource = "github-pages-approved-website-chibi";
+    bubble.xjwRecommendationScene = scene;
+    bubble.xjwRecommendationHeroSource = "github-pages-approved-website-chibi-semantic";
   }
   return bubble;
+}
+
+function pruneRepeatedMascotHeroes(carousel) {
+  if (!carousel || carousel.type !== "carousel" || !Array.isArray(carousel.contents)) return carousel;
+  let mascotHeroKept = false;
+  for (const bubble of carousel.contents) {
+    if (!bubble || bubble.type !== "bubble" || bubble.xjwProductPhoto) continue;
+    if (!bubble.xjwRecommendationHero) continue;
+    if (!mascotHeroKept) {
+      mascotHeroKept = true;
+      continue;
+    }
+    delete bubble.hero;
+    bubble.xjwRecommendationHero = false;
+    bubble.xjwRecommendationHeroSuppressed = true;
+  }
+  return carousel;
 }
 
 function applyVisualFix(node) {
@@ -175,6 +219,7 @@ function applyVisualFix(node) {
   }
   if (node.type === "bubble") applyBubbleFix(node);
   for (const value of Object.values(node)) applyVisualFix(value);
+  if (node.type === "carousel") pruneRepeatedMascotHeroes(node);
   return node;
 }
 
@@ -191,6 +236,7 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwRecordingUiFixInst
 module.exports = {
   VERSION,
   PRODUCTS,
+  MASCOT_HEROES,
   GENERIC_MASCOT_HERO,
   RECOMMEND_HERO,
   MASCOT_CARD_PATTERN,
@@ -199,9 +245,11 @@ module.exports = {
   collectTexts,
   uniqueProductKey,
   productHero,
+  mascotSceneForText,
   mascotHero,
   rewriteProductImageActions,
   isRecommendationBubble,
   applyBubbleFix,
+  pruneRepeatedMascotHeroes,
   applyVisualFix,
 };
