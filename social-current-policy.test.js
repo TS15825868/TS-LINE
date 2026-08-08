@@ -47,6 +47,21 @@ assert(canonical.every((post) => !post.reviewApprovedAt));
 assert.strictEqual(reset.automaticSchedulingAfterReview, true);
 assert.strictEqual(reset.automaticRetryEnabled, false);
 
+const ingredientAuthority = {
+  "guilu-gao": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
+  "guilu-drink-30": ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
+  "guilu-drink-180": ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
+  "guilu-tangkuai": ["龜板萃取物", "鹿角萃取物"],
+  "guilu-jiao": ["龜板萃取物", "鹿角萃取物"],
+  "luerong-fen": ["鹿茸"],
+};
+assert.strictEqual(sales.version, "2026-08-08-canonical-v6-six-single-specs");
+for (const [id, ingredients] of Object.entries(ingredientAuthority)) {
+  assert.deepStrictEqual(sales.products[id].ingredients, ingredients, `${id}成分或順序錯誤`);
+}
+assert.strictEqual(sales.products["guilu-gao"].usage[0], "每日早上及下午各一小匙");
+assert(!sales.products["guilu-gao"].usage.some((line) => String(line).includes("每天一次，每次一小匙")));
+
 assert.strictEqual(sales.products["guilu-gao"].price, 1800);
 assert.strictEqual(sales.products["guilu-gao"].originalPrice, 2100);
 assert.strictEqual(sales.products["guilu-drink-30"].price, 60);
@@ -88,4 +103,4 @@ for (const name of officialScenes) {
   assert(width >= 1000 && height >= 1000, `正式入口圖尺寸不足：${name}.jpg (${width}x${height})`);
 }
 
-console.log("PASS current social policy: Tue/Sat schedule, six specs, 30cc/180cc pricing and image safety");
+console.log("PASS current social policy: Tue/Sat schedule, six specs, canonical product facts, 30cc/180cc pricing and image safety");
