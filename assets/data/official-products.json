@@ -1,14 +1,14 @@
 {
-  "version": "2026-08-08-user-authority-v8-six-single-specs",
+  "version": "2026-08-08-user-authority-v9-canonical-facts",
   "authority": "user-confirmed",
   "publicAuthority": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "products": [
-    {"id":"guilu-gao","name":"龜鹿膏","specification":"100g／罐","fulfillmentType":"ready-stock"},
-    {"id":"guilu-drink-30","name":"龜鹿飲30cc玻璃罐","specification":"30cc／罐（小玻璃罐）","package":"小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋","retailPrice":60,"promotion":"買10送1｜11罐600元","fulfillmentType":"made-to-order-drink","image":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260805","officialOriginalImage":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260805","imagePolicy":"official-original-contain-no-crop"},
-    {"id":"guilu-drink-180","name":"龜鹿飲180cc鋁袋","specification":"180cc／包（鋁袋）","package":"狹長鋁袋","retailPrice":200,"promotion":"買10送1｜11包2,000元","fulfillmentType":"made-to-order-drink"},
-    {"id":"guilu-tangkuai","name":"龜鹿湯塊","specification":"75g／盒｜8塊裝｜每塊約9.375g","package":"深藍正式盒裝","retailPrice":1600,"fulfillmentType":"ready-stock","singleSpecificationOnly":true},
-    {"id":"guilu-jiao","name":"龜鹿膠","specification":"600g（1斤）／盒｜32塊裝｜每塊約18.75g","package":"淡紫色正式盒裝","fulfillmentType":"ready-stock"},
-    {"id":"luerong-fen","name":"鹿茸粉","specification":"75g／罐","package":"白色塑膠罐","fulfillmentType":"ready-stock"}
+    {"id":"guilu-gao","name":"龜鹿膏","specification":"100g／罐","ingredients":["鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"],"usagePrimary":"每日早上及下午各一小匙","fulfillmentType":"ready-stock"},
+    {"id":"guilu-drink-30","name":"龜鹿飲30cc玻璃罐","specification":"30cc／罐（小玻璃罐）","package":"小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"retailPrice":60,"promotion":"買10送1｜11罐600元","fulfillmentType":"made-to-order-drink","image":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260808","officialOriginalImage":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260808","imagePolicy":"official-original-contain-no-crop"},
+    {"id":"guilu-drink-180","name":"龜鹿飲180cc鋁袋","specification":"180cc／包（鋁袋）","package":"狹長鋁袋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"retailPrice":200,"promotion":"買10送1｜11包2,000元","fulfillmentType":"made-to-order-drink"},
+    {"id":"guilu-tangkuai","name":"龜鹿湯塊","specification":"75g／盒｜8塊裝｜每塊約9.375g","package":"深藍正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"retailPrice":1600,"fulfillmentType":"ready-stock","singleSpecificationOnly":true},
+    {"id":"guilu-jiao","name":"龜鹿膠","specification":"600g（1斤）／盒｜32塊裝｜每塊約18.75g","package":"淡紫色正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"fulfillmentType":"ready-stock"},
+    {"id":"luerong-fen","name":"鹿茸粉","specification":"75g／罐","package":"白色塑膠罐","ingredients":["鹿茸"],"fulfillmentType":"ready-stock"}
   ],
   "fulfillmentPolicy": {
     "version":"2026-08-08-v5",
@@ -26,13 +26,15 @@
     "preventRepublish":true,
     "doNotRegenerate":true,
     "lineCompatibleFallback":"https://ts15825868.github.io/xianjiawei/images/posts/approved-v412/guilu-drink-trial-evergreen.jpg?v=20260806",
-    "fallbackReason":"最終1254×1254原始JPEG尚未存入公開Git；LINE訊息圖片暫保留既有JPEG相容素材，正式活動權威仍以2026-08-08最終版manifest為準"
+    "fallbackReason":"最終發布資產維持發布鎖定；LINE訊息圖片如需JPEG相容素材，使用既有相容圖，不影響最終版發布紀錄。"
   },
   "guardRules": [
     "只允許products清單內六項正式產品與規格",
     "龜鹿湯塊只有75g深藍盒",
     "龜鹿膠與龜鹿湯塊不得互換規格或包裝",
     "30cc正式名稱必須是龜鹿飲30cc玻璃罐，不得稱瓶",
+    "正式成分與順序不得回退舊版本",
+    "龜鹿膏使用資料以每日早上及下午各一小匙為正式版本",
     "產品圖片必須使用正式原圖等比例呈現"
   ]
 }
