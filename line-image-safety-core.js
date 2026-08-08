@@ -10,7 +10,7 @@
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260808-line-oa-clean-mascot-v4";
+const VERSION = "20260808-line-oa-clean-mascot-v5";
 const SOURCE_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/line-oa";
 const BASE = SOURCE_BASE;
 const APPROVED_MASCOT_NAMES = ["welcome", "products", "recommend", "combo", "usage", "faq", "service", "brand"];
@@ -236,11 +236,10 @@ async function buildCleanMascotImage(name) {
   const promise = (async () => {
     const sharp = require("sharp");
     const input = await fetchImageBuffer(mascotSourceUrl(safe), `mascot ${safe}`);
-    const image = sharp(input);
-    const metadata = await image.metadata();
+    const metadata = await sharp(input).metadata();
     const width = Number(metadata.width || 1024);
     const height = Number(metadata.height || 768);
-    const left = Math.max(0, Math.min(width - 1, Math.round(width * 0.56)));
+    const left = Math.max(0, Math.min(width - 1, Math.round(width * 0.64)));
     const top = Math.max(0, Math.min(height - 1, Math.round(height * 0.06)));
     const rightMargin = Math.max(0, Math.round(width * 0.01));
     const bottomMargin = Math.max(0, Math.round(height * 0.06));
