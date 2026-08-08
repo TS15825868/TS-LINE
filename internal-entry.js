@@ -30,10 +30,68 @@ const {
   notifyOrder,
 } = require("./internal-line-order-sync");
 
+const FAST_START_VERSION = "20260809-line-first-v1";
+
 async function main() {
-  const restore = await bridge.restoreAll();
-  if (restore.enabled) console.log("Supabase state restore", restore);
-  else console.warn("Supabase state bridge disabled; using local JSON fallback");
+  /*
+   * LINE OA 是顧客即時通道：先讓 Express 開始接 webhook，再做 Supabase/ERP 初始化。
+   * 舊流程會 await bridge.restoreAll() 後才 listen，免費 Render 冷啟動時會把 LINE 第一則回覆一起拖慢。
+   */
+  const {
+    app,
+    execute: baseExecuteSocialPost,
+    healthPayload,
+    readStore: readSocialStore,
+    writeStore: writeSocialStore,
+  } = require("./social-server");
+
+  let internalReady = false;
+  let internalInitError = "";
+  const internalStartedAt = new Date().toISOString();
+
+  app.get("/internal/readyz", (_req, res) => {
+    res.status(internalReady ? 200 : 503).json({
+      ok: internalReady,
+      service: "仙加味 ERP initialization",
+      fastStartVersion: FAST_START_VERSION,
+      internalReady,
+      internalInitError,
+      startedAt: internalStartedAt,
+      checkedAt: new Date().toISOString(),
+    });
+  });
+
+  /* ERP API 初始化期間明確回 503 JSON，避免瀏覽器無限顯示「資料載入中」。 */
+  app.use("/api", (req, res, next) => {
+    if (internalReady) return next();
+    res.status(503).json({
+      ok: false,
+      error: internalInitError || "系統初始化中，LINE OA 已可使用；ERP 資料正在連線，請稍後重新整理。",
+      code: "ERP_INITIALIZING",
+      fastStartVersion: FAST_START_VERSION,
+    });
+  });
+
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    const health = typeof healthPayload === "function" ? healthPayload() : {};
+    console.log(`仙加味 LINE OA fast start ${FAST_START_VERSION} listening on ${port}`, {
+      lineVersion: health.lineVersion,
+      socialVersion: health.socialVersion,
+      internalReady,
+    });
+  });
+
+  let restore;
+  try {
+    restore = await bridge.restoreAll();
+    if (restore.enabled) console.log("Supabase state restore", restore);
+    else console.warn("Supabase state bridge disabled; using local JSON fallback");
+  } catch (error) {
+    internalInitError = `Supabase restore failed: ${error.message}`;
+    console.error(internalInitError);
+    restore = { enabled: false, error: error.message };
+  }
 
   installPersistenceAutoSave();
 
@@ -135,13 +193,6 @@ async function main() {
     };
   }
 
-  const {
-    app,
-    execute: baseExecuteSocialPost,
-    healthPayload,
-    readStore: readSocialStore,
-    writeStore: writeSocialStore,
-  } = require("./social-server");
   const executeSocialPost = wrapSocialExecute(
     baseExecuteSocialPost,
     readSocialStore,
@@ -189,6 +240,8 @@ async function main() {
     res.status(state.enabled && !state.connected ? 503 : 200).json({
       ok: !state.enabled || state.connected,
       service: "仙加味 Supabase persistence",
+      fastStartVersion: FAST_START_VERSION,
+      internalReady,
       ...state,
       checkedAt: new Date().toISOString(),
     });
@@ -198,9 +251,14 @@ async function main() {
   writeSocialStore(readSocialStore());
   bridge.startWatching();
 
+  internalReady = true;
+  internalInitError = "";
+
+  /* 啟動後同步不再阻塞 LINE webhook；失敗只記錄，下一輪維護會重試。 */
   if (bridge.health().enabled) {
-    const startupSync = await bridge.syncAll();
-    console.log("Supabase startup synchronization", startupSync);
+    bridge.syncAll()
+      .then((startupSync) => console.log("Supabase startup synchronization", startupSync))
+      .catch((error) => console.error("Supabase startup synchronization failed", error.message));
   }
 
   const socialStatusTimer = setInterval(() => {
@@ -213,43 +271,43 @@ async function main() {
   socialStatusTimer.unref?.();
 
   const maintenanceTimer = setInterval(async () => {
-    const result = await bridge.syncAll();
-    if (result.enabled) console.log("Supabase periodic synchronization", result);
+    try {
+      const result = await bridge.syncAll();
+      if (result.enabled) console.log("Supabase periodic synchronization", result);
+    } catch (error) {
+      console.error("Supabase periodic synchronization failed", error.message);
+    }
   }, 10 * 60 * 1000);
   maintenanceTimer.unref?.();
 
-  const port = process.env.PORT || 3000;
-  app.listen(port, () => {
-    const health = typeof healthPayload === "function" ? healthPayload() : {};
-    console.log(
-      `仙加味 LINE OA + internal app ${APP_VERSION} running on ${port}`,
-      {
-        lineVersion: health.lineVersion,
-        socialVersion: health.socialVersion,
-        storage: bridge.health().storage,
-        operationsVersion: "1.0.0",
-        orderPricingVersion: ORDER_PRICING_VERSION,
-        orderSyncVersion: ORDER_SYNC_VERSION,
-        knowledgeStaticVersion: KNOWLEDGE_STATIC_VERSION,
-        officialSocialVersion: OFFICIAL_SOCIAL_VERSION,
-        officialSocialCampaign: officialSocialSchedule.campaignId,
-        officialSocialImageVersion: officialSocialSchedule.imageVersion,
-        officialSocialPublishedPreserved: officialSocialSchedule.preservedPublished,
-        officialSocialOldUnpublishedRemoved: officialSocialSchedule.removedUnpublished,
-        officialSocialInserted: officialSocialSchedule.inserted,
-        officialSocialUpdated: officialSocialSchedule.updated,
-        officialSocialPendingReview: officialSocialSchedule.pendingReview,
-        officialSocialActiveTotal: officialSocialSchedule.activeTotal,
-        officialSocialFirstAt: officialSocialSchedule.firstAt,
-        officialSocialLastAt: officialSocialSchedule.lastAt,
-        officialSocialSignature: officialSocialSchedule.signature,
-        socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
-      }
-    );
+  const health = typeof healthPayload === "function" ? healthPayload() : {};
+  console.log(`仙加味 LINE OA + internal app ${APP_VERSION} initialization complete`, {
+    fastStartVersion: FAST_START_VERSION,
+    lineVersion: health.lineVersion,
+    socialVersion: health.socialVersion,
+    storage: bridge.health().storage,
+    operationsVersion: "1.0.0",
+    orderPricingVersion: ORDER_PRICING_VERSION,
+    orderSyncVersion: ORDER_SYNC_VERSION,
+    knowledgeStaticVersion: KNOWLEDGE_STATIC_VERSION,
+    officialSocialVersion: OFFICIAL_SOCIAL_VERSION,
+    officialSocialCampaign: officialSocialSchedule.campaignId,
+    officialSocialImageVersion: officialSocialSchedule.imageVersion,
+    officialSocialPublishedPreserved: officialSocialSchedule.preservedPublished,
+    officialSocialOldUnpublishedRemoved: officialSocialSchedule.removedUnpublished,
+    officialSocialInserted: officialSocialSchedule.inserted,
+    officialSocialUpdated: officialSocialSchedule.updated,
+    officialSocialPendingReview: officialSocialSchedule.pendingReview,
+    officialSocialActiveTotal: officialSocialSchedule.activeTotal,
+    officialSocialFirstAt: officialSocialSchedule.firstAt,
+    officialSocialLastAt: officialSocialSchedule.lastAt,
+    officialSocialSignature: officialSocialSchedule.signature,
+    socialPlatformStatusVersion: SOCIAL_PLATFORM_STATUS_VERSION,
   });
 }
 
 main().catch((error) => {
-  console.error("Application startup failed", error);
-  process.exit(1);
+  console.error("Application initialization failed after LINE fast start", error);
+  /* 不因 ERP 初始化失敗主動關閉已啟動的 LINE webhook。 */
+  process.exitCode = 1;
 });
