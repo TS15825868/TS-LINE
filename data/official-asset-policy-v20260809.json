@@ -1,0 +1,19 @@
+{
+  "version":"2026-08-09-official-assets-v1",
+  "sourceAuthority":"TS15825868/xianjiawei/content/official-asset-audit-v20260809.json",
+  "rules":{
+    "productImages":"只使用已核准正式產品素材，不使用AI重畫產品本體",
+    "trialImage":"龜鹿飲試喝組使用2026-08-09核准正式試喝主圖",
+    "mascot":"LINE OA使用LINE專用小老闆圖；角色完整、不裁切",
+    "reject":"規格錯、圖文不符、30cc寫成瓶/瓶裝、產品比例或包裝錯誤，一律不得送出",
+    "regenerate":"無合格情境圖時依文案重製候選圖，候選圖先待審核；正式產品本體仍使用核准產品素材"
+  },
+  "productFacts":{
+    "guiluDrink30":"30cc／罐（小玻璃罐）｜裸罐｜無貼紙",
+    "guiluDrink180":"180cc／包（鋁袋）",
+    "guiluGao":"100g／罐",
+    "guiluTangkuai":"75g／盒｜8塊裝｜每塊約9.375g",
+    "guiluJiao":"600g（1斤）／盒｜32塊裝｜每塊約18.75g",
+    "luerongFen":"75g／罐"
+  }
+}
