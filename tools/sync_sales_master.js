@@ -18,19 +18,14 @@ function hasBuyTenGetOne(product, unitPrice) {
   );
 }
 
-function assertSoupVariants(product) {
-  const expected = new Map([
-    ["guilu-tangkuai-75", "75g／盒｜8塊裝｜每塊約9.375g"],
-    ["guilu-tangkuai-300", "300g／盒｜16塊裝｜每塊約18.75g"],
-    ["guilu-tangkuai-600", "600g／盒｜32塊裝｜每塊約18.75g"],
-  ]);
-  const variants = new Map((product.variants || []).map((item) => [String(item.id), String(item.specification)]));
-  for (const [id, specification] of expected) {
-    if (variants.get(id) !== specification) throw new Error(`龜鹿湯塊正式規格不同步：${id}`);
-  }
-  if (product.variantSelectionMode !== "75g可依現行售價加入購物車；300g與600g由人工確認價格、數量與出貨") {
-    throw new Error("龜鹿湯塊規格選擇安全規則不同步");
-  }
+function assertSoupAuthority(product) {
+  if (!product) throw new Error("龜鹿湯塊不存在");
+  const specification = String(product.specification || product.size || product.spec || "");
+  if (specification !== "75g／盒｜8塊裝｜每塊約9.375g") throw new Error(`龜鹿湯塊正式規格不同步：${specification}`);
+  if (Array.isArray(product.variants) && product.variants.length) throw new Error("龜鹿湯塊不得再保留其他容量 variants");
+  if (product.variantSelectionMode) throw new Error("龜鹿湯塊不得再使用多規格選擇模式");
+  const text = JSON.stringify(product);
+  if (/龜鹿湯塊.{0,80}(300g|600g)|guilu-tangkuai-(300|600)|PROD-SOUP-(300|600)/i.test(text)) throw new Error("龜鹿湯塊仍含未核准容量");
 }
 
 function main() {
@@ -44,6 +39,7 @@ function main() {
   if ((merged.offers?.comboOffers || []).length !== 3) throw new Error("正式組合必須是3組");
   if ((merged.combos || []).length !== 3) throw new Error("根層正式組合資料必須是3組");
   if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6個分類，目前${merged.products?.length || 0}項`);
+  if ((authority.products || []).length !== 6) throw new Error("LINE正式產品權威必須剛好6項");
 
   const expected = {
     "guilu-gao": { price: 1800, originalPrice: 2100 },
@@ -83,8 +79,7 @@ function main() {
     }
   }
 
-  const soup = merged.products.find((item) => item.id === "guilu-tangkuai");
-  assertSoupVariants(soup || {});
+  assertSoupAuthority(merged.products.find((item) => item.id === "guilu-tangkuai"));
 
   const drink30 = merged.products.find((item) => item.id === "guilu-drink-30");
   const expectedImagePath = "/images/products-v3/guilu-drink-30.jpg";
@@ -93,15 +88,15 @@ function main() {
   if (drink30?.imagePolicy !== "official-original-contain-no-crop") throw new Error("30cc圖片政策不同步");
   if (drink30?.priceLabel !== "正式售價60元／罐，買10送1（共11罐600元）") throw new Error("30cc正式價格文案不同步");
   if (merged.trialCampaign?.publicPrice !== "龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元") throw new Error("試喝方案公開價格不同步");
-  if (merged.fulfillmentPolicy?.version !== "2026-08-07-v4") throw new Error("出貨政策版本不同步");
+  if (merged.fulfillmentPolicy?.version !== "2026-08-08-v5") throw new Error("出貨政策版本不同步");
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version} with soup variants and fulfillment v4`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, six specs, soup 75g only`);
     return;
   }
 
-  console.log(`PASS LINE OA sales master ${master.version}: six product families, soup 75/300/600g, 30cc price 60, 11 jars 600 and fulfillment v4`);
+  console.log(`PASS LINE OA sales master ${master.version}: six products, six specs, soup 75g only, prices and fulfillment aligned`);
 }
 
 if (require.main === module) {
@@ -112,4 +107,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { stable, hasBuyTenGetOne, assertSoupVariants };
+module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority };
