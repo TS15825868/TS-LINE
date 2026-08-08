@@ -4,9 +4,10 @@ const fs = require("fs");
 const path = require("path");
 const safety = require("./line-image-safety");
 
-assert.equal(safety.VERSION, "20260808-direct-start-products-v2-v2-rich-menu");
+assert.equal(safety.VERSION, "20260808-direct-start-products-v2-v3-schedule-rich-menu");
 assert.equal(safety.photoAuthority.version, "2026-08-08-products-v2-actual-photo-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v4"));
+assert.equal(safety.schedulePolicy.VERSION, "20260808-tue1930-sat0930-v2-idempotent");
 assert.equal(safety.richMenuSync.VERSION, "20260808-rich-menu-website-chibi-v1");
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
@@ -23,6 +24,7 @@ for (const product of data.products) {
 assert.equal(data.productPhotoAuthorityVersion, "2026-08-08-products-v2-actual-photo-v1");
 assert.equal(data.runtime.productMainImageSource, "products-v2-actual-photos");
 assert.equal(data.runtime.productsV3Use, "marketing-layout-reference-only");
+assert.equal(data.runtime.schedulePolicyVersion, "20260808-tue1930-sat0930-v2-idempotent");
 assert.equal(data.runtime.richMenuSyncVersion, "20260808-rich-menu-website-chibi-v1");
 
 const oldBubble = {
@@ -39,4 +41,4 @@ assert.ok(oldBubble.hero.url.includes("/images/products-v2/guilu-drink-30.jpeg")
 assert.equal(oldBubble.footer.contents[0].action.label, "看正式產品圖");
 assert.equal(oldBubble.body.contents[1].text, "商品合計：$6,400");
 
-console.log("PASS：即使Render直接啟動server.js，products-v2、錄影UI修正與網站Q版Rich Menu同步都會載入。");
+console.log("PASS：Render直接啟動server.js也會載入products-v2、錄影UI修正、週二／週六排程與網站Q版Rich Menu同步。");
