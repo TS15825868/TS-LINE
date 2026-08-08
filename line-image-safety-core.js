@@ -2,6 +2,7 @@
 
 /**
  * LINE OA outbound safety layer.
+ * - 小老闆 hero 一律改寫到 xianjiawei 官網 repo 內的 LINE OA 專用 JPEG 集合；不再使用用途錯配的 TS-LINE/public/mascot 舊圖。
  * - 30cc一律使用目前正式裸小玻璃罐原圖，不從舊DM裁切、不改成瓶型。
  * - 5～7個工作天只套用龜鹿飲30cc與180cc。
  * - 龜鹿膏、龜鹿湯塊、龜鹿膠、鹿茸粉只顯示預先備貨說明。
@@ -9,10 +10,10 @@
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260808-six-spec-official-original-v2";
-const BASE = "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot";
-const APPROVED_MASCOT_NAMES = ["recommend", "combo", "usage", "faq"];
-const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg"];
+const VERSION = "20260808-line-oa-approved-mascot-v3";
+const BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/line-oa";
+const APPROVED_MASCOT_NAMES = ["welcome", "products", "recommend", "combo", "usage", "faq", "service", "brand"];
+const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg", "recommend.jpg", "combo.jpg", "usage.jpg", "faq.jpg"];
 const BLOCKED_MASCOT_ASSETS = [...LEGACY_MASCOT_NAMES];
 const MASCOT_RULES = APPROVED_MASCOT_NAMES.map((name) => ({ name, url: `${BASE}/${name}.jpg?v=${VERSION}` }));
 
@@ -37,11 +38,20 @@ function approvedUrl(name) {
   return `${BASE}/${name}.jpg?v=${VERSION}`;
 }
 
+function mascotNameFromUrl(value) {
+  const url = String(value || "");
+  const match = url.match(/\/(?:mascot|line-oa)\/(welcome|products|recommend|combo|usage|faq|service|brand|cart)\.jpg(?:[?#]|$)/i);
+  if (!match) return "";
+  const name = match[1].toLowerCase();
+  return name === "cart" ? "welcome" : name;
+}
+
 function isBlockedMascotUrl(value) {
   const url = String(value || "");
   if (!url) return false;
-  if (APPROVED_MASCOT_NAMES.some((name) => url.includes(`/mascot/${name}.jpg`))) return false;
-  return BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(asset));
+  const name = mascotNameFromUrl(url);
+  if (name && APPROVED_MASCOT_NAMES.includes(name) && url.includes("/images/brand/line-oa/")) return false;
+  return /TS15825868\/TS-LINE\/main\/public\/mascot\//i.test(url) || BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(asset));
 }
 
 function collectBodyTexts(node, output = []) {
@@ -87,11 +97,29 @@ function sceneForBubble(bubble) {
   if (/搭配組合|日常搭配導覽|組合推薦/.test(text)) return "combo";
   if (/幫我推薦|幫你選|怎麼選|產品差異/.test(text)) return "recommend";
   if (/怎麼使用|使用方式|沖泡方式|燉湯方式/.test(text)) return "usage";
+  if (/品牌故事|四代傳承|鹿角伯|萬華開始/.test(text)) return "brand";
+  if (/人工客服|門市資訊|確認訂單|結帳/.test(text)) return "service";
+  if (/歡迎來到仙加味/.test(text)) return "welcome";
   return "";
 }
 
 function approvedHero(scene) {
-  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "1:1", aspectMode: "cover" };
+  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "4:3", aspectMode: "fit", backgroundColor: "#EFE4D2" };
+}
+
+function rewriteMascotHero(bubble) {
+  if (!bubble || bubble.type !== "bubble") return;
+  const semanticScene = sceneForBubble(bubble);
+  if (semanticScene) {
+    bubble.hero = approvedHero(semanticScene);
+    return;
+  }
+  const legacyName = mascotNameFromUrl(bubble.hero?.url);
+  if (legacyName && APPROVED_MASCOT_NAMES.includes(legacyName)) {
+    bubble.hero = approvedHero(legacyName);
+  } else if (bubble.hero?.type === "image" && isBlockedMascotUrl(bubble.hero.url)) {
+    delete bubble.hero;
+  }
 }
 
 function fulfillmentKind(bubble) {
@@ -156,9 +184,7 @@ function applyImageSafety(node) {
     return node;
   }
   if (node.type === "bubble") {
-    const scene = sceneForBubble(node);
-    if (scene) node.hero = approvedHero(scene);
-    else if (node.hero?.type === "image" && isBlockedMascotUrl(node.hero.url)) delete node.hero;
+    rewriteMascotHero(node);
     replaceLegacyOrderNotice(node, fulfillmentNotice(fulfillmentKind(node)));
     if (isDrink30Bubble(node)) rewriteDrink30Artwork(node);
   }
@@ -236,6 +262,7 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwImageSafetyInstall
 
 module.exports = {
   VERSION,
+  BASE,
   APPROVED_MASCOT_NAMES,
   BLOCKED_MASCOT_ASSETS,
   MASCOT_RULES,
@@ -247,10 +274,13 @@ module.exports = {
   CLEAN_DRINK_IMAGE_URL,
   OFFICIAL_DRINK_SOURCE,
   approvedUrl,
+  mascotNameFromUrl,
   isBlockedMascotUrl,
   bubbleTexts,
   collectAllTexts,
   sceneForBubble,
+  approvedHero,
+  rewriteMascotHero,
   fulfillmentKind,
   fulfillmentNotice,
   replaceLegacyOrderNotice,
