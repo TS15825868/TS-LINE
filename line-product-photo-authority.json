@@ -1,0 +1,13 @@
+{
+  "version": "2026-08-08-products-v2-actual-photo-v1",
+  "source": "TS15825868/xianjiawei images/products-v2 actual product photos",
+  "policy": "產品主圖、產品DM按鈕回退、LINE Flex產品hero一律使用實際產品照片；products-v3為宣傳版面，不作產品主圖。",
+  "products": {
+    "guilu-gao": "https://ts15825868.github.io/xianjiawei/images/products-v2/guilu-gao.jpeg?v=20260808-20",
+    "guilu-drink-30": "https://ts15825868.github.io/xianjiawei/images/products-v2/guilu-drink-30.jpeg?v=20260808-20",
+    "guilu-drink-180": "https://ts15825868.github.io/xianjiawei/images/products-v2/guilu-drink-180.jpeg?v=20260808-20",
+    "guilu-tangkuai": "https://ts15825868.github.io/xianjiawei/images/products-v2/guilu-tangkuai.jpeg?v=20260808-20",
+    "guilu-jiao": "https://ts15825868.github.io/xianjiawei/images/products-v2/guilu-jiao-open-new.jpg?v=20260808-20",
+    "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/products-v2/luerong-fen.jpeg?v=20260808-20"
+  }
+}
