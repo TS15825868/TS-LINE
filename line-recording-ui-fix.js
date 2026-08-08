@@ -1,16 +1,17 @@
 "use strict";
 
 /**
- * 2026-08-08 新錄影 LINE OA 畫面修正 v2
+ * 2026-08-08 新錄影 LINE OA 畫面修正 v3
  * - 六項產品卡送出前一律使用官網 products-v2 實際產品照片，不使用DM/海報版面。
  * - 「看產品DM」一律改成「看正式產品圖」，連結同一張實際產品照片。
- * - 怎麼選／使用方向卡片不再依賴 Render 即時裁圖；直接使用官網 approved-v405 衍生 LINE OA 圖，避免大白框。
+ * - 非產品的怎麼選／搭配／使用／FAQ／品牌／客服卡固定補網站Q版小老闆靜態hero；不再依賴Render即時裁圖，避免carousel大片白框。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260808-recording-ui-v2-static-mascot";
+const VERSION = "20260808-recording-ui-v3-static-mascot-all";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
-const RECOMMEND_HERO = `${SITE_BASE}images/brand/line-oa/brand.jpg?v=${VERSION}`;
+const GENERIC_MASCOT_HERO = `${SITE_BASE}images/brand/line-oa/brand.jpg?v=${VERSION}`;
+const RECOMMEND_HERO = GENERIC_MASCOT_HERO;
 
 const PRODUCTS = Object.freeze({
   "guilu-drink-30": {
@@ -39,7 +40,8 @@ const PRODUCTS = Object.freeze({
   },
 });
 
-const RECOMMEND_PATTERN = /怎麼選|幫你選|幫我推薦|產品差異|固定節奏|方便快速|沖泡[、，,\s]*燉湯|家庭使用|自己搭配|依日常|依生活|搭配方案|選擇適合|使用型態/;
+const MASCOT_CARD_PATTERN = /怎麼選|幫你選|幫我推薦|產品差異|固定節奏|方便快速|沖泡[、，,\s]*燉湯|家庭使用|自己搭配|依日常|依生活|搭配方案|搭配組合|日常搭配導覽|選擇適合|使用型態|怎麼使用|使用方式|沖泡方式|燉湯方式|常見問題|FAQ|品牌故事|四代傳承|萬華開始|人工客服|門市資訊|歡迎來到仙加味/;
+const RECOMMEND_PATTERN = MASCOT_CARD_PATTERN;
 
 function collectTexts(node, output = []) {
   if (!node || typeof node !== "object") return output;
@@ -82,7 +84,7 @@ function productHero(key) {
 function mascotHero() {
   return {
     type: "image",
-    url: RECOMMEND_HERO,
+    url: GENERIC_MASCOT_HERO,
     size: "full",
     aspectRatio: "4:3",
     aspectMode: "fit",
@@ -112,7 +114,7 @@ function rewriteProductImageActions(node, key) {
 }
 
 function isRecommendationBubble(bubble) {
-  return RECOMMEND_PATTERN.test(collectTexts(bubble, []).join("\n"));
+  return MASCOT_CARD_PATTERN.test(collectTexts(bubble, []).join("\n"));
 }
 
 function applyBubbleFix(bubble) {
@@ -160,7 +162,9 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwRecordingUiFixInst
 module.exports = {
   VERSION,
   PRODUCTS,
+  GENERIC_MASCOT_HERO,
   RECOMMEND_HERO,
+  MASCOT_CARD_PATTERN,
   collectTexts,
   uniqueProductKey,
   productHero,
