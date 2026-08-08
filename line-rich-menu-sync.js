@@ -3,21 +3,22 @@
 /**
  * 仙加味 LINE Rich Menu 自動同步｜2026-08-08
  * 保留既有 3×2 六格選單的文字、圖示與操作邏輯，僅把舊小老闆視覺覆蓋為官網 approved-v405 衍生Q版。
+ * 六格角色情境依功能對應：產品／購物車／推薦／搭配／使用／下單客服。
  * 不使用產品圖，因此不會把舊包裝或宣傳版面混進 Rich Menu。
  * 成功後透過 LINE Messaging API 設為預設 Rich Menu；失敗只記錄，不影響 webhook 回覆。
  */
 const sharp = require("sharp");
 
-const VERSION = "20260808-rich-menu-website-chibi-v1";
+const VERSION = "20260808-rich-menu-website-chibi-v2-semantic-scenes";
 const MENU_NAME = `仙加味正式選單｜網站Q版｜${VERSION}`;
 const BASE_MENU = "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg";
 const BOSS_SOURCES = [
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/brand.jpg?v=20260808",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/recommend.jpg?v=20260808",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/faq.jpg?v=20260808",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/brand.jpg?v=20260808",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/usage.jpg?v=20260808",
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/service.jpg?v=20260808",
+  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=20260808-24",
+  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=20260808-24",
+  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/recommend.jpg?v=20260808-24",
+  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/combo.jpg?v=20260808-24",
+  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/usage.jpg?v=20260808-24",
+  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/service.jpg?v=20260808-24"
 ];
 const API = "https://api.line.me";
 const DATA_API = "https://api-data.line.me";
