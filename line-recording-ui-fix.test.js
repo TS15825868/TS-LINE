@@ -11,7 +11,7 @@ function productBubble(name, oldImage) {
   };
 }
 
-assert.ok(fix.VERSION.includes("recording-ui-v4"));
+assert.ok(fix.VERSION.includes("recording-ui-v5"));
 const cases = [
   ["龜鹿膏｜100g／罐", "guilu-gao", "guilu-gao.jpeg"],
   ["龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）", "guilu-drink-30", "guilu-drink-30.jpeg"],
@@ -26,27 +26,41 @@ for (const [name, key, file] of cases) {
   assert.equal(bubble.xjwProductPhoto, key);
   assert.ok(bubble.hero.url.includes(`/images/products-v2/${file}`), `${name} 未切回 products-v2 實際產品照片`);
   assert.equal(bubble.hero.aspectMode, "fit");
-  assert.equal(bubble.footer.contents[0].action.label, "看正式產品圖");
+  assert.equal(bubble.footer.contents[0].action.label, "看實際產品照片");
   assert.equal(bubble.footer.contents[0].action.uri, bubble.hero.url);
   assert.equal(bubble.hero.action.uri, "https://ts15825868.github.io/xianjiawei/products.html");
 }
 
 const recommend = {
   type: "bubble",
-  body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "沖泡、燉湯與家庭使用" }] },
+  body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "依日常使用方式幫你選" }] },
   footer: { type: "box", layout: "vertical", contents: [{ type: "button", action: { type: "message", label: "看搭配方案", text: "怎麼選" } }] },
 };
 fix.applyVisualFix(recommend);
-assert.ok(recommend.hero, "怎麼選卡片不得再出現空白 hero");
-assert.ok(recommend.hero.url.includes("ts15825868.github.io/xianjiawei/images/brand/line-oa/brand.jpg"), "怎麼選卡必須使用GitHub Pages網站Q版小老闆靜態圖");
-assert.ok(!recommend.hero.url.includes("onrender.com"), "怎麼選hero不可再依賴Render即時產圖");
+assert.ok(recommend.hero, "怎麼選卡片不得出現空白 hero");
+assert.ok(recommend.hero.url.includes("/images/brand/line-oa/recommend.jpg"), "怎麼選卡必須使用推薦情境小老闆");
+assert.ok(!recommend.hero.url.includes("onrender.com"), "怎麼選hero不可依賴Render即時產圖");
 assert.equal(recommend.hero.aspectRatio, "4:3");
 assert.equal(recommend.hero.aspectMode, "fit");
+
+const usage = {
+  type: "bubble",
+  body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "產品使用方式導覽" }] },
+};
+fix.applyVisualFix(usage);
+assert.ok(usage.hero.url.includes("/images/brand/line-oa/usage.jpg"), "使用方式卡必須用使用情境小老闆");
+
+const faq = {
+  type: "bubble",
+  body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "常見問題 FAQ" }] },
+};
+fix.applyVisualFix(faq);
+assert.ok(faq.hero.url.includes("/images/brand/line-oa/faq.jpg"), "FAQ卡必須用FAQ情境小老闆");
 
 const combo = {
   type: "bubble",
   body: { type: "box", layout: "vertical", contents: [
-    { type: "text", text: "完整體驗組" },
+    { type: "text", text: "搭配組合｜完整體驗組" },
     { type: "text", text: "每組售價：$6,400\n可選組數：1、2、3、5組" },
     { type: "text", text: "產品DM請看完整資訊" },
   ] },
@@ -55,13 +69,26 @@ fix.applyVisualFix(combo);
 assert.ok(combo.body.contents[1].text.includes("商品合計：$6,400"));
 assert.ok(!combo.body.contents[1].text.includes("每組售價"));
 assert.equal(combo.body.contents[2].text, "實際產品照片請看完整資訊");
-assert.ok(combo.hero.url.includes("/images/brand/line-oa/brand.jpg"), "組合導覽卡使用網站Q版小老闆");
+assert.ok(combo.hero.url.includes("/images/brand/line-oa/combo.jpg"), "組合導覽卡使用搭配情境小老闆");
 
 const multi = {
   type: "bubble",
   body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "龜鹿膏與龜鹿飲30cc怎麼選" }] },
 };
 fix.applyVisualFix(multi);
-assert.ok(multi.hero.url.includes("/images/brand/line-oa/brand.jpg"), "多產品推薦卡應用網站Q版小老闆，不可誤塞其中一項產品主圖");
+assert.ok(multi.hero.url.includes("/images/brand/line-oa/recommend.jpg"), "多產品推薦卡應用推薦情境小老闆，不可誤塞其中一項產品主圖");
 
-console.log("PASS：LINE OA 六產品只用 products-v2 實際照片；DM按鈕改正式產品圖；組合金額標示商品合計；非產品卡使用網站Q版小老闆。");
+const carousel = {
+  type: "carousel",
+  contents: [
+    { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "依日常使用方式幫你選" }] } },
+    { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "固定日常安排怎麼選" }] } },
+    productBubble("龜鹿膏｜100g／罐", "https://example.com/old.jpg"),
+  ],
+};
+fix.applyVisualFix(carousel);
+assert.ok(carousel.contents[0].hero, "carousel 第一張導覽卡保留完整小老闆圖");
+assert.equal(carousel.contents[1].hero, undefined, "carousel 後續非產品說明卡移除重複小老闆 hero");
+assert.ok(carousel.contents[2].hero.url.includes("/images/products-v2/guilu-gao.jpeg"), "產品卡仍保留真實產品照片");
+
+console.log("PASS：LINE OA 產品只用實際照片；小老闆依文案情境配圖；carousel 不重複載入同一小老闆；所有 hero 使用 fit 不裁切。");
