@@ -1,16 +1,16 @@
 "use strict";
 
 /**
- * 2026-08-09 LINE OA 正式畫面修正 v5
- * - 六項產品卡一律使用官網 products-v2 實際產品照片，不使用DM/海報版面。
+ * 2026-08-09 LINE OA 正式畫面修正 v6
+ * - 六項產品卡一律使用官網 products-v3 使用者確認的正式產品原圖，不使用舊 products-v2、DM或海報版面。
  * - 「產品DM」一律改成「實際產品照片」。
- * - 小老闆依文案語意選擇推薦／搭配／使用／FAQ／客服／品牌／歡迎正式場景，不再所有卡都塞同一張圖。
- * - 同一 carousel 中，非產品說明卡只保留第一張必要小老闆 hero，避免重複下載與畫面過重。
- * - 所有小老闆與產品 hero 使用 fit，不裁切人物或產品。
+ * - 小老闆依文案語意選擇推薦／搭配／使用／FAQ／客服／品牌／歡迎正式場景。
+ * - 同一 carousel 中，非產品說明卡只保留第一張必要小老闆 hero，降低重複載入。
+ * - 所有小老闆與產品 hero 使用 fit；產品只允許等比例顯示，不拉寬、不拉高、不裁切。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260809-recording-ui-v5-semantic-fast";
+const VERSION = "20260809-recording-ui-v6-products-v3-size-lock";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
 
 const MASCOT_HEROES = Object.freeze({
@@ -29,27 +29,27 @@ const RECOMMEND_HERO = MASCOT_HEROES.recommend;
 const PRODUCTS = Object.freeze({
   "guilu-drink-30": {
     patterns: [/龜鹿飲\s*30\s*cc/i, /30\s*cc.*(?:玻璃罐|小玻璃罐)/i],
-    image: `${SITE_BASE}images/products-v2/guilu-drink-30.jpeg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-drink-30.jpg?v=${VERSION}`,
   },
   "guilu-drink-180": {
     patterns: [/龜鹿飲\s*180\s*cc/i, /180\s*cc.*鋁袋/i],
-    image: `${SITE_BASE}images/products-v2/guilu-drink-180.jpeg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-drink-180.jpg?v=${VERSION}`,
   },
   "guilu-gao": {
     patterns: [/龜鹿膏/],
-    image: `${SITE_BASE}images/products-v2/guilu-gao.jpeg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-gao.jpg?v=${VERSION}`,
   },
   "guilu-tangkuai": {
     patterns: [/龜鹿湯塊/],
-    image: `${SITE_BASE}images/products-v2/guilu-tangkuai.jpeg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-tangkuai.jpg?v=${VERSION}`,
   },
   "guilu-jiao": {
     patterns: [/龜鹿膠/],
-    image: `${SITE_BASE}images/products-v2/guilu-jiao-open-new.jpg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-jiao.jpg?v=${VERSION}`,
   },
   "luerong-fen": {
     patterns: [/鹿茸粉/],
-    image: `${SITE_BASE}images/products-v2/luerong-fen.jpeg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/luerong-fen.jpg?v=${VERSION}`,
   },
 });
 
@@ -180,6 +180,8 @@ function applyBubbleFix(bubble) {
     }
     rewriteProductImageActions(bubble, key);
     bubble.xjwProductPhoto = key;
+    bubble.xjwProductPhotoAuthority = "products-v3-user-approved-originals";
+    bubble.xjwProductScalePolicy = "uniform-only-no-crop-no-stretch";
     return bubble;
   }
   if (isRecommendationBubble(bubble)) {
