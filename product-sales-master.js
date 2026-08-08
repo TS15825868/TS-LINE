@@ -9,7 +9,7 @@ let master = null;
 
 const SALES_OVERRIDE_FIELDS = Object.freeze([
   "name", "displayName", "specification", "size", "spec", "unit",
-  "description", "usage", "storage", "fit", "purposeDirection", "aliases",
+  "description", "ingredients", "usage", "storage", "fit", "purposeDirection", "aliases",
   "price", "originalPrice", "offers", "priceText", "originalPriceText",
   "priceLabel", "quoteOnly",
   "fulfillmentType", "fulfillmentNotice", "productionLeadTime", "readyStock",
