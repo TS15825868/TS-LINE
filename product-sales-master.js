@@ -82,7 +82,6 @@ function photoOverride(id) {
     dmImage: url,
     officialOriginalImage: url,
     imagePolicy: "approved-original-product-photo-contain-no-crop",
-    physicalScalePolicy: "uniform-only-preserve-realistic-product-scale",
   };
 }
 
@@ -107,6 +106,7 @@ function applyMaster(data) {
       promotionTexts: normalized.promotionTexts,
       quantityOptions,
     };
+    if (!merged.physicalScalePolicy) merged.physicalScalePolicy = "uniform-only-preserve-realistic-product-scale";
     delete merged.variants;
     delete merged.variantSelectionMode;
     return merged;
