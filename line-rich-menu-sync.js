@@ -1,23 +1,24 @@
 "use strict";
 
 /**
- * 仙加味 LINE Rich Menu｜2026-08-09 正式視覺 v7
+ * 仙加味 LINE Rich Menu｜2026-08-09 正式視覺 v8
  * - 保留既有深藍＋金線＋六格功能文字的品牌母版。
- * - 每格圖像區改為接近滿寬的米白展示面，不再出現左右大片黑底。
- * - 圖像完整 contain，不裁頭、裁手、裁腳，不覆蓋下方功能標題。
- * - 六個功能意圖維持正式設定；「直接下單」先進產品選擇。
+ * - 原母版安全區：Header 到 y=172；第一排圖片區 y=173~717；第一排文字條 y=718~925；
+ *   第二排圖片區 y=931~1475；第二排文字條 y=1476~1678。
+ * - 每格圖片區以米白安全展示面完整覆蓋原黑底，圖像放大置中且不壓到 Header 或功能文字。
+ * - 圖像完整 contain，不裁頭、裁手、裁腳；六個功能意圖維持正式設定。
  */
 const sharp = require("sharp");
 
-const VERSION = "20260809-rich-menu-premium-v7-full-visual-zone";
+const VERSION = "20260809-rich-menu-premium-v8-template-safe-zone";
 const MENU_NAME = `仙加味正式選單｜高級六格｜${VERSION}`;
 const BASE_MENU = "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg";
-const ASSET_VERSION = "20260809-03";
+const ASSET_VERSION = "20260809-04";
 const OVERLAY_FIT = "contain";
-const VISUAL_WIDTH = 740;
-const VISUAL_HEIGHT = 430;
+const VISUAL_WIDTH = 770;
+const VISUAL_HEIGHT = 500;
 const BACKGROUND_WIDTH = 805;
-const BACKGROUND_HEIGHT = 500;
+const BACKGROUND_HEIGHT = 522;
 const BOSS_SOURCES = [
   `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
   `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
@@ -29,12 +30,12 @@ const BOSS_SOURCES = [
 const API = "https://api.line.me";
 const DATA_API = "https://api-data.line.me";
 const CELL_LAYOUTS = Object.freeze([
-  { bgX: 14, bgY: 90, imgX: 47, imgY: 115 },
-  { bgX: 847, bgY: 90, imgX: 880, imgY: 115 },
-  { bgX: 1681, bgY: 90, imgX: 1714, imgY: 115 },
-  { bgX: 14, bgY: 933, imgX: 47, imgY: 958 },
-  { bgX: 847, bgY: 933, imgX: 880, imgY: 958 },
-  { bgX: 1681, bgY: 933, imgX: 1714, imgY: 958 },
+  { bgX: 16, bgY: 184, imgX: 34, imgY: 195 },
+  { bgX: 848, bgY: 184, imgX: 866, imgY: 195 },
+  { bgX: 1680, bgY: 184, imgX: 1698, imgY: 195 },
+  { bgX: 16, bgY: 942, imgX: 34, imgY: 953 },
+  { bgX: 848, bgY: 942, imgX: 866, imgY: 953 },
+  { bgX: 1680, bgY: 942, imgX: 1698, imgY: 953 },
 ]);
 let syncPromise = null;
 let scheduled = false;
