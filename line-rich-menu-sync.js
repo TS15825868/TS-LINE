@@ -1,42 +1,20 @@
 "use strict";
 
 /**
- * 仙加味 LINE Rich Menu｜2026-08-09 正式視覺 v8
- * - 保留既有深藍＋金線＋六格功能文字的品牌母版。
- * - 原母版安全區：Header 到 y=172；第一排圖片區 y=173~717；第一排文字條 y=718~925；
- *   第二排圖片區 y=931~1475；第二排文字條 y=1476~1678。
- * - 每格圖片區以米白安全展示面完整覆蓋原黑底，圖像放大置中且不壓到 Header 或功能文字。
- * - 圖像完整 contain，不裁頭、裁手、裁腳；六個功能意圖維持正式設定。
+ * 仙加味 LINE Rich Menu｜2026-08-09 正式單一成品圖版
+ * - Rich Menu 視覺只允許一張完整 2500×1686 成品圖，不再做任何六格圖片後貼／拼湊／composite。
+ * - 功能熱區與視覺圖分離：圖只負責品牌視覺；LINE areas 只負責六個正確意圖。
+ * - 保留使用者偏好的經典深藍＋金線六格母版，先停止所有會造成黑底＋白框拼貼感的動態疊圖。
+ * - 未來更換正式視覺時，只需換 FINAL_MENU_IMAGE 整張成品，不得再新增 BOSS_SOURCES 或 cell overlay。
  */
 const sharp = require("sharp");
 
-const VERSION = "20260809-rich-menu-premium-v8-template-safe-zone";
-const MENU_NAME = `仙加味正式選單｜高級六格｜${VERSION}`;
-const BASE_MENU = "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg";
-const ASSET_VERSION = "20260809-04";
-const OVERLAY_FIT = "contain";
-const VISUAL_WIDTH = 770;
-const VISUAL_HEIGHT = 500;
-const BACKGROUND_WIDTH = 805;
-const BACKGROUND_HEIGHT = 522;
-const BOSS_SOURCES = [
-  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
-  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
-  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/recommend.jpg?v=${ASSET_VERSION}`,
-  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/combo.jpg?v=${ASSET_VERSION}`,
-  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/usage.jpg?v=${ASSET_VERSION}`,
-  `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/service.jpg?v=${ASSET_VERSION}`,
-];
+const VERSION = "20260809-rich-menu-single-final-v9-no-composite";
+const MENU_NAME = `仙加味正式選單｜完整成品圖｜${VERSION}`;
+const FINAL_MENU_IMAGE = "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg";
 const API = "https://api.line.me";
 const DATA_API = "https://api-data.line.me";
-const CELL_LAYOUTS = Object.freeze([
-  { bgX: 16, bgY: 184, imgX: 34, imgY: 195 },
-  { bgX: 848, bgY: 184, imgX: 866, imgY: 195 },
-  { bgX: 1680, bgY: 184, imgX: 1698, imgY: 195 },
-  { bgX: 16, bgY: 942, imgX: 34, imgY: 953 },
-  { bgX: 848, bgY: 942, imgX: 866, imgY: 953 },
-  { bgX: 1680, bgY: 942, imgX: 1698, imgY: 953 },
-]);
+const SINGLE_IMAGE_ONLY = true;
 let syncPromise = null;
 let scheduled = false;
 
@@ -56,37 +34,19 @@ async function request(url, options = {}) {
 
 async function fetchBuffer(url) {
   const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Rich Menu 素材讀取失敗 HTTP ${response.status}: ${url}`);
+  if (!response.ok) throw new Error(`Rich Menu 完整成品圖讀取失敗 HTTP ${response.status}: ${url}`);
   return Buffer.from(await response.arrayBuffer());
 }
 
-async function bossOverlay(buffer, width = VISUAL_WIDTH, height = VISUAL_HEIGHT) {
-  return sharp(buffer)
-    .resize(width, height, {
-      fit: OVERLAY_FIT,
-      position: "centre",
-      background: { r: 239, g: 228, b: 210, alpha: 1 },
-      withoutEnlargement: true,
-    })
-    .flatten({ background: { r: 239, g: 228, b: 210 } })
-    .jpeg({ quality: 90, mozjpeg: true })
-    .toBuffer();
-}
-
 async function buildRichMenuImage() {
-  const [base, ...bosses] = await Promise.all([fetchBuffer(BASE_MENU), ...BOSS_SOURCES.map(fetchBuffer)]);
-  const overlays = await Promise.all(bosses.map((buffer) => bossOverlay(buffer)));
-  const backgroundBlocks = CELL_LAYOUTS.map((cell) => ({
-    input: { create: { width: BACKGROUND_WIDTH, height: BACKGROUND_HEIGHT, channels: 4, background: { r: 239, g: 228, b: 210, alpha: 1 } } },
-    left: cell.bgX,
-    top: cell.bgY,
-  }));
-  const bossLayers = overlays.map((input, index) => ({ input, left: CELL_LAYOUTS[index].imgX, top: CELL_LAYOUTS[index].imgY }));
-  return sharp(base)
-    .resize(2500, 1686, { fit: "fill" })
-    .composite([...backgroundBlocks, ...bossLayers])
-    .jpeg({ quality: 90, mozjpeg: true })
-    .toBuffer();
+  const source = await fetchBuffer(FINAL_MENU_IMAGE);
+  const image = sharp(source);
+  const metadata = await image.metadata();
+  if (!metadata.width || !metadata.height) throw new Error("Rich Menu 完整成品圖無法讀取尺寸");
+  if (metadata.width !== 2500 || metadata.height !== 1686) {
+    throw new Error(`Rich Menu 完整成品圖尺寸必須是2500×1686，目前為${metadata.width}×${metadata.height}`);
+  }
+  return image.jpeg({ quality: 92, mozjpeg: true }).toBuffer();
 }
 
 function menuDefinition() {
@@ -133,8 +93,8 @@ async function syncRichMenu() {
       menu = { richMenuId, name: MENU_NAME };
     }
     await setDefault(token, menu.richMenuId);
-    global.__XJW_RICH_MENU_RUNTIME__ = Object.freeze({ ok: true, version: VERSION, richMenuId: menu.richMenuId, syncedAt: new Date().toISOString() });
-    console.log("仙加味 Rich Menu 已同步", JSON.stringify(global.__XJW_RICH_MENU_RUNTIME__));
+    global.__XJW_RICH_MENU_RUNTIME__ = Object.freeze({ ok: true, version: VERSION, richMenuId: menu.richMenuId, image: FINAL_MENU_IMAGE, singleImageOnly: true, syncedAt: new Date().toISOString() });
+    console.log("仙加味 Rich Menu 已同步完整成品圖", JSON.stringify(global.__XJW_RICH_MENU_RUNTIME__));
     return global.__XJW_RICH_MENU_RUNTIME__;
   })().catch((error) => {
     console.warn("仙加味 Rich Menu 同步失敗", error.message || error);
@@ -150,4 +110,4 @@ function scheduleRichMenuSync(delayMs = 3000) {
   if (typeof timer.unref === "function") timer.unref();
 }
 
-module.exports = { VERSION, MENU_NAME, BASE_MENU, ASSET_VERSION, OVERLAY_FIT, VISUAL_WIDTH, VISUAL_HEIGHT, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, BOSS_SOURCES, CELL_LAYOUTS, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
+module.exports = { VERSION, MENU_NAME, FINAL_MENU_IMAGE, SINGLE_IMAGE_ONLY, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
