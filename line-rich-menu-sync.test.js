@@ -9,6 +9,7 @@ assert.equal(rich.SINGLE_IMAGE_ONLY, true);
 assert.equal(rich.RUNTIME_COMPOSITE_FORBIDDEN, true);
 assert.equal(rich.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
 assert.equal(rich.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v11.svg");
+assert.deepEqual([...rich.RICH_MENU_RETRY_DELAYS_MS], [3000, 15000, 60000], "Rich Menu冷啟動同步必須保留有限安全重試");
 
 const source = fs.readFileSync("line-rich-menu-sync.js", "utf8");
 const artwork = fs.readFileSync(rich.STATIC_ARTWORK, "utf8");
@@ -16,6 +17,9 @@ assert.ok(!source.includes("BASE_TEMPLATE"), "Rich Menu正式程式不得再依�
 assert.ok(!source.includes("BOSS_SOURCES"), "Rich Menu不得再維護六張後貼圖片來源");
 assert.ok(!source.includes("CELL_LAYOUTS"), "Rich Menu不得再維護六格圖片拼貼座標");
 assert.ok(!source.includes(".composite("), "Rich Menu不得再用sharp composite拼湊視覺");
+assert.ok(source.includes("RICH_MENU_RETRY_DELAYS_MS"), "Rich Menu必須保留啟動同步安全重試設定");
+assert.ok(source.includes("maxAttempts"), "Rich Menu重試必須是有限次數而非無限輪詢");
+assert.ok(source.includes("result?.ok || result?.skipped"), "Rich Menu同步成功或缺少憑證時必須停止重試");
 assert.ok(!/<image\b/i.test(artwork), "Rich Menu完整母稿不得再內嵌照片或舊底圖");
 assert.equal((artwork.match(/rx=\"38\"/g) || []).length, 6, "Rich Menu必須有六個一致完整功能面板");
 for (const label of ["仙加味", "看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]) {
@@ -44,4 +48,4 @@ for (const area of menu.areas) {
   assert.ok(area.bounds.y + area.bounds.height <= 1650, "功能熱區不得超出實際面板");
 }
 
-console.log("PASS：Rich Menu使用一張原生完整母稿、不拼貼、不重畫產品；六個點擊熱區精準對齊六個實際功能面板，品牌Header與間距不誤觸。");
+console.log("PASS：Rich Menu使用一張原生完整母稿、不拼貼、不重畫產品；六個熱區精準對齊；啟動同步具有限次安全重試，成功即停止。");
