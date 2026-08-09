@@ -44,7 +44,22 @@ function assertOfficialImageSlots(product, id) {
     if (!String(product?.[field] || "").includes(expected)) throw new Error(`${id}.${field} 未使用products-v3正式產品原圖`);
   }
   if (product.imagePolicy !== "approved-original-product-photo-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
-  if (product.physicalScalePolicy !== "uniform-only-preserve-realistic-product-scale") throw new Error(`${id}實際尺寸比例政策不同步`);
+  if (!String(product.physicalScalePolicy || "").trim()) throw new Error(`${id}缺少個別產品實際尺寸／比例政策`);
+}
+function assertPhysicalScaleAuthority(products) {
+  const byId = Object.fromEntries((products || []).map((product) => [product.id, product]));
+  const p30 = String(byId["guilu-drink-30"]?.physicalScalePolicy || "");
+  const p180 = String(byId["guilu-drink-180"]?.physicalScalePolicy || "");
+  const pGao = String(byId["guilu-gao"]?.physicalScalePolicy || "");
+  const pSoup = String(byId["guilu-tangkuai"]?.physicalScalePolicy || "");
+  const pJiao = String(byId["guilu-jiao"]?.physicalScalePolicy || "");
+  const pPowder = String(byId["luerong-fen"]?.physicalScalePolicy || "");
+  if (!/Ø42.*H51|小玻璃裸罐/i.test(p30)) throw new Error("30cc個別尺寸政策必須保留Ø42×H51mm小玻璃裸罐規則");
+  if (!/0\.60.*0\.68|狹長直立鋁袋/i.test(p180)) throw new Error("180cc個別比例政策必須保留狹長鋁袋0.60～0.68規則");
+  if (!/51.*78|六角玻璃罐/i.test(pGao)) throw new Error("龜鹿膏100g尺寸政策必須保留51×78mm／六角罐規則");
+  if (!/毫米尺寸未知|不得自行猜測|深藍正式盒/i.test(pSoup)) throw new Error("龜鹿湯塊尺寸未知時不得自行猜測");
+  if (!/毫米尺寸未知|不得自行猜測|淡紫正式盒/i.test(pJiao)) throw new Error("龜鹿膠尺寸未知時不得自行猜測");
+  if (!/毫米尺寸未知|不得自行猜測|白色塑膠罐/i.test(pPowder)) throw new Error("鹿茸粉尺寸未知時不得自行猜測");
 }
 function assertSoupAuthority(product) {
   if (!product) throw new Error("龜鹿湯塊不存在");
@@ -70,7 +85,7 @@ function main() {
   if (Object.keys(photoAuthority.products || {}).length !== 6) throw new Error("正式產品照片權威必須剛好6項");
   if ((merged.offers?.comboOffers || []).length !== 3) throw new Error("正式組合必須是3組");
   if ((merged.combos || []).length !== 3) throw new Error("根層正式組合資料必須是3組");
-  if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6個分類，目前${merged.products?.length || 0}項`);
+  if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6項，目前${merged.products?.length || 0}項`);
   if ((authority.products || []).length !== 6) throw new Error("LINE正式產品權威必須剛好6項");
 
   const expected = {
@@ -112,6 +127,8 @@ function main() {
     }
   }
 
+  assertPhysicalScaleAuthority(merged.products);
+
   const gao = merged.products.find((item) => item.id === "guilu-gao");
   if (gao?.usage?.[0] !== "每日早上及下午各一小匙") throw new Error("龜鹿膏正式使用方式不同步");
   if ((gao?.usage || []).some((line) => String(line).includes("每天一次，每次一小匙"))) throw new Error("龜鹿膏仍含舊的一日一次用法");
@@ -119,6 +136,9 @@ function main() {
 
   const drink30 = merged.products.find((item) => item.id === "guilu-drink-30");
   if (drink30?.priceLabel !== "正式售價60元／罐，買10送1（共11罐600元）") throw new Error("30cc正式價格文案不同步");
+  if (merged.trialCampaign?.contents !== "30cc小玻璃罐×3罐" || Number(merged.trialCampaign?.productFee) !== 0) throw new Error("試喝正式內容必須是30cc小玻璃罐×3罐且試喝品免費");
+  const shipping = (merged.trialCampaign?.shippingOptions || []).map((item) => [item.id, Number(item.fee)]);
+  if (JSON.stringify(shipping) !== JSON.stringify([["store",60],["home",100]])) throw new Error("試喝正式運費必須是7-11 60元、郵局宅配100元");
   if (merged.trialCampaign?.publicPrice !== "龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元") throw new Error("試喝方案公開價格不同步");
   if (merged.fulfillmentPolicy?.version !== "2026-08-08-v5") throw new Error("出貨政策版本不同步");
   if (merged.runtime?.imagePolicy?.dmFallback !== "approved-original-photo-until-current-dm-reviewed") throw new Error("DM正式產品原圖回退政策未啟用");
@@ -128,10 +148,10 @@ function main() {
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts and all image slots use products-v3 approved originals`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts, products-v3 originals and per-product physical scale rules`);
     return;
   }
-  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, fulfillment and products-v3 scale-locked photo policy aligned`);
+  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, trial, fulfillment, products-v3 and per-product physical scale rules aligned`);
 }
 
 if (require.main === module) {
@@ -139,4 +159,4 @@ if (require.main === module) {
   catch (error) { console.error(error.message || error); process.exit(1); }
 }
 
-module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION, PHOTO_VERSION };
+module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, assertPhysicalScaleAuthority, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION, PHOTO_VERSION };
