@@ -8,12 +8,12 @@ assert.equal(safety.VERSION, "20260809-direct-start-products-v3-size-lock-v4");
 assert.equal(safety.photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v6"));
 assert.equal(safety.schedulePolicy.VERSION, "20260808-tue1930-sat0930-v2-idempotent");
-assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-premium-v7-full-visual-zone");
+assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-premium-v8-template-safe-zone");
 assert.equal(safety.richMenuSync.OVERLAY_FIT, "contain");
-assert.equal(safety.richMenuSync.VISUAL_WIDTH, 740);
-assert.equal(safety.richMenuSync.VISUAL_HEIGHT, 430);
+assert.equal(safety.richMenuSync.VISUAL_WIDTH, 770);
+assert.equal(safety.richMenuSync.VISUAL_HEIGHT, 500);
 assert.equal(safety.richMenuSync.BACKGROUND_WIDTH, 805);
-assert.equal(safety.richMenuSync.BACKGROUND_HEIGHT, 500);
+assert.equal(safety.richMenuSync.BACKGROUND_HEIGHT, 522);
 assert.equal(safety.richMenuSync.CELL_LAYOUTS.length, 6);
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
@@ -33,26 +33,16 @@ assert.equal(data.runtime.productMainImageSource, "products-v3-user-approved-ori
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 assert.equal(data.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
 assert.equal(data.runtime.schedulePolicyVersion, "20260808-tue1930-sat0930-v2-idempotent");
-assert.ok(String(data.runtime.richMenuSyncVersion||"").includes("rich-menu"), "data runtime應保留Rich Menu版本欄位；實際同步版本以line-rich-menu-sync.js為準");
+assert.ok(String(data.runtime.richMenuSyncVersion||"").includes("rich-menu"));
 
-const oldBubble = {
-  type: "bubble",
-  hero: { type: "image", url: "https://example.com/old.jpg" },
-  body: { type: "box", layout: "vertical", contents: [
-    { type: "text", text: "龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）" },
-    { type: "text", text: "每組售價：$6,400" },
-  ] },
-  footer: { type: "box", layout: "vertical", contents: [{ type: "button", action: { type: "uri", label: "看產品DM", uri: "https://example.com/old-dm.jpg" } }] },
-};
+const oldBubble = {type:"bubble",hero:{type:"image",url:"https://example.com/old.jpg"},body:{type:"box",layout:"vertical",contents:[{type:"text",text:"龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）"},{type:"text",text:"每組售價：$6,400"}]},footer:{type:"box",layout:"vertical",contents:[{type:"button",action:{type:"uri",label:"看產品DM",uri:"https://example.com/old-dm.jpg"}}]}};
 safety.recordingUiFix.applyVisualFix(oldBubble);
 assert.ok(oldBubble.hero.url.includes("/images/products-v3/guilu-drink-30.jpg"));
 assert.equal(oldBubble.hero.aspectMode, "fit");
 assert.equal(oldBubble.xjwProductScalePolicy, "uniform-only-no-crop-no-stretch");
 assert.equal(oldBubble.footer.contents[0].action.label, "看實際產品照片");
 assert.equal(oldBubble.body.contents[1].text, "商品合計：$6,400");
-
 const menu = safety.richMenuSync.menuDefinition();
 assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
-
-console.log("PASS：Render直接啟動保留products-v3正式原圖與尺寸鎖；Rich Menu採滿寬米白安全展示區，功能意圖仍維持正確設定。");
+console.log("PASS：Render直接啟動保留products-v3正式原圖與尺寸鎖；Rich Menu精確落在母版安全區，功能意圖維持正確。");
