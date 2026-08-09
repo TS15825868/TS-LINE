@@ -6,9 +6,10 @@
  * 1. data.json 讀入前就把六項產品圖片強制改成 products-v3 使用者確認的正式產品原圖；
  * 2. Flex送出前仍套用錄影修正：舊DM按鈕→正式產品照片、推薦卡→網站Q版小老闆；
  * 3. 所有產品 hero 一律 fit／contain，只能等比例顯示，不拉寬、不拉高、不裁切；
- * 4. 龜鹿飲製作5～7工作天／其他產品現貨與75g-only文字守門仍生效；
- * 5. 固定社群排程先鎖週二19:30／週六09:30；
- * 6. 啟動後自動同步網站Q版小老闆 Rich Menu。
+ * 4. 保留每項產品自己的實際尺寸／比例規則，30cc小罐與180cc狹長鋁袋不得被通用規則覆蓋；
+ * 5. 龜鹿飲製作5～7工作天／其他產品現貨與75g-only文字守門仍生效；
+ * 6. 固定社群排程先鎖週二19:30／週六09:30；
+ * 7. 啟動後自動同步原生完整單一 Rich Menu。
  */
 const fs = require("fs");
 const path = require("path");
@@ -35,7 +36,8 @@ function normalizeProductPhotos(data) {
       dmImage: photo,
       officialOriginalImage: photo,
       imagePolicy: "approved-original-product-photo-contain-no-crop",
-      physicalScalePolicy: "uniform-only-preserve-realistic-product-scale",
+      // 只補缺省值；不得把 data.json／正式母檔裡的個別產品尺寸規則洗掉。
+      physicalScalePolicy: product.physicalScalePolicy || "uniform-only-preserve-realistic-product-scale",
     };
   });
   data.productPhotoAuthorityVersion = photoAuthority.version;
