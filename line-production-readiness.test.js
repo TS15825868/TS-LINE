@@ -78,7 +78,6 @@ assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf
 for (const field of ["lastWebhookAt", "lastReplySuccessAt", "lastReplyError"]) assert.ok(serverSource.includes(field), `LINE health 缺少 ${field}`);
 assert.ok(internalEntrySource.indexOf("app.listen(port") < internalEntrySource.indexOf("await bridge.restoreAll()"), "LINE 必須先 listen 再做 Supabase/ERP restore");
 assert.ok(syncSource.includes('PHOTO_VERSION = "2026-08-09-products-v3-user-approved-size-lock-v1"'), "prestart 必須驗 products-v3 權威");
-assert.equal(packageJson.prestart || packageJson.scripts?.prestart, undefined);
 assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write");
 assert.ok(packageJson.scripts.start.includes("product-fulfillment-message-fix.js"), "正式啟動必須載入出貨訊息邊界修正");
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"));
