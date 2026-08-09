@@ -8,9 +8,10 @@ assert.equal(safety.VERSION, "20260809-direct-start-products-v3-size-lock-v4");
 assert.equal(safety.photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v6"));
 assert.equal(safety.schedulePolicy.VERSION, "20260808-tue1930-sat0930-v2-idempotent");
-assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-website-chibi-v4-full-cell-no-black-gap");
+assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-website-chibi-v5-wide-safe-label-zone");
 assert.equal(safety.richMenuSync.OVERLAY_FIT, "contain");
 assert.ok(safety.richMenuSync.VISUAL_WIDTH >= 740);
+assert.ok(safety.richMenuSync.VISUAL_HEIGHT <= 430);
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
 const data = JSON.parse(raw);
@@ -29,7 +30,7 @@ assert.equal(data.runtime.productMainImageSource, "products-v3-user-approved-ori
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 assert.equal(data.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
 assert.equal(data.runtime.schedulePolicyVersion, "20260808-tue1930-sat0930-v2-idempotent");
-assert.equal(data.runtime.richMenuSyncVersion, "20260809-rich-menu-website-chibi-v4-full-cell-no-black-gap");
+assert.equal(data.runtime.richMenuSyncVersion, "20260809-rich-menu-website-chibi-v5-wide-safe-label-zone");
 
 const oldBubble = {
   type: "bubble",
@@ -51,4 +52,4 @@ const menu = safety.richMenuSync.menuDefinition();
 assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：Render直接啟動server.js會載入products-v3正式原圖、LINE UI v6尺寸鎖、Rich Menu v4全寬無黑洞版，以及完整不裁切且下單意圖一致的六格選單。");
+console.log("PASS：Render直接啟動server.js會載入products-v3正式原圖、LINE UI v6尺寸鎖、Rich Menu v5寬版安全文字區，以及完整不裁切且下單意圖一致的六格選單。");
