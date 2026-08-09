@@ -2,7 +2,7 @@
 
 const line = require("@line/bot-sdk");
 
-const POLICY_VERSION = "2026-08-08-v7-canonical-copy-and-photo-policy";
+const POLICY_VERSION = "2026-08-09-v8-products-v3-standalone-line";
 const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
 const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
 const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
@@ -103,7 +103,9 @@ function patchMessages(messages, core) {
 function healthPayload(core) {
   return {
     ok: true,
+    service: "仙加味 LINE OA fulfillment and image safety",
     policyVersion: POLICY_VERSION,
+    serviceMode: "standalone-line-oa",
     productCount: 6,
     sellableSpecificationCount: 6,
     drinkProductIds: DRINK_PRODUCT_IDS,
@@ -111,14 +113,19 @@ function healthPayload(core) {
     drinkNotice: core.DRINK_FULFILLMENT_NOTICE,
     readyStockNotice: core.STOCK_FULFILLMENT_NOTICE,
     generalNotice: core.GENERAL_FULFILLMENT_NOTICE,
+    productMainImageSource: "products-v3-user-approved-originals",
+    productsV2Use: "legacy-reference-only-forbidden-in-live-cards",
+    imagePolicy: "approved-original-product-photo-contain-no-crop-no-stretch-no-ai-redraw",
     cleanDrinkImagePath: core.CLEAN_DRINK_IMAGE_PATH,
     cleanDrinkImageUrl: core.CLEAN_DRINK_IMAGE_URL,
     cleanDrinkImageSource: core.OFFICIAL_DRINK_SOURCE,
-    cleanDrinkImagePolicy: "actual-product-photo-contain-no-crop",
-    productMainImageSource: "products-v2-actual-photos",
-    productsV3Use: "marketing-layout-reference-only",
+    cleanDrinkImagePolicy: "products-v3-official-original-contain-no-crop",
+    mascotImagePathPrefix: core.CLEAN_MASCOT_PATH_PREFIX,
+    mascotPolicy: "approved-website-chibi-character-clean-jpeg-route",
     guiluDrink30Specification: "30cc／罐（小玻璃罐）",
+    guiluDrink30PhysicalScale: "約Ø42×H51mm；小玻璃裸罐；不得稱瓶、不得放大成接近100g罐",
     guiluDrink180Specification: "180cc／包（鋁袋）",
+    guiluDrink180PhysicalScale: "狹長直立鋁袋；寬高比目標約0.64（0.60～0.68）",
     guiluGaoSpecification: "100g／罐",
     guiluGaoUsagePrimary: "每日早上及下午各一小匙",
     guiluGaoIngredients: ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
@@ -130,9 +137,6 @@ function healthPayload(core) {
     guiluJiaoIngredients: ["龜板萃取物", "鹿角萃取物"],
     luerongFenSpecification: "75g／罐",
     luerongFenIngredients: ["鹿茸"],
-    ownerReviewRequired: true,
-    unapprovedPostPublishingAllowed: false,
-    lineVoomManualOnly: true,
   };
 }
 
@@ -149,7 +153,7 @@ function installHealthRoute(core) {
           "Cache-Control": "no-store",
           "X-Content-Type-Options": "nosniff",
           "X-XJW-Fulfillment-Policy": POLICY_VERSION,
-          "X-XJW-Drink-Image-Policy": "actual-product-photo-contain-no-crop",
+          "X-XJW-Product-Image-Authority": "products-v3-user-approved-originals",
         });
         res.status(200).json(healthPayload(core));
       });
