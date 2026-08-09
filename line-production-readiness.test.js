@@ -8,14 +8,17 @@ const visual = require("./line-recording-ui-fix");
 const fulfillment = require("./product-fulfillment-message-fix");
 
 const read = (file) => fs.readFileSync(path.join(__dirname, file), "utf8");
-const rawData = JSON.parse(read("data.json"));
+const rawDataText = read("data.json");
+const rawData = JSON.parse(rawDataText);
 const data = applyMaster(rawData);
 const serverSource = read("server.js");
 const internalEntrySource = read("internal-entry.js");
 const syncSource = read("tools/sync_sales_master.js");
 const richSource = read("line-rich-menu-sync.js");
+const richArtwork = read("assets/rich-menu/xianjiawei-rich-menu-v11.svg");
 const packageJson = JSON.parse(read("package.json"));
 
+assert.ok(!rawDataText.includes("/images/products-v2/"), "LINE原始data.json不得再保存products-v2正式圖");
 assert.equal(data.products.length, 6, "正式產品必須剛好六項");
 const byId = Object.fromEntries(data.products.map((p) => [p.id, p]));
 const expected = {
@@ -51,17 +54,19 @@ assert.equal(byId["guilu-drink-180"].productionLeadTime, "5～7個工作天");
 for (const id of ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]) assert.equal(byId[id].productionLeadTime, null, `${id} 不得套用龜鹿飲5～7工作天`);
 assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.{0,80}(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得含舊300g/600g規格");
 
-assert.equal(rich.VERSION, "20260809-rich-menu-single-canvas-v10-cohesive");
+assert.equal(rich.VERSION, "20260809-rich-menu-native-single-artwork-v11");
 assert.equal(rich.SINGLE_IMAGE_ONLY, true);
 assert.equal(rich.RUNTIME_COMPOSITE_FORBIDDEN, true);
-assert.ok(rich.BASE_TEMPLATE.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
+assert.equal(rich.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
+assert.equal(rich.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v11.svg");
+assert.ok(!richSource.includes("BASE_TEMPLATE"), "Rich Menu正式程式不得再依賴舊JPG底圖");
 assert.ok(!richSource.includes("BOSS_SOURCES"), "Rich Menu正式程式不得保留六張後貼圖來源");
 assert.ok(!richSource.includes("CELL_LAYOUTS"), "Rich Menu正式程式不得保留六格圖片拼貼座標");
 assert.ok(!richSource.includes(".composite("), "Rich Menu正式程式不得使用sharp composite拼湊視覺");
-assert.ok(richSource.includes("fullCanvasSvg"), "Rich Menu必須在單一畫布完成視覺");
-const richSvg=rich.fullCanvasSvg(Buffer.from("fake"));
-assert.equal((richSvg.match(/<image /g)||[]).length,1,"Rich Menu完整畫布只允許一張品牌母版image，不得塞六張照片");
-assert.ok((richSvg.match(/<rect /g)||[]).length>=12,"Rich Menu六個視覺區未使用一致向量面板重繪");
+assert.ok(!/<image\b/i.test(richArtwork), "Rich Menu完整母稿不得再內嵌照片或舊底圖");
+assert.equal((richArtwork.match(/rx=\"38\"/g) || []).length, 6, "Rich Menu必須有六個一致完整功能面板");
+for (const label of ["仙加味","看產品","購物車","幫我推薦","搭配組合","怎麼使用","直接下單"]) assert.ok(richArtwork.includes(label), `Rich Menu完整母稿缺少：${label}`);
+assert.ok(!/#000000|#000\b|fill=\"black\"/i.test(richArtwork), "Rich Menu不得再出現黑色空白補位區");
 const menu = rich.menuDefinition();
 assert.deepEqual(menu.areas.map(a => a.action.label), ["看產品","購物車","幫我推薦","搭配組合","怎麼使用","直接下單"]);
 assert.deepEqual(menu.areas.map(a => a.action.text), ["看產品","查看購買清單","幫我推薦","搭配組合","怎麼使用","直接下單"]);
@@ -86,4 +91,4 @@ assert.ok(packageJson.scripts.start.includes("product-fulfillment-message-fix.js
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"));
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"));
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
-console.log("PASS：LINE OA 正式上線條件完整：六產品/價格/出貨/products-v3/尺寸、單一畫布非拼湊Rich Menu、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
+console.log("PASS：LINE OA正式上線條件完整：六產品/價格/出貨/products-v3/尺寸、原生完整單一Rich Menu、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
