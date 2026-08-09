@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * 2026-08-09 LINE OA 正式畫面修正 v6
- * - 六項產品卡一律使用官網 products-v3 使用者確認的正式產品原圖，不使用舊 products-v2、DM或海報版面。
+ * 2026-08-10 LINE OA 正式畫面修正 v6
+ * - 六項產品卡一律使用官網 products-v3 真正產品實拍原圖，不使用舊 products-v2、DM或海報版面。
  * - 「產品DM」一律改成「實際產品照片」。
  * - 小老闆依文案語意選擇推薦／搭配／使用／FAQ／客服／品牌／歡迎正式場景。
  * - 同一 carousel 中，非產品說明卡只保留第一張必要小老闆 hero，降低重複載入。
@@ -11,6 +11,7 @@
 const line = require("@line/bot-sdk");
 
 const VERSION = "20260809-recording-ui-v6-products-v3-size-lock";
+const PRODUCT_IMAGE_VERSION = "20260810-products-v3-true-originals-v2";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
 
 const MASCOT_HEROES = Object.freeze({
@@ -29,27 +30,27 @@ const RECOMMEND_HERO = MASCOT_HEROES.recommend;
 const PRODUCTS = Object.freeze({
   "guilu-drink-30": {
     patterns: [/龜鹿飲\s*30\s*cc/i, /30\s*cc.*(?:玻璃罐|小玻璃罐)/i],
-    image: `${SITE_BASE}images/products-v3/guilu-drink-30.jpg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-drink-30.jpg?v=${PRODUCT_IMAGE_VERSION}`,
   },
   "guilu-drink-180": {
     patterns: [/龜鹿飲\s*180\s*cc/i, /180\s*cc.*鋁袋/i],
-    image: `${SITE_BASE}images/products-v3/guilu-drink-180.jpg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-drink-180.jpg?v=${PRODUCT_IMAGE_VERSION}`,
   },
   "guilu-gao": {
     patterns: [/龜鹿膏/],
-    image: `${SITE_BASE}images/products-v3/guilu-gao.jpg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-gao.jpg?v=${PRODUCT_IMAGE_VERSION}`,
   },
   "guilu-tangkuai": {
     patterns: [/龜鹿湯塊/],
-    image: `${SITE_BASE}images/products-v3/guilu-tangkuai.jpg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-tangkuai.jpg?v=${PRODUCT_IMAGE_VERSION}`,
   },
   "guilu-jiao": {
     patterns: [/龜鹿膠/],
-    image: `${SITE_BASE}images/products-v3/guilu-jiao.jpg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/guilu-jiao.jpg?v=${PRODUCT_IMAGE_VERSION}`,
   },
   "luerong-fen": {
     patterns: [/鹿茸粉/],
-    image: `${SITE_BASE}images/products-v3/luerong-fen.jpg?v=${VERSION}`,
+    image: `${SITE_BASE}images/products-v3/luerong-fen.jpg?v=${PRODUCT_IMAGE_VERSION}`,
   },
 });
 
@@ -237,6 +238,7 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwRecordingUiFixInst
 
 module.exports = {
   VERSION,
+  PRODUCT_IMAGE_VERSION,
   PRODUCTS,
   MASCOT_HEROES,
   GENERIC_MASCOT_HERO,
