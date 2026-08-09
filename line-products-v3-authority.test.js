@@ -5,7 +5,13 @@ const fs = require("fs");
 const path = require("path");
 const { applyMaster, getPhotoAuthority } = require("./product-sales-master");
 
-const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "data.json"), "utf8"));
+const rawText = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
+const masterText = fs.readFileSync(path.join(__dirname, "line-sales-master.json"), "utf8");
+assert.ok(!rawText.includes("/images/products-v2/"), "data.json 原始主檔不得再保存 products-v2 正式圖路徑");
+assert.ok(!masterText.includes("/images/products-v2/"), "line-sales-master.json 不得再保存 products-v2 正式圖路徑");
+assert.ok(rawText.includes("products-v3-user-approved-originals"), "data.json 原始主檔必須直接標示 products-v3 正式圖權威");
+
+const raw = JSON.parse(rawText);
 const data = applyMaster(raw);
 const photoAuthority = getPhotoAuthority();
 
@@ -40,4 +46,4 @@ assert.equal(byId["guilu-tangkuai"].specification, "75g／盒｜8塊裝｜每塊
 assert.equal(byId["guilu-jiao"].specification, "600g（1斤）／盒｜32塊裝｜每塊約18.75g");
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
 
-console.log("PASS：LINE OA六項產品、products-v3正式原圖、實際比例、售價與規格權威一致。");
+console.log("PASS：LINE OA原始主檔與執行時六項產品皆鎖定products-v3正式原圖、實際比例、售價與規格權威。");
