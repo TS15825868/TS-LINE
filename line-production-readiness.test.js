@@ -107,7 +107,7 @@ assert.ok(serverSource.includes("DRINK_ORDER_NOTICE") && serverSource.includes("
 assert.ok(serverSource.includes("orderNoticeForProduct") && serverSource.includes("orderNoticeForCart"), "產品卡與購物車必須由主程式直接判斷交期");
 assert.ok(syncSource.includes('PHOTO_VERSION = "2026-08-09-products-v3-user-approved-size-lock-v1"'), "prestart 必須驗 products-v3 權威");
 assert.equal(packageJson.main, "server.js", "正式服務入口必須是LINE OA server.js");
-assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-production-readiness.test.js", "Render prestart 必須先同步正式母本，再執行完整正式驗收");
+assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-health-authority.test.js && node line-production-readiness.test.js", "Render prestart 必須同步正式母本、驗健康權威，再執行完整正式驗收");
 assert.equal(packageJson.scripts.start, "node -r ./product-sales-master.js server.js", "Render正式啟動只允許LINE OA必要模組，不得一起啟動ERP／社群發布系統");
 for (const forbidden of ["internal-entry.js","social-review-center","social-publish-guard","instagram-content-publishing","facebook-page-token","internal-app-pro","product-fulfillment-message-fix.js"]) {
   assert.ok(!packageJson.scripts.start.includes(forbidden), `LINE正式start不得再載入非必要模組：${forbidden}`);
@@ -115,4 +115,4 @@ for (const forbidden of ["internal-entry.js","social-review-center","social-publ
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"), "相容性守門仍需知道龜鹿飲正式交期");
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"), "相容性守門不得把現貨商品寫成5～7工作天");
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
-console.log("PASS：LINE OA獨立正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3/個別尺寸、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、LINE-only Render start均符合正式規則。");
+console.log("PASS：LINE OA獨立正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3/個別尺寸、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、健康權威與LINE-only Render start均符合正式規則。");
