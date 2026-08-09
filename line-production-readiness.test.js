@@ -40,7 +40,7 @@ for (const [id, rule] of Object.entries(expected)) {
     assert.ok(!String(p[field] || "").includes("/images/products-v2/"), `${id}.${field} 套用正式母本後仍含 products-v2`);
   }
   assert.equal(p.imagePolicy, "approved-original-product-photo-contain-no-crop", `${id} 圖片政策錯誤`);
-  assert.equal(p.physicalScalePolicy, "uniform-only-preserve-realistic-product-scale", `${id} 尺寸比例政策錯誤`);
+  assert.ok(String(p.physicalScalePolicy || "").trim(), `${id} 缺少個別產品尺寸／比例政策`);
   if (rule.offerQty) {
     const offer = (p.offers || []).find((o) => Number(o.qty) === rule.offerQty);
     assert.ok(offer, `${id} 缺少買10送1方案`);
@@ -49,6 +49,8 @@ for (const [id, rule] of Object.entries(expected)) {
 }
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.ok(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(byId["guilu-drink-30"])), "30cc 正式資料不得出現玻璃瓶／瓶裝");
+assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|小玻璃裸罐/i, "30cc必須保留Ø42×H51mm小玻璃罐尺寸規則");
+assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長直立鋁袋/i, "180cc必須保留狹長鋁袋比例規則");
 assert.equal(byId["guilu-drink-30"].productionLeadTime, "5～7個工作天");
 assert.equal(byId["guilu-drink-180"].productionLeadTime, "5～7個工作天");
 for (const id of ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]) assert.equal(byId[id].productionLeadTime, null, `${id} 不得套用龜鹿飲5～7工作天`);
@@ -70,6 +72,15 @@ assert.ok(!/#000000|#000\b|fill=\"black\"/i.test(richArtwork), "Rich Menu不得�
 const menu = rich.menuDefinition();
 assert.deepEqual(menu.areas.map(a => a.action.label), ["看產品","購物車","幫我推薦","搭配組合","怎麼使用","直接下單"]);
 assert.deepEqual(menu.areas.map(a => a.action.text), ["看產品","查看購買清單","幫我推薦","搭配組合","怎麼使用","直接下單"]);
+assert.deepEqual(menu.areas.map(a => a.bounds), [
+  { x: 24, y: 176, width: 785, height: 635 },
+  { x: 857, y: 176, width: 786, height: 635 },
+  { x: 1691, y: 176, width: 785, height: 635 },
+  { x: 24, y: 875, width: 785, height: 775 },
+  { x: 857, y: 875, width: 786, height: 775 },
+  { x: 1691, y: 875, width: 785, height: 775 },
+], "Rich Menu六個熱區必須精準對齊六個實際面板");
+assert.ok(menu.areas.every(a => a.bounds.y >= 176), "Rich Menu品牌Header不得成為點擊熱區");
 
 assert.equal(visual.VERSION, "20260809-recording-ui-v6-products-v3-size-lock");
 for (const p of Object.values(visual.PRODUCTS)) assert.ok(p.image.includes("/images/products-v3/"));
@@ -91,4 +102,4 @@ assert.ok(packageJson.scripts.start.includes("product-fulfillment-message-fix.js
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"));
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"));
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
-console.log("PASS：LINE OA正式上線條件完整：六產品/價格/出貨/products-v3/尺寸、原生完整單一Rich Menu、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
+console.log("PASS：LINE OA正式上線條件完整：六產品/價格/出貨/products-v3/個別尺寸規則、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
