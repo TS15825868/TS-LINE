@@ -5,6 +5,7 @@
  * - 正式視覺是一個完整 SVG 母稿，不再讀舊 JPG 底圖，也不在執行時補黑塊／貼照片／拼六格素材。
  * - 六個功能區、品牌標頭、文字、圖示、背景與分隔全部在同一份 SVG 中完成。
  * - 執行時只做一次 SVG → JPEG 格式轉換，再上傳 LINE；不使用 sharp.composite。
+ * - LINE 點擊熱區只覆蓋六個實際功能面板，品牌標頭與面板間距不再誤觸功能。
  */
 const fs = require("fs");
 const path = require("path");
@@ -59,8 +60,16 @@ async function buildRichMenuImage() {
 }
 
 function menuDefinition() {
-  const col = [0, 833, 1667, 2500];
-  const rows = [0, 843, 1686];
+  // 點擊區直接對齊 SVG 的六個實際面板，不把品牌 Header、面板間距或外框算進功能熱區。
+  const columns = [
+    { x: 24, width: 785 },
+    { x: 857, width: 786 },
+    { x: 1691, width: 785 },
+  ];
+  const rows = [
+    { y: 176, height: 635 },
+    { y: 875, height: 775 },
+  ];
   const actions = [
     ["看產品", "看產品"],
     ["購物車", "查看購買清單"],
@@ -71,10 +80,10 @@ function menuDefinition() {
   ];
   const areas = [];
   let i = 0;
-  for (let r = 0; r < 2; r += 1) {
-    for (let c = 0; c < 3; c += 1) {
+  for (const row of rows) {
+    for (const column of columns) {
       areas.push({
-        bounds: { x: col[c], y: rows[r], width: col[c + 1] - col[c], height: rows[r + 1] - rows[r] },
+        bounds: { x: column.x, y: row.y, width: column.width, height: row.height },
         action: { type: "message", label: actions[i][0], text: actions[i][1] },
       });
       i += 1;
@@ -115,7 +124,7 @@ async function syncRichMenu() {
     }
     await setDefault(token, menu.richMenuId);
     const retiredMenuCount = await removeRetiredMenus(token, listed.richmenus || [], menu.richMenuId);
-    global.__XJW_RICH_MENU_RUNTIME__ = Object.freeze({ ok: true, version: VERSION, richMenuId: menu.richMenuId, staticArtwork: STATIC_ARTWORK, singleImageOnly: true, runtimeCompositeForbidden: true, legacyBaseTemplateForbidden: true, visualMode: "native-static-single-artwork", retiredMenuCount, syncedAt: new Date().toISOString() });
+    global.__XJW_RICH_MENU_RUNTIME__ = Object.freeze({ ok: true, version: VERSION, richMenuId: menu.richMenuId, staticArtwork: STATIC_ARTWORK, singleImageOnly: true, runtimeCompositeForbidden: true, legacyBaseTemplateForbidden: true, visualMode: "native-static-single-artwork", tapZones: "visual-panels-only", retiredMenuCount, syncedAt: new Date().toISOString() });
     console.log("仙加味 Rich Menu 已同步原生完整單一設計稿", JSON.stringify(global.__XJW_RICH_MENU_RUNTIME__));
     return global.__XJW_RICH_MENU_RUNTIME__;
   })().catch((error) => {
