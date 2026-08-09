@@ -12,6 +12,7 @@ function productBubble(name, oldImage) {
 }
 
 assert.ok(fix.VERSION.includes("recording-ui-v6"));
+assert.equal(fix.PRODUCT_IMAGE_VERSION, "20260810-products-v3-true-originals-v2");
 const cases = [
   ["龜鹿膏｜100g／罐", "guilu-gao", "guilu-gao.jpg"],
   ["龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）", "guilu-drink-30", "guilu-drink-30.jpg"],
@@ -25,6 +26,7 @@ for (const [name, key, file] of cases) {
   fix.applyVisualFix(bubble);
   assert.equal(bubble.xjwProductPhoto, key);
   assert.ok(bubble.hero.url.includes(`/images/products-v3/${file}`), `${name} 未切到 products-v3 使用者確認正式產品原圖`);
+  assert.ok(bubble.hero.url.includes(fix.PRODUCT_IMAGE_VERSION), `${name} 未使用真正產品原圖快取版本`);
   assert.equal(bubble.hero.aspectMode, "fit");
   assert.equal(bubble.xjwProductPhotoAuthority, "products-v3-user-approved-originals");
   assert.equal(bubble.xjwProductScalePolicy, "uniform-only-no-crop-no-stretch");
@@ -92,5 +94,6 @@ fix.applyVisualFix(carousel);
 assert.ok(carousel.contents[0].hero, "carousel 第一張導覽卡保留完整小老闆圖");
 assert.equal(carousel.contents[1].hero, undefined, "carousel 後續非產品說明卡移除重複小老闆 hero");
 assert.ok(carousel.contents[2].hero.url.includes("/images/products-v3/guilu-gao.jpg"), "產品卡仍保留使用者確認的正式產品原圖");
+assert.ok(carousel.contents[2].hero.url.includes(fix.PRODUCT_IMAGE_VERSION), "產品卡不得退回舊圖片快取");
 
-console.log("PASS：LINE OA 產品使用 products-v3 正式原圖；產品只等比例fit不裁切；小老闆依文案情境配圖；carousel 不重複載入同一小老闆。");
+console.log("PASS：LINE OA產品使用products-v3真正原圖與2026-08-10快取版本；產品只等比例fit不裁切；小老闆依文案情境配圖；carousel不重複載入同一小老闆。");
