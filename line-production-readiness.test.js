@@ -71,8 +71,9 @@ assert.equal(rich.RUNTIME_COMPOSITE_FORBIDDEN, true);
 assert.equal(rich.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
 assert.equal(rich.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v11.svg");
 assert.ok(!richSource.includes("BASE_TEMPLATE"), "Rich Menu正式程式不得再依賴舊JPG底圖");
-assert.ok(!richSource.includes("BOSS_SOURCES"), "Rich Menu正式程式不得保留六張後貼圖來源");
-assert.ok(!richSource.includes("CELL_LAYOUTS"), "Rich Menu正式程式不得保留六格圖片拼貼座標");
+assert.ok(!/\b(?:const|let|var)\s+BOSS_SOURCES\b/.test(richSource), "Rich Menu正式程式不得保留六張後貼圖來源變數");
+assert.ok(!/\b(?:const|let|var)\s+CELL_LAYOUTS\b/.test(richSource), "Rich Menu正式程式不得保留六格圖片拼貼座標變數");
+assert.ok(richSource.includes("BOSS_SOURCES|CELL_LAYOUTS"), "Rich Menu正式母稿仍應主動拒絕舊拼貼標記");
 assert.ok(!richSource.includes(".composite("), "Rich Menu正式程式不得使用sharp composite拼湊視覺");
 assert.ok(!/<image\b/i.test(richArtwork), "Rich Menu完整母稿不得再內嵌照片或舊底圖");
 assert.equal((richArtwork.match(/rx=\"38\"/g) || []).length, 6, "Rich Menu必須有六個一致完整功能面板");
@@ -117,4 +118,4 @@ for (const forbidden of ["internal-entry.js","social-review-center","social-publ
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"), "相容性守門仍需知道龜鹿飲正式交期");
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"), "相容性守門不得把現貨商品寫成5～7工作天");
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
-console.log("PASS：LINE OA獨立正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3最新真正原圖/個別尺寸、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、健康權威與LINE-only Render start均符合正式規則。");
+console.log("PASS：LINE OA獨立正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3最新真正原圖/個別尺寸、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、健康權威與LINE-only Render start均符合正式規則。\n");
