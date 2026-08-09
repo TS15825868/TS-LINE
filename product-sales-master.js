@@ -15,7 +15,7 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
   "price", "originalPrice", "offers", "priceText", "originalPriceText",
   "priceLabel", "quoteOnly",
   "fulfillmentType", "fulfillmentNotice", "productionLeadTime", "readyStock",
-  "image", "imageUrl", "image_url", "dmImage", "officialOriginalImage", "imagePolicy",
+  "image", "imageUrl", "image_url", "dmImage", "officialOriginalImage", "imagePolicy", "physicalScalePolicy",
 ]);
 
 function getMaster() {
@@ -74,14 +74,15 @@ function salesOverride(override = {}) {
 function photoOverride(id) {
   const authority = getPhotoAuthority();
   const url = String(authority?.products?.[id] || "").trim();
-  if (!url) throw new Error(`${id} 缺少 products-v2 實際產品照片權威`);
+  if (!url) throw new Error(`${id} 缺少 products-v3 正式產品原圖權威`);
   return {
     image: url,
     imageUrl: url,
     image_url: url,
     dmImage: url,
     officialOriginalImage: url,
-    imagePolicy: "actual-product-photo-contain-no-crop",
+    imagePolicy: "approved-original-product-photo-contain-no-crop",
+    physicalScalePolicy: "uniform-only-preserve-realistic-product-scale",
   };
 }
 
@@ -127,10 +128,14 @@ function applyMaster(data) {
       ...((data.runtime || {}).imagePolicy || {}),
       ...(policy.imagePolicy || {}),
       actualProductPhotoAuthority: getPhotoAuthority().version,
-      productMainImageSource: "products-v2-actual-photos",
-      productsV3Use: "marketing-layout-reference-only",
-      dmFallback: "actual-product-photo-until-new-dm-reviewed",
+      productMainImageSource: "products-v3-user-approved-originals",
+      productsV2Use: "legacy-reference-only",
+      productScalePolicy: "uniform-only-no-equal-height-equal-width",
+      dmFallback: "approved-original-photo-until-current-dm-reviewed",
     },
+    productMainImageSource: "products-v3-user-approved-originals",
+    productsV2Use: "legacy-reference-only",
+    productScalePolicy: "uniform-only-no-equal-height-equal-width",
     contentApproval: {
       mode: "review-only",
       defaultStatus: "pending_review",
