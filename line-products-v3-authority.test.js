@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const { applyMaster, getPhotoAuthority } = require("./product-sales-master");
 
+const TRUE_ORIGINAL_CACHE = "20260810-products-v3-true-originals-v2";
 const rawText = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
 const masterText = fs.readFileSync(path.join(__dirname, "line-sales-master.json"), "utf8");
 assert.ok(!rawText.includes("/images/products-v2/"), "data.json 原始主檔不得再保存 products-v2 正式圖路徑");
@@ -17,12 +18,17 @@ const photoAuthority = getPhotoAuthority();
 
 assert.equal(photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.equal(Object.keys(photoAuthority.products || {}).length, 6);
+for (const [id, url] of Object.entries(photoAuthority.products || {})) {
+  assert.ok(String(url).includes("/images/products-v3/"), `${id} 圖片權威不得離開products-v3`);
+  assert.ok(String(url).includes(TRUE_ORIGINAL_CACHE), `${id} 未鎖定2026-08-10真正產品原圖快取版本`);
+}
 assert.equal(data.products.length, 6);
 assert.equal(data.productPhotoAuthorityVersion, photoAuthority.version);
 
 for (const product of data.products) {
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
     assert.ok(String(product[field] || "").includes("/images/products-v3/"), `${product.id}.${field} 未使用products-v3`);
+    assert.ok(String(product[field] || "").includes(TRUE_ORIGINAL_CACHE), `${product.id}.${field} 未使用真正產品原圖快取版本`);
     assert.ok(!String(product[field] || "").includes("/images/products-v2/"), `${product.id}.${field} 仍含products-v2`);
   }
   assert.equal(product.imagePolicy, "approved-original-product-photo-contain-no-crop");
@@ -49,4 +55,4 @@ assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.strin
 assert.equal(byId["guilu-jiao"].specification, "600g（1斤）／盒｜32塊裝｜每塊約18.75g");
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
 
-console.log("PASS：LINE OA原始主檔與執行時六項產品皆鎖定products-v3正式原圖；30cc、180cc及其他產品保留各自實際尺寸／比例規則，售價與規格權威一致。");
+console.log("PASS：LINE OA六項產品皆鎖定products-v3真正產品原圖與2026-08-10快取版本；30cc、180cc及其他產品保留各自實際尺寸／比例規則，售價與規格權威一致。");
