@@ -12,7 +12,6 @@ const rawDataText = read("data.json");
 const rawData = JSON.parse(rawDataText);
 const data = applyMaster(rawData);
 const serverSource = read("server.js");
-const internalEntrySource = read("internal-entry.js");
 const syncSource = read("tools/sync_sales_master.js");
 const richSource = read("line-rich-menu-sync.js");
 const richArtwork = read("assets/rich-menu/xianjiawei-rich-menu-v11.svg");
@@ -56,6 +55,15 @@ assert.equal(byId["guilu-drink-180"].productionLeadTime, "5～7個工作天");
 for (const id of ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]) assert.equal(byId[id].productionLeadTime, null, `${id} 不得套用龜鹿飲5～7工作天`);
 assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.{0,80}(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得含舊300g/600g規格");
 
+const trial = data.trialCampaign || {};
+assert.equal(trial.contents, "30cc小玻璃罐×3罐", "試喝份量必須由正式主檔鎖定3罐");
+assert.equal(trial.productFee, 0, "試喝品必須免費");
+assert.equal(trial.publicPrice, "龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元");
+assert.deepEqual((trial.shippingOptions || []).map(o => [o.id, o.fee]), [["store",60],["home",100]], "試喝配送費用必須由正式trialCampaign主檔提供");
+assert.ok(!serverSource.includes("正式售價50元／罐"), "server.js不得保留舊30cc 50元備援價");
+assert.ok(!serverSource.includes("11罐500元"), "server.js不得保留舊買10送1 500元備援價");
+assert.ok(serverSource.includes("trialShippingOptions()"), "試喝配送費用必須從正式資料讀取，不得散落硬編碼");
+
 assert.equal(rich.VERSION, "20260809-rich-menu-native-single-artwork-v11");
 assert.equal(rich.SINGLE_IMAGE_ONLY, true);
 assert.equal(rich.RUNTIME_COMPOSITE_FORBIDDEN, true);
@@ -95,11 +103,16 @@ for (const token of [
 assert.ok(serverSource.includes('res.json({ ok: true });'), "LINE webhook 必須先快速回 200");
 assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf('Promise.allSettled((req.body.events || []).map(handleEvent))'), "LINE webhook 200 必須早於事件處理");
 for (const field of ["lastWebhookAt", "lastReplySuccessAt", "lastReplyError"]) assert.ok(serverSource.includes(field), `LINE health 缺少 ${field}`);
-assert.ok(internalEntrySource.indexOf("app.listen(port") < internalEntrySource.indexOf("await bridge.restoreAll()"), "LINE 必須先 listen 再做 Supabase/ERP restore");
+assert.ok(serverSource.includes("DRINK_ORDER_NOTICE") && serverSource.includes("READY_STOCK_ORDER_NOTICE") && serverSource.includes("MIXED_ORDER_NOTICE"), "主程式必須直接包含產品別出貨邏輯");
+assert.ok(serverSource.includes("orderNoticeForProduct") && serverSource.includes("orderNoticeForCart"), "產品卡與購物車必須由主程式直接判斷交期");
 assert.ok(syncSource.includes('PHOTO_VERSION = "2026-08-09-products-v3-user-approved-size-lock-v1"'), "prestart 必須驗 products-v3 權威");
+assert.equal(packageJson.main, "server.js", "正式服務入口必須是LINE OA server.js");
 assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-production-readiness.test.js", "Render prestart 必須先同步正式母本，再執行完整正式驗收");
-assert.ok(packageJson.scripts.start.includes("product-fulfillment-message-fix.js"), "正式啟動必須載入出貨訊息邊界修正");
-assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"));
-assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"));
+assert.equal(packageJson.scripts.start, "node -r ./product-sales-master.js server.js", "Render正式啟動只允許LINE OA必要模組，不得一起啟動ERP／社群發布系統");
+for (const forbidden of ["internal-entry.js","social-review-center","social-publish-guard","instagram-content-publishing","facebook-page-token","internal-app-pro","product-fulfillment-message-fix.js"]) {
+  assert.ok(!packageJson.scripts.start.includes(forbidden), `LINE正式start不得再載入非必要模組：${forbidden}`);
+}
+assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"), "相容性守門仍需知道龜鹿飲正式交期");
+assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"), "相容性守門不得把現貨商品寫成5～7工作天");
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
-console.log("PASS：LINE OA正式上線條件完整：六產品/價格/出貨/products-v3/個別尺寸規則、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
+console.log("PASS：LINE OA獨立正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3/個別尺寸、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、LINE-only Render start均符合正式規則。");
