@@ -36,6 +36,7 @@ for (const [id, rule] of Object.entries(expected)) {
   assert.equal(Boolean(p.readyStock), rule.ready, `${id} 備貨狀態不同步`);
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
     assert.ok(String(p[field] || "").includes("/images/products-v3/"), `${id}.${field} 套用正式母本後仍非 products-v3`);
+    assert.ok(String(p[field] || "").includes("20260810-products-v3-latest-originals-v3"), `${id}.${field} 未使用最新產品原圖版本`);
     assert.ok(!String(p[field] || "").includes("/images/products-v2/"), `${id}.${field} 套用正式母本後仍含 products-v2`);
   }
   assert.equal(p.imagePolicy, "approved-original-product-photo-contain-no-crop", `${id} 圖片政策錯誤`);
@@ -91,6 +92,7 @@ assert.deepEqual(menu.areas.map(a => a.bounds), [
 assert.ok(menu.areas.every(a => a.bounds.y >= 176), "Rich Menu品牌Header不得成為點擊熱區");
 
 assert.equal(visual.VERSION, "20260809-recording-ui-v6-products-v3-size-lock");
+assert.equal(visual.PRODUCT_IMAGE_VERSION, "20260810-products-v3-latest-originals-v3", "LINE Flex 必須使用最新產品原圖版本");
 for (const p of Object.values(visual.PRODUCTS)) assert.ok(p.image.includes("/images/products-v3/"));
 assert.equal(visual.productHero("guilu-drink-30").aspectMode, "fit");
 for (const token of [
@@ -105,9 +107,9 @@ assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf
 for (const field of ["lastWebhookAt", "lastReplySuccessAt", "lastReplyError"]) assert.ok(serverSource.includes(field), `LINE health 缺少 ${field}`);
 assert.ok(serverSource.includes("DRINK_ORDER_NOTICE") && serverSource.includes("READY_STOCK_ORDER_NOTICE") && serverSource.includes("MIXED_ORDER_NOTICE"), "主程式必須直接包含產品別出貨邏輯");
 assert.ok(serverSource.includes("orderNoticeForProduct") && serverSource.includes("orderNoticeForCart"), "產品卡與購物車必須由主程式直接判斷交期");
-assert.ok(syncSource.includes('PHOTO_VERSION = "2026-08-09-products-v3-user-approved-size-lock-v1"'), "prestart 必須驗 products-v3 權威");
+assert.ok(syncSource.includes('PHOTO_VERSION = "2026-08-10-products-v3-latest-originals-v3"'), "prestart 必須驗最新 products-v3 圖片權威");
 assert.equal(packageJson.main, "server.js", "正式服務入口必須是LINE OA server.js");
-assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-health-authority.test.js && node line-true-original-readiness.test.js && node line-production-readiness.test.js", "Render prestart 必須同步正式母本、驗健康權威、驗真正products-v3原圖，再執行完整正式驗收");
+assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-health-authority.test.js && node line-true-original-readiness.test.js && node line-production-readiness.test.js", "Render prestart 必須同步正式母本、驗健康權威、驗最新products-v3原圖，再執行完整正式驗收");
 assert.equal(packageJson.scripts.start, "node -r ./product-sales-master.js server.js", "Render正式啟動只允許LINE OA必要模組，不得一起啟動ERP／社群發布系統");
 for (const forbidden of ["internal-entry.js","social-review-center","social-publish-guard","instagram-content-publishing","facebook-page-token","internal-app-pro","product-fulfillment-message-fix.js"]) {
   assert.ok(!packageJson.scripts.start.includes(forbidden), `LINE正式start不得再載入非必要模組：${forbidden}`);
@@ -115,4 +117,4 @@ for (const forbidden of ["internal-entry.js","social-review-center","social-publ
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"), "相容性守門仍需知道龜鹿飲正式交期");
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"), "相容性守門不得把現貨商品寫成5～7工作天");
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
-console.log("PASS：LINE OA獨立正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3真正原圖/個別尺寸、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、健康權威與LINE-only Render start均符合正式規則。");
+console.log("PASS：LINE OA獨立正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3最新真正原圖/個別尺寸、原生單一Rich Menu與精準熱區、六大意圖、快速Webhook、健康權威與LINE-only Render start均符合正式規則。");
