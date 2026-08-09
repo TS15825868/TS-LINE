@@ -11,6 +11,7 @@
 const line = require("@line/bot-sdk");
 
 const VERSION = "20260808-line-oa-clean-mascot-v5";
+const PRODUCT_IMAGE_VERSION = "20260810-products-v3-latest-originals-v3";
 const SOURCE_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/line-oa";
 const BASE = SOURCE_BASE;
 const APPROVED_MASCOT_NAMES = ["welcome", "products", "recommend", "combo", "usage", "faq", "service", "brand"];
@@ -40,9 +41,9 @@ const GENERAL_FULFILLMENT_NOTICE = "龜鹿飲30cc與180cc為接單後安排製�
 
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const CLEAN_DRINK_IMAGE_PATH = "/assets/guilu-drink-30-clean.jpg";
-const CLEAN_DRINK_IMAGE_URL = `${PUBLIC_BASE_URL}${CLEAN_DRINK_IMAGE_PATH}?v=${VERSION}`;
+const CLEAN_DRINK_IMAGE_URL = `${PUBLIC_BASE_URL}${CLEAN_DRINK_IMAGE_PATH}?v=${PRODUCT_IMAGE_VERSION}`;
 const CLEAN_MASCOT_PATH_PREFIX = "/assets/mascot-clean";
-const OFFICIAL_DRINK_SOURCE = "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260805";
+const OFFICIAL_DRINK_SOURCE = `https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=${PRODUCT_IMAGE_VERSION}`;
 let cleanDrinkImagePromise = null;
 const cleanMascotImagePromises = new Map();
 
@@ -186,7 +187,7 @@ function rewriteDrink30Artwork(node) {
   }
   if (node.action && typeof node.action === "object" && typeof node.action.uri === "string" && LEGACY_IMAGE_PATTERN.test(node.action.uri)) {
     node.action.uri = CLEAN_DRINK_IMAGE_URL;
-    if (node.action.label === "看產品DM") node.action.label = "看正確產品圖";
+    if (node.action.label === "看產品DM") node.action.label = "看產品圖";
   }
   for (const value of Object.values(node)) rewriteDrink30Artwork(value);
 }
@@ -324,6 +325,7 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwImageSafetyInstall
 
 module.exports = {
   VERSION,
+  PRODUCT_IMAGE_VERSION,
   BASE,
   SOURCE_BASE,
   PUBLIC_BASE_URL,
