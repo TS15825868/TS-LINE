@@ -10,7 +10,7 @@ const MASTER_PATH = path.join(ROOT, "line-sales-master.json");
 const AUTHORITY_PATH = path.join(ROOT, "assets/data/official-products.json");
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 const MASTER_VERSION = "2026-08-08-canonical-v7-official-originals";
-const PHOTO_VERSION = "2026-08-09-products-v3-user-approved-size-lock-v1";
+const PHOTO_VERSION = "2026-08-10-products-v3-latest-originals-v3";
 
 const CANONICAL_INGREDIENTS = Object.freeze({
   "guilu-gao": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
@@ -148,10 +148,10 @@ function main() {
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts, products-v3 originals and per-product physical scale rules`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts, products-v3 latest originals and per-product physical scale rules`);
     return;
   }
-  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, trial, fulfillment, products-v3 and per-product physical scale rules aligned`);
+  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, trial, fulfillment, products-v3 latest originals and per-product physical scale rules aligned`);
 }
 
 if (require.main === module) {
