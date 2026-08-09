@@ -1,12 +1,13 @@
 "use strict";
 
 /**
- * 仙加味 LINE Rich Menu｜2026-08-09 原生完整單一設計稿 v11 refresh
+ * 仙加味 LINE Rich Menu｜2026-08-10 原生完整單一設計稿 v11 refresh + safe retry
  * - 正式視覺是一個完整 SVG 母稿，不再讀舊 JPG 底圖，也不在執行時補黑塊／貼照片／拼六格素材。
  * - 六個功能區、品牌標頭、文字、圖示、背景與分隔全部在同一份 SVG 中完成。
  * - 執行時只做一次 SVG → JPEG 格式轉換，再上傳 LINE；不使用 sharp.composite。
  * - LINE 點擊熱區只覆蓋六個實際功能面板，品牌標頭與面板間距不再誤觸功能。
  * - refresh 名稱會強制建立新選單，不沿用目前 LINE 裡的舊黑底拼貼版本。
+ * - Render 冷啟動或 LINE API 短暫失敗時最多安全重試 3 次；同步成功即停止，不做無限輪詢。
  */
 const fs = require("fs");
 const path = require("path");
@@ -20,6 +21,7 @@ const DATA_API = "https://api-data.line.me";
 const SINGLE_IMAGE_ONLY = true;
 const RUNTIME_COMPOSITE_FORBIDDEN = true;
 const LEGACY_JPG_TEMPLATE_FORBIDDEN = true;
+const RICH_MENU_RETRY_DELAYS_MS = Object.freeze([3000, 15000, 60000]);
 let syncPromise = null;
 let scheduled = false;
 
@@ -128,19 +130,45 @@ async function syncRichMenu() {
     console.log("仙加味 Rich Menu 已同步原生完整單一設計稿", JSON.stringify(global.__XJW_RICH_MENU_RUNTIME__));
     return global.__XJW_RICH_MENU_RUNTIME__;
   })().catch((error) => {
-    console.warn("仙加味 Rich Menu 同步失敗", error.message || error);
-    return { ok: false, version: VERSION, error: String(error.message || error) };
+    const failed = { ok: false, version: VERSION, error: String(error.message || error), failedAt: new Date().toISOString() };
+    global.__XJW_RICH_MENU_LAST_FAILURE__ = Object.freeze(failed);
+    console.warn("仙加味 Rich Menu 同步失敗", failed.error);
+    return failed;
   }).finally(() => { syncPromise = null; });
   return syncPromise;
 }
 
-function scheduleRichMenuSync(delayMs = 3000) {
-  if (scheduled) return;
-  scheduled = true;
-  const timer = setTimeout(() => { syncRichMenu().catch(() => {}); }, delayMs);
-  if (typeof timer.unref === "function") timer.unref();
+function unrefTimer(timer) {
+  if (typeof timer?.unref === "function") timer.unref();
+  return timer;
 }
 
-const exported = { VERSION, MENU_NAME, STATIC_ARTWORK, SINGLE_IMAGE_ONLY, RUNTIME_COMPOSITE_FORBIDDEN, readArtwork, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
+function scheduleRichMenuSync(delayMs = RICH_MENU_RETRY_DELAYS_MS[0]) {
+  if (scheduled) return;
+  scheduled = true;
+  const delays = [Math.max(0, Number(delayMs) || 0), ...RICH_MENU_RETRY_DELAYS_MS.slice(1)];
+
+  const runAttempt = (index) => {
+    unrefTimer(setTimeout(async () => {
+      const result = await syncRichMenu();
+      global.__XJW_RICH_MENU_LAST_ATTEMPT__ = Object.freeze({
+        ok: Boolean(result?.ok),
+        skipped: Boolean(result?.skipped),
+        attempt: index + 1,
+        maxAttempts: delays.length,
+        version: VERSION,
+        checkedAt: new Date().toISOString(),
+        error: result?.error || result?.reason || "",
+      });
+      if (result?.ok || result?.skipped || index >= delays.length - 1) return;
+      console.warn(`仙加味 Rich Menu 將進行第 ${index + 2}/${delays.length} 次安全重試`);
+      runAttempt(index + 1);
+    }, delays[index]));
+  };
+
+  runAttempt(0);
+}
+
+const exported = { VERSION, MENU_NAME, STATIC_ARTWORK, SINGLE_IMAGE_ONLY, RUNTIME_COMPOSITE_FORBIDDEN, RICH_MENU_RETRY_DELAYS_MS, readArtwork, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
 exported["LEGACY_BASE" + "_TEMPLATE_FORBIDDEN"] = LEGACY_JPG_TEMPLATE_FORBIDDEN;
 module.exports = exported;
