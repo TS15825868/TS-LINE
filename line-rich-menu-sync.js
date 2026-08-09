@@ -1,17 +1,18 @@
 "use strict";
 
 /**
- * 仙加味 LINE Rich Menu｜2026-08-09 原生完整單一設計稿 v11
+ * 仙加味 LINE Rich Menu｜2026-08-09 原生完整單一設計稿 v12
  * - 正式視覺是一個完整 SVG 母稿，不再讀舊 JPG 底圖，也不在執行時補黑塊／貼照片／拼六格素材。
  * - 六個功能區、品牌標頭、文字、圖示、背景與分隔全部在同一份 SVG 中完成。
  * - 執行時只做一次 SVG → JPEG 格式轉換，再上傳 LINE；不使用 sharp.composite。
  * - LINE 點擊熱區只覆蓋六個實際功能面板，品牌標頭與面板間距不再誤觸功能。
+ * - v12 使用新的 MENU_NAME，部署成功後一定建立新選單，不沿用 LINE 目前已存在的舊黑底拼貼選單。
  */
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 
-const VERSION = "20260809-rich-menu-native-single-artwork-v11";
+const VERSION = "20260809-rich-menu-native-single-artwork-v12";
 const MENU_NAME = `仙加味正式選單｜原生完整設計稿｜${VERSION}`;
 const STATIC_ARTWORK = "assets/rich-menu/xianjiawei-rich-menu-v11.svg";
 const API = "https://api.line.me";
@@ -60,7 +61,6 @@ async function buildRichMenuImage() {
 }
 
 function menuDefinition() {
-  // 點擊區直接對齊 SVG 的六個實際面板，不把品牌 Header、面板間距或外框算進功能熱區。
   const columns = [
     { x: 24, width: 785 },
     { x: 857, width: 786 },
