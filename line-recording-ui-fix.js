@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 2026-08-10 LINE OA 正式畫面修正 v7
+ * 2026-08-10 LINE OA 正式畫面修正 v6
  * - 六項產品卡一律使用官網 products-v3 最新真正產品實拍原圖，不使用舊 products-v2、DM或海報版面。
  * - 「產品DM」一律改成「實際產品照片」。
  * - 小老闆依文案語意選擇推薦／搭配／使用／FAQ／客服／品牌／歡迎正式場景。
@@ -10,7 +10,7 @@
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260810-recording-ui-v7-latest-products";
+const VERSION = "20260809-recording-ui-v6-products-v3-size-lock";
 const PRODUCT_IMAGE_VERSION = "20260810-products-v3-latest-originals-v3";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
 
