@@ -3,15 +3,24 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const rich = require("./line-rich-menu-sync");
 
-assert.equal(rich.VERSION, "20260809-rich-menu-single-final-v9-no-composite");
-assert.ok(rich.MENU_NAME.includes("完整成品圖"));
+assert.equal(rich.VERSION, "20260809-rich-menu-single-canvas-v10-cohesive");
+assert.ok(rich.MENU_NAME.includes("單一完整畫布"));
 assert.equal(rich.SINGLE_IMAGE_ONLY, true);
-assert.ok(rich.FINAL_MENU_IMAGE.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
+assert.equal(rich.RUNTIME_COMPOSITE_FORBIDDEN, true);
+assert.ok(rich.BASE_TEMPLATE.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
 const source = fs.readFileSync("line-rich-menu-sync.js", "utf8");
 assert.ok(!source.includes("BOSS_SOURCES"), "Rich Menu不得再維護六張後貼圖片來源");
 assert.ok(!source.includes("CELL_LAYOUTS"), "Rich Menu不得再維護六格圖片拼貼座標");
 assert.ok(!source.includes(".composite("), "Rich Menu不得再用sharp composite拼湊視覺");
 assert.ok(!source.includes("bossOverlay"), "Rich Menu不得再產生每格後貼圖片");
+assert.ok(source.includes("fullCanvasSvg"), "Rich Menu必須以單一完整畫布一次渲染");
+assert.ok(source.includes('visualMode: "single-canvas-vector-redraw"'), "Rich Menu runtime沒有標示單一畫布模式");
+const dummy=Buffer.from('fake');
+const svg=rich.fullCanvasSvg(dummy);
+assert.ok(svg.startsWith('<svg'));
+assert.ok(svg.includes('data:image/jpeg;base64,'));
+assert.equal((svg.match(/<image /g)||[]).length,1,"完整畫布只能有一張品牌母版 image，不得再貼六張圖片");
+assert.ok((svg.match(/<rect /g)||[]).length>=12,"六個視覺區應由同一套向量面板重繪");
 const menu = rich.menuDefinition();
 assert.deepEqual(menu.size, { width: 2500, height: 1686 });
 assert.equal(menu.selected, true);
@@ -20,4 +29,4 @@ assert.deepEqual(menu.areas.map((area) => area.action.label), ["看產品", "購
 assert.deepEqual(menu.areas.map((area) => area.action.text), ["看產品", "查看購買清單", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]);
 assert.equal(menu.areas.reduce((sum, area) => sum + area.bounds.width * area.bounds.height, 0), 2500 * 1686);
 
-console.log("PASS：Rich Menu只接受一張完整2500×1686成品圖，不再使用六格拼貼／composite；六個功能熱區維持正確。");
+console.log("PASS：Rich Menu以單一品牌母版＋一致向量圖示一次完成整體畫布，不再使用六張照片／角色圖拼貼；六個功能熱區維持正確。");
