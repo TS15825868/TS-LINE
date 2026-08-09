@@ -52,12 +52,15 @@ for (const id of ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]) {
 }
 assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.{0,80}(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得含舊300g/600g規格");
 
-assert.equal(rich.VERSION, "20260809-rich-menu-classic-v6-user-preferred");
+assert.equal(rich.VERSION, "20260809-rich-menu-premium-v7-full-visual-zone");
 assert.equal(rich.OVERLAY_FIT, "contain");
-assert.equal(rich.VISUAL_WIDTH, 350);
-assert.equal(rich.VISUAL_HEIGHT, 525);
-assert.equal(rich.BACKGROUND_WIDTH, 370);
-assert.equal(rich.BACKGROUND_HEIGHT, 545);
+assert.equal(rich.VISUAL_WIDTH, 740);
+assert.equal(rich.VISUAL_HEIGHT, 430);
+assert.equal(rich.BACKGROUND_WIDTH, 805);
+assert.equal(rich.BACKGROUND_HEIGHT, 500);
+assert.equal(rich.CELL_LAYOUTS.length, 6);
+assert.ok(rich.CELL_LAYOUTS.slice(0,3).every(cell => cell.bgY + rich.BACKGROUND_HEIGHT <= 600), "Rich Menu第一排圖片不得壓到功能文字");
+assert.ok(rich.CELL_LAYOUTS.slice(3).every(cell => cell.bgY + rich.BACKGROUND_HEIGHT <= 1435), "Rich Menu第二排圖片不得壓到功能文字");
 const menu = rich.menuDefinition();
 assert.deepEqual(menu.areas.map(a => a.action.label), ["看產品","購物車","幫我推薦","搭配組合","怎麼使用","直接下單"]);
 assert.deepEqual(menu.areas.map(a => a.action.text), ["看產品","查看購買清單","幫我推薦","搭配組合","怎麼使用","直接下單"]);
@@ -78,10 +81,10 @@ assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf
 for (const field of ["lastWebhookAt", "lastReplySuccessAt", "lastReplyError"]) assert.ok(serverSource.includes(field), `LINE health 缺少 ${field}`);
 assert.ok(internalEntrySource.indexOf("app.listen(port") < internalEntrySource.indexOf("await bridge.restoreAll()"), "LINE 必須先 listen 再做 Supabase/ERP restore");
 assert.ok(syncSource.includes('PHOTO_VERSION = "2026-08-09-products-v3-user-approved-size-lock-v1"'), "prestart 必須驗 products-v3 權威");
-assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write");
+assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-production-readiness.test.js", "Render prestart 必須先同步正式母本，再執行完整正式驗收");
 assert.ok(packageJson.scripts.start.includes("product-fulfillment-message-fix.js"), "正式啟動必須載入出貨訊息邊界修正");
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"));
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"));
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
 
-console.log("PASS：LINE OA 正式上線條件完整：六產品/價格/出貨/products-v3/尺寸、六格Rich Menu、六大意圖、快速Webhook與冷啟動均符合正式規則。");
+console.log("PASS：LINE OA 正式上線條件完整：六產品/價格/出貨/products-v3/尺寸、滿寬高級六格Rich Menu、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
