@@ -16,7 +16,9 @@ const path = require("path");
 
 const VERSION = "v401.6";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
-const ORDER_NOTICE = "訂單資料與付款方式確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計。";
+const DRINK_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
+const READY_STOCK_ORDER_NOTICE = "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。";
+const MIXED_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作，約需5～7個工作天；龜鹿膏、龜鹿湯塊、龜鹿膠與鹿茸粉依現貨狀況安排。物流配送時間另計。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
 const STATE_TTL_MS = Number(process.env.STATE_TTL_MS || 24 * 60 * 60 * 1000);
@@ -118,6 +120,46 @@ function absoluteUrl(asset = "") {
 
 function getProduct(id) {
   return DATA.products.find((product) => product.id === id) || null;
+}
+
+function orderNoticeForProduct(product) {
+  if (!product) return MIXED_ORDER_NOTICE;
+  if (String(product.fulfillmentNotice || "").trim()) return String(product.fulfillmentNotice).trim();
+  return product.fulfillmentType === "made-to-order-drink" || product.readyStock === false
+    ? DRINK_ORDER_NOTICE
+    : READY_STOCK_ORDER_NOTICE;
+}
+
+function orderNoticeForCombo(combo) {
+  const products = (combo?.products || []).map((item) => getProduct(item.productId)).filter(Boolean);
+  if (!products.length) return MIXED_ORDER_NOTICE;
+  const hasDrink = products.some((product) => product.fulfillmentType === "made-to-order-drink" || product.readyStock === false);
+  const hasReady = products.some((product) => product.fulfillmentType !== "made-to-order-drink" && product.readyStock !== false);
+  if (hasDrink && hasReady) return MIXED_ORDER_NOTICE;
+  return hasDrink ? DRINK_ORDER_NOTICE : READY_STOCK_ORDER_NOTICE;
+}
+
+function orderNoticeForCart(cart = []) {
+  if (!cart.length) return MIXED_ORDER_NOTICE;
+  if (cart.some((item) => item.trial)) return String(DATA.trialCampaign?.fulfillmentRule || DRINK_ORDER_NOTICE);
+  const products = [];
+  for (const item of cart) {
+    if (Number.isInteger(item.comboIndex)) {
+      const combo = getCombo(item.comboIndex);
+      for (const component of combo?.products || []) {
+        const product = getProduct(component.productId);
+        if (product) products.push(product);
+      }
+    } else {
+      const product = getProduct(item.id);
+      if (product) products.push(product);
+    }
+  }
+  if (!products.length) return MIXED_ORDER_NOTICE;
+  const hasDrink = products.some((product) => product.fulfillmentType === "made-to-order-drink" || product.readyStock === false);
+  const hasReady = products.some((product) => product.fulfillmentType !== "made-to-order-drink" && product.readyStock !== false);
+  if (hasDrink && hasReady) return MIXED_ORDER_NOTICE;
+  return hasDrink ? DRINK_ORDER_NOTICE : READY_STOCK_ORDER_NOTICE;
 }
 
 function cleanupExpiredStates(now = Date.now()) {
@@ -313,7 +355,7 @@ function productBubble(product) {
     : "";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
-  const dmUrl = absoluteUrl(product.dmImage || product.image || "images/logo.png");
+  const productPhotoUrl = absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png");
 
   return {
     type: "bubble",
@@ -340,7 +382,7 @@ function productBubble(product) {
           color: "#555555",
           wrap: true,
         },
-        { type: "text", text: ORDER_NOTICE, size: "sm", color: "#7B1E1E", weight: "bold", wrap: true },
+        { type: "text", text: orderNoticeForProduct(product), size: "sm", color: "#7B1E1E", weight: "bold", wrap: true },
       ],
     },
     footer: {
@@ -362,7 +404,7 @@ function productBubble(product) {
         {
           type: "button",
           style: "secondary",
-          action: { type: "uri", label: "看產品DM", uri: dmUrl },
+          action: { type: "uri", label: "看實際產品照片", uri: productPhotoUrl },
         },
         {
           type: "button",
@@ -402,9 +444,9 @@ function priceCarousel() {
         const offers = product.offers.length
           ? `\n\n活動：\n${product.offers.map((offer) => `・${offer.label} ${money(offer.total)}`).join("\n")}`
           : "";
-        return flexCard(product.displayName, `規格：${product.spec}\n${original}${offers}\n\n${ORDER_NOTICE}`, [
+        return flexCard(product.displayName, `規格：${product.spec}\n${original}${offers}\n\n${orderNoticeForProduct(product)}`, [
           { label: "選擇數量", text: `選擇數量｜${product.id}` },
-          { label: "看產品DM", uri: absoluteUrl(product.dmImage || product.image || "images/logo.png") },
+          { label: "看實際產品照片", uri: absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png") },
           { label: "看產品", text: "看產品" },
         ]).contents;
       }),
@@ -440,7 +482,7 @@ function qtyMenu(product) {
   buttons.push({ label: "返回產品", text: "看產品" });
   return flexCard(
     `${product.displayName}｜選擇數量`,
-    `${ORDER_NOTICE}\n\n活動與優惠：\n${promotionLines.map((line) => `・${line}`).join("\n")}\n\n請選擇要加入購物車的數量。`,
+    `${orderNoticeForProduct(product)}\n\n活動與優惠：\n${promotionLines.map((line) => `・${line}`).join("\n")}\n\n請選擇要加入購物車的數量。`,
     buttons
   );
 }
@@ -491,7 +533,7 @@ function cartFlex(state) {
   };
 
   if (!state.cart.length) {
-    return buildCartCard(`目前購物車是空的。\n\n${ORDER_NOTICE}`, [
+    return buildCartCard(`目前購物車是空的。\n\n${MIXED_ORDER_NOTICE}`, [
       { label: "看產品", text: "看產品" },
       { label: "價格方案", text: "價格方案" },
     ]);
@@ -501,7 +543,7 @@ function cartFlex(state) {
     .map((item, index) => `${index + 1}. ${item.name}\n數量：${item.qty}${item.unit}\n方案：${item.label}\n小計：${money(item.total)}`)
     .join("\n\n");
 
-  return buildCartCard(`${lines}\n\n合計：${money(cartTotal(state.cart))}\n\n${ORDER_NOTICE}`, [
+  return buildCartCard(`${lines}\n\n合計：${money(cartTotal(state.cart))}\n\n${orderNoticeForCart(state.cart)}`, [
     { label: "直接結帳", text: "開始結帳" },
     { label: "繼續選購", text: "看產品" },
     { label: "清空購物車", text: "清空購物車" },
@@ -548,7 +590,7 @@ function mascotWelcomeReply() {
     altText: "歡迎來到仙加味",
     contents: mascotBubble(
       "歡迎來到仙加味",
-      `您好，歡迎來到仙加味。\n\n我可以帶您查看六項產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。\n\n${ORDER_NOTICE}`,
+      `您好，歡迎來到仙加味。\n\n我可以帶您查看六項產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。\n\n${MIXED_ORDER_NOTICE}`,
       [
         { label: "看產品", text: "看產品" },
         { label: "幫我推薦", text: "幫我推薦" },
@@ -610,7 +652,7 @@ function comboReply() {
     `搭配組合以產品型態、使用方式與生活情境為主：
 
 ・固定日常安排：龜鹿膏
-・方便即飲：龜鹿飲30cc
+・方便即飲：龜鹿飲30cc小玻璃罐／180cc鋁袋
 ・沖泡與料理：龜鹿湯塊
 ・家庭長期使用：龜鹿膠
 ・自行搭配飲品：鹿茸粉
@@ -668,7 +710,7 @@ function comboQtyMenu(index) {
     `可選組數：${quantities.join("、")}組`,
     ...(promotionLines.length ? ["", "已套用活動／優惠：", ...promotionLines.map((line) => `・${line}`)] : []),
     "",
-    ORDER_NOTICE,
+    orderNoticeForCombo(combo),
   ].join("\n");
   const buttons = quantities.map((qty) => ({
     label: `${qty}組｜${money(unitPrice * qty)}`.slice(0, 20),
@@ -724,6 +766,8 @@ function comboMenuReply() {
             `每組售價：${money(unitPrice)}`,
             `可選組數：${quantities.join("、")}組`,
             ...(promotions.length ? ["", "活動／優惠已套用：", ...promotions.map((line) => `・${line}`)] : []),
+            "",
+            orderNoticeForCombo(combo),
           ].join("\n");
           return flexCard(combo.name, description, [
             { label: "選擇組數", text: `搭配組數｜${index}` },
@@ -749,7 +793,7 @@ function usageChooserReply() {
       contents: [
         mascotBubble(
           "產品使用方式導覽",
-          "先選擇想了解的產品，再查看正式使用方式、成分、完整介紹與產品DM。",
+          "先選擇想了解的產品，再查看正式使用方式、成分、完整介紹與實際產品照片。",
           [
             { label: "看產品", text: "看產品" },
             { label: "幫我推薦", text: "幫我推薦" },
@@ -765,11 +809,11 @@ function usageChooserReply() {
 function usageReply(product) {
   return flexCard(
     `${product.displayName}｜使用方式`,
-    `${(product.usage || []).join("\n\n")}\n\n成分：${(product.ingredients || []).join("、")}\n\n${ORDER_NOTICE}`,
+    `${(product.usage || []).join("\n\n")}\n\n成分：${(product.ingredients || []).join("、")}\n\n${orderNoticeForProduct(product)}`,
     [
       { label: "選擇數量", text: `選擇數量｜${product.id}` },
       { label: "完整介紹", uri: absoluteUrl(product.page || "products.html") },
-      { label: "看產品DM", uri: absoluteUrl(product.dmImage || product.image || "images/logo.png") },
+      { label: "看實際產品照片", uri: absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png") },
     ]
   );
 }
@@ -853,9 +897,33 @@ function detectProduct(text) {
   return null;
 }
 
+function trialShippingOptions() {
+  return (DATA.trialCampaign?.shippingOptions || [])
+    .map((option) => ({
+      id: String(option.id || "").trim(),
+      label: String(option.label || "").trim(),
+      fee: Number(option.fee),
+    }))
+    .filter((option) => option.id && option.label && Number.isFinite(option.fee) && option.fee >= 0);
+}
+
+function trialShippingOption(choice) {
+  const value = String(choice || "");
+  const options = trialShippingOptions();
+  return options.find((option) => value.includes(option.id) || value.includes(option.label) || (/7-11/.test(value) && /7-11/.test(option.label)) || (/宅配/.test(value) && /宅配/.test(option.label))) || null;
+}
 
 function trialCampaignReply() {
   const trial = DATA.trialCampaign || {};
+  const shippingOptions = trialShippingOptions();
+  const shippingLines = shippingOptions.length
+    ? shippingOptions.map((option) => `${option.label}運費${money(option.fee)}`)
+    : ["配送費用由客服確認"];
+  const buttons = shippingOptions.slice(0, 2).map((option) => ({
+    label: `${option.label}${money(option.fee)}`.slice(0, 20),
+    text: `試喝配送｜${option.id}`,
+  }));
+  buttons.push({ label: "看正式售價", text: "價格方案" });
   return {
     type: "flex",
     altText: trial.title || "龜鹿飲30cc試喝組",
@@ -864,35 +932,41 @@ function trialCampaignReply() {
       [
         "內容：" + (trial.contents || "30cc小玻璃罐×3罐"),
         trial.productFeeText || "試喝品免費",
-        "7-11店到店運費60元",
-        "郵局宅配運費100元",
+        ...shippingLines,
         "",
         trial.limitRule || "每位顧客、聯絡電話及收件地址限申請一次",
-        trial.fulfillmentRule || "資料及運費確認後安排製作加工，製作加工約需5～7個工作天；完成後才安排出貨，物流配送時間另計",
+        trial.paymentRule || "試喝運費需先確認並完成付款，試喝組不使用貨到付款",
+        trial.fulfillmentRule || DRINK_ORDER_NOTICE,
         "",
-        trial.publicPrice || "正式售價50元／罐；買10送1，共11罐500元",
+        trial.publicPrice || "正式售價與活動請查看價格方案或由客服確認。",
       ].join("\n"),
-      [
-        { label: "7-11運費60元", text: "試喝配送｜7-11" },
-        { label: "宅配運費100元", text: "試喝配送｜宅配" },
-        { label: "看正式售價", text: "價格方案" },
-      ],
+      buttons,
       "service"
     ),
   };
 }
 
 function startTrialCheckout(state, shippingChoice) {
-  const isStore = /7-11/.test(shippingChoice);
-  const shipping = isStore ? "7-11賣貨便" : "宅配";
-  const fee = isStore ? 60 : 100;
+  const trial = DATA.trialCampaign || {};
+  const option = trialShippingOption(shippingChoice);
+  if (!option) {
+    return flexCard(
+      "試喝配送待確認",
+      "目前無法讀取正式試喝配送費用，請先由人工客服協助確認，不會自行猜測運費。",
+      [{ label: "人工客服", text: "我要人工客服" }, { label: "重新申請", text: "申請試喝" }]
+    );
+  }
+  const shipping = option.label;
+  const fee = option.fee;
+  const trialName = String(trial.title || "龜鹿飲30cc試喝組");
+  const trialContents = String(trial.contents || "30cc小玻璃罐×3罐");
   state.cart = [{
     id: "guilu-drink-30-trial",
-    name: "龜鹿飲30cc試喝組（3罐）",
+    name: `${trialName}（${trialContents.replace(/^30cc小玻璃罐×/, "").replace(/罐$/, "罐")}）`,
     qty: 1,
     unit: "組",
     total: fee,
-    label: "試喝品免費｜" + shipping + "運費" + fee + "元",
+    label: `試喝品免費｜${shipping}運費${fee}元`,
     trial: true,
   }];
   state.checkout = {
@@ -907,7 +981,7 @@ function startTrialCheckout(state, shippingChoice) {
   };
   return flexCard(
     "申請試喝｜第一步",
-    "龜鹿飲30cc小玻璃罐×3罐，試喝品免費；本次僅收" + shipping + "運費" + fee + "元。\n\n請直接回覆收件人姓名。",
+    `${trialContents}，${trial.productFeeText || "試喝品免費"}；本次僅收${shipping}運費${fee}元。\n\n請直接回覆收件人姓名。`,
     [{ label: "取消", text: "取消" }]
   );
 }
@@ -921,7 +995,7 @@ function orderSummary(state) {
   const checkout = state.checkout;
   return flexCard(
     "確認訂單",
-    `姓名：${checkout.name}\n電話：${checkout.phone}\n付款：${checkout.payment}\n配送：${checkout.shipping}\n地址／門市：${checkout.address}\n訂單金額：${money(cartTotal(state.cart))}\n\n${ORDER_NOTICE}`,
+    `姓名：${checkout.name}\n電話：${checkout.phone}\n付款：${checkout.payment}\n配送：${checkout.shipping}\n地址／門市：${checkout.address}\n訂單金額：${money(cartTotal(state.cart))}\n\n${orderNoticeForCart(state.cart)}`,
     [
       { label: "確認送出", text: "確認送出" },
       { label: "取消", text: "取消" },
@@ -978,7 +1052,7 @@ async function continueCheckout(event, state, text) {
       checkout.step = "address";
       return reply(event.replyToken, flexCard(
         "第三步｜地址或門市",
-        checkout.shipping === "7-11賣貨便" ? "請回覆7-11門市名稱或門市地址。" : "請回覆完整收件地址。",
+        /7-11/.test(checkout.shipping) ? "請回覆7-11門市名稱或門市地址。" : "請回覆完整收件地址。",
         [{ label: "取消", text: "取消" }]
       ));
     }
@@ -1046,6 +1120,7 @@ async function continueCheckout(event, state, text) {
   if (checkout.step === "confirm") {
     if (!/確認送出|確認|送出/.test(text)) return reply(event.replyToken, orderSummary(state));
 
+    const finalNotice = orderNoticeForCart(state.cart);
     const payload = {
       userId: event.source.userId || "",
       cart: state.cart,
@@ -1079,7 +1154,7 @@ async function continueCheckout(event, state, text) {
       event.replyToken,
       flexCard(
         "訂單已送出",
-        `${orderId ? `訂單編號：${orderId}\n` : ""}客服會確認商品、付款、配送與出貨順序。\n\n${ORDER_NOTICE}`,
+        `${orderId ? `訂單編號：${orderId}\n` : ""}客服會確認商品、付款、配送與出貨順序。\n\n${finalNotice}`,
         [
           { label: "再次選購", text: "看產品" },
           { label: "人工客服", text: "我要人工客服" },
@@ -1274,7 +1349,7 @@ async function handleMessage(event) {
   if (/到貨|現貨|上架|可以買|能買|開放下單|何時出貨|出貨時間|盒子|盒裝/.test(text)) {
     return reply(
       event.replyToken,
-      textMsg(`${ORDER_NOTICE}\n\n可先選擇產品與數量完成訂購安排；實際出貨時間、配送方式與優惠由客服再協助確認。`, mainQuick())
+      textMsg(`${MIXED_ORDER_NOTICE}\n\n可先選擇產品與數量完成訂購安排；實際出貨時間、配送方式與優惠由客服再協助確認。`, mainQuick())
     );
   }
 
@@ -1291,7 +1366,7 @@ async function handleMessage(event) {
   return reply(
     event.replyToken,
     textMsg(
-      `您好，歡迎來到仙加味。\n\n${ORDER_NOTICE}\n\n您可以直接輸入產品名稱、價格、怎麼選、搭配組合、怎麼使用、品牌故事、購物車或人工客服。`,
+      `您好，歡迎來到仙加味。\n\n${MIXED_ORDER_NOTICE}\n\n您可以直接輸入產品名稱、價格、怎麼選、搭配組合、怎麼使用、品牌故事、購物車或人工客服。`,
       mainQuick()
     )
   );
@@ -1372,7 +1447,13 @@ module.exports = {
   app,
   DATA,
   VERSION,
+  DRINK_ORDER_NOTICE,
+  READY_STOCK_ORDER_NOTICE,
+  MIXED_ORDER_NOTICE,
   getProduct,
+  orderNoticeForProduct,
+  orderNoticeForCombo,
+  orderNoticeForCart,
   detectProduct,
   calcItem,
   addCart,
@@ -1397,6 +1478,10 @@ module.exports = {
   huangdiNeijingReply,
   brandStoryReply,
   faqReply,
+  trialCampaignReply,
+  trialShippingOptions,
+  trialShippingOption,
+  startTrialCheckout,
   isSensitiveHealthQuestion,
   validateData,
   sanitizeUserText,
