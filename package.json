@@ -1,6 +1,6 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "6.3.17",
+  "version": "6.3.18",
   "main": "internal-entry.js",
   "engines": {"node": "22.x"},
   "scripts": {
@@ -14,5 +14,5 @@
     "check:catalog": "node tools/sync_sales_master.js"
   },
   "dependencies": {"@line/bot-sdk": "10.8.0", "express": "^4.18.2", "satori": "0.28.0", "sharp": "^0.34.3"},
-  "description": "仙加味 LINE OA 正式版｜六個正式產品與正式規格｜products-v3使用者核准產品原圖與實際比例鎖｜經典六格Rich Menu保留正確六功能｜Render啟動前完整正式驗收｜龜鹿飲5～7工作天、其他產品依現貨｜龜鹿湯塊只有75g"
+  "description": "仙加味 LINE OA 正式版｜六個正式產品與正式規格｜products-v3使用者核准產品原圖與實際比例鎖｜單一完整畫布Rich Menu、不拼貼六張素材｜Render啟動前完整正式驗收｜龜鹿飲5～7工作天、其他產品依現貨｜龜鹿湯塊只有75g"
 }
