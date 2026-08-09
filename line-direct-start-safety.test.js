@@ -8,10 +8,13 @@ assert.equal(safety.VERSION, "20260809-direct-start-products-v3-size-lock-v4");
 assert.equal(safety.photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v6"));
 assert.equal(safety.schedulePolicy.VERSION, "20260808-tue1930-sat0930-v2-idempotent");
-assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-classic-v6-user-preferred");
+assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-premium-v7-full-visual-zone");
 assert.equal(safety.richMenuSync.OVERLAY_FIT, "contain");
-assert.equal(safety.richMenuSync.VISUAL_WIDTH, 350);
-assert.equal(safety.richMenuSync.VISUAL_HEIGHT, 525);
+assert.equal(safety.richMenuSync.VISUAL_WIDTH, 740);
+assert.equal(safety.richMenuSync.VISUAL_HEIGHT, 430);
+assert.equal(safety.richMenuSync.BACKGROUND_WIDTH, 805);
+assert.equal(safety.richMenuSync.BACKGROUND_HEIGHT, 500);
+assert.equal(safety.richMenuSync.CELL_LAYOUTS.length, 6);
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
 const data = JSON.parse(raw);
@@ -52,4 +55,4 @@ const menu = safety.richMenuSync.menuDefinition();
 assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：Render直接啟動保留products-v3正式原圖與尺寸鎖；Rich Menu使用偏好的經典六格比例，功能意圖仍維持新版正確設定。");
+console.log("PASS：Render直接啟動保留products-v3正式原圖與尺寸鎖；Rich Menu採滿寬米白安全展示區，功能意圖仍維持正確設定。");
