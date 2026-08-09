@@ -8,21 +8,25 @@ assert.equal(safety.VERSION, "20260809-direct-start-products-v3-size-lock-v4");
 assert.equal(safety.photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v6"));
 assert.equal(safety.schedulePolicy.VERSION, "20260808-tue1930-sat0930-v2-idempotent");
-assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-single-canvas-v10-cohesive");
+assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-native-single-artwork-v11");
 assert.equal(safety.richMenuSync.SINGLE_IMAGE_ONLY, true);
 assert.equal(safety.richMenuSync.RUNTIME_COMPOSITE_FORBIDDEN, true);
-assert.ok(safety.richMenuSync.BASE_TEMPLATE.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
-const richSource=fs.readFileSync(path.join(__dirname,"line-rich-menu-sync.js"),"utf8");
+assert.equal(safety.richMenuSync.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
+assert.equal(safety.richMenuSync.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v11.svg");
+
+const richSource = fs.readFileSync(path.join(__dirname, "line-rich-menu-sync.js"), "utf8");
+const richArtwork = fs.readFileSync(path.join(__dirname, safety.richMenuSync.STATIC_ARTWORK), "utf8");
+assert.ok(!richSource.includes("BASE_TEMPLATE"));
 assert.ok(!richSource.includes("BOSS_SOURCES"));
 assert.ok(!richSource.includes("CELL_LAYOUTS"));
 assert.ok(!richSource.includes(".composite("));
-assert.ok(richSource.includes("fullCanvasSvg"));
-const canvas=safety.richMenuSync.fullCanvasSvg(Buffer.from("fake"));
-assert.equal((canvas.match(/<image /g)||[]).length,1,"Rich Menu不得塞六張圖片，只能用一張品牌母版一次重繪");
+assert.ok(!/<image\b/i.test(richArtwork), "Rich Menu不得內嵌舊底圖或照片拼貼");
+assert.equal((richArtwork.match(/rx=\"38\"/g) || []).length, 6, "Rich Menu應有六個原生完整面板");
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
 const data = JSON.parse(raw);
 assert.equal(data.products.length, 6);
+const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
 for (const product of data.products) {
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
     assert.ok(String(product[field] || "").includes("/images/products-v3/"), `${product.id}.${field} direct-start仍非products-v3正式原圖`);
@@ -30,14 +34,17 @@ for (const product of data.products) {
     assert.ok(!String(product[field] || "").includes("/images/dm-final/"), `${product.id}.${field} direct-start仍含舊DM`);
   }
   assert.equal(product.imagePolicy, "approved-original-product-photo-contain-no-crop");
-  assert.equal(product.physicalScalePolicy, "uniform-only-preserve-realistic-product-scale");
+  assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id} 缺少產品個別尺寸／比例規則`);
 }
+assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|30cc.*小玻璃|小玻璃.*30cc/i, "30cc必須保留小玻璃罐實際尺寸規則");
+assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長.*鋁袋|鋁袋.*狹長/i, "180cc必須保留狹長鋁袋比例規則");
+assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得回復300g／600g舊規格");
 assert.equal(data.productPhotoAuthorityVersion, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.equal(data.runtime.productMainImageSource, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 assert.equal(data.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
 assert.equal(data.runtime.schedulePolicyVersion, "20260808-tue1930-sat0930-v2-idempotent");
-assert.ok(String(data.runtime.richMenuSyncVersion||"").includes("rich-menu"));
+assert.ok(String(data.runtime.richMenuSyncVersion || "").includes("rich-menu"));
 
 const oldBubble = {type:"bubble",hero:{type:"image",url:"https://example.com/old.jpg"},body:{type:"box",layout:"vertical",contents:[{type:"text",text:"龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）"},{type:"text",text:"每組售價：$6,400"}]},footer:{type:"box",layout:"vertical",contents:[{type:"button",action:{type:"uri",label:"看產品DM",uri:"https://example.com/old-dm.jpg"}}]}};
 safety.recordingUiFix.applyVisualFix(oldBubble);
@@ -46,7 +53,11 @@ assert.equal(oldBubble.hero.aspectMode, "fit");
 assert.equal(oldBubble.xjwProductScalePolicy, "uniform-only-no-crop-no-stretch");
 assert.equal(oldBubble.footer.contents[0].action.label, "看實際產品照片");
 assert.equal(oldBubble.body.contents[1].text, "商品合計：$6,400");
+
 const menu = safety.richMenuSync.menuDefinition();
+assert.equal(menu.areas.at(0).bounds.y, 176, "品牌Header不得成為熱區");
+assert.equal(menu.areas.at(-1).bounds.y, 875);
 assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
-console.log("PASS：Render直接啟動保留products-v3正式原圖與尺寸鎖；Rich Menu以單一完整畫布重繪，不再使用照片拼貼，六功能意圖維持正確。");
+
+console.log("PASS：Render直接啟動保留products-v3正式原圖與每項產品個別尺寸鎖；Rich Menu使用原生完整單一母稿，六功能熱區精準對齊面板且Header不誤觸。");
