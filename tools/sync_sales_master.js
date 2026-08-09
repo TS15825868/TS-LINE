@@ -10,6 +10,7 @@ const MASTER_PATH = path.join(ROOT, "line-sales-master.json");
 const AUTHORITY_PATH = path.join(ROOT, "assets/data/official-products.json");
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 const MASTER_VERSION = "2026-08-08-canonical-v7-official-originals";
+const PHOTO_VERSION = "2026-08-09-products-v3-user-approved-size-lock-v1";
 
 const CANONICAL_INGREDIENTS = Object.freeze({
   "guilu-gao": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
@@ -20,12 +21,12 @@ const CANONICAL_INGREDIENTS = Object.freeze({
   "luerong-fen": ["鹿茸"],
 });
 const OFFICIAL_IMAGE_PATHS = Object.freeze({
-  "guilu-gao": "/images/products-v2/guilu-gao.jpeg",
-  "guilu-drink-30": "/images/products-v2/guilu-drink-30.jpeg",
-  "guilu-drink-180": "/images/products-v2/guilu-drink-180.jpeg",
-  "guilu-tangkuai": "/images/products-v2/guilu-tangkuai.jpeg",
-  "guilu-jiao": "/images/products-v2/guilu-jiao-open-new.jpg",
-  "luerong-fen": "/images/products-v2/luerong-fen.jpeg",
+  "guilu-gao": "/images/products-v3/guilu-gao.jpg",
+  "guilu-drink-30": "/images/products-v3/guilu-drink-30.jpg",
+  "guilu-drink-180": "/images/products-v3/guilu-drink-180.jpg",
+  "guilu-tangkuai": "/images/products-v3/guilu-tangkuai.jpg",
+  "guilu-jiao": "/images/products-v3/guilu-jiao.jpg",
+  "luerong-fen": "/images/products-v3/luerong-fen.jpg",
 });
 
 function hasBuyTenGetOne(product, unitPrice) {
@@ -38,11 +39,12 @@ function hasBuyTenGetOne(product, unitPrice) {
 function sameArray(left, right) { return JSON.stringify(left || []) === JSON.stringify(right || []); }
 function assertOfficialImageSlots(product, id) {
   const expected = OFFICIAL_IMAGE_PATHS[id];
-  if (!expected) throw new Error(`${id}缺少實際產品照片權威路徑`);
+  if (!expected) throw new Error(`${id}缺少正式產品原圖權威路徑`);
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
-    if (!String(product?.[field] || "").includes(expected)) throw new Error(`${id}.${field} 未使用products-v2實際產品照片`);
+    if (!String(product?.[field] || "").includes(expected)) throw new Error(`${id}.${field} 未使用products-v3正式產品原圖`);
   }
-  if (product.imagePolicy !== "actual-product-photo-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
+  if (product.imagePolicy !== "approved-original-product-photo-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
+  if (product.physicalScalePolicy !== "uniform-only-preserve-realistic-product-scale") throw new Error(`${id}實際尺寸比例政策不同步`);
 }
 function assertSoupAuthority(product) {
   if (!product) throw new Error("龜鹿湯塊不存在");
@@ -64,8 +66,8 @@ function main() {
 
   if (master.version !== merged.salesMasterVersion) throw new Error("正式銷售主檔版本套用失敗");
   if (master.version !== MASTER_VERSION) throw new Error(`正式主檔版本不是目前v7：${master.version}`);
-  if (photoAuthority.version !== "2026-08-08-products-v2-actual-photo-v1") throw new Error("實際產品照片權威版本不同步");
-  if (Object.keys(photoAuthority.products || {}).length !== 6) throw new Error("實際產品照片權威必須剛好6項");
+  if (photoAuthority.version !== PHOTO_VERSION) throw new Error(`正式產品照片權威版本不同步：${photoAuthority.version}`);
+  if (Object.keys(photoAuthority.products || {}).length !== 6) throw new Error("正式產品照片權威必須剛好6項");
   if ((merged.offers?.comboOffers || []).length !== 3) throw new Error("正式組合必須是3組");
   if ((merged.combos || []).length !== 3) throw new Error("根層正式組合資料必須是3組");
   if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6個分類，目前${merged.products?.length || 0}項`);
@@ -119,15 +121,17 @@ function main() {
   if (drink30?.priceLabel !== "正式售價60元／罐，買10送1（共11罐600元）") throw new Error("30cc正式價格文案不同步");
   if (merged.trialCampaign?.publicPrice !== "龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元") throw new Error("試喝方案公開價格不同步");
   if (merged.fulfillmentPolicy?.version !== "2026-08-08-v5") throw new Error("出貨政策版本不同步");
-  if (merged.runtime?.imagePolicy?.dmFallback !== "actual-product-photo-until-new-dm-reviewed") throw new Error("DM實際產品照片回退政策未啟用");
-  if (merged.runtime?.imagePolicy?.productMainImageSource !== "products-v2-actual-photos") throw new Error("產品主圖沒有鎖到products-v2");
+  if (merged.runtime?.imagePolicy?.dmFallback !== "approved-original-photo-until-current-dm-reviewed") throw new Error("DM正式產品原圖回退政策未啟用");
+  if (merged.runtime?.imagePolicy?.productMainImageSource !== "products-v3-user-approved-originals") throw new Error("產品主圖沒有鎖到products-v3");
+  if (merged.runtime?.imagePolicy?.productsV2Use !== "legacy-reference-only") throw new Error("舊products-v2沒有降級為歷史參考");
+  if (merged.runtime?.imagePolicy?.productScalePolicy !== "uniform-only-no-equal-height-equal-width") throw new Error("產品實際比例政策沒有啟用");
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts and all image/DM slots use products-v2 actual photos`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts and all image slots use products-v3 approved originals`);
     return;
   }
-  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, fulfillment and products-v2 actual-photo policy aligned`);
+  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, fulfillment and products-v3 scale-locked photo policy aligned`);
 }
 
 if (require.main === module) {
@@ -135,4 +139,4 @@ if (require.main === module) {
   catch (error) { console.error(error.message || error); process.exit(1); }
 }
 
-module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION };
+module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION, PHOTO_VERSION };
