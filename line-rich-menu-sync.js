@@ -1,23 +1,23 @@
 "use strict";
 
 /**
- * 仙加味 LINE Rich Menu｜2026-08-09
- * - 回到使用者偏好的經典六格視覺比例：圖片不要撐滿整格，功能文字更清楚。
- * - 保留目前已修正的六個功能意圖與點擊範圍。
- * - 小老闆固定 contain，不裁頭、裁手、裁腳。
- * - 「直接下單」先進產品選擇；購物車有商品後才進結帳。
+ * 仙加味 LINE Rich Menu｜2026-08-09 正式視覺 v7
+ * - 保留既有深藍＋金線＋六格功能文字的品牌母版。
+ * - 每格圖像區改為接近滿寬的米白展示面，不再出現左右大片黑底。
+ * - 圖像完整 contain，不裁頭、裁手、裁腳，不覆蓋下方功能標題。
+ * - 六個功能意圖維持正式設定；「直接下單」先進產品選擇。
  */
 const sharp = require("sharp");
 
-const VERSION = "20260809-rich-menu-classic-v6-user-preferred";
-const MENU_NAME = `仙加味正式選單｜經典六格｜${VERSION}`;
+const VERSION = "20260809-rich-menu-premium-v7-full-visual-zone";
+const MENU_NAME = `仙加味正式選單｜高級六格｜${VERSION}`;
 const BASE_MENU = "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg";
-const ASSET_VERSION = "20260809-02";
+const ASSET_VERSION = "20260809-03";
 const OVERLAY_FIT = "contain";
-const VISUAL_WIDTH = 350;
-const VISUAL_HEIGHT = 525;
-const BACKGROUND_WIDTH = 370;
-const BACKGROUND_HEIGHT = 545;
+const VISUAL_WIDTH = 740;
+const VISUAL_HEIGHT = 430;
+const BACKGROUND_WIDTH = 805;
+const BACKGROUND_HEIGHT = 500;
 const BOSS_SOURCES = [
   `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
   `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
@@ -28,6 +28,14 @@ const BOSS_SOURCES = [
 ];
 const API = "https://api.line.me";
 const DATA_API = "https://api-data.line.me";
+const CELL_LAYOUTS = Object.freeze([
+  { bgX: 14, bgY: 90, imgX: 47, imgY: 115 },
+  { bgX: 847, bgY: 90, imgX: 880, imgY: 115 },
+  { bgX: 1681, bgY: 90, imgX: 1714, imgY: 115 },
+  { bgX: 14, bgY: 933, imgX: 47, imgY: 958 },
+  { bgX: 847, bgY: 933, imgX: 880, imgY: 958 },
+  { bgX: 1681, bgY: 933, imgX: 1714, imgY: 958 },
+]);
 let syncPromise = null;
 let scheduled = false;
 
@@ -59,27 +67,24 @@ async function bossOverlay(buffer, width = VISUAL_WIDTH, height = VISUAL_HEIGHT)
       background: { r: 239, g: 228, b: 210, alpha: 1 },
       withoutEnlargement: true,
     })
-    .jpeg({ quality: 88, mozjpeg: true })
+    .flatten({ background: { r: 239, g: 228, b: 210 } })
+    .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
 }
 
 async function buildRichMenuImage() {
   const [base, ...bosses] = await Promise.all([fetchBuffer(BASE_MENU), ...BOSS_SOURCES.map(fetchBuffer)]);
   const overlays = await Promise.all(bosses.map((buffer) => bossOverlay(buffer)));
-  const cells = [
-    { x: 18, y: 220 }, { x: 851, y: 220 }, { x: 1685, y: 220 },
-    { x: 18, y: 1063 }, { x: 851, y: 1063 }, { x: 1685, y: 1063 },
-  ];
-  const backgroundBlocks = cells.map((cell) => ({
+  const backgroundBlocks = CELL_LAYOUTS.map((cell) => ({
     input: { create: { width: BACKGROUND_WIDTH, height: BACKGROUND_HEIGHT, channels: 4, background: { r: 239, g: 228, b: 210, alpha: 1 } } },
-    left: cell.x - 8,
-    top: cell.y - 10,
+    left: cell.bgX,
+    top: cell.bgY,
   }));
-  const bossLayers = overlays.map((input, index) => ({ input, left: cells[index].x, top: cells[index].y }));
+  const bossLayers = overlays.map((input, index) => ({ input, left: CELL_LAYOUTS[index].imgX, top: CELL_LAYOUTS[index].imgY }));
   return sharp(base)
     .resize(2500, 1686, { fit: "fill" })
     .composite([...backgroundBlocks, ...bossLayers])
-    .jpeg({ quality: 84, mozjpeg: true })
+    .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
 }
 
@@ -137,11 +142,11 @@ async function syncRichMenu() {
   return syncPromise;
 }
 
-function scheduleRichMenuSync(delayMs = 7000) {
+function scheduleRichMenuSync(delayMs = 3000) {
   if (scheduled) return;
   scheduled = true;
   const timer = setTimeout(() => { syncRichMenu().catch(() => {}); }, delayMs);
   if (typeof timer.unref === "function") timer.unref();
 }
 
-module.exports = { VERSION, MENU_NAME, BASE_MENU, ASSET_VERSION, OVERLAY_FIT, VISUAL_WIDTH, VISUAL_HEIGHT, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, BOSS_SOURCES, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
+module.exports = { VERSION, MENU_NAME, BASE_MENU, ASSET_VERSION, OVERLAY_FIT, VISUAL_WIDTH, VISUAL_HEIGHT, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, BOSS_SOURCES, CELL_LAYOUTS, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
