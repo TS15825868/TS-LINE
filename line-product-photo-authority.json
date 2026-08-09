@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-10-products-v3-true-originals-v2",
-  "source": "TS15825868/xianjiawei images/products-v3 true original product photos, replacing former DM/poster payloads at the same authoritative paths",
+  "version": "2026-08-09-products-v3-user-approved-size-lock-v1",
+  "source": "TS15825868/xianjiawei images/products-v3 true original product photos; 2026-08-10 replaced former DM/poster payloads at the same authoritative paths",
   "policy": "LINE產品主圖、產品照片按鈕與Flex產品hero一律使用真正產品實拍原圖；所有產品只允許等比例顯示，不改包裝、不裁切、不拉寬拉高，不把不同產品強制等高或等寬。",
   "scaleAuthority": "data/product-physical-scale-authority-v20260809.json",
   "products": {
