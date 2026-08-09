@@ -26,7 +26,7 @@ for (const product of data.products) {
     assert.ok(!String(product[field] || "").includes("/images/products-v2/"), `${product.id}.${field} 仍含products-v2`);
   }
   assert.equal(product.imagePolicy, "approved-original-product-photo-contain-no-crop");
-  assert.equal(product.physicalScalePolicy, "uniform-only-preserve-realistic-product-scale");
+  assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id} 缺少個別產品尺寸／比例規則`);
 }
 
 assert.equal(data.runtime.imagePolicy.productMainImageSource, "products-v3-user-approved-originals");
@@ -38,12 +38,15 @@ const byId = Object.fromEntries(data.products.map((product) => [product.id, prod
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.equal(byId["guilu-drink-30"].specification, "30cc／罐（小玻璃罐）");
 assert.ok(!byId["guilu-drink-30"].aliases.includes("玻璃瓶"));
+assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|小玻璃裸罐/i);
 assert.equal(byId["guilu-drink-30"].price, 60);
 assert.ok(byId["guilu-drink-30"].offers.some((offer) => offer.label === "買10送1" && offer.qty === 11 && offer.total === 600));
 assert.equal(byId["guilu-drink-180"].price, 200);
+assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長直立鋁袋/i);
 assert.ok(byId["guilu-drink-180"].offers.some((offer) => offer.label === "買10送1" && offer.qty === 11 && offer.total === 2000));
 assert.equal(byId["guilu-tangkuai"].specification, "75g／盒｜8塊裝｜每塊約9.375g");
+assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得帶回舊規格");
 assert.equal(byId["guilu-jiao"].specification, "600g（1斤）／盒｜32塊裝｜每塊約18.75g");
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
 
-console.log("PASS：LINE OA原始主檔與執行時六項產品皆鎖定products-v3正式原圖、實際比例、售價與規格權威。");
+console.log("PASS：LINE OA原始主檔與執行時六項產品皆鎖定products-v3正式原圖；30cc、180cc及其他產品保留各自實際尺寸／比例規則，售價與規格權威一致。");
