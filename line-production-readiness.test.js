@@ -51,12 +51,17 @@ assert.equal(byId["guilu-drink-180"].productionLeadTime, "5～7個工作天");
 for (const id of ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"]) assert.equal(byId[id].productionLeadTime, null, `${id} 不得套用龜鹿飲5～7工作天`);
 assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.{0,80}(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得含舊300g/600g規格");
 
-assert.equal(rich.VERSION, "20260809-rich-menu-single-final-v9-no-composite");
+assert.equal(rich.VERSION, "20260809-rich-menu-single-canvas-v10-cohesive");
 assert.equal(rich.SINGLE_IMAGE_ONLY, true);
-assert.ok(rich.FINAL_MENU_IMAGE.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
+assert.equal(rich.RUNTIME_COMPOSITE_FORBIDDEN, true);
+assert.ok(rich.BASE_TEMPLATE.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
 assert.ok(!richSource.includes("BOSS_SOURCES"), "Rich Menu正式程式不得保留六張後貼圖來源");
-assert.ok(!richSource.includes("CELL_LAYOUTS"), "Rich Menu正式程式不得保留六格拼貼座標");
+assert.ok(!richSource.includes("CELL_LAYOUTS"), "Rich Menu正式程式不得保留六格圖片拼貼座標");
 assert.ok(!richSource.includes(".composite("), "Rich Menu正式程式不得使用sharp composite拼湊視覺");
+assert.ok(richSource.includes("fullCanvasSvg"), "Rich Menu必須在單一畫布完成視覺");
+const richSvg=rich.fullCanvasSvg(Buffer.from("fake"));
+assert.equal((richSvg.match(/<image /g)||[]).length,1,"Rich Menu完整畫布只允許一張品牌母版image，不得塞六張照片");
+assert.ok((richSvg.match(/<rect /g)||[]).length>=12,"Rich Menu六個視覺區未使用一致向量面板重繪");
 const menu = rich.menuDefinition();
 assert.deepEqual(menu.areas.map(a => a.action.label), ["看產品","購物車","幫我推薦","搭配組合","怎麼使用","直接下單"]);
 assert.deepEqual(menu.areas.map(a => a.action.text), ["看產品","查看購買清單","幫我推薦","搭配組合","怎麼使用","直接下單"]);
@@ -81,4 +86,4 @@ assert.ok(packageJson.scripts.start.includes("product-fulfillment-message-fix.js
 assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"));
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"));
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
-console.log("PASS：LINE OA 正式上線條件完整：六產品/價格/出貨/products-v3/尺寸、單一完整Rich Menu成品圖、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
+console.log("PASS：LINE OA 正式上線條件完整：六產品/價格/出貨/products-v3/尺寸、單一畫布非拼湊Rich Menu、六大意圖、快速Webhook、冷啟動與Render prestart均符合正式規則。");
