@@ -18,6 +18,8 @@ assert.equal(safety.fulfillmentSafety, undefined, "LINE獨立安全層不得再�
 const safetySource = fs.readFileSync(path.join(__dirname, "line-image-safety.js"), "utf8");
 assert.ok(!safetySource.includes('require("./social-schedule-policy-fix")'), "LINE安全層不得載入社群排程");
 assert.ok(!safetySource.includes('require("./product-fulfillment-message-fix")'), "LINE安全層不得載入舊出貨補丁");
+assert.equal(fs.existsSync(path.join(__dirname, "social-final-approved-batch.js")), false, "退役的自動核准社群batch不得回到LINE repo");
+assert.equal(fs.existsSync(path.join(__dirname, "social-final-posts.js")), false, "退役的2026/7社群排程模板不得回到LINE repo");
 
 const richSource = fs.readFileSync(path.join(__dirname, "line-rich-menu-sync.js"), "utf8");
 const richArtwork = fs.readFileSync(path.join(__dirname, safety.richMenuSync.STATIC_ARTWORK), "utf8");
@@ -70,4 +72,4 @@ assert.equal(menu.areas.at(-1).bounds.y, 875);
 assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：LINE獨立直接啟動只保留products-v3、個別尺寸、乾淨角色圖route與原生Rich Menu；社群排程與舊出貨補丁不再進入LINE安全層。");
+console.log("PASS：LINE獨立直接啟動只保留products-v3、個別尺寸、乾淨角色圖route與原生Rich Menu；退役自動核准社群batch、社群排程與舊出貨補丁不得重新進入LINE安全層。");
