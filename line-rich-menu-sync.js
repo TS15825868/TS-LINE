@@ -5,21 +5,21 @@
  * - 3×2 六格正式功能。
  * - 六格依產品／購物車／推薦／搭配／使用／下單客服使用對應LINE專用Q版小老闆場景。
  * - 每格人物視覺區接近完整欄寬，清除舊版大片黑色空白。
+ * - 只放寬人物區，不向下侵入功能文字區。
  * - 小老闆固定 contain，不用 cover，不裁頭、裁手、裁腳。
  * - 「直接下單」先進產品選擇；購物車有商品後才使用「開始結帳」。
- * - Rich Menu 不拿產品宣傳圖當人物背景。
  */
 const sharp = require("sharp");
 
-const VERSION = "20260809-rich-menu-website-chibi-v4-full-cell-no-black-gap";
+const VERSION = "20260809-rich-menu-website-chibi-v5-wide-safe-label-zone";
 const MENU_NAME = `仙加味正式選單｜網站Q版｜${VERSION}`;
 const BASE_MENU = "https://ts15825868.github.io/xianjiawei/images/line/xianjiawei-rich-menu-2500x1686-v309.jpg";
 const ASSET_VERSION = "20260809-02";
 const OVERLAY_FIT = "contain";
 const VISUAL_WIDTH = 760;
-const VISUAL_HEIGHT = 525;
+const VISUAL_HEIGHT = 420;
 const BACKGROUND_WIDTH = 800;
-const BACKGROUND_HEIGHT = 545;
+const BACKGROUND_HEIGHT = 430;
 const BOSS_SOURCES = [
   `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
   `https://ts15825868.github.io/xianjiawei/images/brand/line-oa/products.jpg?v=${ASSET_VERSION}`,
@@ -75,7 +75,7 @@ async function buildRichMenuImage() {
   const backgroundBlocks = cells.map((cell) => ({
     input: { create: { width: BACKGROUND_WIDTH, height: BACKGROUND_HEIGHT, channels: 4, background: { r: 247, g: 244, b: 237, alpha: 1 } } },
     left: Math.max(0, cell.x - 20),
-    top: cell.y - 10,
+    top: cell.y - 5,
   }));
   const bossLayers = overlays.map((input, index) => ({ input, left: cells[index].x, top: cells[index].y }));
   return sharp(base)
@@ -164,19 +164,4 @@ function scheduleRichMenuSync(delayMs = 7000) {
   if (typeof timer.unref === "function") timer.unref();
 }
 
-module.exports = {
-  VERSION,
-  MENU_NAME,
-  BASE_MENU,
-  ASSET_VERSION,
-  OVERLAY_FIT,
-  VISUAL_WIDTH,
-  VISUAL_HEIGHT,
-  BACKGROUND_WIDTH,
-  BACKGROUND_HEIGHT,
-  BOSS_SOURCES,
-  menuDefinition,
-  buildRichMenuImage,
-  syncRichMenu,
-  scheduleRichMenuSync,
-};
+module.exports = { VERSION, MENU_NAME, BASE_MENU, ASSET_VERSION, OVERLAY_FIT, VISUAL_WIDTH, VISUAL_HEIGHT, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, BOSS_SOURCES, menuDefinition, buildRichMenuImage, syncRichMenu, scheduleRichMenuSync };
