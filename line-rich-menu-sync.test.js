@@ -2,13 +2,14 @@
 const assert = require("node:assert/strict");
 const rich = require("./line-rich-menu-sync");
 
-assert.equal(rich.VERSION, "20260809-rich-menu-website-chibi-v4-full-cell-no-black-gap");
+assert.equal(rich.VERSION, "20260809-rich-menu-website-chibi-v5-wide-safe-label-zone");
 assert.ok(rich.MENU_NAME.includes("網站Q版"));
 assert.ok(rich.BASE_MENU.includes("xianjiawei-rich-menu-2500x1686-v309.jpg"));
 assert.equal(rich.OVERLAY_FIT, "contain");
 assert.ok(rich.VISUAL_WIDTH >= 740, "Rich Menu人物視覺區太窄，會出現大片黑底");
 assert.ok(rich.BACKGROUND_WIDTH >= 780, "Rich Menu背景覆蓋太窄");
-assert.equal(rich.VISUAL_HEIGHT, 525);
+assert.ok(rich.VISUAL_HEIGHT <= 430, "Rich Menu人物區太高，可能蓋到六格功能文字");
+assert.ok(rich.BACKGROUND_HEIGHT <= 440, "Rich Menu米白背景區太高，可能蓋到六格功能文字");
 assert.equal(rich.BOSS_SOURCES.length, 6);
 for (const url of rich.BOSS_SOURCES) {
   assert.ok(url.includes("ts15825868.github.io/xianjiawei/images/brand/line-oa/"));
@@ -32,4 +33,4 @@ assert.deepEqual(labels, ["看產品", "購物車", "幫我推薦", "搭配組�
 assert.deepEqual(texts, ["看產品", "查看購買清單", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]);
 assert.equal(menu.areas.reduce((sum, area) => sum + area.bounds.width * area.bounds.height, 0), 2500 * 1686);
 
-console.log("PASS：Rich Menu 六格維持完整功能；每格人物視覺接近全寬、米白底、contain不裁切；直接下單先進產品選擇。");
+console.log("PASS：Rich Menu人物區接近全寬、米白補底、contain不裁切，且保留底部功能文字安全區。");
