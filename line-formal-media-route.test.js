@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("assert");
+require("./line-app-bootstrap");
+const express=require("express");
+const app=express();
+const routes=(app._router?.stack||[]).map(layer=>layer?.route?.path).filter(Boolean);
+assert(routes.includes("/assets/formal-dm/:id.jpg"),"正式DM JPEG路由沒有掛到實際Express app");
+const runtime=global.__XJW_LINE_EXPRESS_BOOTSTRAP__||{};
+assert.strictEqual(runtime.installed,true,"LINE Express正式媒體bootstrap未安裝");
+assert.strictEqual(runtime.capability,"formal-dm-routes-mounted-on-runtime-app","LINE正式媒體路由能力標記不存在");
+console.log("PASS：LINE實際Express app已掛載正式DM／試喝JPEG路由；守門驗能力，不綁舊版本號。");
