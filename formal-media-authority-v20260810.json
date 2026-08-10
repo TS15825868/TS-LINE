@@ -1,15 +1,15 @@
 {
-  "runtime":"20260810-line-formal-media-v1",
+  "runtime":"20260810-line-formal-media-v2-user-approved-webp",
   "source":"https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
   "product_dm":{
-    "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-gao-100g.png",
-    "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.png",
-    "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.png",
-    "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.png",
-    "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.png",
-    "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.png"
+    "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-gao-100g.webp",
+    "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp",
+    "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp",
+    "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp",
+    "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp",
+    "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp"
   },
-  "trial":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.png",
+  "trial":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp",
   "hard_rules":["products-v3 remains true original package authority","30cc is a small naked glass jar with no sticker","180cc is an aluminum pouch","AI must not redraw product identity","latest approved user copy supersedes obsolete fixed copy"],
-  "guard_principle":"check current capabilities/specs/media availability; never fail only because a correct version or wording was upgraded"
+  "guard_principle":"check current capabilities/specs/media availability and current user-approved content; never fail only because a correct version, file extension or wording was upgraded"
 }
