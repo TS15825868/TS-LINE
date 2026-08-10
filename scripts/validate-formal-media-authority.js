@@ -14,10 +14,13 @@ must(/\/assets\/formal-dm\/trial\.jpg\?v=/.test(authority.trial||''),'LINE試喝
 must(safety.includes('resize({ width: 1024, height: 1024, fit: "inside"')&&safety.includes('jpeg({ quality: 88'),'LINE核准圖必須等比例縮小並轉JPEG');
 must(safety.includes('officialOriginalImage: original')&&safety.includes('products-v3-remains-identity-authority'),'不得以DM取代products-v3產品本體識別權威');
 must(/^https:\/\/ts15825868\.github\.io\/xianjiawei\/data\/post-library-userzip2-v20260810\.json$/.test(authority.post_image_catalog||''),'LINE尚未同步最新2.zip貼文圖目錄');
-must(authority.post_image_policy?.priority==='user_zip_approved','LINE貼文配圖必須以使用者ZIP優先');
-must(Number(authority.post_image_policy?.candidate_count)>=22,'LINE最新貼文ZIP候選數不可回退');
-must(authority.post_image_policy?.fallback==='regenerate_if_missing','LINE只有在找不到合格ZIP圖時才可重新生成');
-must(Number(authority.post_image_policy?.review_after_change)===16,'LINE貼文圖片變更後仍須16項審核');
+const post=authority.post_image_policy||{};
+must(post.priority==='user_zip_approved','LINE貼文配圖必須以使用者ZIP優先');
+must(Number(post.candidate_count)>=22,'LINE最新貼文ZIP候選數不可回退');
+must(Array.isArray(post.states)&&['approved_existing','needs_binary_sync','regenerate_if_missing'].every(x=>post.states.includes(x)),'LINE貼文媒體必須區分可用／待同步原圖／真的缺圖才生成');
+must(['pending','ready'].includes(post.binary_sync_status),'LINE必須清楚標示ZIP二進位同步狀態');
+must(/matching ZIP source waits for binary sync/.test(post.rule||'')&&/regeneration is only for true no-match cases/.test(post.rule||''),'LINE不得把待同步的合格ZIP圖誤判成需要重新生成');
+must(Number(post.review_after_change)===16,'LINE貼文圖片變更後仍須16項審核');
 must(authority.hard_rules.some(x=>x.includes('products-v3')),'不得放寬products-v3產品本體權威');
 must(authority.guard_principle.includes('never fail only because'),'守門員必須驗正式能力，不得守舊版號／舊固定文案');
-console.log('PASS：LINE正式規格、核准DM／試喝圖、JPEG相容轉換、最新ZIP優先配圖與能力式守門已同步。');
+console.log('PASS：LINE正式規格、核准DM／試喝圖、JPEG相容轉換、ZIP三態配圖與能力式守門已同步。');
