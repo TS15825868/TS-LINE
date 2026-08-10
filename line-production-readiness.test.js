@@ -12,14 +12,17 @@ const rawDataText = read("data.json");
 const rawData = JSON.parse(rawDataText);
 const data = applyMaster(rawData);
 const photoAuthority = getPhotoAuthority();
-const photoVersion = String(photoAuthority?.version || "").trim();
+const photoAuthorityVersion = String(photoAuthority?.version || "").trim();
+const photoCacheVersions = new Set(Object.values(photoAuthority?.products || {}).map((url) => String(url || "").match(/[?&]v=([^&#]+)/)?.[1] || "").filter(Boolean));
+const photoVersion = photoCacheVersions.size === 1 ? [...photoCacheVersions][0] : "";
 const serverSource = read("server.js");
 const syncSource = read("tools/sync_sales_master.js");
 const richSource = read("line-rich-menu-sync.js");
 const richArtwork = rich.readArtwork();
 const packageJson = JSON.parse(read("package.json"));
 
-assert.ok(photoVersion && /products-v3/i.test(photoVersion), "LINE正式產品圖片權威必須是目前products-v3系列");
+assert.ok(photoAuthorityVersion && /products-v3/i.test(photoAuthorityVersion), "LINE正式產品圖片權威必須是目前products-v3系列");
+assert.ok(photoVersion && /products-v3/i.test(photoVersion), "LINE六項正式產品照片必須使用一致的products-v3快取版本");
 assert.ok(!rawDataText.includes("/images/products-v2/"), "LINE原始data.json不得再保存products-v2正式圖");
 assert.equal(data.products.length, 6, "正式產品必須剛好六項");
 const byId = Object.fromEntries(data.products.map((p) => [p.id, p]));
@@ -41,7 +44,7 @@ for (const [id, rule] of Object.entries(expected)) {
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
     const url = String(p[field] || "");
     assert.ok(url.includes("/images/products-v3/"), `${id}.${field} 仍非products-v3正式原圖`);
-    assert.ok(url.includes(`v=${photoVersion}`), `${id}.${field} 未跟目前產品圖片權威同步`);
+    assert.ok(url.includes(`v=${photoVersion}`), `${id}.${field} 未跟目前產品圖片快取版本同步`);
     assert.ok(!url.includes("/images/products-v2/"), `${id}.${field} 不得回退products-v2`);
   }
   assert.equal(p.imagePolicy, "approved-original-product-photo-contain-no-crop", `${id} 圖片政策錯誤`);
@@ -104,7 +107,7 @@ assert.deepEqual(menu.areas.map((a) => a.bounds), [
 assert.ok(menu.areas.every((a) => a.bounds.y >= 176), "Rich Menu品牌Header不得成為點擊熱區");
 
 assert.ok(String(visual.VERSION || "").includes("recording-ui"), "LINE Flex視覺層必須提供正式版本識別");
-assert.equal(visual.PRODUCT_IMAGE_VERSION, photoVersion, "LINE Flex必須直接跟目前產品圖片權威同步，不得另外寫死舊版號");
+assert.equal(visual.PRODUCT_IMAGE_VERSION, photoVersion, "LINE Flex必須直接跟目前產品圖片快取版本同步，不得另外寫死舊版號");
 for (const p of Object.values(visual.PRODUCTS)) assert.ok(p.image.includes("/images/products-v3/"));
 assert.equal(visual.productHero("guilu-drink-30").aspectMode, "fit");
 
@@ -122,7 +125,7 @@ assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf
 for (const field of ["lastWebhookAt", "lastReplySuccessAt", "lastReplyError"]) assert.ok(serverSource.includes(field), `LINE health缺少${field}`);
 assert.ok(serverSource.includes("DRINK_ORDER_NOTICE") && serverSource.includes("READY_STOCK_ORDER_NOTICE") && serverSource.includes("MIXED_ORDER_NOTICE"), "主程式必須包含產品別出貨邏輯");
 assert.ok(serverSource.includes("orderNoticeForProduct") && serverSource.includes("orderNoticeForCart"), "產品卡與購物車必須由主程式判斷交期");
-assert.ok(syncSource.includes("assertPhotoAuthority") && syncSource.includes("getPhotoAuthority()?.version"), "prestart必須從唯一圖片權威動態驗證，不得再綁死某一版照片版本號");
+assert.ok(syncSource.includes("assertPhotoAuthority") && syncSource.includes("PHOTO_CACHE_VERSION"), "prestart必須從唯一圖片權威動態驗證權威標籤與圖片快取版本，不得再綁死某一版照片版本號");
 
 assert.equal(packageJson.main, "server.js", "正式服務入口必須是LINE OA server.js");
 assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-health-authority.test.js && node line-true-original-readiness.test.js && node line-production-readiness.test.js", "Render prestart必須同步正式母本並執行完整正式驗收");
@@ -134,4 +137,4 @@ assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"), "相容性守�
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"), "相容性守門不得把現貨商品寫成5～7工作天");
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
 
-console.log(`PASS：LINE OA正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3目前權威 ${photoVersion}/個別尺寸、繁中向量字Rich Menu、六大意圖、快速Webhook與LINE-only Render start均符合正式規則；新版資產不再因舊版號誤擋。`);
+console.log(`PASS：LINE OA正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3權威 ${photoAuthorityVersion} / 圖片快取 ${photoVersion}/個別尺寸、繁中向量字Rich Menu、六大意圖、快速Webhook與LINE-only Render start均符合正式規則；新版資產不再因舊版號誤擋。`);
