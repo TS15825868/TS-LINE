@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const safety = require("./line-image-safety");
 
-assert.equal(safety.VERSION, "20260809-direct-start-products-v3-standalone-v5");
+assert.equal(safety.VERSION, "20260810-direct-start-products-v3-promo-qty-v6");
 assert.equal(safety.photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v6"));
 assert.equal(safety.richMenuSync.VERSION, "20260810-rich-menu-vector-outline-v12");
@@ -50,12 +50,17 @@ for (const product of data.products) {
 }
 assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|30cc.*小玻璃|小玻璃.*30cc/i, "30cc必須保留小玻璃罐實際尺寸規則");
 assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長.*鋁袋|鋁袋.*狹長/i, "180cc必須保留狹長鋁袋比例規則");
+assert.deepEqual(byId["guilu-drink-30"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "30cc買10送1的11罐必須出現在前四個可選數量");
+assert.deepEqual(byId["guilu-drink-180"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "180cc買10送1的11包必須出現在前四個可選數量");
+assert.equal(byId["guilu-drink-30"].offers.find((offer) => offer.qty === 11)?.total, 600);
+assert.equal(byId["guilu-drink-180"].offers.find((offer) => offer.qty === 11)?.total, 2000);
 assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得回復300g／600g舊規格");
 assert.equal(data.productPhotoAuthorityVersion, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.equal(data.runtime.serviceMode, "standalone-line-oa");
 assert.equal(data.runtime.productMainImageSource, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 assert.equal(data.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
+assert.equal(data.runtime.promotionQuantityPolicy, "promotion-qty-must-appear-within-first-four-options");
 assert.equal(data.runtime.schedulePolicyVersion, undefined, "LINE執行資料不得再掛社群排程版本");
 assert.ok(String(data.runtime.richMenuSyncVersion || "").includes("rich-menu"));
 
@@ -77,4 +82,4 @@ assert.equal(menu.areas.at(-1).bounds.y, 875);
 assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：LINE獨立直接啟動只保留products-v3、個別尺寸、乾淨角色圖route與繁中向量字原生Rich Menu；退役自動核准社群batch、社群排程與舊出貨補丁不得重新進入LINE安全層。");
+console.log("PASS：LINE獨立直接啟動保留products-v3、個別尺寸、繁中向量字Rich Menu，且買10送1活動數量可直接選；退役社群與舊補丁不會回流。");
