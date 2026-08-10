@@ -7,11 +7,11 @@ const safety = require("./line-image-safety");
 assert.equal(safety.VERSION, "20260809-direct-start-products-v3-standalone-v5");
 assert.equal(safety.photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
 assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v6"));
-assert.equal(safety.richMenuSync.VERSION, "20260809-rich-menu-native-single-artwork-v11");
+assert.equal(safety.richMenuSync.VERSION, "20260810-rich-menu-vector-outline-v12");
 assert.equal(safety.richMenuSync.SINGLE_IMAGE_ONLY, true);
 assert.equal(safety.richMenuSync.RUNTIME_COMPOSITE_FORBIDDEN, true);
 assert.equal(safety.richMenuSync.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
-assert.equal(safety.richMenuSync.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v11.svg");
+assert.equal(safety.richMenuSync.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v12.svg.gz.b64");
 assert.equal(safety.schedulePolicy, undefined, "LINE獨立安全層不得再載入社群排程模組");
 assert.equal(safety.fulfillmentSafety, undefined, "LINE獨立安全層不得再依賴舊出貨補丁");
 
@@ -22,12 +22,17 @@ assert.equal(fs.existsSync(path.join(__dirname, "social-final-approved-batch.js"
 assert.equal(fs.existsSync(path.join(__dirname, "social-final-posts.js")), false, "退役的2026/7社群排程模板不得回到LINE repo");
 
 const richSource = fs.readFileSync(path.join(__dirname, "line-rich-menu-sync.js"), "utf8");
-const richArtwork = fs.readFileSync(path.join(__dirname, safety.richMenuSync.STATIC_ARTWORK), "utf8");
+const richArtwork = safety.richMenuSync.readArtwork();
 assert.ok(!richSource.includes("BASE_TEMPLATE"));
 assert.ok(!richSource.includes("BOSS_SOURCES"));
 assert.ok(!richSource.includes("CELL_LAYOUTS"));
 assert.ok(!richSource.includes(".composite("));
 assert.ok(!/<image\b/i.test(richArtwork), "Rich Menu不得內嵌舊底圖或照片拼貼");
+assert.ok(!/<text\b/i.test(richArtwork), "Rich Menu顧客可見繁中不得依賴主機字型");
+assert.ok(richArtwork.includes("xjw-text-outlined-v12"), "Rich Menu正式母稿必須使用繁中向量字");
+for (const label of ["看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]) {
+  assert.ok(richArtwork.includes(label), `Rich Menu正式母稿缺少${label}`);
+}
 assert.equal((richArtwork.match(/rx=\"38\"/g) || []).length, 6, "Rich Menu應有六個原生完整面板");
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
@@ -72,4 +77,4 @@ assert.equal(menu.areas.at(-1).bounds.y, 875);
 assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：LINE獨立直接啟動只保留products-v3、個別尺寸、乾淨角色圖route與原生Rich Menu；退役自動核准社群batch、社群排程與舊出貨補丁不得重新進入LINE安全層。");
+console.log("PASS：LINE獨立直接啟動只保留products-v3、個別尺寸、乾淨角色圖route與繁中向量字原生Rich Menu；退役自動核准社群batch、社群排程與舊出貨補丁不得重新進入LINE安全層。");

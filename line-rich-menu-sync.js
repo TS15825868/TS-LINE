@@ -1,21 +1,21 @@
 "use strict";
 
 /**
- * 仙加味 LINE Rich Menu｜2026-08-10 原生完整單一設計稿 v11 refresh + safe retry
- * - 正式視覺是一個完整 SVG 母稿，不再讀舊 JPG 底圖，也不在執行時補黑塊／貼照片／拼六格素材。
- * - 六個功能區、品牌標頭、文字、圖示、背景與分隔全部在同一份 SVG 中完成。
- * - 執行時只做一次 SVG → JPEG 格式轉換，再上傳 LINE；不使用 sharp.composite。
- * - LINE 點擊熱區只覆蓋六個實際功能面板，品牌標頭與面板間距不再誤觸功能。
- * - refresh 名稱會強制建立新選單，不沿用目前 LINE 裡的舊黑底拼貼版本。
- * - Render 冷啟動或 LINE API 短暫失敗時最多安全重試 3 次；同步成功即停止，不做無限輪詢。
+ * 仙加味 LINE Rich Menu｜2026-08-10 v12 font-independent vector refresh
+ * - 六格正式版維持單一 SVG 設計稿，不使用產品拼貼、黑塊或舊 JPG 底圖。
+ * - 所有顧客可見繁中文字已轉成 SVG path，Render / Sharp 不需要主機中文字型。
+ * - 靜態母稿以 gzip + base64 儲存，執行時只解碼為 SVG，再轉 JPEG 上傳 LINE。
+ * - 點擊熱區只覆蓋六個實際功能面板；品牌 Header 不成為熱區。
+ * - refresh 名稱會建立新選單並設為預設，舊仙加味正式選單會安全清理。
  */
 const fs = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 const sharp = require("sharp");
 
-const VERSION = "20260809-rich-menu-native-single-artwork-v11";
-const MENU_NAME = `仙加味正式選單｜原生完整設計稿｜${VERSION}-refresh-20260809`;
-const STATIC_ARTWORK = "assets/rich-menu/xianjiawei-rich-menu-v11.svg";
+const VERSION = "20260810-rich-menu-vector-outline-v12";
+const MENU_NAME = `仙加味正式選單｜繁中向量字｜${VERSION}-refresh`;
+const STATIC_ARTWORK = "assets/rich-menu/xianjiawei-rich-menu-v12.svg.gz.b64";
 const API = "https://api.line.me";
 const DATA_API = "https://api-data.line.me";
 const SINGLE_IMAGE_ONLY = true;
@@ -46,10 +46,18 @@ function artworkPath() {
 function readArtwork() {
   const file = artworkPath();
   if (!fs.existsSync(file)) throw new Error(`Rich Menu 正式母稿不存在：${STATIC_ARTWORK}`);
-  const svg = fs.readFileSync(file, "utf8");
-  const required = ["width=\"2500\"", "height=\"1686\"", "看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"];
+  const encoded = fs.readFileSync(file, "utf8").replace(/\s+/g, "");
+  if (!encoded) throw new Error("Rich Menu 正式母稿為空");
+  let svg = "";
+  try {
+    svg = zlib.gunzipSync(Buffer.from(encoded, "base64")).toString("utf8");
+  } catch (error) {
+    throw new Error(`Rich Menu 正式母稿解碼失敗：${error.message || error}`);
+  }
+  const required = ["width=\"2500\"", "height=\"1686\"", "看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單", "xjw-text-outlined-v12"];
   for (const token of required) if (!svg.includes(token)) throw new Error(`Rich Menu 正式母稿缺少：${token}`);
-  if (/<image\b/i.test(svg)) throw new Error("Rich Menu 正式母稿不得再內嵌照片或舊底圖；必須是單一原生設計稿");
+  if (/<text\b/i.test(svg)) throw new Error("Rich Menu v12 顧客可見文字必須全部轉成向量 path，不得依賴主機中文字型");
+  if (/<image\b/i.test(svg)) throw new Error("Rich Menu 正式母稿不得內嵌照片或舊底圖；必須是單一原生設計稿");
   if (/sharp\.composite|products-v2|BOSS_SOURCES|CELL_LAYOUTS/i.test(svg)) throw new Error("Rich Menu 正式母稿含禁止的拼貼／舊素材標記");
   return svg;
 }
@@ -126,8 +134,8 @@ async function syncRichMenu() {
     }
     await setDefault(token, menu.richMenuId);
     const retiredMenuCount = await removeRetiredMenus(token, listed.richmenus || [], menu.richMenuId);
-    global.__XJW_RICH_MENU_RUNTIME__ = Object.freeze({ ok: true, version: VERSION, richMenuId: menu.richMenuId, staticArtwork: STATIC_ARTWORK, singleImageOnly: true, runtimeCompositeForbidden: true, legacyBaseTemplateForbidden: true, visualMode: "native-static-single-artwork", tapZones: "visual-panels-only", retiredMenuCount, syncedAt: new Date().toISOString() });
-    console.log("仙加味 Rich Menu 已同步原生完整單一設計稿", JSON.stringify(global.__XJW_RICH_MENU_RUNTIME__));
+    global.__XJW_RICH_MENU_RUNTIME__ = Object.freeze({ ok: true, version: VERSION, richMenuId: menu.richMenuId, staticArtwork: STATIC_ARTWORK, singleImageOnly: true, runtimeCompositeForbidden: true, legacyBaseTemplateForbidden: true, visualMode: "native-static-single-artwork-vector-outline", fontIndependent: true, tapZones: "visual-panels-only", retiredMenuCount, syncedAt: new Date().toISOString() });
+    console.log("仙加味 Rich Menu 已同步繁中向量字正式版", JSON.stringify(global.__XJW_RICH_MENU_RUNTIME__));
     return global.__XJW_RICH_MENU_RUNTIME__;
   })().catch((error) => {
     const failed = { ok: false, version: VERSION, error: String(error.message || error), failedAt: new Date().toISOString() };
@@ -147,7 +155,6 @@ function scheduleRichMenuSync(delayMs = RICH_MENU_RETRY_DELAYS_MS[0]) {
   if (scheduled) return;
   scheduled = true;
   const delays = [Math.max(0, Number(delayMs) || 0), ...RICH_MENU_RETRY_DELAYS_MS.slice(1)];
-
   const runAttempt = (index) => {
     unrefTimer(setTimeout(async () => {
       const result = await syncRichMenu();
@@ -165,7 +172,6 @@ function scheduleRichMenuSync(delayMs = RICH_MENU_RETRY_DELAYS_MS[0]) {
       runAttempt(index + 1);
     }, delays[index]));
   };
-
   runAttempt(0);
 }
 
