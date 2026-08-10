@@ -1,5 +1,6 @@
 {
-  "runtime":"20260810-line-formal-media-v5-binary-aware",
+  "runtime":"20260810-line-formal-media-v6-latest-user-batch",
+  "approval_batch":"20260810-latest-user-dm-and-trial",
   "source":"https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
   "source_product_dm":{
     "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-gao-100g.webp",
@@ -11,23 +12,25 @@
   },
   "source_trial":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp",
   "product_dm":{
-    "龜鹿膏":"https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=20260810-user-approved-v3",
-    "龜鹿飲30cc玻璃罐":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30cc.jpg?v=20260810-user-approved-v3",
-    "龜鹿飲180cc鋁袋":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180cc.jpg?v=20260810-user-approved-v3",
-    "龜鹿湯塊":"https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=20260810-user-approved-v3",
-    "龜鹿膠":"https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=20260810-user-approved-v3",
-    "鹿茸粉":"https://ts-line.onrender.com/assets/formal-dm/lurong-fen.jpg?v=20260810-user-approved-v3"
+    "龜鹿膏":"https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=20260810-latest-user-batch",
+    "龜鹿飲30cc玻璃罐":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30cc.jpg?v=20260810-latest-user-batch",
+    "龜鹿飲180cc鋁袋":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180cc.jpg?v=20260810-latest-user-batch",
+    "龜鹿湯塊":"https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=20260810-latest-user-batch",
+    "龜鹿膠":"https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=20260810-latest-user-batch",
+    "鹿茸粉":"https://ts-line.onrender.com/assets/formal-dm/lurong-fen.jpg?v=20260810-latest-user-batch"
   },
-  "trial":"https://ts-line.onrender.com/assets/formal-dm/trial.jpg?v=20260810-user-approved-v3",
+  "trial":"https://ts-line.onrender.com/assets/formal-dm/trial.jpg?v=20260810-latest-user-batch",
   "post_image_catalog":"https://ts15825868.github.io/xianjiawei/data/post-library-userzip2-v20260810.json",
   "post_image_policy":{
     "priority":"user_zip_approved",
     "candidate_count":22,
+    "match_dimensions":["season","scene","environment","temperature","expression","action","props"],
     "states":["approved_existing","needs_binary_sync","regenerate_if_missing"],
     "binary_sync_status":"pending",
-    "rule":"a matching ZIP source waits for binary sync and must not be regenerated; regeneration is only for true no-match cases",
+    "rule":"use newest approved user media first; a matching ZIP source waits for binary sync and must not be regenerated; regeneration is only for a true no-match case",
+    "invalidate_old_approval_after_change":true,
     "review_after_change":16
   },
-  "hard_rules":["products-v3 remains true original package identity authority","30cc is a small naked glass jar with no sticker","180cc is an aluminum pouch","approved DM display never redefines package identity","AI must not redraw product identity","latest approved user copy supersedes obsolete fixed copy"],
-  "guard_principle":"validate current formal capabilities, specs and media behavior; never fail only because a correct version or approved wording was upgraded"
+  "hard_rules":["products-v3 remains true original package identity authority","30cc is a small naked glass jar with no sticker","180cc is an aluminum pouch","approved DM display never redefines package identity","AI must not redraw product identity","latest user-approved data and copy supersede obsolete fixed copy"],
+  "guard_principle":"validate current authority, actual media availability, specs and capabilities; never fail only because a correct version, filename or approved wording was upgraded"
 }
