@@ -10,8 +10,10 @@ const MASTER_PATH = path.join(ROOT, "line-sales-master.json");
 const AUTHORITY_PATH = path.join(ROOT, "assets/data/official-products.json");
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 const MASTER_VERSION = "2026-08-08-canonical-v7-official-originals";
-// 圖片版本以 line-product-photo-authority.json 為唯一來源，不再在守門員重複寫死。
-const PHOTO_VERSION = String(getPhotoAuthority()?.version || "").trim();
+// 圖片權威版本與圖片 URL 快取版本都從 line-product-photo-authority.json 取得，不在守門員重複寫死。
+const PHOTO_AUTHORITY_AT_LOAD = getPhotoAuthority();
+const PHOTO_VERSION = String(PHOTO_AUTHORITY_AT_LOAD?.version || "").trim();
+const PHOTO_CACHE_VERSION = String(Object.values(PHOTO_AUTHORITY_AT_LOAD?.products || {})[0] || "").match(/[?&]v=([^&#]+)/)?.[1] || "";
 
 const CANONICAL_INGREDIENTS = Object.freeze({
   "guilu-gao": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
@@ -53,13 +55,17 @@ function assertPhotoAuthority(photoAuthority) {
   if (!/products-v3/i.test(version) || /products-v2/i.test(version)) throw new Error(`正式產品照片權威必須維持products-v3系列：${version}`);
   const entries = Object.entries(photoAuthority?.products || {});
   if (entries.length !== 6) throw new Error("正式產品照片權威必須剛好6項");
+  const cacheVersions = new Set();
   for (const [id, url] of entries) {
     const value = String(url || "");
     if (!value.includes("/images/products-v3/")) throw new Error(`${id}照片權威不得離開products-v3`);
-    if (!value.includes(`v=${version}`)) throw new Error(`${id}照片網址版本沒有跟目前權威版本同步`);
     if (value.includes("/images/products-v2/")) throw new Error(`${id}照片權威不得回退products-v2`);
+    const cacheVersion = value.match(/[?&]v=([^&#]+)/)?.[1] || "";
+    if (!cacheVersion || !/products-v3/i.test(cacheVersion)) throw new Error(`${id}照片網址缺少products-v3正式快取版本`);
+    cacheVersions.add(cacheVersion);
   }
-  return version;
+  if (cacheVersions.size !== 1) throw new Error("六項正式產品照片網址快取版本必須一致");
+  return { version, cacheVersion: [...cacheVersions][0] };
 }
 function assertPhysicalScaleAuthority(products) {
   const byId = Object.fromEntries((products || []).map((product) => [product.id, product]));
@@ -96,8 +102,8 @@ function main() {
 
   if (master.version !== merged.salesMasterVersion) throw new Error("正式銷售主檔版本套用失敗");
   if (master.version !== MASTER_VERSION) throw new Error(`正式主檔版本不是目前v7：${master.version}`);
-  const currentPhotoVersion = assertPhotoAuthority(photoAuthority);
-  if (currentPhotoVersion !== PHOTO_VERSION) throw new Error("正式產品照片權威在啟動檢查期間發生版本漂移");
+  const { version: currentPhotoVersion, cacheVersion: currentPhotoCacheVersion } = assertPhotoAuthority(photoAuthority);
+  if (currentPhotoVersion !== PHOTO_VERSION || currentPhotoCacheVersion !== PHOTO_CACHE_VERSION) throw new Error("正式產品照片權威在啟動檢查期間發生版本漂移");
   if ((merged.offers?.comboOffers || []).length !== 3) throw new Error("正式組合必須是3組");
   if ((merged.combos || []).length !== 3) throw new Error("根層正式組合資料必須是3組");
   if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6項，目前${merged.products?.length || 0}項`);
@@ -163,10 +169,10 @@ function main() {
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts, products-v3 current authority ${currentPhotoVersion} and per-product physical scale rules`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts, products-v3 current authority ${currentPhotoVersion} / cache ${currentPhotoCacheVersion} and per-product physical scale rules`);
     return;
   }
-  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, trial, fulfillment, products-v3 current authority ${currentPhotoVersion} and per-product physical scale rules aligned`);
+  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, trial, fulfillment, products-v3 current authority ${currentPhotoVersion} / cache ${currentPhotoCacheVersion} and per-product physical scale rules aligned`);
 }
 
 if (require.main === module) {
@@ -174,4 +180,4 @@ if (require.main === module) {
   catch (error) { console.error(error.message || error); process.exit(1); }
 }
 
-module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, assertPhotoAuthority, assertPhysicalScaleAuthority, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION, PHOTO_VERSION };
+module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, assertPhotoAuthority, assertPhysicalScaleAuthority, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION, PHOTO_VERSION, PHOTO_CACHE_VERSION };
