@@ -10,7 +10,8 @@ const MASTER_PATH = path.join(ROOT, "line-sales-master.json");
 const AUTHORITY_PATH = path.join(ROOT, "assets/data/official-products.json");
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 const MASTER_VERSION = "2026-08-08-canonical-v7-official-originals";
-const PHOTO_VERSION = "2026-08-10-products-v3-latest-originals-v3";
+// 圖片版本以 line-product-photo-authority.json 為唯一來源，不再在守門員重複寫死。
+const PHOTO_VERSION = String(getPhotoAuthority()?.version || "").trim();
 
 const CANONICAL_INGREDIENTS = Object.freeze({
   "guilu-gao": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
@@ -45,6 +46,20 @@ function assertOfficialImageSlots(product, id) {
   }
   if (product.imagePolicy !== "approved-original-product-photo-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
   if (!String(product.physicalScalePolicy || "").trim()) throw new Error(`${id}缺少個別產品實際尺寸／比例政策`);
+}
+function assertPhotoAuthority(photoAuthority) {
+  const version = String(photoAuthority?.version || "").trim();
+  if (!version) throw new Error("正式產品照片權威缺少版本號");
+  if (!/products-v3/i.test(version) || /products-v2/i.test(version)) throw new Error(`正式產品照片權威必須維持products-v3系列：${version}`);
+  const entries = Object.entries(photoAuthority?.products || {});
+  if (entries.length !== 6) throw new Error("正式產品照片權威必須剛好6項");
+  for (const [id, url] of entries) {
+    const value = String(url || "");
+    if (!value.includes("/images/products-v3/")) throw new Error(`${id}照片權威不得離開products-v3`);
+    if (!value.includes(`v=${version}`)) throw new Error(`${id}照片網址版本沒有跟目前權威版本同步`);
+    if (value.includes("/images/products-v2/")) throw new Error(`${id}照片權威不得回退products-v2`);
+  }
+  return version;
 }
 function assertPhysicalScaleAuthority(products) {
   const byId = Object.fromEntries((products || []).map((product) => [product.id, product]));
@@ -81,8 +96,8 @@ function main() {
 
   if (master.version !== merged.salesMasterVersion) throw new Error("正式銷售主檔版本套用失敗");
   if (master.version !== MASTER_VERSION) throw new Error(`正式主檔版本不是目前v7：${master.version}`);
-  if (photoAuthority.version !== PHOTO_VERSION) throw new Error(`正式產品照片權威版本不同步：${photoAuthority.version}`);
-  if (Object.keys(photoAuthority.products || {}).length !== 6) throw new Error("正式產品照片權威必須剛好6項");
+  const currentPhotoVersion = assertPhotoAuthority(photoAuthority);
+  if (currentPhotoVersion !== PHOTO_VERSION) throw new Error("正式產品照片權威在啟動檢查期間發生版本漂移");
   if ((merged.offers?.comboOffers || []).length !== 3) throw new Error("正式組合必須是3組");
   if ((merged.combos || []).length !== 3) throw new Error("根層正式組合資料必須是3組");
   if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6項，目前${merged.products?.length || 0}項`);
@@ -148,10 +163,10 @@ function main() {
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts, products-v3 latest originals and per-product physical scale rules`);
+    console.log(`SYNCED LINE OA sales master ${master.version}: six products, canonical facts, products-v3 current authority ${currentPhotoVersion} and per-product physical scale rules`);
     return;
   }
-  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, trial, fulfillment, products-v3 latest originals and per-product physical scale rules aligned`);
+  console.log(`PASS LINE OA sales master ${master.version}: canonical facts, pricing, trial, fulfillment, products-v3 current authority ${currentPhotoVersion} and per-product physical scale rules aligned`);
 }
 
 if (require.main === module) {
@@ -159,4 +174,4 @@ if (require.main === module) {
   catch (error) { console.error(error.message || error); process.exit(1); }
 }
 
-module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, assertPhysicalScaleAuthority, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION, PHOTO_VERSION };
+module.exports = { stable, hasBuyTenGetOne, assertSoupAuthority, assertOfficialImageSlots, assertPhotoAuthority, assertPhysicalScaleAuthority, sameArray, CANONICAL_INGREDIENTS, OFFICIAL_IMAGE_PATHS, MASTER_VERSION, PHOTO_VERSION };
