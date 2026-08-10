@@ -18,8 +18,8 @@ const richMenuSync = require("./line-rich-menu-sync");
 const photoAuthority = require("./line-product-photo-authority.json");
 const formalMedia = require("./formal-media-authority-v20260810.json");
 
-const VERSION = "20260810-direct-start-user-approved-dm-v7";
-const FORMAL_MEDIA_VERSION = "20260810-user-approved-v3";
+const VERSION = "20260810-direct-start-latest-user-dm-v8";
+const FORMAL_MEDIA_VERSION = "20260810-latest-user-batch";
 const FORMAL_KEYS = Object.freeze({
   "guilu-gao": "龜鹿膏",
   "guilu-drink-30": "龜鹿飲30cc玻璃罐",
@@ -124,6 +124,7 @@ function normalizeProductPhotos(data) {
   data.productPhotoAuthorityVersion = photoAuthority.version;
   data.formalMediaAuthority = {
     version: formalMedia.runtime,
+    approvalBatch: formalMedia.approval_batch,
     trialImage: formalLineImageUrl("trial"),
     trialSource: formalMedia.source_trial,
     source: formalMedia.source,
@@ -138,6 +139,7 @@ function normalizeProductPhotos(data) {
     productScalePolicy: "uniform-only-no-equal-height-equal-width",
     directStartPhotoSafetyVersion: VERSION,
     formalMediaVersion: FORMAL_MEDIA_VERSION,
+    formalMediaApprovalBatch: formalMedia.approval_batch,
     promotionQuantityPolicy: "promotion-qty-must-appear-within-first-four-options",
     richMenuSyncVersion: richMenuSync.VERSION,
   };
@@ -170,6 +172,7 @@ global.__XJW_LINE_DIRECT_START_SAFETY__ = Object.freeze({
   serviceMode: "standalone-line-oa",
   photoAuthorityVersion: photoAuthority.version,
   formalMediaVersion: FORMAL_MEDIA_VERSION,
+  formalMediaApprovalBatch: formalMedia.approval_batch,
   recordingUiVersion: recordingUiFix.VERSION,
   richMenuSyncVersion: richMenuSync.VERSION,
 });
