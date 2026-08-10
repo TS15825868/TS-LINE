@@ -1,0 +1,20 @@
+{
+  "version": "20260810-formal-content-sync-v1",
+  "status": "ready",
+  "website_commit": "42159bdfc708e22e8f7998d5416d012e9394fab8",
+  "product_authority": "products-v3-original-no-redraw",
+  "customer_display": "products-v4-final-contain-no-crop",
+  "rules": {
+    "guilu_gao": "100g／罐",
+    "guilu_drink_30": "30cc／罐（小玻璃罐、裸罐、無貼紙）",
+    "guilu_drink_180": "180cc／包（鋁袋）",
+    "guilu_tangkuai": "75g／盒｜8塊裝",
+    "guilu_jiao": "600g／盒｜32塊裝",
+    "luerong_fen": "75g／罐"
+  },
+  "generated_image_policy": {
+    "product_body": "official-original-only",
+    "mascot_scene": "approved-q-version-context-match",
+    "mismatch": "regenerate-and-return-to-review"
+  }
+}
