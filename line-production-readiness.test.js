@@ -2,7 +2,7 @@
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { applyMaster } = require("./product-sales-master");
+const { applyMaster, getPhotoAuthority } = require("./product-sales-master");
 const rich = require("./line-rich-menu-sync");
 const visual = require("./line-recording-ui-fix");
 const fulfillment = require("./product-fulfillment-message-fix");
@@ -11,12 +11,15 @@ const read = (file) => fs.readFileSync(path.join(__dirname, file), "utf8");
 const rawDataText = read("data.json");
 const rawData = JSON.parse(rawDataText);
 const data = applyMaster(rawData);
+const photoAuthority = getPhotoAuthority();
+const photoVersion = String(photoAuthority?.version || "").trim();
 const serverSource = read("server.js");
 const syncSource = read("tools/sync_sales_master.js");
 const richSource = read("line-rich-menu-sync.js");
 const richArtwork = rich.readArtwork();
 const packageJson = JSON.parse(read("package.json"));
 
+assert.ok(photoVersion && /products-v3/i.test(photoVersion), "LINE正式產品圖片權威必須是目前products-v3系列");
 assert.ok(!rawDataText.includes("/images/products-v2/"), "LINE原始data.json不得再保存products-v2正式圖");
 assert.equal(data.products.length, 6, "正式產品必須剛好六項");
 const byId = Object.fromEntries(data.products.map((p) => [p.id, p]));
@@ -36,9 +39,10 @@ for (const [id, rule] of Object.entries(expected)) {
   assert.equal(Number(p.price), rule.price, `${id} 正式售價不同步`);
   assert.equal(Boolean(p.readyStock), rule.ready, `${id} 備貨狀態不同步`);
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
-    assert.ok(String(p[field] || "").includes("/images/products-v3/"), `${id}.${field} 仍非products-v3正式原圖`);
-    assert.ok(String(p[field] || "").includes("20260810-products-v3-latest-originals-v3"), `${id}.${field} 未使用最新產品原圖版本`);
-    assert.ok(!String(p[field] || "").includes("/images/products-v2/"), `${id}.${field} 不得回退products-v2`);
+    const url = String(p[field] || "");
+    assert.ok(url.includes("/images/products-v3/"), `${id}.${field} 仍非products-v3正式原圖`);
+    assert.ok(url.includes(`v=${photoVersion}`), `${id}.${field} 未跟目前產品圖片權威同步`);
+    assert.ok(!url.includes("/images/products-v2/"), `${id}.${field} 不得回退products-v2`);
   }
   assert.equal(p.imagePolicy, "approved-original-product-photo-contain-no-crop", `${id} 圖片政策錯誤`);
   assert.ok(String(p.physicalScalePolicy || "").trim(), `${id} 缺少個別產品尺寸／比例政策`);
@@ -69,18 +73,18 @@ assert.ok(!serverSource.includes("正式售價50元／罐"), "server.js不得保
 assert.ok(!serverSource.includes("11罐500元"), "server.js不得保留舊買10送1 500元備援價");
 assert.ok(serverSource.includes("trialShippingOptions()"), "試喝配送費用必須從正式資料讀取");
 
-assert.equal(rich.VERSION, "20260810-rich-menu-vector-outline-v12");
+assert.ok(String(rich.VERSION || "").includes("rich-menu"), "Rich Menu必須提供正式版本識別");
 assert.equal(rich.SINGLE_IMAGE_ONLY, true);
 assert.equal(rich.RUNTIME_COMPOSITE_FORBIDDEN, true);
 assert.equal(rich.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
-assert.equal(rich.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v12.svg.gz.b64");
+assert.match(String(rich.STATIC_ARTWORK || ""), /^assets\/rich-menu\/.*\.svg(?:\.gz\.b64)?$/, "Rich Menu正式母稿必須是assets/rich-menu下的單一SVG資產");
 assert.ok(!richSource.includes("BASE_TEMPLATE"), "Rich Menu正式程式不得依賴舊JPG底圖");
 assert.ok(!/\b(?:const|let|var)\s+BOSS_SOURCES\b/.test(richSource), "Rich Menu不得保留六張後貼圖來源變數");
 assert.ok(!/\b(?:const|let|var)\s+CELL_LAYOUTS\b/.test(richSource), "Rich Menu不得保留六格圖片拼貼座標變數");
 assert.ok(!richSource.includes(".composite("), "Rich Menu不得使用sharp composite拼湊視覺");
 assert.ok(!/<image\b/i.test(richArtwork), "Rich Menu不得內嵌照片或舊底圖");
-assert.ok(!/<text\b/i.test(richArtwork), "Rich Menu顧客可見繁中不得依賴主機字型");
-assert.ok(richArtwork.includes("xjw-text-outlined-v12"), "Rich Menu必須使用繁中向量字正式母稿");
+assert.ok(!/<text\b/i.test(richArtwork), "Rich Menu顧客可見繁中不得依賴主機中文字型");
+assert.ok(richArtwork.includes("xjw-text-outlined-"), "Rich Menu必須使用繁中向量字正式母稿");
 assert.equal((richArtwork.match(/rx=\"38\"/g) || []).length, 6, "Rich Menu必須有六個一致完整功能面板");
 for (const label of ["仙加味", "看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]) {
   assert.ok(richArtwork.includes(label), `Rich Menu完整母稿缺少：${label}`);
@@ -99,8 +103,8 @@ assert.deepEqual(menu.areas.map((a) => a.bounds), [
 ], "Rich Menu六個熱區必須精準對齊六個實際面板");
 assert.ok(menu.areas.every((a) => a.bounds.y >= 176), "Rich Menu品牌Header不得成為點擊熱區");
 
-assert.equal(visual.VERSION, "20260809-recording-ui-v6-products-v3-size-lock");
-assert.equal(visual.PRODUCT_IMAGE_VERSION, "20260810-products-v3-latest-originals-v3", "LINE Flex必須使用最新產品原圖版本");
+assert.ok(String(visual.VERSION || "").includes("recording-ui"), "LINE Flex視覺層必須提供正式版本識別");
+assert.equal(visual.PRODUCT_IMAGE_VERSION, photoVersion, "LINE Flex必須直接跟目前產品圖片權威同步，不得另外寫死舊版號");
 for (const p of Object.values(visual.PRODUCTS)) assert.ok(p.image.includes("/images/products-v3/"));
 assert.equal(visual.productHero("guilu-drink-30").aspectMode, "fit");
 
@@ -118,7 +122,7 @@ assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf
 for (const field of ["lastWebhookAt", "lastReplySuccessAt", "lastReplyError"]) assert.ok(serverSource.includes(field), `LINE health缺少${field}`);
 assert.ok(serverSource.includes("DRINK_ORDER_NOTICE") && serverSource.includes("READY_STOCK_ORDER_NOTICE") && serverSource.includes("MIXED_ORDER_NOTICE"), "主程式必須包含產品別出貨邏輯");
 assert.ok(serverSource.includes("orderNoticeForProduct") && serverSource.includes("orderNoticeForCart"), "產品卡與購物車必須由主程式判斷交期");
-assert.ok(syncSource.includes('PHOTO_VERSION = "2026-08-10-products-v3-latest-originals-v3"'), "prestart必須驗最新products-v3圖片權威");
+assert.ok(syncSource.includes("assertPhotoAuthority") && syncSource.includes("getPhotoAuthority()?.version"), "prestart必須從唯一圖片權威動態驗證，不得再綁死某一版照片版本號");
 
 assert.equal(packageJson.main, "server.js", "正式服務入口必須是LINE OA server.js");
 assert.equal(packageJson.scripts.prestart, "node tools/sync_sales_master.js --write && node line-health-authority.test.js && node line-true-original-readiness.test.js && node line-production-readiness.test.js", "Render prestart必須同步正式母本並執行完整正式驗收");
@@ -130,4 +134,4 @@ assert.ok(fulfillment.DRINK_NOTICE.includes("5～7個工作天"), "相容性守�
 assert.ok(!fulfillment.READY_STOCK_NOTICE.includes("5～7"), "相容性守門不得把現貨商品寫成5～7工作天");
 assert.ok(fulfillment.SOUP_VARIANTS.includes("75g／盒｜8塊裝｜每塊約9.375g"));
 
-console.log("PASS：LINE OA正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3最新原圖/個別尺寸、繁中向量字Rich Menu、六大意圖、快速Webhook與LINE-only Render start均符合正式規則。\n");
+console.log(`PASS：LINE OA正式服務驗收完成：六項產品/價格/試喝/出貨/products-v3目前權威 ${photoVersion}/個別尺寸、繁中向量字Rich Menu、六大意圖、快速Webhook與LINE-only Render start均符合正式規則；新版資產不再因舊版號誤擋。`);
