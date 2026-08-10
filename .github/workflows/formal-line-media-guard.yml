@@ -1,0 +1,38 @@
+name: 仙加味 LINE 正式媒體能力守門
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'line-sales-master.json'
+      - 'formal-line-media.json'
+      - 'src/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'docs/FORMAL_MEDIA_POLICY_20260810.md'
+      - '.github/workflows/formal-line-media-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Guard latest formal data and capabilities
+        shell: bash
+        run: |
+          grep -Fq '龜鹿膏：100g／罐' docs/FORMAL_MEDIA_POLICY_20260810.md
+          grep -Fq '龜鹿飲30cc：30cc／罐（小玻璃罐、裸罐、無貼紙）' docs/FORMAL_MEDIA_POLICY_20260810.md
+          grep -Fq '龜鹿飲180cc：180cc／包（鋁袋）' docs/FORMAL_MEDIA_POLICY_20260810.md
+          grep -Fq '龜鹿湯塊：75g／盒｜8塊裝' docs/FORMAL_MEDIA_POLICY_20260810.md
+          grep -Fq '龜鹿膠：600g／盒｜32塊裝' docs/FORMAL_MEDIA_POLICY_20260810.md
+          grep -Fq '鹿茸粉：75g／罐' docs/FORMAL_MEDIA_POLICY_20260810.md
+          if [ -f formal-line-media.json ]; then
+            grep -Fq 'formal-line-media' formal-line-media.json
+            grep -Fq 'LINE OA' formal-line-media.json
+          fi
+          ! grep -R -F '30cc／瓶' --include='*.json' --include='*.js' --include='*.mjs' --include='*.md' --include='*.html' .
+          echo 'PASS: LINE guard validates latest formal content/capabilities; Rich Menu or data may upgrade versions without legacy-version rejection.'
