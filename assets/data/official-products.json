@@ -1,8 +1,9 @@
 {
-  "version": "2026-08-11-current-authority",
+  "version": "current-authority",
   "authority": "user-confirmed-current",
   "publicAuthority": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "visualAuthority": "https://ts15825868.github.io/xianjiawei/content/visual-production-spec-current.json",
+  "formalMediaAuthority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
   "products": [
     {
       "id": "guilu-gao",
@@ -23,7 +24,8 @@
       "retailPrice": 60,
       "promotion": "買10送1｜11罐600元",
       "fulfillmentType": "made-to-order-drink",
-      "imagePolicy": "official-original-contain-no-crop"
+      "imagePolicy": "official-original-contain-no-crop",
+      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp?v=current"
     },
     {
       "id": "guilu-drink-180",
@@ -72,16 +74,25 @@
     "drinkNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
     "readyStockNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。"
   },
+  "trialCampaign": {
+    "title": "龜鹿飲試喝組｜先試喝，再決定",
+    "free": "3罐試喝品免費",
+    "shipping": ["7-11店到店60元", "郵局宅配100元"],
+    "limit": "每位顧客、電話及地址限申請一次",
+    "leadTime": "接單後安排製作，約5～7個工作天出貨",
+    "orderChannel": "所有試喝申請與正式下單皆在LINE OA完成",
+    "price30": "60元／罐；買10送1，11罐600元",
+    "price180": "200元／包；買10送1，11包2,000元"
+  },
   "trialPosterAuthority": {
-    "assetId": "guilu-drink-trial-final-20260808",
-    "manifest": "https://ts15825868.github.io/xianjiawei/content/final-published-assets-v20260808.json",
-    "preview": "https://ts15825868.github.io/xianjiawei/images/posts/final-published/guilu-drink-trial-final-20260808-preview.svg",
-    "confirmedPublishedOn": "2026-08-08",
-    "publishAllowed": false,
-    "preventRepublish": true,
+    "assetId": "current-user-approved-trial-poster",
+    "status": "approved_display",
+    "currentDisplay": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp?v=current",
+    "currentTrialPage": "https://ts15825868.github.io/xianjiawei/trial.html?v=current",
+    "title": "龜鹿飲試喝組｜先試喝，再決定",
     "doNotRegenerate": true,
-    "lineCompatibleFallback": "https://ts15825868.github.io/xianjiawei/images/posts/approved-v412/guilu-drink-trial-evergreen.jpg?v=20260806",
-    "fallbackReason": "最終發布資產維持發布鎖定；LINE訊息圖片如需JPEG相容素材，使用既有相容圖，不影響最終版發布紀錄。"
+    "useCurrentFormalMediaOnly": true,
+    "retiredPosterMustNotBeUsed": true
   },
   "guardRules": [
     "只允許products清單內六項目前正式顧客規格",
@@ -90,7 +101,8 @@
     "30cc正式名稱必須是龜鹿飲30cc玻璃罐，規格30cc／罐（小玻璃罐），不得稱瓶",
     "正式成分與順序不得回退舊版本",
     "龜鹿膏目前主要使用資料為一天一次一小匙；不得回退早晚各一次舊用法",
+    "試喝標題、免費數量、運費、限領規則、交期、價格與圖片必須跟formalMediaAuthority目前資料一致",
     "守門驗證正式能力與目前權威資料，不綁死歷史版號、舊文案或退役延伸規格",
-    "產品圖片必須使用products-v3正式原圖等比例呈現；顧客DM如與目前正式規格文字衝突必須隔離"
+    "產品本體圖片必須使用products-v3正式原圖等比例呈現；顧客DM如與目前正式規格文字衝突必須隔離"
   ]
 }
