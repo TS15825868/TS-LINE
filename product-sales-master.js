@@ -134,14 +134,16 @@ function currentAuthorityOverride(id, merged = {}) {
   };
 }
 function photoOverride(id) {
-  const authority = getPhotoAuthority();
-  const url = String(authority?.products?.[id] || "").trim();
+  const photo = getPhotoAuthority();
+  const url = String(photo?.products?.[id] || "").trim();
+  const official = authorityProduct(id);
+  const approvedDm = String(official?.approvedDm || "").trim();
   if (!url) throw new Error(`${id} 缺少 products-v3 正式產品原圖權威`);
   return {
     image: url,
     imageUrl: url,
     image_url: url,
-    dmImage: url,
+    dmImage: approvedDm || url,
     officialOriginalImage: url,
     imagePolicy: "approved-original-product-photo-contain-no-crop",
   };
@@ -196,7 +198,7 @@ function applyMaster(data) {
       productMainImageSource: "products-v3-user-approved-originals",
       productsV2Use: "legacy-reference-only",
       productScalePolicy: "uniform-only-no-equal-height-equal-width",
-      dmFallback: "current-formal-dm-if-approved-otherwise-products-v3",
+      dmFallback: "current-user-approved-dm-otherwise-products-v3",
     },
     productMainImageSource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
