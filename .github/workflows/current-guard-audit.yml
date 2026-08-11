@@ -17,6 +17,22 @@ jobs:
           node-version: '22'
       - name: Install current dependencies
         run: npm install --ignore-scripts
+      - name: Verify package lock and current drink units
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+          const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          const root=lock.packages?.['']||{};
+          const products=JSON.parse(fs.readFileSync('assets/data/official-products.json','utf8')).products||[];
+          const byId=Object.fromEntries(products.map(p=>[p.id,p]));
+          const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
+          must(root.version===pkg.version,'package-lock root version does not follow package.json');
+          must(root.dependencies?.sharp===pkg.dependencies?.sharp,'package-lock sharp does not follow package.json');
+          must(byId['guilu-drink-30']?.usagePrimary==='每日一罐','30cc usage unit must remain 每日一罐');
+          must(byId['guilu-drink-180']?.usagePrimary==='每日一包','180cc usage unit must remain 每日一包');
+          console.log('PASS: current lockfile and explicit drink usage units are aligned.');
+          NODE
       - name: Current authority full guard
         run: npm run guard:full
       - name: Security audit
