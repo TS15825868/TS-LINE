@@ -1,12 +1,12 @@
 "use strict";
 
 /*
- * LINE OA 正式媒體入口｜2026-08-10
+ * LINE OA 正式媒體入口
  * - products-v3 仍是產品本體／包裝識別唯一權威。
- * - 顧客產品介紹圖使用使用者最新核准 DM。
- * - 核准 DM 原檔為官網 WebP；LINE 顯示時只做 JPEG 格式轉換與等比例縮小，不裁切、不拉伸、不重畫。
+ * - 顧客產品介紹圖使用目前核准正式媒體；來源可為 JPEG／PNG／WebP。
+ * - LINE 顯示只做 JPEG 格式轉換與等比例縮小，不裁切、不拉伸、不重畫。
  * - 30cc 必須維持小玻璃裸罐、無貼紙；180cc 必須維持鋁袋。
- * - 守門驗最新能力、規格與媒體行為，不綁舊版號或舊固定文案。
+ * - 守門驗目前能力、規格與媒體行為，不綁舊版號、舊檔名或舊固定文案。
  */
 const fs = require("fs");
 const path = require("path");
@@ -18,8 +18,8 @@ const richMenuSync = require("./line-rich-menu-sync");
 const photoAuthority = require("./line-product-photo-authority.json");
 const formalMedia = require("./formal-media-authority-v20260810.json");
 
-const VERSION = "20260810-direct-start-latest-user-dm-v8";
-const FORMAL_MEDIA_VERSION = "20260810-latest-user-batch";
+const VERSION = "current-line-direct-start-media-safety";
+const FORMAL_MEDIA_VERSION = "current-formal-media";
 const FORMAL_KEYS = Object.freeze({
   "guilu-gao": "龜鹿膏",
   "guilu-drink-30": "龜鹿飲30cc玻璃罐",
@@ -117,7 +117,7 @@ function normalizeProductPhotos(data) {
       officialOriginalImage: original,
       productIdentityImage: original,
       formalDmSource: formalSource,
-      imagePolicy: "user-approved-dm-jpeg-contain-no-crop; products-v3-remains-identity-authority",
+      imagePolicy: "current-user-approved-dm-jpeg-contain-no-crop; products-v3-remains-identity-authority",
       physicalScalePolicy: product.physicalScalePolicy || "uniform-only-preserve-realistic-product-scale",
     };
   });
@@ -133,7 +133,7 @@ function normalizeProductPhotos(data) {
   data.runtime = {
     ...(data.runtime || {}),
     serviceMode: "standalone-line-oa",
-    productMainImageSource: "user-approved-dm-rendered-as-line-compatible-jpeg",
+    productMainImageSource: "current-user-approved-media-rendered-as-line-compatible-jpeg",
     productIdentitySource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
     productScalePolicy: "uniform-only-no-equal-height-equal-width",
