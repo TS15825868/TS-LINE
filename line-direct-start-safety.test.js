@@ -2,6 +2,10 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+
+// Read the repository master before line-image-safety installs its runtime fs guard.
+const rawText = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
+const rawData = JSON.parse(rawText);
 const safety = require("./line-image-safety");
 
 assert.match(String(safety.VERSION || ""), /current|line|media|safety/i, "LINE安全層必須有目前能力識別");
@@ -37,31 +41,44 @@ assert.ok(!/<text\b/i.test(richArtwork), "Rich Menu顧客可見繁中不得依�
 assert.ok(/xjw-text-outlined-/i.test(richArtwork), "Rich Menu正式母稿必須使用繁中向量字");
 for (const label of ["看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]) assert.ok(richArtwork.includes(label), `Rich Menu正式母稿缺少${label}`);
 
-const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
-const data = JSON.parse(raw);
-assert.equal(data.products.length, 6, "LINE正式產品必須維持六項");
-const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
-for (const product of data.products) {
+assert.equal(rawData.products.length, 6, "LINE正式母資料產品必須維持六項");
+const rawById = Object.fromEntries(rawData.products.map((product) => [product.id, product]));
+for (const product of rawData.products) {
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
     const value=String(product[field] || "");
-    assert.ok(value.includes("/images/products-v3/"), `${product.id}.${field} direct-start母資料產品識別必須使用products-v3`);
+    assert.ok(value.includes("/images/products-v3/"), `${product.id}.${field} 母資料產品識別必須使用products-v3`);
     assert.ok(!value.includes("/images/products-v2/"), `${product.id}.${field}不得回退products-v2`);
   }
   assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id}缺少產品個別尺寸／比例規則`);
 }
-assert.match(String(byId["guilu-drink-30"]?.physicalScalePolicy || ""), /Ø42.*H51|小玻璃/i, "30cc必須保留小玻璃罐尺寸規則");
-assert.match(String(byId["guilu-drink-180"]?.physicalScalePolicy || ""), /0\.60.*0\.68|狹長.*鋁袋/i, "180cc必須保留狹長鋁袋比例規則");
-assert.deepEqual(byId["guilu-drink-30"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "30cc買10送1數量必須可直接選");
-assert.deepEqual(byId["guilu-drink-180"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "180cc買10送1數量必須可直接選");
-assert.equal(byId["guilu-drink-30"].offers.find((offer) => offer.qty === 11)?.total, 600);
-assert.equal(byId["guilu-drink-180"].offers.find((offer) => offer.qty === 11)?.total, 2000);
-assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得回復退役規格");
-assert.equal(data.runtime.serviceMode, "standalone-line-oa");
-assert.equal(data.runtime.productMainImageSource, "products-v3-user-approved-originals");
-assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
-assert.equal(data.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
-assert.equal(data.runtime.promotionQuantityPolicy, "promotion-qty-must-appear-within-first-four-options");
-assert.equal(data.runtime.schedulePolicyVersion, undefined, "LINE執行資料不得掛社群排程版本");
+assert.match(String(rawById["guilu-drink-30"]?.physicalScalePolicy || ""), /Ø42.*H51|小玻璃/i, "30cc必須保留小玻璃罐尺寸規則");
+assert.match(String(rawById["guilu-drink-180"]?.physicalScalePolicy || ""), /0\.60.*0\.68|狹長.*鋁袋/i, "180cc必須保留狹長鋁袋比例規則");
+assert.deepEqual(rawById["guilu-drink-30"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "30cc買10送1數量必須可直接選");
+assert.deepEqual(rawById["guilu-drink-180"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "180cc買10送1數量必須可直接選");
+assert.equal(rawById["guilu-drink-30"].offers.find((offer) => offer.qty === 11)?.total, 600);
+assert.equal(rawById["guilu-drink-180"].offers.find((offer) => offer.qty === 11)?.total, 2000);
+assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(rawById["guilu-tangkuai"])), "龜鹿湯塊不得回復退役規格");
+assert.equal(rawData.runtime.serviceMode, "standalone-line-oa");
+assert.equal(rawData.runtime.productMainImageSource, "products-v3-user-approved-originals");
+assert.equal(rawData.runtime.productsV2Use, "legacy-reference-only");
+assert.equal(rawData.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
+assert.equal(rawData.runtime.promotionQuantityPolicy, "promotion-qty-must-appear-within-first-four-options");
+assert.equal(rawData.runtime.schedulePolicyVersion, undefined, "LINE執行資料不得掛社群排程版本");
+
+// Customer-facing runtime is intentionally different from product identity: current approved media is shown,
+// while products-v3 is retained separately as the immutable identity/fallback authority.
+const customerData = safety.normalizeProductPhotos(JSON.parse(rawText));
+assert.equal(customerData.products.length,6);
+for(const product of customerData.products){
+  const display=String(product.image||'');
+  assert.match(display,/^https:\/\/ts-line\.onrender\.com\/assets\/formal-dm\/[^?]+\.jpg\?v=/,`${product.id} 顧客展示應使用LINE目前正式媒體route`);
+  for(const field of ['officialOriginalImage','productIdentityImage']){
+    const value=String(product[field]||'');
+    assert.ok(value.includes('/images/products-v3/'),`${product.id}.${field} 必須維持products-v3產品識別`);
+    assert.ok(!value.includes('/images/products-v2/'),`${product.id}.${field} 不得回退products-v2`);
+  }
+  assert.ok(String(product.formalDmSource||'').startsWith('https://'),`${product.id} 顧客正式DM必須保留公開來源可追溯性`);
+}
 
 const formal=safety.formalMedia || {};
 assert.match(String(formal.runtime || ""), /current/i, "LINE正式媒體authority必須是目前權威");
@@ -87,4 +104,4 @@ assert.equal(menu.areas.length,6);
 assert.equal(menu.areas.at(0).bounds.y, 176, "品牌Header不得成為熱區");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：LINE直接啟動守門以目前能力驗收：products-v3產品識別、目前核准正式媒體、等比例JPEG route、六格繁中向量Rich Menu、產品比例與促銷數量都存在；安全程式可提及退役標記但不會被誤判成仍在使用，也不綁歷史路徑／版號。");
+console.log("PASS：LINE直接啟動守門已分離『產品本體識別』與『顧客展示媒體』：母資料／fallback維持products-v3；顧客畫面使用目前核准正式媒體JPEG route；同時驗六格繁中向量Rich Menu、產品比例與促銷數量，不綁歷史路徑／版號。");
