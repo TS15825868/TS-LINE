@@ -1,26 +1,29 @@
 {
   "runtime":"20260811-line-formal-media-current",
-  "approval_batch":"20260810-latest-user-dm-and-trial",
+  "approval_batch":"20260810-latest-user-dm-and-trial-copy-validated-current",
   "post_approval_batch":"20260811-latest-user-post-images",
   "source":"https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
   "source_product_dm":{
     "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-gao-100g.webp",
-    "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp",
+    "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260810-products-v3-latest-originals-v3",
     "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp",
     "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp",
     "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp",
     "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp"
   },
+  "quarantined_media":{
+    "龜鹿飲30cc玻璃罐":{"url":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp","reason":"圖內嵌文字仍寫30cc／瓶，與目前30cc／罐（小玻璃罐）正式規格衝突；LINE顧客顯示先回退products-v3正式小玻璃裸罐。"}
+  },
   "source_trial":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp",
   "product_dm":{
-    "龜鹿膏":"https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=20260810-latest-user-batch",
-    "龜鹿飲30cc玻璃罐":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30cc.jpg?v=20260810-latest-user-batch",
-    "龜鹿飲180cc鋁袋":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180cc.jpg?v=20260810-latest-user-batch",
-    "龜鹿湯塊":"https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=20260810-latest-user-batch",
-    "龜鹿膠":"https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=20260810-latest-user-batch",
-    "鹿茸粉":"https://ts-line.onrender.com/assets/formal-dm/lurong-fen.jpg?v=20260810-latest-user-batch"
+    "龜鹿膏":"https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=20260811-copy-validated-current",
+    "龜鹿飲30cc玻璃罐":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30cc.jpg?v=20260811-copy-validated-current",
+    "龜鹿飲180cc鋁袋":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180cc.jpg?v=20260811-copy-validated-current",
+    "龜鹿湯塊":"https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=20260811-copy-validated-current",
+    "龜鹿膠":"https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=20260811-copy-validated-current",
+    "鹿茸粉":"https://ts-line.onrender.com/assets/formal-dm/lurong-fen.jpg?v=20260811-copy-validated-current"
   },
-  "trial":"https://ts-line.onrender.com/assets/formal-dm/trial.jpg?v=20260810-latest-user-batch",
+  "trial":"https://ts-line.onrender.com/assets/formal-dm/trial.jpg?v=20260811-copy-validated-current",
   "post_image_catalog":"https://ts15825868.github.io/xianjiawei/data/post-library-userzip3-v20260811.json",
   "post_image_policy":{
     "priority":"user_zip_approved",
@@ -31,10 +34,10 @@
     "match_dimensions":["season","scene","environment","temperature","expression","action","props","copy_semantics"],
     "states":["approved_existing","needs_binary_sync","regenerate_if_missing"],
     "binary_sync_status":"pending",
-    "rule":"product and trial copy uses current approved formal DM/products-v3 first; lifestyle copy uses the current user ZIP after semantic match; a matching ZIP source waits for binary sync and must not be regenerated; regeneration is only for a true no-match case",
+    "rule":"product and trial copy uses current copy-validated formal media/products-v3 first; lifestyle copy uses the current user ZIP after semantic match; a matching ZIP source waits for binary sync and must not be regenerated; regeneration is only for a true no-match case",
     "invalidate_old_approval_after_change":true,
     "review_after_change":16
   },
-  "hard_rules":["products-v3 remains true original package identity authority","30cc is a small naked glass jar with no sticker","180cc is an aluminum pouch","approved DM display never redefines package identity","AI must not redraw product identity","latest user-approved data and copy supersede obsolete fixed copy"],
-  "guard_principle":"validate current authority, actual media availability, specs and capabilities; compare to the current public catalog instead of retired ZIP names, fixed candidate counts, old version numbers or obsolete wording"
+  "hard_rules":["products-v3 remains true original package identity authority","30cc is a small naked glass jar with no sticker and must never be called a bottle","180cc is an aluminum pouch","customer DM may display only when embedded copy agrees with current formal specs","AI must not redraw product identity","latest user-approved data and copy supersede obsolete fixed copy"],
+  "guard_principle":"validate current authority, current copy validity, actual media availability, specs and capabilities; compare to the current public catalog instead of retired ZIP names, fixed candidate counts, old version numbers or obsolete wording"
 }
