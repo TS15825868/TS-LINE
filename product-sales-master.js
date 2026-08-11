@@ -21,6 +21,22 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
 ]);
 
 const FORMAL_PRODUCT_COPY = Object.freeze({});
+const RETIRED_COPY_REPLACEMENTS = Object.freeze([
+  [/每日早上及下午各一小匙/g, "一天一次一小匙"],
+  [/早晚各一小匙/g, "一天一次一小匙"],
+  [/75g／盒｜8塊裝｜每塊約9\.375g/g, "75g／盒｜8塊裝"],
+  [/75g深藍盒、8塊裝、每塊約9\.375g/g, "75g深藍盒、8塊裝"],
+  [/600g（1斤）／盒｜32塊裝｜每塊約18\.75g/g, "600g／盒｜32塊裝"],
+  [/600g一斤淡紫盒/g, "600g淡紫盒"],
+  [/一斤大規格/g, "600g大規格"],
+]);
+
+function sanitizeCurrentCopy(value) {
+  if (Array.isArray(value)) return value.map(sanitizeCurrentCopy);
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key,item]) => [key, sanitizeCurrentCopy(item)]));
+  if (typeof value !== "string") return value;
+  return RETIRED_COPY_REPLACEMENTS.reduce((text,[pattern,replacement]) => text.replace(pattern,replacement), value);
+}
 
 function getMaster() {
   if (master) return master;
@@ -76,7 +92,7 @@ function normalizeProductOffers(product, override = {}) {
 }
 
 function salesOverride(override = {}) {
-  return Object.fromEntries(SALES_OVERRIDE_FIELDS.filter((field) => override[field] !== undefined).map((field) => [field, override[field]]));
+  return Object.fromEntries(SALES_OVERRIDE_FIELDS.filter((field) => override[field] !== undefined).map((field) => [field, sanitizeCurrentCopy(override[field])]));
 }
 function formalCopy(id, value = {}) {
   return { ...value, ...(FORMAL_PRODUCT_COPY[id] || {}) };
@@ -88,15 +104,23 @@ function currentAuthorityOverride(id, merged = {}) {
   const official = authorityProduct(id);
   if (!official) throw new Error(`${id} 缺少目前正式產品權威`);
   const spec = String(official.specification || "").trim();
-  const usage = Array.isArray(merged.usage) ? [...merged.usage] : [];
+  const usage = (Array.isArray(merged.usage) ? [...merged.usage] : []).map(sanitizeCurrentCopy);
   if (official.usagePrimary) {
     if (usage.length) usage[0] = official.usagePrimary;
     else usage.push(official.usagePrimary);
   }
   const aliases = (Array.isArray(merged.aliases) ? merged.aliases : [])
-    .map((value) => String(value || "").trim())
+    .map((value) => sanitizeCurrentCopy(String(value || "").trim()))
     .filter(Boolean)
-    .filter((value) => id !== "guilu-drink-30" || !/瓶/.test(value));
+    .filter((value) => id !== "guilu-drink-30" || !/瓶/.test(value))
+    .filter((value) => id !== "guilu-jiao" || !/^一斤$/.test(value));
+  const cleaned = sanitizeCurrentCopy({
+    description: merged.description,
+    storage: merged.storage,
+    fit: merged.fit,
+    purposeDirection: merged.purposeDirection,
+    physicalScalePolicy: merged.physicalScalePolicy,
+  });
   return {
     name: official.name,
     displayName: official.name,
@@ -106,6 +130,7 @@ function currentAuthorityOverride(id, merged = {}) {
     ingredients: official.ingredients || merged.ingredients,
     ...(official.usagePrimary ? { usage } : {}),
     aliases,
+    ...Object.fromEntries(Object.entries(cleaned).filter(([,value]) => value !== undefined)),
   };
 }
 function photoOverride(id) {
@@ -126,7 +151,7 @@ function applyMaster(data) {
   const policy = getMaster();
   const authority = getCurrentAuthority();
   const productOverrides = policy.products || {};
-  const comboOffers = Array.isArray(policy.comboOffers) ? policy.comboOffers : [];
+  const comboOffers = Array.isArray(policy.comboOffers) ? sanitizeCurrentCopy(policy.comboOffers) : [];
 
   data.products = (data.products || []).filter((product) => productOverrides[product.id]).map((product) => {
     const rawOverride = formalCopy(product.id, productOverrides[product.id] || {});
@@ -137,7 +162,7 @@ function applyMaster(data) {
       ...normalized.offers.map((offer) => offer.qty),
     ].map(Number).filter((value) => Number.isFinite(value) && value > 0))];
     let merged = {
-      ...product,
+      ...sanitizeCurrentCopy(product),
       ...override,
       ...photoOverride(product.id),
       offers: normalized.offers,
@@ -160,7 +185,7 @@ function applyMaster(data) {
   data.payments = Array.isArray(policy.payments) ? policy.payments : (data.payments || []);
   data.shipping = Array.isArray(policy.shipping) ? policy.shipping : (data.shipping || []);
   data.store = policy.store ? { ...policy.store } : (data.store || {});
-  data.trialCampaign = policy.trialCampaign ? { ...policy.trialCampaign } : data.trialCampaign;
+  data.trialCampaign = policy.trialCampaign ? sanitizeCurrentCopy({ ...policy.trialCampaign }) : data.trialCampaign;
   data.runtime = {
     ...(data.runtime || {}),
     imagePolicy: {
@@ -170,7 +195,7 @@ function applyMaster(data) {
       productMainImageSource: "products-v3-user-approved-originals",
       productsV2Use: "legacy-reference-only",
       productScalePolicy: "uniform-only-no-equal-height-equal-width",
-      dmFallback: "approved-original-photo-until-current-dm-reviewed",
+      dmFallback: "copy-validated-formal-dm-or-products-v3-fallback",
     },
     productMainImageSource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
@@ -185,8 +210,8 @@ function applyMaster(data) {
       lineVoomManualOnly: true,
     },
   };
-  data.salesMasterVersion = `${policy.version}-authority-driven`;
-  data.salesMasterSource = policy.source;
+  data.salesMasterVersion = `${policy.version}-authority-driven-current`;
+  data.salesMasterSource = `${policy.source}; retired copy normalized by current official authority before runtime`;
   data.currentProductAuthorityVersion = authority.version;
   data.productPhotoAuthorityVersion = getPhotoAuthority().version;
   return data;
@@ -208,4 +233,4 @@ fs.readFileSync = function patchedReadFileSync(file, ...args) {
   return result;
 };
 
-module.exports = { applyMaster, getMaster, getCurrentAuthority, getPhotoAuthority, rootCombos, normalizeProductOffers, salesOverride, formalCopy, authorityProduct, currentAuthorityOverride, photoOverride, FORMAL_PRODUCT_COPY, SALES_OVERRIDE_FIELDS };
+module.exports = { applyMaster, getMaster, getCurrentAuthority, getPhotoAuthority, rootCombos, normalizeProductOffers, salesOverride, formalCopy, authorityProduct, currentAuthorityOverride, photoOverride, sanitizeCurrentCopy, FORMAL_PRODUCT_COPY, SALES_OVERRIDE_FIELDS };
