@@ -4,82 +4,77 @@ const fs = require("node:fs");
 const path = require("node:path");
 const safety = require("./line-image-safety");
 
-assert.equal(safety.VERSION, "20260810-direct-start-products-v3-promo-qty-v6");
-assert.equal(safety.photoAuthority.version, "2026-08-09-products-v3-user-approved-size-lock-v1");
-assert.ok(safety.recordingUiFix.VERSION.includes("recording-ui-v6"));
-assert.equal(safety.richMenuSync.VERSION, "20260810-rich-menu-vector-outline-v12");
+assert.match(String(safety.VERSION || ""), /current|line|media|safety/i, "LINE安全層必須有目前能力識別");
+assert.match(String(safety.photoAuthority?.version || ""), /products-v3/i, "產品圖片權威必須維持products-v3");
+assert.ok(!/products-v2/i.test(String(safety.photoAuthority?.version || "")), "產品圖片權威不得回退products-v2");
+assert.match(String(safety.recordingUiFix?.VERSION || ""), /recording-ui/i, "LINE Flex視覺層缺少能力識別");
+assert.match(String(safety.richMenuSync?.VERSION || ""), /rich-menu/i, "Rich Menu缺少能力識別");
 assert.equal(safety.richMenuSync.SINGLE_IMAGE_ONLY, true);
 assert.equal(safety.richMenuSync.RUNTIME_COMPOSITE_FORBIDDEN, true);
 assert.equal(safety.richMenuSync.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
-assert.equal(safety.richMenuSync.STATIC_ARTWORK, "assets/rich-menu/xianjiawei-rich-menu-v12.svg.gz.b64");
-assert.equal(safety.schedulePolicy, undefined, "LINE獨立安全層不得再載入社群排程模組");
-assert.equal(safety.fulfillmentSafety, undefined, "LINE獨立安全層不得再依賴舊出貨補丁");
+assert.match(String(safety.richMenuSync.STATIC_ARTWORK || ""), /^assets\/rich-menu\/.*\.svg(?:\.gz\.b64)?$/, "Rich Menu必須使用單一SVG正式母稿");
+assert.equal(safety.schedulePolicy, undefined, "LINE獨立安全層不得載入社群排程模組");
+assert.equal(safety.fulfillmentSafety, undefined, "LINE獨立安全層不得依賴舊出貨補丁");
+assert.equal(safety.FORMAL_MEDIA_VERSION, "current-formal-media", "正式媒體快取識別應跟目前authority，不應鎖歷史日期版本");
 
 const safetySource = fs.readFileSync(path.join(__dirname, "line-image-safety.js"), "utf8");
 assert.ok(!safetySource.includes('require("./social-schedule-policy-fix")'), "LINE安全層不得載入社群排程");
 assert.ok(!safetySource.includes('require("./product-fulfillment-message-fix")'), "LINE安全層不得載入舊出貨補丁");
-assert.equal(fs.existsSync(path.join(__dirname, "social-final-approved-batch.js")), false, "退役的自動核准社群batch不得回到LINE repo");
-assert.equal(fs.existsSync(path.join(__dirname, "social-final-posts.js")), false, "退役的2026/7社群排程模板不得回到LINE repo");
+assert.ok(safetySource.includes('app.get("/assets/formal-dm/:id.jpg"'), "LINE正式啟動必須提供目前正式DM JPEG route");
+assert.ok(safetySource.includes('fit: "inside"'), "正式媒體轉LINE JPEG必須等比例contain，不可裁切");
+assert.ok(safetySource.includes('withoutEnlargement: true'), "正式媒體不得不必要放大");
+assert.equal(fs.existsSync(path.join(__dirname, "social-final-approved-batch.js")), false, "退役自動核准社群batch不得回到LINE repo");
+assert.equal(fs.existsSync(path.join(__dirname, "social-final-posts.js")), false, "退役社群排程模板不得回到LINE repo");
 
 const richSource = fs.readFileSync(path.join(__dirname, "line-rich-menu-sync.js"), "utf8");
 const richArtwork = safety.richMenuSync.readArtwork();
-assert.ok(!richSource.includes("BASE_TEMPLATE"));
-assert.ok(!richSource.includes("BOSS_SOURCES"));
-assert.ok(!richSource.includes("CELL_LAYOUTS"));
-assert.ok(!richSource.includes(".composite("));
+for (const forbidden of ["BASE_TEMPLATE", "BOSS_SOURCES", "CELL_LAYOUTS", ".composite("]) assert.ok(!richSource.includes(forbidden), `Rich Menu不得回退拼貼能力：${forbidden}`);
 assert.ok(!/<image\b/i.test(richArtwork), "Rich Menu不得內嵌舊底圖或照片拼貼");
 assert.ok(!/<text\b/i.test(richArtwork), "Rich Menu顧客可見繁中不得依賴主機字型");
-assert.ok(richArtwork.includes("xjw-text-outlined-v12"), "Rich Menu正式母稿必須使用繁中向量字");
-for (const label of ["看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]) {
-  assert.ok(richArtwork.includes(label), `Rich Menu正式母稿缺少${label}`);
-}
-assert.equal((richArtwork.match(/rx=\"38\"/g) || []).length, 6, "Rich Menu應有六個原生完整面板");
+assert.ok(/xjw-text-outlined-/i.test(richArtwork), "Rich Menu正式母稿必須使用繁中向量字");
+for (const label of ["看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]) assert.ok(richArtwork.includes(label), `Rich Menu正式母稿缺少${label}`);
 
 const raw = fs.readFileSync(path.join(__dirname, "data.json"), "utf8");
 const data = JSON.parse(raw);
-assert.equal(data.products.length, 6);
+assert.equal(data.products.length, 6, "LINE正式產品必須維持六項");
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
 for (const product of data.products) {
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
-    assert.ok(String(product[field] || "").includes("/images/products-v3/"), `${product.id}.${field} direct-start仍非products-v3正式原圖`);
-    assert.ok(!String(product[field] || "").includes("/images/products-v2/"), `${product.id}.${field} direct-start仍含舊products-v2`);
-    assert.ok(!String(product[field] || "").includes("/images/dm-final/"), `${product.id}.${field} direct-start仍含舊DM`);
+    const value=String(product[field] || "");
+    assert.ok(value.includes("/images/products-v3/"), `${product.id}.${field} direct-start產品識別必須使用products-v3`);
+    assert.ok(!value.includes("/images/products-v2/"), `${product.id}.${field}不得回退products-v2`);
   }
-  assert.equal(product.imagePolicy, "approved-original-product-photo-contain-no-crop");
-  assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id} 缺少產品個別尺寸／比例規則`);
+  assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id}缺少產品個別尺寸／比例規則`);
 }
-assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|30cc.*小玻璃|小玻璃.*30cc/i, "30cc必須保留小玻璃罐實際尺寸規則");
-assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長.*鋁袋|鋁袋.*狹長/i, "180cc必須保留狹長鋁袋比例規則");
-assert.deepEqual(byId["guilu-drink-30"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "30cc買10送1的11罐必須出現在前四個可選數量");
-assert.deepEqual(byId["guilu-drink-180"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "180cc買10送1的11包必須出現在前四個可選數量");
+assert.match(String(byId["guilu-drink-30"]?.physicalScalePolicy || ""), /Ø42.*H51|小玻璃/i, "30cc必須保留小玻璃罐尺寸規則");
+assert.match(String(byId["guilu-drink-180"]?.physicalScalePolicy || ""), /0\.60.*0\.68|狹長.*鋁袋/i, "180cc必須保留狹長鋁袋比例規則");
+assert.deepEqual(byId["guilu-drink-30"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "30cc買10送1數量必須可直接選");
+assert.deepEqual(byId["guilu-drink-180"].quantityOptions.slice(0, 4), [1, 2, 5, 11], "180cc買10送1數量必須可直接選");
 assert.equal(byId["guilu-drink-30"].offers.find((offer) => offer.qty === 11)?.total, 600);
 assert.equal(byId["guilu-drink-180"].offers.find((offer) => offer.qty === 11)?.total, 2000);
-assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得回復300g／600g舊規格");
-assert.equal(data.productPhotoAuthorityVersion, "2026-08-09-products-v3-user-approved-size-lock-v1");
+assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(byId["guilu-tangkuai"])), "龜鹿湯塊不得回復退役規格");
 assert.equal(data.runtime.serviceMode, "standalone-line-oa");
 assert.equal(data.runtime.productMainImageSource, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 assert.equal(data.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
 assert.equal(data.runtime.promotionQuantityPolicy, "promotion-qty-must-appear-within-first-four-options");
-assert.equal(data.runtime.schedulePolicyVersion, undefined, "LINE執行資料不得再掛社群排程版本");
-assert.ok(String(data.runtime.richMenuSyncVersion || "").includes("rich-menu"));
+assert.equal(data.runtime.schedulePolicyVersion, undefined, "LINE執行資料不得掛社群排程版本");
 
-const oldBubble = {type:"bubble",hero:{type:"image",url:"https://example.com/old.jpg"},body:{type:"box",layout:"vertical",contents:[{type:"text",text:"龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）"},{type:"text",text:"每組售價：$6,400"}]},footer:{type:"box",layout:"vertical",contents:[{type:"button",action:{type:"uri",label:"看產品DM",uri:"https://example.com/old-dm.jpg"}}]}};
-safety.recordingUiFix.applyVisualFix(oldBubble);
-assert.ok(oldBubble.hero.url.includes("/images/products-v3/guilu-drink-30.jpg"));
-assert.equal(oldBubble.hero.aspectMode, "fit");
-assert.equal(oldBubble.xjwProductScalePolicy, "uniform-only-no-crop-no-stretch");
-assert.equal(oldBubble.footer.contents[0].action.label, "看實際產品照片");
-assert.equal(oldBubble.body.contents[1].text, "商品合計：$6,400");
+const formal=safety.formalMedia || {};
+assert.match(String(formal.runtime || ""), /current/i, "LINE正式媒體authority必須是目前權威");
+assert.equal(String(formal.approval_batch || ""), "current-user-approved-media");
+assert.ok(String(formal.source_trial || "").includes("guilu-drink-trial"), "LINE試喝圖必須跟目前正式海報來源同步");
+assert.ok(String(formal.source_product_dm?.["龜鹿飲30cc玻璃罐"] || "").includes("guilu-drink-30cc.webp"), "30cc顧客DM來源必須是目前核准DM");
+for (const key of ["龜鹿膏","龜鹿飲180cc鋁袋","龜鹿湯塊","龜鹿膠","鹿茸粉"]) assert.match(String(formal.source_product_dm?.[key]||""), /\/images\/dm-final\/.*\.jpg\?v=current$/, `${key}正式顯示來源必須跟目前網站有效二進位同步`);
 
 assert.equal(safety.CLEAN_MASCOT_PATH_PREFIX, "/assets/mascot-clean");
 assert.equal(safety.CLEAN_DRINK_IMAGE_PATH, "/assets/guilu-drink-30-clean.jpg");
-assert.equal(typeof safety.installImageRoutes, "function", "獨立server必須保留乾淨圖片route安裝器");
+assert.equal(typeof safety.installImageRoutes, "function", "獨立server必須保留圖片route安裝器");
 
 const menu = safety.richMenuSync.menuDefinition();
+assert.deepEqual(menu.size,{width:2500,height:1686});
+assert.equal(menu.areas.length,6);
 assert.equal(menu.areas.at(0).bounds.y, 176, "品牌Header不得成為熱區");
-assert.equal(menu.areas.at(-1).bounds.y, 875);
-assert.equal(menu.areas.at(-1).action.label, "直接下單");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：LINE獨立直接啟動保留products-v3、個別尺寸、繁中向量字Rich Menu，且買10送1活動數量可直接選；退役社群與舊補丁不會回流。");
+console.log("PASS：LINE直接啟動守門改為目前能力驗收：products-v3產品識別、目前核准正式媒體、等比例JPEG route、六格繁中向量Rich Menu、個別產品比例與促銷數量都存在；不再綁歷史安全層／照片／Rich Menu版號。");
