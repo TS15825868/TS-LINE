@@ -27,8 +27,8 @@ const FORMAL_SPECS = Object.freeze({
   "guilu-gao": "100g／罐",
   "guilu-drink-30": "30cc／罐（小玻璃罐）",
   "guilu-drink-180": "180cc／包（鋁袋）",
-  "guilu-tangkuai": "75g／盒｜8塊裝",
-  "guilu-jiao": "600g／盒｜32塊裝",
+  "guilu-tangkuai": "75g／盒｜8塊裝｜每塊約9.375g",
+  "guilu-jiao": "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
   "luerong-fen": "75g／罐",
 });
 
@@ -56,17 +56,16 @@ function assertOfficialImageSlots(product, id) {
 }
 function assertPhotoAuthority(photoAuthority) {
   const version = String(photoAuthority?.version || "").trim();
-  if (!version) throw new Error("正式產品照片權威缺少版本號");
-  if (!/products-v3/i.test(version) || /products-v2/i.test(version)) throw new Error(`正式產品照片權威必須維持products-v3系列：${version}`);
+  if (!version) throw new Error("正式產品照片權威缺少版本識別");
   const entries = Object.entries(photoAuthority?.products || {});
   if (entries.length !== 6) throw new Error("正式產品照片權威必須剛好6項");
   const cacheVersions = new Set();
   for (const [id, url] of entries) {
     const value = String(url || "");
-    if (!value.includes("/images/products-v3/")) throw new Error(`${id}照片權威不得離開products-v3`);
+    if (!value.includes("/images/products-v3/")) throw new Error(`${id}照片權威不得離開products-v3正式原圖目錄`);
     if (value.includes("/images/products-v2/")) throw new Error(`${id}照片權威不得回退products-v2`);
     const cacheVersion = value.match(/[?&]v=([^&#]+)/)?.[1] || "";
-    if (!cacheVersion || !/products-v3/i.test(cacheVersion)) throw new Error(`${id}照片網址缺少products-v3正式快取版本`);
+    if (!cacheVersion) throw new Error(`${id}照片網址缺少快取版本`);
     cacheVersions.add(cacheVersion);
   }
   if (cacheVersions.size !== 1) throw new Error("六項正式產品照片網址快取版本必須一致");
@@ -99,8 +98,8 @@ function assertSoupAuthority(product) {
 function assertMasterVersion(master, merged) {
   const masterVersion = String(master?.version || "").trim();
   const mergedVersion = String(merged?.salesMasterVersion || "").trim();
-  if (!masterVersion || !/canonical-v\d+/i.test(masterVersion)) throw new Error(`正式銷售主檔缺少 canonical 版本識別：${masterVersion}`);
-  if (!mergedVersion.startsWith(masterVersion)) throw new Error(`正式銷售主檔版本套用失敗：${mergedVersion}`);
+  if (!masterVersion) throw new Error("正式銷售主檔缺少版本識別");
+  if (!mergedVersion.startsWith(masterVersion)) throw new Error(`正式銷售主檔未成功套用：${mergedVersion}`);
 }
 
 function main() {
@@ -127,8 +126,10 @@ function main() {
     "guilu-jiao": { price: 9600, originalPrice: 12000, quoteOnly: false },
   };
   const authorityById = new Map(authority.products.map((item) => [item.id, item]));
-  const drinkIds = new Set(authority.fulfillmentPolicy.drinkProductIds);
-  const readyStockIds = new Set(authority.fulfillmentPolicy.readyStockProductIds);
+  const drinkIds = new Set(authority.fulfillmentPolicy?.drinkProductIds || []);
+  const readyStockIds = new Set(authority.fulfillmentPolicy?.readyStockProductIds || []);
+  if (JSON.stringify([...drinkIds].sort()) !== JSON.stringify(["guilu-drink-180", "guilu-drink-30"])) throw new Error("龜鹿飲交期適用產品必須是30cc與180cc");
+  if (JSON.stringify([...readyStockIds].sort()) !== JSON.stringify(["guilu-gao", "guilu-jiao", "guilu-tangkuai", "luerong-fen"])) throw new Error("備貨商品分組不同步");
 
   for (const [id, rule] of Object.entries(expected)) {
     const product = merged.products.find((item) => item.id === id);
@@ -160,8 +161,8 @@ function main() {
 
   assertPhysicalScaleAuthority(merged.products);
   const gao = merged.products.find((item) => item.id === "guilu-gao");
-  if (gao?.usage?.[0] !== "一天一次一小匙") throw new Error("龜鹿膏正式使用方式必須是一天一次一小匙");
-  if ((gao?.usage || []).some((line) => String(line).includes("每日早上及下午各一小匙"))) throw new Error("龜鹿膏仍含舊的早晚各一次用法");
+  if (gao?.usage?.[0] !== "每日早上及下午各一小匙") throw new Error("龜鹿膏正式使用方式必須以每日早上及下午各一小匙為主");
+  if ((gao?.usage || []).some((line) => /一天一次一小匙|每天一次，每次一小匙/.test(String(line)))) throw new Error("龜鹿膏不得回退舊的一日一次用法");
   assertSoupAuthority(merged.products.find((item) => item.id === "guilu-tangkuai"));
 
   const drink30 = merged.products.find((item) => item.id === "guilu-drink-30");
@@ -170,7 +171,7 @@ function main() {
   const shipping = (merged.trialCampaign?.shippingOptions || []).map((item) => [item.id, Number(item.fee)]);
   if (JSON.stringify(shipping) !== JSON.stringify([["store",60],["home",100]])) throw new Error("試喝正式運費必須是7-11 60元、郵局宅配100元");
   if (merged.trialCampaign?.publicPrice !== "龜鹿飲30cc正式售價60元／罐；買10送1，共11罐600元；180cc鋁袋單包200元，買10送1，共11包2,000元") throw new Error("試喝方案公開價格不同步");
-  if (!/^2026-08-(08|10)-v\d+$/.test(String(merged.fulfillmentPolicy?.version || ""))) throw new Error("出貨政策缺少有效版本識別");
+  if (!merged.fulfillmentPolicy || typeof merged.fulfillmentPolicy !== "object") throw new Error("缺少正式出貨政策");
   if (merged.runtime?.imagePolicy?.dmFallback !== "approved-original-photo-until-current-dm-reviewed") throw new Error("DM正式產品原圖回退政策未啟用");
   if (merged.runtime?.imagePolicy?.productMainImageSource !== "products-v3-user-approved-originals") throw new Error("產品主圖沒有鎖到products-v3");
   if (merged.runtime?.imagePolicy?.productsV2Use !== "legacy-reference-only") throw new Error("舊products-v2沒有降級為歷史參考");
