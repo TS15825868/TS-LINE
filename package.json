@@ -1,20 +1,21 @@
 {
   "name": "xianjiawei-lineoa",
-  "version": "6.1.3",
+  "version": "6.1.4",
   "main": "server.js",
   "engines": {"node": "22.x"},
   "scripts": {
-    "postinstall": "node --check product-sales-master.js && node --check tools/sync_sales_master.js && node --check line-recording-ui-fix.js && node --check line-image-safety-core.js && node --check line-plain-text-safety.js && node --check line-rich-menu-sync.js && node --check line-image-safety.js && node --check line-app-bootstrap.js && node --check line-formal-media-route.test.js && node --check line-health-authority.test.js && node --check line-rich-menu-sync.test.js && node --check line-direct-start-safety.test.js && node --check line-products-v3-authority.test.js && node --check line-true-original-readiness.test.js && node --check line-production-readiness.test.js && node --check server.js && (npm audit --omit=dev --json || true)",
+    "postinstall": "node --check product-sales-master.js && node --check tools/sync_sales_master.js && node --check line-recording-ui-fix.js && node --check line-image-safety-core.js && node --check line-plain-text-safety.js && node --check line-rich-menu-sync.js && node --check line-image-safety.js && node --check line-app-bootstrap.js && node --check line-formal-media-route.test.js && node --check line-health-authority.test.js && node --check line-rich-menu-sync.test.js && node --check line-direct-start-safety.test.js && node --check line-products-v3-authority.test.js && node --check line-true-original-readiness.test.js && node --check line-production-readiness.test.js && node --check server.js",
     "prestart": "node tools/sync_sales_master.js --write && node --check product-sales-master.js && node --check line-app-bootstrap.js && node --check line-image-safety.js && node --check server.js",
     "start": "node -r ./product-sales-master.js -r ./line-app-bootstrap.js server.js",
     "pretest": "node tools/sync_sales_master.js --write",
     "test": "node --check product-sales-master.js && node --check tools/sync_sales_master.js && node --check line-recording-ui-fix.js && node --check line-image-safety-core.js && node --check line-plain-text-safety.js && node --check line-rich-menu-sync.js && node --check line-image-safety.js && node --check line-app-bootstrap.js && node --check line-formal-media-route.test.js && node --check server.js && node line-products-v3-authority.test.js && node line-true-original-readiness.test.js && node line-health-authority.test.js && node line-rich-menu-sync.test.js && node line-direct-start-safety.test.js && node line-production-readiness.test.js && node line-formal-media-route.test.js && node product-fulfillment-message-fix.test.js && node line-mascot-authority.test.js && node line-recording-ui-fix.test.js",
     "guard:full": "node tools/sync_sales_master.js --write && node line-health-authority.test.js && node line-true-original-readiness.test.js && node line-production-readiness.test.js && node line-formal-media-route.test.js && node line-products-v3-authority.test.js && node line-rich-menu-sync.test.js && node line-direct-start-safety.test.js && node line-mascot-authority.test.js",
-    "check:release": "npm test",
+    "security:audit": "npm audit --omit=dev --audit-level=high",
+    "check:release": "npm test && npm run security:audit",
     "sync:catalog": "node tools/sync_sales_master.js --write",
     "check:catalog": "node tools/sync_sales_master.js",
     "check:legacy-social": "node --check social-server.js && node --check internal-entry.js && node --check social-publish-guard.js && node --check social-review-only-mode.js"
   },
-  "dependencies": {"@line/bot-sdk": "10.8.0", "express": "^4.18.2", "satori": "0.28.0", "sharp": "^0.34.3"},
+  "dependencies": {"@line/bot-sdk": "10.8.0", "express": "^4.18.2", "satori": "0.28.0", "sharp": "0.35.3"},
   "description": "仙加味 LINE OA 正式獨立服務｜六項正式產品與規格｜products-v3產品識別權威＋使用者核准DM顯示｜原生完整六格Rich Menu、不拼貼｜Webhook快速回覆｜龜鹿飲5～7工作天、其他產品依現貨"
 }
