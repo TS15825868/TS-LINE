@@ -13,7 +13,8 @@
       "usagePrimary": "一天一次一小匙",
       "retailPrice": 1800,
       "originalPrice": 2100,
-      "fulfillmentType": "ready-stock"
+      "fulfillmentType": "ready-stock",
+      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=current-upload"
     },
     {
       "id": "guilu-drink-30",
@@ -26,7 +27,7 @@
       "promotion": "買10送1｜11罐600元",
       "fulfillmentType": "made-to-order-drink",
       "imagePolicy": "official-original-contain-no-crop",
-      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp?v=current"
+      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp?v=current-upload"
     },
     {
       "id": "guilu-drink-180",
@@ -37,7 +38,8 @@
       "usagePrimary": "每日一包",
       "retailPrice": 200,
       "promotion": "買10送1｜11包2,000元",
-      "fulfillmentType": "made-to-order-drink"
+      "fulfillmentType": "made-to-order-drink",
+      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/03_guilu-drink-180cc-dm.jpg?v=current-upload"
     },
     {
       "id": "guilu-tangkuai",
@@ -47,7 +49,8 @@
       "ingredients": ["龜板萃取物", "鹿角萃取物"],
       "retailPrice": 1600,
       "fulfillmentType": "ready-stock",
-      "singleSpecificationOnly": true
+      "singleSpecificationOnly": true,
+      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=current-upload"
     },
     {
       "id": "guilu-jiao",
@@ -57,7 +60,8 @@
       "ingredients": ["龜板萃取物", "鹿角萃取物"],
       "retailPrice": 9600,
       "originalPrice": 12000,
-      "fulfillmentType": "ready-stock"
+      "fulfillmentType": "ready-stock",
+      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=current-upload"
     },
     {
       "id": "luerong-fen",
@@ -66,7 +70,8 @@
       "package": "白色塑膠罐",
       "ingredients": ["鹿茸"],
       "retailPrice": 2000,
-      "fulfillmentType": "ready-stock"
+      "fulfillmentType": "ready-stock",
+      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/04_luerong-fen-75g-dm.jpg?v=current-upload"
     }
   ],
   "fulfillmentPolicy": {
@@ -89,8 +94,8 @@
   "trialPosterAuthority": {
     "assetId": "current-user-approved-trial-poster",
     "status": "approved_display",
-    "currentDisplay": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp?v=current",
-    "currentTrialPage": "https://ts15825868.github.io/xianjiawei/trial.html?v=current",
+    "currentDisplay": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp?v=current-upload",
+    "currentTrialPage": "https://ts15825868.github.io/xianjiawei/trial.html?v=current-upload",
     "title": "龜鹿飲試喝組｜先試喝，再決定",
     "doNotRegenerate": true,
     "useCurrentFormalMediaOnly": true,
@@ -105,6 +110,7 @@
     "龜鹿膏目前主要使用資料為一天一次一小匙；不得回退早晚各一次舊用法",
     "龜鹿飲30cc使用單位為每日一罐；龜鹿飲180cc使用單位為每日一包，不得泛化成每日一份",
     "試喝標題、免費數量、運費、限領規則、交期、價格與圖片必須跟formalMediaAuthority目前資料一致",
+    "LINE產品本體使用products-v3；LINE產品DM使用目前核准上傳DM；試喝固定使用目前核准上傳試喝圖",
     "守門驗證正式能力與目前權威資料，不綁死歷史版號、舊文案或退役延伸規格",
     "產品本體圖片必須使用products-v3正式原圖等比例呈現；顧客DM如與目前正式規格文字衝突必須隔離"
   ]
