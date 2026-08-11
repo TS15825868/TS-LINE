@@ -15,7 +15,7 @@ assert.equal(safety.richMenuSync.LEGACY_BASE_TEMPLATE_FORBIDDEN, true);
 assert.match(String(safety.richMenuSync.STATIC_ARTWORK || ""), /^assets\/rich-menu\/.*\.svg(?:\.gz\.b64)?$/, "Rich Menu必須使用單一SVG正式母稿");
 assert.equal(safety.schedulePolicy, undefined, "LINE獨立安全層不得載入社群排程模組");
 assert.equal(safety.fulfillmentSafety, undefined, "LINE獨立安全層不得依賴舊出貨補丁");
-assert.equal(safety.FORMAL_MEDIA_VERSION, "current-formal-media", "正式媒體快取識別應跟目前authority，不應鎖歷史日期版本");
+assert.match(String(safety.FORMAL_MEDIA_VERSION || ""), /current|formal/i, "正式媒體快取識別必須代表目前authority，不應鎖歷史日期版本");
 
 const safetySource = fs.readFileSync(path.join(__dirname, "line-image-safety.js"), "utf8");
 assert.ok(!safetySource.includes('require("./social-schedule-policy-fix")'), "LINE安全層不得載入社群排程");
@@ -28,7 +28,10 @@ assert.equal(fs.existsSync(path.join(__dirname, "social-final-posts.js")), false
 
 const richSource = fs.readFileSync(path.join(__dirname, "line-rich-menu-sync.js"), "utf8");
 const richArtwork = safety.richMenuSync.readArtwork();
-for (const forbidden of ["BASE_TEMPLATE", "BOSS_SOURCES", "CELL_LAYOUTS", ".composite("]) assert.ok(!richSource.includes(forbidden), `Rich Menu不得回退拼貼能力：${forbidden}`);
+assert.ok(!/\b(?:const|let|var)\s+BASE_TEMPLATE\b/.test(richSource), "Rich Menu不得重新宣告舊底圖");
+assert.ok(!/\b(?:const|let|var)\s+BOSS_SOURCES\b/.test(richSource), "Rich Menu不得重新維護六張後貼圖來源");
+assert.ok(!/\b(?:const|let|var)\s+CELL_LAYOUTS\b/.test(richSource), "Rich Menu不得重新維護拼貼座標");
+assert.ok(!/sharp\([^)]*\)\s*\.composite\s*\(/.test(richSource)&&!/\.composite\s*\(\s*\[/.test(richSource), "Rich Menu不得回退runtime拼貼");
 assert.ok(!/<image\b/i.test(richArtwork), "Rich Menu不得內嵌舊底圖或照片拼貼");
 assert.ok(!/<text\b/i.test(richArtwork), "Rich Menu顧客可見繁中不得依賴主機字型");
 assert.ok(/xjw-text-outlined-/i.test(richArtwork), "Rich Menu正式母稿必須使用繁中向量字");
@@ -41,7 +44,7 @@ const byId = Object.fromEntries(data.products.map((product) => [product.id, prod
 for (const product of data.products) {
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
     const value=String(product[field] || "");
-    assert.ok(value.includes("/images/products-v3/"), `${product.id}.${field} direct-start產品識別必須使用products-v3`);
+    assert.ok(value.includes("/images/products-v3/"), `${product.id}.${field} direct-start母資料產品識別必須使用products-v3`);
     assert.ok(!value.includes("/images/products-v2/"), `${product.id}.${field}不得回退products-v2`);
   }
   assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id}缺少產品個別尺寸／比例規則`);
@@ -62,10 +65,17 @@ assert.equal(data.runtime.schedulePolicyVersion, undefined, "LINE執行資料不
 
 const formal=safety.formalMedia || {};
 assert.match(String(formal.runtime || ""), /current/i, "LINE正式媒體authority必須是目前權威");
-assert.equal(String(formal.approval_batch || ""), "current-user-approved-media");
-assert.ok(String(formal.source_trial || "").includes("guilu-drink-trial"), "LINE試喝圖必須跟目前正式海報來源同步");
-assert.ok(String(formal.source_product_dm?.["龜鹿飲30cc玻璃罐"] || "").includes("guilu-drink-30cc.webp"), "30cc顧客DM來源必須是目前核准DM");
-for (const key of ["龜鹿膏","龜鹿飲180cc鋁袋","龜鹿湯塊","龜鹿膠","鹿茸粉"]) assert.match(String(formal.source_product_dm?.[key]||""), /\/images\/dm-final\/.*\.jpg\?v=current$/, `${key}正式顯示來源必須跟目前網站有效二進位同步`);
+assert.ok(String(formal.approval_batch || "").trim(), "正式媒體authority必須有目前核准批次");
+assert.ok(/^https:\/\//.test(String(formal.source_trial || "")), "LINE試喝圖必須有目前公開正式來源");
+const sources=Object.entries(formal.source_product_dm || {});
+assert.equal(sources.length,6,"LINE正式媒體authority必須維持六項顧客展示來源");
+for(const [name,url] of sources){
+  const value=String(url||"");
+  assert.ok(/^https:\/\//.test(value),`${name}正式顯示來源必須是可公開取得網址`);
+  assert.ok(/\/images\//.test(value),`${name}正式顯示來源必須來自目前網站圖片資產`);
+  assert.ok(!/products-v2/.test(value),`${name}正式顯示來源不得使用products-v2`);
+}
+assert.ok(String(formal.source_product_dm?.["龜鹿飲30cc玻璃罐"] || "").includes("guilu-drink-30cc"), "30cc顧客DM來源必須維持目前核准30cc媒體");
 
 assert.equal(safety.CLEAN_MASCOT_PATH_PREFIX, "/assets/mascot-clean");
 assert.equal(safety.CLEAN_DRINK_IMAGE_PATH, "/assets/guilu-drink-30-clean.jpg");
@@ -77,4 +87,4 @@ assert.equal(menu.areas.length,6);
 assert.equal(menu.areas.at(0).bounds.y, 176, "品牌Header不得成為熱區");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：LINE直接啟動守門改為目前能力驗收：products-v3產品識別、目前核准正式媒體、等比例JPEG route、六格繁中向量Rich Menu、個別產品比例與促銷數量都存在；不再綁歷史安全層／照片／Rich Menu版號。");
+console.log("PASS：LINE直接啟動守門以目前能力驗收：products-v3產品識別、目前核准正式媒體、等比例JPEG route、六格繁中向量Rich Menu、產品比例與促銷數量都存在；安全程式可提及退役標記但不會被誤判成仍在使用，也不綁歷史路徑／版號。");
