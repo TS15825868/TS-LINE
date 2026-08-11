@@ -56,12 +56,6 @@ assert.match(String(rawById["guilu-drink-180"]?.physicalScalePolicy || ""), /0\.
 assert.equal(rawById["guilu-drink-30"].offers.find((offer) => offer.qty === 11)?.total, 600, "30cc母資料必須保留買10送1總額");
 assert.equal(rawById["guilu-drink-180"].offers.find((offer) => offer.qty === 11)?.total, 2000, "180cc母資料必須保留買10送1總額");
 assert.ok(!/(300g|600g).*龜鹿湯塊|龜鹿湯塊.*(300g|600g)/.test(JSON.stringify(rawById["guilu-tangkuai"])), "龜鹿湯塊不得回復退役規格");
-assert.equal(rawData.runtime.serviceMode, "standalone-line-oa");
-assert.equal(rawData.runtime.productMainImageSource, "products-v3-user-approved-originals");
-assert.equal(rawData.runtime.productsV2Use, "legacy-reference-only");
-assert.equal(rawData.runtime.productScalePolicy, "uniform-only-no-equal-height-equal-width");
-assert.equal(rawData.runtime.promotionQuantityPolicy, "promotion-qty-must-appear-within-first-four-options");
-assert.equal(rawData.runtime.schedulePolicyVersion, undefined, "LINE執行資料不得掛社群排程版本");
 
 // Customer-facing runtime intentionally separates current approved display media from immutable identity authority.
 const customerData = safety.normalizeProductPhotos(JSON.parse(rawText));
@@ -79,6 +73,13 @@ for(const product of customerData.products){
 }
 assert.ok(customerById['guilu-drink-30'].quantityOptions.slice(0,4).includes(11),"30cc runtime前四個數量必須直接包含買10送1的11罐");
 assert.ok(customerById['guilu-drink-180'].quantityOptions.slice(0,4).includes(11),"180cc runtime前四個數量必須直接包含買10送1的11包");
+assert.equal(customerData.runtime?.serviceMode,'standalone-line-oa','LINE顧客runtime必須維持獨立LINE OA模式');
+assert.equal(customerData.runtime?.productMainImageSource,'current-user-approved-media-rendered-as-line-compatible-jpeg','LINE顧客runtime必須顯示目前核准正式媒體');
+assert.equal(customerData.runtime?.productIdentitySource,'products-v3-user-approved-originals','LINE顧客runtime必須保留products-v3產品識別權威');
+assert.equal(customerData.runtime?.productsV2Use,'legacy-reference-only','products-v2只能保留歷史參考角色');
+assert.equal(customerData.runtime?.productScalePolicy,'uniform-only-no-equal-height-equal-width','不同產品不得被強制等高／等寬');
+assert.equal(customerData.runtime?.promotionQuantityPolicy,'promotion-qty-must-appear-within-first-four-options','促銷數量必須在前四個選項可直接選');
+assert.equal(customerData.runtime?.schedulePolicyVersion,undefined,'LINE runtime不得掛社群排程版本');
 
 const formal=safety.formalMedia || {};
 assert.match(String(formal.runtime || ""), /current/i, "LINE正式媒體authority必須是目前權威");
@@ -104,4 +105,4 @@ assert.equal(menu.areas.length,6);
 assert.equal(menu.areas.at(0).bounds.y, 176, "品牌Header不得成為熱區");
 assert.equal(menu.areas.at(-1).action.text, "直接下單");
 
-console.log("PASS：LINE直接啟動守門分離產品本體與顧客展示：母資料／fallback維持products-v3；顧客畫面使用目前核准正式媒體JPEG route；買10送1的11數量在runtime前四個選項出現；不再誤要求母資料本身固定排序。");
+console.log("PASS：LINE直接啟動守門分離產品本體與顧客展示：母資料／fallback維持products-v3；顧客畫面使用目前核准正式媒體JPEG route；促銷數量在runtime直接可選；服務／媒體／產品識別政策在runtime驗證，不再錯驗未正規化的母資料欄位。");
