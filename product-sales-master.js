@@ -18,53 +18,9 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
   "image", "imageUrl", "image_url", "dmImage", "officialOriginalImage", "imagePolicy", "physicalScalePolicy",
 ]);
 
-const FORMAL_PRODUCT_COPY = Object.freeze({
-  "guilu-gao": {
-    specification: "100g／罐",
-    size: "100g／罐",
-    spec: "100g／罐",
-    usage: [
-      "一天一次一小匙",
-      "初次可先從半匙開始",
-      "可直接食用或加入約100～300mL溫熱水化開",
-      "避免接近睡前食用",
-    ],
-  },
-  "guilu-drink-30": {
-    name: "龜鹿飲30cc玻璃罐",
-    displayName: "龜鹿飲30cc玻璃罐",
-    specification: "30cc／罐（小玻璃罐）",
-    size: "30cc／罐（小玻璃罐）",
-    spec: "30cc／罐（小玻璃罐）",
-    usage: ["每日一份", "開罐即可飲用", "可隔水加熱或溫熱後飲用", "避免冰飲", "開罐後請儘速飲用完畢"],
-  },
-  "guilu-drink-180": {
-    name: "龜鹿飲180cc鋁袋",
-    displayName: "龜鹿飲180cc鋁袋",
-    specification: "180cc／包（鋁袋）",
-    size: "180cc／包（鋁袋）",
-    spec: "180cc／包（鋁袋）",
-    usage: ["每日一份", "撕開包裝即可飲用", "可隔水加熱或溫熱後飲用", "避免冰飲", "開封後請儘速飲用完畢"],
-  },
-  "guilu-tangkuai": {
-    specification: "75g／盒｜8塊裝",
-    size: "75g／盒｜8塊裝",
-    spec: "75g／盒｜8塊裝",
-  },
-  "guilu-jiao": {
-    specification: "600g／盒｜32塊裝",
-    size: "600g／盒｜32塊裝",
-    spec: "600g／盒｜32塊裝",
-    description: "600g淡紫盒、32塊裝，適合家庭大規格、熱水化開或燉湯。",
-    fit: "熟悉龜鹿產品、偏好家庭大規格或家庭安排的人",
-    aliases: ["龜鹿膠", "膠", "600g"],
-  },
-  "luerong-fen": {
-    specification: "75g／罐",
-    size: "75g／罐",
-    spec: "75g／罐",
-  },
-});
+// 正式顧客文案、規格與使用方式只由 line-sales-master.json 提供。
+// 這裡不再另存一份逐字覆寫，避免新版正確資料被舊硬編碼內容蓋回去。
+const FORMAL_PRODUCT_COPY = Object.freeze({});
 
 function getMaster() {
   if (master) return master;
@@ -188,7 +144,7 @@ function applyMaster(data) {
     productMainImageSource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
     productScalePolicy: "uniform-only-no-equal-height-equal-width",
-    formalCopyVersion: "20260810-formal-copy-v1",
+    formalCopyVersion: "sales-master-authority",
     contentApproval: {
       mode: "review-only",
       defaultStatus: "pending_review",
@@ -197,7 +153,7 @@ function applyMaster(data) {
       lineVoomManualOnly: true,
     },
   };
-  data.salesMasterVersion = `${policy.version}-formal-copy-v1`;
+  data.salesMasterVersion = `${policy.version}-authority-driven`;
   data.salesMasterSource = policy.source;
   data.productPhotoAuthorityVersion = getPhotoAuthority().version;
   return data;
