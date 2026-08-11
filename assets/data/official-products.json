@@ -1,14 +1,15 @@
 {
-  "version": "2026-08-11-user-authority-latest",
-  "authority": "user-confirmed",
+  "version": "2026-08-11-current-authority",
+  "authority": "user-confirmed-current",
   "publicAuthority": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
+  "visualAuthority": "https://ts15825868.github.io/xianjiawei/content/visual-production-spec-current.json",
   "products": [
     {
       "id": "guilu-gao",
       "name": "龜鹿膏",
       "specification": "100g／罐",
       "ingredients": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
-      "usagePrimary": "每日早上及下午各一小匙",
+      "usagePrimary": "一天一次一小匙",
       "retailPrice": 1800,
       "originalPrice": 2100,
       "fulfillmentType": "ready-stock"
@@ -37,7 +38,7 @@
     {
       "id": "guilu-tangkuai",
       "name": "龜鹿湯塊",
-      "specification": "75g／盒｜8塊裝｜每塊約9.375g",
+      "specification": "75g／盒｜8塊裝",
       "package": "深藍正式盒裝",
       "ingredients": ["龜板萃取物", "鹿角萃取物"],
       "retailPrice": 1600,
@@ -47,7 +48,7 @@
     {
       "id": "guilu-jiao",
       "name": "龜鹿膠",
-      "specification": "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
+      "specification": "600g／盒｜32塊裝",
       "package": "淡紫色正式盒裝",
       "ingredients": ["龜板萃取物", "鹿角萃取物"],
       "retailPrice": 9600,
@@ -83,13 +84,13 @@
     "fallbackReason": "最終發布資產維持發布鎖定；LINE訊息圖片如需JPEG相容素材，使用既有相容圖，不影響最終版發布紀錄。"
   },
   "guardRules": [
-    "只允許products清單內六項正式產品與正式規格",
-    "龜鹿湯塊只有75g／盒｜8塊裝｜每塊約9.375g深藍盒",
-    "龜鹿膠600g（1斤）／盒｜32塊裝｜每塊約18.75g，與龜鹿湯塊不得互換規格或包裝",
+    "只允許products清單內六項目前正式顧客規格",
+    "龜鹿湯塊正式規格為75g／盒｜8塊裝；不得回退300g／600g或硬帶舊每塊重量延伸",
+    "龜鹿膠正式規格為600g／盒｜32塊裝；不得回退舊1斤／每塊重量延伸，也不得與龜鹿湯塊互換包裝",
     "30cc正式名稱必須是龜鹿飲30cc玻璃罐，規格30cc／罐（小玻璃罐），不得稱瓶",
     "正式成分與順序不得回退舊版本",
-    "龜鹿膏使用資料以每日早上及下午各一小匙為正式版本",
-    "守門驗證正式能力與目前權威資料，不綁死歷史版號或舊文案版本",
-    "產品圖片必須使用products-v3正式原圖等比例呈現"
+    "龜鹿膏目前主要使用資料為一天一次一小匙；不得回退早晚各一次舊用法",
+    "守門驗證正式能力與目前權威資料，不綁死歷史版號、舊文案或退役延伸規格",
+    "產品圖片必須使用products-v3正式原圖等比例呈現；顧客DM如與目前正式規格文字衝突必須隔離"
   ]
 }
