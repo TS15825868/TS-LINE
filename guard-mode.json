@@ -1,0 +1,13 @@
+{
+  "mode": "paused_for_full_system_update",
+  "blocking_runtime_guards": false,
+  "keep_minimum_safety": true,
+  "minimum_safety": [
+    "catalog sync",
+    "JavaScript syntax checks",
+    "server bootstrap syntax"
+  ],
+  "full_guard_command": "npm run guard:full",
+  "re_enable_after": "owner_visual_and_functional_review",
+  "future_guard_principle": "Validate current runtime capabilities and current authority. Do not require retired version strings, old exact copy, old filenames or stale media state."
+}
