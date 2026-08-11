@@ -185,7 +185,7 @@ function applyMaster(data) {
   data.payments = Array.isArray(policy.payments) ? policy.payments : (data.payments || []);
   data.shipping = Array.isArray(policy.shipping) ? policy.shipping : (data.shipping || []);
   data.store = policy.store ? { ...policy.store } : (data.store || {});
-  data.trialCampaign = sanitizeCurrentCopy({ ...(authority.trialCampaign || policy.trialCampaign || data.trialCampaign || {}) });
+  data.trialCampaign = sanitizeCurrentCopy({ ...(policy.trialCampaign || data.trialCampaign || {}), ...(authority.trialCampaign || {}) });
   data.trialPosterAuthority = sanitizeCurrentCopy({ ...(authority.trialPosterAuthority || {}) });
   data.runtime = {
     ...(data.runtime || {}),
