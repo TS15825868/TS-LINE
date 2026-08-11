@@ -1,0 +1,31 @@
+name: 仙加味 LINE OA 目前權威驗收（手動）
+
+# MAINTENANCE MODE：不在 push / PR 自動執行；Render 正常啟動只保留同步與語法安全。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install current dependencies
+        run: npm install --ignore-scripts
+      - name: Current authority full guard
+        run: npm run guard:full
+      - name: Security audit
+        run: npm run security:audit
+      - name: Verify maintenance mode remains nonblocking
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const mode=JSON.parse(fs.readFileSync('guard-mode.json','utf8'));
+          if(mode.mode!=='paused_for_full_system_update'||mode.blocking_runtime_guards!==false||mode.keep_minimum_safety!==true) throw new Error('maintenance guard mode changed unexpectedly');
+          console.log('PASS: runtime blockers remain paused; updated full guard is manual-only until owner review.');
+          NODE
