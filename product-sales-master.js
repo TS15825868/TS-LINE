@@ -181,11 +181,12 @@ function applyMaster(data) {
   data.retentionOffers = {
     combos: Object.fromEntries(comboOffers.map((combo) => [combo.name, "可依組合內容、數量與需求協助整理較適合的方案。"])),
   };
-  data.fulfillmentPolicy = { ...(policy.fulfillmentPolicy || {}) };
+  data.fulfillmentPolicy = { ...(authority.fulfillmentPolicy || policy.fulfillmentPolicy || {}) };
   data.payments = Array.isArray(policy.payments) ? policy.payments : (data.payments || []);
   data.shipping = Array.isArray(policy.shipping) ? policy.shipping : (data.shipping || []);
   data.store = policy.store ? { ...policy.store } : (data.store || {});
-  data.trialCampaign = policy.trialCampaign ? sanitizeCurrentCopy({ ...policy.trialCampaign }) : data.trialCampaign;
+  data.trialCampaign = sanitizeCurrentCopy({ ...(authority.trialCampaign || policy.trialCampaign || data.trialCampaign || {}) });
+  data.trialPosterAuthority = sanitizeCurrentCopy({ ...(authority.trialPosterAuthority || {}) });
   data.runtime = {
     ...(data.runtime || {}),
     imagePolicy: {
@@ -195,13 +196,14 @@ function applyMaster(data) {
       productMainImageSource: "products-v3-user-approved-originals",
       productsV2Use: "legacy-reference-only",
       productScalePolicy: "uniform-only-no-equal-height-equal-width",
-      dmFallback: "copy-validated-formal-dm-or-products-v3-fallback",
+      dmFallback: "current-formal-dm-if-approved-otherwise-products-v3",
     },
     productMainImageSource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
     productScalePolicy: "uniform-only-no-equal-height-equal-width",
     formalCopyVersion: authority.version,
     formalCopyAuthority: authority.authority,
+    trialAuthority: "assets/data/official-products.json",
     contentApproval: {
       mode: "review-only",
       defaultStatus: "pending_review",
