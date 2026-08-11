@@ -14,10 +14,10 @@ assert.ok(rich.RICH_MENU_RETRY_DELAYS_MS.every(ms=>Number.isFinite(ms)&&ms>=0), 
 
 const source = fs.readFileSync("line-rich-menu-sync.js", "utf8");
 const artwork = rich.readArtwork();
-assert.ok(!source.includes("BASE_TEMPLATE"), "Rich Menu正式程式不得再依賴舊JPG底圖");
-assert.ok(!source.includes("BOSS_SOURCES"), "Rich Menu不得再維護六張後貼圖片來源");
-assert.ok(!source.includes("CELL_LAYOUTS"), "Rich Menu不得再維護六格圖片拼貼座標");
-assert.ok(!source.includes(".composite("), "Rich Menu不得再用sharp composite拼湊視覺");
+assert.ok(!/\b(?:const|let|var)\s+BASE_TEMPLATE\b/.test(source), "Rich Menu正式程式不得再宣告舊JPG底圖");
+assert.ok(!/\b(?:const|let|var)\s+BOSS_SOURCES\b/.test(source), "Rich Menu不得再維護六張後貼圖片來源");
+assert.ok(!/\b(?:const|let|var)\s+CELL_LAYOUTS\b/.test(source), "Rich Menu不得再維護六格圖片拼貼座標");
+assert.ok(!/sharp\([^)]*\)\s*\.composite\s*\(/.test(source)&&!/\.composite\s*\(\s*\[/.test(source), "Rich Menu不得再用sharp composite拼湊視覺");
 assert.ok(source.includes("RICH_MENU_RETRY_DELAYS_MS"), "Rich Menu必須保留啟動同步安全重試設定");
 assert.ok(source.includes("maxAttempts"), "Rich Menu重試必須有限次數而非無限輪詢");
 assert.ok(source.includes("result?.ok || result?.skipped"), "Rich Menu同步成功或缺少憑證時必須停止重試");
@@ -40,4 +40,4 @@ for (const area of menu.areas) {
   assert.ok(area.bounds.y + area.bounds.height <= menu.size.height, "Rich Menu功能熱區不得超出畫布高度");
 }
 
-console.log(`PASS：Rich Menu以功能與顧客結果驗收；目前 ${rich.VERSION}，單一完整向量母稿、六格可點擊、繁中正常、不拼貼、有限安全重試；後續正常升版或調整重試秒數不會被歷史格式誤擋。`);
+console.log(`PASS：Rich Menu以功能與顧客結果驗收；目前 ${rich.VERSION}，單一完整向量母稿、六格可點擊、繁中正常、不拼貼、有限安全重試；安全碼可提及退役標記但不會被誤判為仍在使用。`);
