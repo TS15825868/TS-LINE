@@ -4,12 +4,12 @@
   "post_approval_batch":"20260811-latest-user-post-images",
   "source":"https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
   "source_product_dm":{
-    "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-gao-100g.webp",
+    "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=current",
     "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp?v=current",
-    "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp",
-    "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp",
-    "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp",
-    "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp"
+    "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-final/03_guilu-drink-180cc-dm.jpg?v=current",
+    "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=current",
+    "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=current",
+    "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-final/04_luerong-fen-75g-dm.jpg?v=current"
   },
   "source_trial":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp?v=current",
   "product_dm":{
