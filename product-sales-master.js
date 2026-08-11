@@ -5,8 +5,10 @@ const path = require("path");
 
 const originalReadFileSync = fs.readFileSync.bind(fs);
 const masterPath = path.join(__dirname, "line-sales-master.json");
+const currentAuthorityPath = path.join(__dirname, "assets/data/official-products.json");
 const photoAuthorityPath = path.join(__dirname, "line-product-photo-authority.json");
 let master = null;
+let currentAuthority = null;
 let photoAuthority = null;
 
 const SALES_OVERRIDE_FIELDS = Object.freeze([
@@ -18,14 +20,17 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
   "image", "imageUrl", "image_url", "dmImage", "officialOriginalImage", "imagePolicy", "physicalScalePolicy",
 ]);
 
-// 正式顧客文案、規格與使用方式只由 line-sales-master.json 提供。
-// 這裡不再另存一份逐字覆寫，避免新版正確資料被舊硬編碼內容蓋回去。
 const FORMAL_PRODUCT_COPY = Object.freeze({});
 
 function getMaster() {
   if (master) return master;
   master = JSON.parse(originalReadFileSync(masterPath, "utf8"));
   return master;
+}
+function getCurrentAuthority() {
+  if (currentAuthority) return currentAuthority;
+  currentAuthority = JSON.parse(originalReadFileSync(currentAuthorityPath, "utf8"));
+  return currentAuthority;
 }
 function getPhotoAuthority() {
   if (photoAuthority) return photoAuthority;
@@ -53,7 +58,6 @@ function normalizeProductOffers(product, override = {}) {
   const price = Number(override.price ?? product.price ?? 0);
   const offers = [];
   const promotionTexts = [];
-
   for (const entry of raw) {
     if (entry && typeof entry === "object") {
       const qty = Number(entry.qty || 0);
@@ -74,11 +78,36 @@ function normalizeProductOffers(product, override = {}) {
 function salesOverride(override = {}) {
   return Object.fromEntries(SALES_OVERRIDE_FIELDS.filter((field) => override[field] !== undefined).map((field) => [field, override[field]]));
 }
-
 function formalCopy(id, value = {}) {
   return { ...value, ...(FORMAL_PRODUCT_COPY[id] || {}) };
 }
-
+function authorityProduct(id) {
+  return (getCurrentAuthority().products || []).find((item) => item.id === id) || null;
+}
+function currentAuthorityOverride(id, merged = {}) {
+  const official = authorityProduct(id);
+  if (!official) throw new Error(`${id} 缺少目前正式產品權威`);
+  const spec = String(official.specification || "").trim();
+  const usage = Array.isArray(merged.usage) ? [...merged.usage] : [];
+  if (official.usagePrimary) {
+    if (usage.length) usage[0] = official.usagePrimary;
+    else usage.push(official.usagePrimary);
+  }
+  const aliases = (Array.isArray(merged.aliases) ? merged.aliases : [])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .filter((value) => id !== "guilu-drink-30" || !/瓶/.test(value));
+  return {
+    name: official.name,
+    displayName: official.name,
+    specification: spec,
+    size: spec,
+    spec,
+    ingredients: official.ingredients || merged.ingredients,
+    ...(official.usagePrimary ? { usage } : {}),
+    aliases,
+  };
+}
 function photoOverride(id) {
   const authority = getPhotoAuthority();
   const url = String(authority?.products?.[id] || "").trim();
@@ -95,6 +124,7 @@ function photoOverride(id) {
 
 function applyMaster(data) {
   const policy = getMaster();
+  const authority = getCurrentAuthority();
   const productOverrides = policy.products || {};
   const comboOffers = Array.isArray(policy.comboOffers) ? policy.comboOffers : [];
 
@@ -106,7 +136,7 @@ function applyMaster(data) {
       ...(Array.isArray(product.quantityOptions) ? product.quantityOptions : [1, 2, 3, 5]),
       ...normalized.offers.map((offer) => offer.qty),
     ].map(Number).filter((value) => Number.isFinite(value) && value > 0))];
-    const merged = {
+    let merged = {
       ...product,
       ...override,
       ...photoOverride(product.id),
@@ -114,6 +144,7 @@ function applyMaster(data) {
       promotionTexts: normalized.promotionTexts,
       quantityOptions,
     };
+    merged = { ...merged, ...currentAuthorityOverride(product.id, merged) };
     if (!merged.physicalScalePolicy) merged.physicalScalePolicy = "uniform-only-preserve-realistic-product-scale";
     delete merged.variants;
     delete merged.variantSelectionMode;
@@ -144,7 +175,8 @@ function applyMaster(data) {
     productMainImageSource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
     productScalePolicy: "uniform-only-no-equal-height-equal-width",
-    formalCopyVersion: "sales-master-authority",
+    formalCopyVersion: authority.version,
+    formalCopyAuthority: authority.authority,
     contentApproval: {
       mode: "review-only",
       defaultStatus: "pending_review",
@@ -155,6 +187,7 @@ function applyMaster(data) {
   };
   data.salesMasterVersion = `${policy.version}-authority-driven`;
   data.salesMasterSource = policy.source;
+  data.currentProductAuthorityVersion = authority.version;
   data.productPhotoAuthorityVersion = getPhotoAuthority().version;
   return data;
 }
@@ -175,4 +208,4 @@ fs.readFileSync = function patchedReadFileSync(file, ...args) {
   return result;
 };
 
-module.exports = { applyMaster, getMaster, getPhotoAuthority, rootCombos, normalizeProductOffers, salesOverride, formalCopy, photoOverride, FORMAL_PRODUCT_COPY, SALES_OVERRIDE_FIELDS };
+module.exports = { applyMaster, getMaster, getCurrentAuthority, getPhotoAuthority, rootCombos, normalizeProductOffers, salesOverride, formalCopy, authorityProduct, currentAuthorityOverride, photoOverride, FORMAL_PRODUCT_COPY, SALES_OVERRIDE_FIELDS };
