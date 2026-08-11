@@ -2,7 +2,7 @@
 
 const line = require("@line/bot-sdk");
 
-const POLICY_VERSION = "2026-08-09-v8-products-v3-standalone-line";
+const POLICY_VERSION = "2026-08-11-current-authority-line-health";
 const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
 const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
 const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
@@ -13,9 +13,6 @@ const NOTICE_MARKER = /製作加工約需|接單後安排製作加工|預先製�
 
 function normalizePublicCopy(value) {
   return String(value || "")
-    .replaceAll("查看產品DM", "查看實際產品照片")
-    .replaceAll("看產品DM", "看實際產品照片")
-    .replaceAll("產品DM", "實際產品照片")
     .replaceAll("每組售價：", "商品合計：")
     .replaceAll("每組價格", "商品合計");
 }
@@ -45,12 +42,7 @@ function replaceKnownNotices(text, replacement, core) {
   let value = normalizePublicCopy(text);
   LEGACY_NOTICE.lastIndex = 0;
   value = value.replace(LEGACY_NOTICE, replacement);
-  for (const known of [
-    core.DRINK_FULFILLMENT_NOTICE,
-    core.STOCK_FULFILLMENT_NOTICE,
-    core.MIXED_FULFILLMENT_NOTICE,
-    core.GENERAL_FULFILLMENT_NOTICE,
-  ]) {
+  for (const known of [core.DRINK_FULFILLMENT_NOTICE,core.STOCK_FULFILLMENT_NOTICE,core.MIXED_FULFILLMENT_NOTICE,core.GENERAL_FULFILLMENT_NOTICE]) {
     if (known && value.includes(known)) value = value.split(known).join(replacement);
   }
   return value;
@@ -65,32 +57,21 @@ function replacePlainTextNotice(text, core) {
 
 function patchTextNodes(node, replacement, core) {
   if (!node || typeof node !== "object") return;
-  if (Array.isArray(node)) {
-    for (const item of node) patchTextNodes(item, replacement, core);
-    return;
-  }
+  if (Array.isArray(node)) { for (const item of node) patchTextNodes(item, replacement, core); return; }
   if (node.type === "text" && typeof node.text === "string") node.text = replaceKnownNotices(node.text, replacement, core);
   if (node.action && typeof node.action === "object") {
     if (typeof node.action.label === "string") node.action.label = normalizePublicCopy(node.action.label);
     if (typeof node.action.text === "string") node.action.text = normalizePublicCopy(node.action.text);
   }
-  for (const [key, value] of Object.entries(node)) {
-    if (key === "action") continue;
-    patchTextNodes(value, replacement, core);
-  }
+  for (const [key, value] of Object.entries(node)) { if (key !== "action") patchTextNodes(value, replacement, core); }
 }
 
 function patchMessages(messages, core) {
   const list = Array.isArray(messages) ? messages : [messages];
   for (const message of list) {
     if (!message || typeof message !== "object") continue;
-    if (message.type === "text" && typeof message.text === "string") {
-      message.text = replacePlainTextNotice(message.text, core);
-      continue;
-    }
-    const bubbles = message.type === "flex"
-      ? (message.contents?.type === "carousel" ? message.contents.contents || [] : [message.contents])
-      : message.type === "bubble" ? [message] : [];
+    if (message.type === "text" && typeof message.text === "string") { message.text = replacePlainTextNotice(message.text, core); continue; }
+    const bubbles = message.type === "flex" ? (message.contents?.type === "carousel" ? message.contents.contents || [] : [message.contents]) : message.type === "bubble" ? [message] : [];
     for (const bubble of bubbles) {
       if (!bubble || typeof bubble !== "object") continue;
       const context = collectContextText(bubble, []).join("\n");
@@ -116,6 +97,7 @@ function healthPayload(core) {
     productMainImageSource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only-forbidden-in-live-cards",
     imagePolicy: "approved-original-product-photo-contain-no-crop-no-stretch-no-ai-redraw",
+    customerDisplayPolicy: "copy-validated-formal-dm-or-products-v3-fallback",
     cleanDrinkImagePath: core.CLEAN_DRINK_IMAGE_PATH,
     cleanDrinkImageUrl: core.CLEAN_DRINK_IMAGE_URL,
     cleanDrinkImageSource: core.OFFICIAL_DRINK_SOURCE,
@@ -127,16 +109,18 @@ function healthPayload(core) {
     guiluDrink180Specification: "180cc／包（鋁袋）",
     guiluDrink180PhysicalScale: "狹長直立鋁袋；寬高比目標約0.64（0.60～0.68）",
     guiluGaoSpecification: "100g／罐",
-    guiluGaoUsagePrimary: "每日早上及下午各一小匙",
+    guiluGaoUsagePrimary: "一天一次一小匙",
     guiluGaoIngredients: ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
     guiluDrinkIngredients: ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
-    guiluTangkuaiSpecification: "75g／盒｜8塊裝｜每塊約9.375g",
+    guiluTangkuaiSpecification: "75g／盒｜8塊裝",
     guiluTangkuaiPackage: "深藍正式盒裝",
     guiluTangkuaiIngredients: ["龜板萃取物", "鹿角萃取物"],
-    guiluJiaoSpecification: "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
+    guiluJiaoSpecification: "600g／盒｜32塊裝",
+    guiluJiaoPackage: "淡紫色正式盒裝",
     guiluJiaoIngredients: ["龜板萃取物", "鹿角萃取物"],
     luerongFenSpecification: "75g／罐",
     luerongFenIngredients: ["鹿茸"],
+    guardPolicy: "current-authority-capability-based-no-legacy-copy-version-lock"
   };
 }
 
@@ -149,12 +133,7 @@ function installHealthRoute(core) {
   appPrototype.listen = function patchedFulfillmentHealthListen(...args) {
     if (!this.locals.__xjwFulfillmentHealthRegistered) {
       this.get(HEALTH_PATH, (_req, res) => {
-        res.set({
-          "Cache-Control": "no-store",
-          "X-Content-Type-Options": "nosniff",
-          "X-XJW-Fulfillment-Policy": POLICY_VERSION,
-          "X-XJW-Product-Image-Authority": "products-v3-user-approved-originals",
-        });
+        res.set({"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-XJW-Fulfillment-Policy":POLICY_VERSION,"X-XJW-Product-Image-Authority":"products-v3-user-approved-originals"});
         res.status(200).json(healthPayload(core));
       });
       this.locals.__xjwFulfillmentHealthRegistered = true;
@@ -169,26 +148,8 @@ function install(core) {
   const Client = line?.messagingApi?.MessagingApiClient;
   if (!Client?.prototype?.replyMessage || Client.prototype.__xjwPlainTextFulfillmentSafetyInstalled) return;
   const previous = Client.prototype.replyMessage;
-  Client.prototype.replyMessage = function patchedPlainTextReply(payload) {
-    patchMessages(payload?.messages, core);
-    return previous.call(this, payload);
-  };
+  Client.prototype.replyMessage = function patchedPlainTextReply(payload) { patchMessages(payload?.messages, core); return previous.call(this, payload); };
   Object.defineProperty(Client.prototype, "__xjwPlainTextFulfillmentSafetyInstalled", { value: true, enumerable: false });
 }
 
-module.exports = {
-  POLICY_VERSION,
-  HEALTH_PATH,
-  DRINK_PRODUCT_IDS,
-  READY_STOCK_PRODUCT_IDS,
-  normalizePublicCopy,
-  kindFromText,
-  collectContextText,
-  replaceKnownNotices,
-  replacePlainTextNotice,
-  patchTextNodes,
-  patchMessages,
-  healthPayload,
-  installHealthRoute,
-  install,
-};
+module.exports = {POLICY_VERSION,HEALTH_PATH,DRINK_PRODUCT_IDS,READY_STOCK_PRODUCT_IDS,normalizePublicCopy,kindFromText,collectContextText,replaceKnownNotices,replacePlainTextNotice,patchTextNodes,patchMessages,healthPayload,installHealthRoute,install};
