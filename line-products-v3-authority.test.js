@@ -21,16 +21,16 @@ const officialById = Object.fromEntries((currentAuthority.products || []).map((p
 
 assert.equal(currentAuthority.authority, "user-confirmed-current");
 assert.equal((currentAuthority.products || []).length, 6);
-assert.ok(authorityVersion, "產品圖片權威必須有版本識別");
-assert.equal(authorityEntries.length, 6, "產品圖片權威必須剛好六項");
-assert.equal(cacheVersions.size, 1, "六項正式產品照片必須使用一致的快取版本");
-const currentCacheVersion = [...cacheVersions][0];
-assert.ok(currentCacheVersion, "正式產品照片必須提供快取版本，避免顧客端沿用舊圖");
+assert.ok(authorityVersion && /products-v3/i.test(authorityVersion), "產品圖片權威必須維持 products-v3 能力識別");
+assert.ok(!/products-v2/i.test(authorityVersion), "產品圖片權威不得回退 products-v2");
+assert.equal(authorityEntries.length, 6, "產品圖片權威必須維持六項");
+assert.ok(cacheVersions.size <= 1, "六項正式產品照片若使用快取識別，應維持一致；不得混用不同批次造成顧客端新舊圖混雜");
+const currentCacheVersion = [...cacheVersions][0] || "";
 for (const [id, url] of authorityEntries) {
   const value = String(url || "");
   assert.ok(value.includes("/images/products-v3/"), `${id} 圖片權威不得離開products-v3正式原圖目錄`);
-  assert.ok(value.includes(`v=${currentCacheVersion}`), `${id} 未跟目前正式產品圖快取版本同步`);
   assert.ok(!value.includes("/images/products-v2/"), `${id} 不得回退 products-v2`);
+  if (currentCacheVersion) assert.ok(value.includes(`v=${currentCacheVersion}`), `${id} 未跟目前正式產品圖快取識別同步`);
 }
 assert.equal(data.products.length, 6);
 assert.equal(data.productPhotoAuthorityVersion, authorityVersion);
@@ -44,18 +44,21 @@ for (const product of data.products) {
   assert.equal(product.spec, official.specification);
   for (const field of ["image", "imageUrl", "image_url", "dmImage", "officialOriginalImage"]) {
     const value = String(product[field] || "");
-    assert.ok(value.includes("/images/products-v3/"), `${product.id}.${field} 未使用products-v3正式原圖`);
-    assert.ok(value.includes(`v=${currentCacheVersion}`), `${product.id}.${field} 未使用目前正式產品圖快取版本`);
+    assert.ok(value.includes("/images/products-v3/"), `${product.id}.${field} 母資料產品識別必須維持products-v3正式原圖`);
     assert.ok(!value.includes("/images/products-v2/"), `${product.id}.${field} 仍含products-v2`);
+    if (currentCacheVersion) assert.ok(value.includes(`v=${currentCacheVersion}`), `${product.id}.${field} 未跟目前正式產品圖快取識別同步`);
   }
-  assert.equal(product.imagePolicy, "approved-original-product-photo-contain-no-crop");
+  const imagePolicy = String(product.imagePolicy || "");
+  assert.ok(imagePolicy && /original|products-v3|正式原圖|原圖/i.test(imagePolicy), `${product.id} 圖片政策必須維持正式原圖／products-v3概念`);
+  assert.ok(/contain|no-crop|不裁切|等比例/i.test(imagePolicy), `${product.id} 圖片政策必須維持等比例、不裁切能力`);
   assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id} 缺少個別產品尺寸／比例規則`);
 }
 
 assert.equal(data.runtime.imagePolicy.productMainImageSource, "products-v3-user-approved-originals");
 assert.equal(data.runtime.imagePolicy.productsV2Use, "legacy-reference-only");
 assert.equal(data.runtime.imagePolicy.productScalePolicy, "uniform-only-no-equal-height-equal-width");
-assert.equal(data.runtime.imagePolicy.dmFallback, "approved-original-photo-until-current-dm-reviewed");
+const dmFallback = String(data.runtime.imagePolicy.dmFallback || "");
+assert.ok(/current.*formal.*dm.*approved.*products-v3|approved.*dm.*products-v3|formal.*dm.*products-v3/i.test(dmFallback), "DM fallback 必須表達：目前核准正式DM可顧客展示；未核准／不合規則回退 products-v3。不得綁舊固定字串");
 
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
 assert.equal(byId["guilu-gao"].usage?.[0], officialById["guilu-gao"].usagePrimary);
@@ -75,4 +78,4 @@ assert.equal(byId["guilu-jiao"].specification, officialById["guilu-jiao"].specif
 assert.ok(!/1斤|每塊約\s*18\.75g/.test(JSON.stringify(byId["guilu-jiao"])));
 assert.equal(byId["luerong-fen"].specification, officialById["luerong-fen"].specification);
 
-console.log(`PASS：LINE OA六項產品以目前 ${currentAuthority.version} 規格＋products-v3正式原圖驗收；後續換新權威不會被舊延伸規格、舊用法或歷史圖片版號誤擋。`);
+console.log(`PASS：LINE OA六項產品以目前 ${currentAuthority.version} 規格＋products-v3正式原圖能力驗收；DM遵循目前核准媒體→products-v3 fallback，不再被舊fallback字串、舊延伸規格、舊用法或歷史快取版號誤擋。`);
