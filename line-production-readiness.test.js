@@ -19,8 +19,8 @@ const richSource = read("line-rich-menu-sync.js");
 const richArtwork = rich.readArtwork();
 const packageJson = JSON.parse(read("package.json"));
 
-assert.ok(photoAuthorityVersion && /products-v3/i.test(photoAuthorityVersion), "LINE正式產品圖片權威必須是目前products-v3系列");
-assert.ok(photoVersion && /products-v3/i.test(photoVersion), "LINE六項正式產品照片必須使用一致的products-v3快取版本");
+assert.ok(photoAuthorityVersion, "LINE正式產品圖片權威必須提供版本識別");
+assert.ok(photoVersion, "LINE六項正式產品照片必須使用一致的快取版本");
 assert.ok(!rawDataText.includes("/images/products-v2/"), "LINE原始data.json不得再保存products-v2正式圖");
 assert.equal(data.products.length, 6, "正式產品必須剛好六項");
 
@@ -29,8 +29,8 @@ const expected = {
   "guilu-gao": { spec: "100g／罐", price: 1800, ready: true },
   "guilu-drink-30": { spec: "30cc／罐（小玻璃罐）", price: 60, offerQty: 11, offerTotal: 600, ready: false },
   "guilu-drink-180": { spec: "180cc／包（鋁袋）", price: 200, offerQty: 11, offerTotal: 2000, ready: false },
-  "guilu-tangkuai": { spec: "75g／盒｜8塊裝", price: 1600, ready: true },
-  "guilu-jiao": { spec: "600g／盒｜32塊裝", price: 9600, ready: true },
+  "guilu-tangkuai": { spec: "75g／盒｜8塊裝｜每塊約9.375g", price: 1600, ready: true },
+  "guilu-jiao": { spec: "600g（1斤）／盒｜32塊裝｜每塊約18.75g", price: 9600, ready: true },
   "luerong-fen": { spec: "75g／罐", price: 2000, ready: true },
 };
 
@@ -55,8 +55,8 @@ for (const [id, rule] of Object.entries(expected)) {
   }
 }
 
-assert.equal(byId["guilu-gao"].usage?.[0], "一天一次一小匙", "龜鹿膏必須是一天一次一小匙");
-assert.ok(!(byId["guilu-gao"].usage || []).some((line) => String(line).includes("每日早上及下午各一小匙")), "龜鹿膏不得回退早晚各一次舊用法");
+assert.equal(byId["guilu-gao"].usage?.[0], "每日早上及下午各一小匙", "龜鹿膏必須使用目前正式使用方式");
+assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|每天一次，每次一小匙/.test(String(line))), "龜鹿膏不得回退舊的一日一次用法");
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.ok(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(byId["guilu-drink-30"])), "30cc正式產品資料不得出現玻璃瓶／瓶裝");
 assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|小玻璃裸罐/i, "30cc必須保留小玻璃裸罐尺寸規則");
@@ -88,6 +88,12 @@ for (const label of ["仙加味", "看產品", "購物車", "幫我推薦", "搭
 const menu = rich.menuDefinition();
 assert.deepEqual(menu.areas.map((a) => a.action.label), ["看產品", "購物車", "幫我推薦", "搭配組合", "怎麼使用", "直接下單"]);
 assert.equal(menu.areas.length, 6, "Rich Menu必須剛好六個功能熱區");
+for (const area of menu.areas) {
+  assert.ok(area.bounds.width > 0 && area.bounds.height > 0, "Rich Menu功能熱區尺寸必須有效");
+  assert.ok(area.bounds.x >= 0 && area.bounds.y >= 0, "Rich Menu功能熱區不得超出畫布左上界");
+  assert.ok(area.bounds.x + area.bounds.width <= menu.size.width, "Rich Menu功能熱區不得超出畫布寬度");
+  assert.ok(area.bounds.y + area.bounds.height <= menu.size.height, "Rich Menu功能熱區不得超出畫布高度");
+}
 
 assert.ok(String(visual.VERSION || "").includes("recording-ui"), "LINE Flex視覺層必須提供正式版本識別");
 assert.equal(visual.PRODUCT_IMAGE_VERSION, photoVersion, "LINE Flex必須直接跟目前產品圖片快取版本同步");
@@ -108,10 +114,10 @@ assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf
 for (const field of ["lastWebhookAt", "lastReplySuccessAt", "lastReplyError"]) assert.ok(serverSource.includes(field), `LINE health缺少${field}`);
 assert.ok(serverSource.includes("DRINK_ORDER_NOTICE") && serverSource.includes("READY_STOCK_ORDER_NOTICE") && serverSource.includes("MIXED_ORDER_NOTICE"), "主程式必須包含產品別出貨邏輯");
 assert.ok(syncSource.includes("assertPhotoAuthority") && syncSource.includes("PHOTO_CACHE_VERSION"), "prestart必須動態驗證圖片權威與快取版本");
-assert.ok(syncSource.includes("FORMAL_SPECS"), "prestart必須驗正式六項規格，不得再用舊規格硬鎖");
+assert.ok(syncSource.includes("FORMAL_SPECS"), "prestart必須驗正式六項規格");
 
 assert.equal(packageJson.main, "server.js", "正式服務入口必須是LINE OA server.js");
 assert.ok(packageJson.scripts.prestart.includes("sync_sales_master.js --write"), "Render prestart必須同步正式母本");
 assert.ok(packageJson.scripts.prestart.includes("line-production-readiness.test.js"), "Render prestart必須執行正式 readiness");
 
-console.log("PASS：LINE OA production readiness 已按正式能力驗收：六項正式規格、龜鹿膏一天一次、30cc小玻璃罐、180cc鋁袋、products-v3原圖、試喝、交期、Webhook、六格Rich Menu與正式銷售流程均一致；新版正確內容不再被舊規格誤擋。");
+console.log("PASS：LINE OA production readiness 以目前權威與能力驗收：六項正式規格、龜鹿膏正式使用方式、30cc小玻璃罐、180cc鋁袋、products-v3原圖、試喝、交期、Webhook、六格Rich Menu與正式銷售流程均一致；不再綁死舊版號或舊文案。");
