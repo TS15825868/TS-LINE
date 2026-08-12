@@ -1,26 +1,26 @@
 {
-  "runtime":"line-formal-media-current",
-  "approval_batch":"current-user-approved-media",
+  "runtime":"line-formal-media-20260812-formal-image-fix-v3",
+  "approval_batch":"20260812-small-boss-trial-v1",
   "post_approval_batch":"20260811-latest-user-post-images",
   "source":"https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
   "source_product_dm":{
-    "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=current",
-    "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp?v=current",
-    "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-final/03_guilu-drink-180cc-dm.jpg?v=current",
-    "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=current",
-    "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=current",
-    "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-final/04_luerong-fen-75g-dm.jpg?v=current"
+    "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=20260812-formal-image-fix-v3",
+    "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp?v=20260812-formal-image-fix-v3",
+    "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp?v=20260812-formal-image-fix-v3",
+    "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp?v=20260812-formal-image-fix-v3",
+    "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp?v=20260812-formal-image-fix-v3",
+    "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp?v=20260812-formal-image-fix-v3"
   },
-  "source_trial":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-trial.webp?v=current",
+  "source_trial":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial-small-boss.jpg?v=20260812-formal-image-fix-v3",
   "product_dm":{
-    "龜鹿膏":"https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=current",
-    "龜鹿飲30cc玻璃罐":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30cc.jpg?v=current",
-    "龜鹿飲180cc鋁袋":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180cc.jpg?v=current",
-    "龜鹿湯塊":"https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=current",
-    "龜鹿膠":"https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=current",
-    "鹿茸粉":"https://ts-line.onrender.com/assets/formal-dm/lurong-fen.jpg?v=current"
+    "龜鹿膏":"https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=20260812-formal-image-fix-v3",
+    "龜鹿飲30cc玻璃罐":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30cc.jpg?v=20260812-formal-image-fix-v3",
+    "龜鹿飲180cc鋁袋":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180cc.jpg?v=20260812-formal-image-fix-v3",
+    "龜鹿湯塊":"https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=20260812-formal-image-fix-v3",
+    "龜鹿膠":"https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=20260812-formal-image-fix-v3",
+    "鹿茸粉":"https://ts-line.onrender.com/assets/formal-dm/lurong-fen.jpg?v=20260812-formal-image-fix-v3"
   },
-  "trial":"https://ts-line.onrender.com/assets/formal-dm/trial.jpg?v=current",
+  "trial":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial-small-boss.jpg?v=20260812-formal-image-fix-v3",
   "post_image_catalog":"https://ts15825868.github.io/xianjiawei/data/post-library-userzip3-v20260811.json",
   "post_image_policy":{
     "priority":"user_zip_approved",
@@ -31,10 +31,10 @@
     "match_dimensions":["season","scene","environment","temperature","expression","action","props","copy_semantics"],
     "states":["approved_existing","needs_binary_sync","regenerate_if_missing"],
     "binary_sync_status":"pending",
-    "rule":"product and trial copy uses current copy-validated formal media/products-v3 first; lifestyle copy uses the current user ZIP after semantic match; a matching ZIP source waits for binary sync and must not be regenerated; regeneration is only for a true no-match case",
+    "rule":"產品圖、詳細DM、試喝正式主圖三個角色分開；產品與試喝文優先使用目前正式權威，生活情境圖需依文案語意匹配；有符合既有素材就沿用，真的沒有才重生成。",
     "invalidate_old_approval_after_change":true,
     "review_after_change":16
   },
-  "hard_rules":["products-v3 remains true original package identity authority","30cc is a small naked glass jar with no sticker and must never be called a bottle","180cc is an aluminum pouch","customer DM may display only when embedded copy agrees with current formal specs","AI must not redraw product identity","latest user-approved data and copy supersede obsolete fixed copy"],
-  "guard_principle":"validate current authority, current copy validity, actual media availability, specs and capabilities; compare to the current public catalog instead of retired ZIP names, fixed candidate counts, old version numbers or obsolete wording"
+  "hard_rules":["six product images, six detailed DMs and trial master are separate media roles","products-v3 remains true original package identity authority","30cc is a small naked glass jar with no sticker and must never be called a bottle","180cc is an aluminum pouch","tangkuai main spec is 75g／盒｜8塊裝 and piece weight is detail only","jiao main spec is 600g（1斤）／盒｜32塊裝 and piece weight is detail only","trial always uses trial-small-boss current master","AI must not redraw product identity","latest user-approved data and copy supersede obsolete fixed copy"],
+  "guard_principle":"validate current authority, current copy validity, actual media availability, specs and capabilities; never restore retired trial/evergreen assets, obsolete DM paths, fixed old version numbers or obsolete wording"
 }
