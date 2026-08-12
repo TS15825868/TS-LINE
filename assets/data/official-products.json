@@ -1,30 +1,31 @@
 {
-  "version": "20260812-current-authority",
+  "version": "20260812-guilu-drink-trial-master-v2",
   "authority": "user-confirmed-current",
   "publicAuthority": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "visualAuthority": "https://ts15825868.github.io/xianjiawei/content/visual-production-spec-current.json",
   "formalMediaAuthority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
-  "displayPolicy": "LINE顧客端優先使用使用者最新核准正式DM／正式視覺；products-v3保留為實際產品外觀與包裝身份權威，生成或展示不得改變產品本體。",
+  "displayPolicy": "LINE顧客端優先使用使用者最新核准正式DM／正式視覺；龜鹿飲試喝整張正式主圖同時是30cc正式顧客視覺來源與180cc右下鋁袋視覺來源；products-v3只保留為實際產品外觀、包裝與比例校正權威，不再作顧客主視覺。",
   "products": [
-    {"id":"guilu-gao","name":"龜鹿膏","specification":"100g／罐","ingredients":["鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"],"usagePrimary":"一天一次一小匙","retailPrice":1800,"originalPrice":2100,"fulfillmentType":"ready-stock","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-gao.webp?v=20260812"},
-    {"id":"guilu-drink-30","name":"龜鹿飲30cc玻璃罐","specification":"30cc／罐（小玻璃罐）","package":"小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"usagePrimary":"每日一罐","retailPrice":60,"promotion":"買10送1｜11罐600元","fulfillmentType":"made-to-order-drink","imagePolicy":"real-product-shape-must-match-products-v3","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-30cc.webp?v=20260812"},
-    {"id":"guilu-drink-180","name":"龜鹿飲180cc鋁袋","specification":"180cc／包（鋁袋）","package":"狹長直立鋁袋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"usagePrimary":"每日一包","retailPrice":200,"promotion":"買10送1｜11包2,000元","fulfillmentType":"made-to-order-drink","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-180cc.webp?v=20260812"},
-    {"id":"guilu-tangkuai","name":"龜鹿湯塊","specification":"75g／盒｜8塊裝","package":"深藍正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"retailPrice":1600,"fulfillmentType":"ready-stock","singleSpecificationOnly":true,"approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.webp?v=20260812"},
-    {"id":"guilu-jiao","name":"龜鹿膠","specification":"600g／盒｜32塊裝","package":"淡紫色正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"retailPrice":9600,"originalPrice":12000,"fulfillmentType":"ready-stock","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.webp?v=20260812"},
-    {"id":"luerong-fen","name":"鹿茸粉","specification":"75g／罐","package":"白色塑膠罐","ingredients":["鹿茸"],"retailPrice":2000,"fulfillmentType":"ready-stock","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/luerong-fen.webp?v=20260812"}
+    {"id":"guilu-gao","name":"龜鹿膏","specification":"100g／罐","ingredients":["鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"],"usagePrimary":"一天一次一小匙","retailPrice":1800,"originalPrice":2100,"fulfillmentType":"ready-stock","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-gao.webp?v=20260812","displaySource":"own-formal-dm"},
+    {"id":"guilu-drink-30","name":"龜鹿飲30cc玻璃罐","specification":"30cc／罐（小玻璃罐）","package":"小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"usagePrimary":"每日一罐","retailPrice":60,"promotion":"買10送1｜11罐600元","fulfillmentType":"made-to-order-drink","imagePolicy":"customer formal visual first; true product must match products-v3 small bare glass jar without label and without shape/proportion changes","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-30cc.webp?v=20260812","displaySource":"approved trial master / 30cc block / three-jar block"},
+    {"id":"guilu-drink-180","name":"龜鹿飲180cc鋁袋","specification":"180cc／包（鋁袋）","package":"狹長直立鋁袋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"usagePrimary":"每日一包","retailPrice":200,"promotion":"買10送1｜11包2,000元","fulfillmentType":"made-to-order-drink","imagePolicy":"customer formal visual first; true product must remain the products-v3 foil pouch with unchanged pouch shape/proportion","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-180cc.webp?v=20260812","displaySource":"approved trial master lower-right 180cc foil-pouch block"},
+    {"id":"guilu-tangkuai","name":"龜鹿湯塊","specification":"75g／盒｜8塊裝","package":"深藍正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"retailPrice":1600,"fulfillmentType":"ready-stock","singleSpecificationOnly":true,"approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.webp?v=20260812","displaySource":"own-formal-dm"},
+    {"id":"guilu-jiao","name":"龜鹿膠","specification":"600g／盒｜32塊裝","package":"淡紫色正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"retailPrice":9600,"originalPrice":12000,"fulfillmentType":"ready-stock","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.webp?v=20260812","displaySource":"own-formal-dm"},
+    {"id":"luerong-fen","name":"鹿茸粉","specification":"75g／罐","package":"白色塑膠罐","ingredients":["鹿茸"],"retailPrice":2000,"fulfillmentType":"ready-stock","approvedDm":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/luerong-fen.webp?v=20260812","displaySource":"own-formal-dm"}
   ],
   "fulfillmentPolicy": {"version":"current-authority","drinkProductIds":["guilu-drink-30","guilu-drink-180"],"readyStockProductIds":["guilu-gao","guilu-tangkuai","guilu-jiao","luerong-fen"],"drinkNotice":"龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。","readyStockNotice":"本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。"},
   "trialCampaign": {"title":"龜鹿飲試喝組｜先試喝，再決定","free":"3罐試喝品免費","shipping":["7-11店到店60元","郵局宅配100元"],"limit":"每位顧客、電話及地址限申請一次","leadTime":"接單後安排製作，約5～7個工作天出貨","orderChannel":"所有試喝申請與正式下單皆在LINE OA完成","price30":"60元／罐；買10送1，11罐600元","price180":"200元／包；買10送1，11包2,000元"},
-  "trialPosterAuthority": {"assetId":"20260812-user-approved-trial-poster","status":"approved_display","currentDisplay":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial.webp?v=20260812","currentTrialPage":"https://ts15825868.github.io/xianjiawei/trial.html?v=20260812","title":"龜鹿飲試喝組｜先試喝，再決定","doNotRegenerate":true,"useCurrentFormalMediaOnly":true,"retiredPosterMustNotBeUsed":true},
+  "trialPosterAuthority": {"assetId":"20260812-user-approved-trial-poster","status":"approved_display","currentDisplay":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial.webp?v=20260812","currentTrialPage":"https://ts15825868.github.io/xianjiawei/trial.html?v=20260812","title":"龜鹿飲試喝組｜先試喝，再決定","role":"fixed full trial visual + source visual for 30cc and 180cc customer DM family","doNotRegenerate":true,"useCurrentFormalMediaOnly":true,"retiredPosterMustNotBeUsed":true},
   "guardRules": [
     "只允許products清單內六項目前正式顧客規格",
-    "30cc必須是小玻璃裸罐、無貼紙、金色蓋，規格30cc／罐（小玻璃罐），不得稱瓶或改產品比例",
-    "180cc必須維持狹長鋁袋型態，不得改袋型或誇張放大",
+    "試喝固定使用20260812正式試喝主圖，不得回退舊圖或自行重生成",
+    "30cc顧客主視覺使用試喝正式主圖／30cc規格區／三罐區；產品本體必須是小玻璃裸罐、無貼紙、金色蓋，規格30cc／罐（小玻璃罐），不得稱瓶或改比例與罐型",
+    "180cc顧客主視覺以試喝正式主圖右下180cc鋁袋區為來源；產品本體必須維持狹長鋁袋，不得改袋型、比例或亂畫包裝",
+    "龜鹿膏、龜鹿湯塊、龜鹿膠、鹿茸粉各自使用自己的正式DM，不共用龜鹿飲試喝主圖",
     "龜鹿湯塊只顯示75g／盒｜8塊裝，不得顯示退役每塊重量",
     "龜鹿膠只顯示600g／盒｜32塊裝，不得顯示1斤或退役每塊重量",
-    "龜鹿膏目前主要使用資料為一天一次一小匙",
-    "LINE顧客端產品與試喝視覺優先使用20260812最新核准DM；products-v3只作實物身份權威與生成校正，不再要求顧客主視覺必須是簡單原圖",
+    "LINE顧客端正式DM／正式視覺優先；products-v3只作實物身份權威與生成校正，不得因顧客端不是簡單原圖而誤擋",
     "所有生成／合成產品圖必須保持products-v3所代表的真實產品外觀、包裝、標示與比例",
-    "守門驗證目前正式能力與權威，不綁死舊版號、舊檔名、舊文案或簡單原圖"
+    "守門驗證目前正式能力與權威，不綁死舊版號、舊檔名、舊文案或退役簡單原圖"
   ]
 }
