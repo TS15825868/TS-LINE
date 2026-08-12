@@ -30,26 +30,27 @@ function assertCurrent(merged, authority, photoAuthority) {
     if (!product || !rule || !photo) throw new Error(`${id}缺少目前正式產品權威`);
     if (product.name !== rule.name) throw new Error(`${id}正式名稱不同步`);
     if (product.specification !== rule.specification || product.size !== rule.specification || product.spec !== rule.specification) throw new Error(`${id}正式規格不同步`);
-    for (const field of ["image", "imageUrl", "image_url", "officialOriginalImage"]) {
-      if (String(product[field] || "") !== photo) throw new Error(`${id}.${field} 必須使用products-v3正式產品原圖`);
-    }
     const approvedDm = String(rule.approvedDm || "").trim();
-    if (approvedDm) {
-      if (String(product.dmImage || "") !== approvedDm) throw new Error(`${id}.dmImage 必須使用目前核准上傳DM`);
-    } else if (String(product.dmImage || "") !== photo) {
-      throw new Error(`${id}.dmImage 缺少核准DM且未回退products-v3`);
+    const customerDisplay = approvedDm || photo;
+    for (const field of ["image", "imageUrl", "image_url", "dmImage"]) {
+      if (String(product[field] || "") !== customerDisplay) throw new Error(`${id}.${field} 必須使用目前正式DM／正式顧客視覺`);
     }
-    if (product.imagePolicy !== "approved-original-product-photo-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
+    if (String(product.officialOriginalImage || "") !== photo) throw new Error(`${id}.officialOriginalImage 必須保留products-v3實物身份權威`);
+    if (product.imagePolicy !== "current-formal-dm-customer-display-preserve-products-v3-identity") throw new Error(`${id}圖片政策不同步`);
   }
 
   const drink30 = (merged.products || []).find((item) => item.id === "guilu-drink-30");
   if (/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(drink30))) throw new Error("30cc不得出現瓶型舊稱");
+  if (!String(drink30?.image || "").includes("/images/customer-display-v20260812/guilu-drink-30cc.webp")) throw new Error("30cc未使用目前正式試喝主視覺來源");
+  const drink180 = (merged.products || []).find((item) => item.id === "guilu-drink-180");
+  if (!String(drink180?.image || "").includes("/images/customer-display-v20260812/guilu-drink-180cc.webp")) throw new Error("180cc未使用目前正式鋁袋視覺來源");
   if (/每塊約\s*9\.375g/.test(JSON.stringify((merged.products || []).find((item) => item.id === "guilu-tangkuai")))) throw new Error("龜鹿湯塊不得帶退役每塊重量");
   if (/1斤|每塊約\s*18\.75g/.test(JSON.stringify((merged.products || []).find((item) => item.id === "guilu-jiao")))) throw new Error("龜鹿膠不得帶退役1斤／每塊重量");
 
   const trial = authority.trialPosterAuthority || {};
-  if (!String(trial.currentDisplay || "").includes("/images/dm-approved-v20260810/guilu-drink-trial.webp")) throw new Error("試喝圖未使用目前核准上傳版本");
+  if (!String(trial.currentDisplay || "").includes("/images/customer-display-v20260812/trial.webp")) throw new Error("試喝圖未使用20260812正式試喝主圖");
   if (String(merged.trialPosterAuthority?.currentDisplay || "") !== String(trial.currentDisplay || "")) throw new Error("試喝圖權威未同步至LINE執行資料");
+  if (!String(authority.displayPolicy || "").includes("products-v3只保留")) throw new Error("LINE顧客圖政策必須把products-v3限定為實物校正權威");
 }
 
 function main() {
@@ -65,7 +66,7 @@ function main() {
     const previous = fs.readFileSync(DATA_PATH, "utf8");
     if (previous !== next) fs.writeFileSync(DATA_PATH, next, "utf8");
   }
-  console.log(`PASS: LINE current catalog ${mode}; products-v3 identity + approved uploaded DM/trial media.`);
+  console.log(`PASS: LINE current catalog ${mode}; formal customer DM first + products-v3 identity reference + 20260812 trial master.`);
 }
 
 main();
