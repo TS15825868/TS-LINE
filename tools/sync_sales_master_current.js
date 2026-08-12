@@ -33,24 +33,31 @@ function assertCurrent(merged, authority, photoAuthority) {
     const approvedDm = String(rule.approvedDm || "").trim();
     const customerDisplay = approvedDm || photo;
     for (const field of ["image", "imageUrl", "image_url", "dmImage"]) {
-      if (String(product[field] || "") !== customerDisplay) throw new Error(`${id}.${field} 必須使用目前正式DM／正式顧客視覺`);
+      if (String(product[field] || "") !== customerDisplay) throw new Error(`${id}.${field} 必須使用目前正式六產品圖`);
     }
-    if (String(product.officialOriginalImage || "") !== photo) throw new Error(`${id}.officialOriginalImage 必須保留products-v3實物身份權威`);
+    if (String(product.officialOriginalImage || "") !== photo) throw new Error(`${id}.officialOriginalImage 必須保留products-v3實物身份參考`);
     if (product.imagePolicy !== "current-formal-dm-customer-display-preserve-products-v3-identity") throw new Error(`${id}圖片政策不同步`);
   }
 
   const drink30 = (merged.products || []).find((item) => item.id === "guilu-drink-30");
   if (/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(drink30))) throw new Error("30cc不得出現瓶型舊稱");
-  if (!String(drink30?.image || "").includes("/images/customer-display-v20260812/guilu-drink-30cc.webp")) throw new Error("30cc未使用目前正式試喝主視覺來源");
+  if (!String(drink30?.image || "").includes("/images/customer-display-v20260812/guilu-drink-30cc.webp")) throw new Error("30cc未使用正式產品圖");
+
   const drink180 = (merged.products || []).find((item) => item.id === "guilu-drink-180");
-  if (!String(drink180?.image || "").includes("/images/customer-display-v20260812/guilu-drink-180cc.webp")) throw new Error("180cc未使用目前正式鋁袋視覺來源");
-  if (/每塊約\s*9\.375g/.test(JSON.stringify((merged.products || []).find((item) => item.id === "guilu-tangkuai")))) throw new Error("龜鹿湯塊不得帶退役每塊重量");
-  if (/1斤|每塊約\s*18\.75g/.test(JSON.stringify((merged.products || []).find((item) => item.id === "guilu-jiao")))) throw new Error("龜鹿膠不得帶退役1斤／每塊重量");
+  if (!String(drink180?.image || "").includes("/images/customer-display-v20260812/guilu-drink-180cc.webp")) throw new Error("180cc未使用正式產品圖");
+
+  const tangkuai = official.get("guilu-tangkuai");
+  if (tangkuai?.specification !== "75g／盒｜8塊裝") throw new Error("龜鹿湯塊主規格必須是75g／盒｜8塊裝");
+  if (tangkuai?.detailUnitApprox !== "每塊約9.375g" || !String(tangkuai?.detailUnitRule || "").includes("僅詳細資料")) throw new Error("龜鹿湯塊每塊重量必須標為約值且僅詳細資料使用");
+
+  const jiao = official.get("guilu-jiao");
+  if (jiao?.specification !== "600g（1斤）／盒｜32塊裝") throw new Error("龜鹿膠主規格必須是600g（1斤）／盒｜32塊裝");
+  if (jiao?.detailUnitApprox !== "每塊約18.75g" || !String(jiao?.detailUnitRule || "").includes("僅詳細資料")) throw new Error("龜鹿膠每塊重量必須標為約值且僅詳細資料使用");
 
   const trial = authority.trialPosterAuthority || {};
   if (!String(trial.currentDisplay || "").includes("/images/customer-display-v20260812/trial.webp")) throw new Error("試喝圖未使用20260812正式試喝主圖");
   if (String(merged.trialPosterAuthority?.currentDisplay || "") !== String(trial.currentDisplay || "")) throw new Error("試喝圖權威未同步至LINE執行資料");
-  if (!String(authority.displayPolicy || "").includes("products-v3只保留")) throw new Error("LINE顧客圖政策必須把products-v3限定為實物校正權威");
+  if (!String(authority.displayPolicy || "").includes("六張正式產品圖")) throw new Error("LINE顧客圖政策必須以六張正式產品圖為產品主視覺");
 }
 
 function main() {
@@ -66,7 +73,7 @@ function main() {
     const previous = fs.readFileSync(DATA_PATH, "utf8");
     if (previous !== next) fs.writeFileSync(DATA_PATH, next, "utf8");
   }
-  console.log(`PASS: LINE current catalog ${mode}; formal customer DM first + products-v3 identity reference + 20260812 trial master.`);
+  console.log(`PASS: LINE current catalog ${mode}; six official product visuals + separate trial master + products-v3 identity reference.`);
 }
 
 main();
