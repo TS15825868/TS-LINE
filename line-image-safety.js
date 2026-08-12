@@ -6,6 +6,7 @@
  * - 顧客產品介紹圖使用目前核准正式媒體；來源可為 JPEG／PNG／WebP。
  * - LINE 顯示只做 JPEG 格式轉換與等比例縮小，不裁切、不拉伸、不重畫。
  * - 30cc 必須維持小玻璃裸罐、無貼紙；180cc 必須維持鋁袋。
+ * - 試喝固定使用 2026-08-12 小老闆正式主圖的同圖 JPEG，不回退舊 evergreen。
  * - 守門驗目前能力、規格與媒體行為，不綁舊版號、舊檔名或舊固定文案。
  */
 const fs = require("fs");
@@ -18,8 +19,8 @@ const richMenuSync = require("./line-rich-menu-sync");
 const photoAuthority = require("./line-product-photo-authority.json");
 const formalMedia = require("./formal-media-authority-v20260810.json");
 
-const VERSION = "current-line-direct-start-media-safety";
-const FORMAL_MEDIA_VERSION = "current-formal-media";
+const VERSION = "20260812-formal-image-fix-v3";
+const FORMAL_MEDIA_VERSION = "20260812-formal-image-fix-v3";
 const FORMAL_KEYS = Object.freeze({
   "guilu-gao": "龜鹿膏",
   "guilu-drink-30": "龜鹿飲30cc玻璃罐",
