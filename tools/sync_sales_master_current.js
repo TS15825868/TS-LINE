@@ -36,14 +36,21 @@ function assertCurrent(merged, authority, photoAuthority) {
   if(tangkuai?.specification!=="75g／盒｜8塊裝"||tangkuai?.detailUnitApprox!=="每塊約9.375g"||!String(tangkuai?.detailUnitRule||"").includes("僅詳細資料"))throw new Error("龜鹿湯塊主規格／詳細約重規則不同步");
   const jiao=official.get("guilu-jiao");
   if(jiao?.specification!=="600g（1斤）／盒｜32塊裝"||jiao?.detailUnitApprox!=="每塊約18.75g"||!String(jiao?.detailUnitRule||"").includes("僅詳細資料"))throw new Error("龜鹿膠主規格／詳細約重規則不同步");
+
   const trial=authority.trialPosterAuthority||{};
-  if(!String(trial.currentDisplay||"").includes("/images/customer-display-v20260812/trial.webp"))throw new Error("試喝圖未使用獨立正式試喝主圖");
-  if(String(merged.trialPosterAuthority?.currentDisplay||"")!==String(trial.currentDisplay||""))throw new Error("試喝圖權威未同步至LINE執行資料");
-  if(!String(authority.displayPolicy||"").includes("詳細DM使用獨立修正版DM"))throw new Error("LINE媒體角色分離政策未同步");
+  const trialDisplay=String(trial.currentDisplay||"").trim();
+  if(!trialDisplay)throw new Error("試喝圖缺少目前正式權威");
+  if(!trialDisplay.includes("/images/customer-display-v20260812/trial-small-boss.webp"))throw new Error("試喝圖未使用使用者最新指定的小老闆正式主圖");
+  if(/\/trial\.webp(?:[?#]|$)|trial-clean-v4\.svg/i.test(trialDisplay))throw new Error("試喝圖不得回退已退役舊主圖");
+  if(trial.status!=="approved_display"||trial.doNotRegenerate!==true)throw new Error("試喝主圖核准／禁止重生成規則不同步");
+  if(String(merged.trialPosterAuthority?.currentDisplay||"")!==trialDisplay)throw new Error("試喝圖權威未同步至LINE執行資料");
+
+  const policy=String(authority.displayPolicy||"");
+  if(!policy.includes("產品介紹固定使用六張正式產品圖")||!policy.includes("詳細DM")||!policy.includes("試喝"))throw new Error("LINE媒體角色分離政策未同步");
 }
 function main(){
   const mode=process.argv.includes("--write")?"write":"check"; const raw=JSON.parse(fs.readFileSync(DATA_PATH,"utf8")); const authority=JSON.parse(fs.readFileSync(AUTHORITY_PATH,"utf8")); const merged=applyMaster(raw); const photoAuthority=getPhotoAuthority(); assertCurrent(merged,authority,photoAuthority);
   if(mode==="write"){const next=stable(merged),previous=fs.readFileSync(DATA_PATH,"utf8");if(previous!==next)fs.writeFileSync(DATA_PATH,next,"utf8");}
-  console.log(`PASS: LINE current catalog ${mode}; product images + corrected detailed DMs + trial master are separated.`);
+  console.log(`PASS: LINE current catalog ${mode}; product images + corrected detailed DMs + current trial master are separated.`);
 }
 main();
