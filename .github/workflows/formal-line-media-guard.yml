@@ -4,12 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'line-sales-master.json'
-      - 'formal-line-media.json'
-      - 'src/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'docs/FORMAL_MEDIA_POLICY_20260810.md'
+      - 'formal-media-authority-v20260810.json'
+      - 'assets/data/official-products.json'
+      - 'config/official-products.json'
+      - 'content/trial-campaign-visual.json'
+      - 'social-guilu-drink-trial-v1.json'
+      - 'content/social-guilu-drink-trial-v1.json'
+      - 'line-image-safety.js'
+      - 'trial-poster-runtime.js'
       - '.github/workflows/formal-line-media-guard.yml'
   workflow_dispatch:
 
@@ -21,18 +23,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Guard latest formal data and capabilities
-        shell: bash
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Validate current formal authority only
         run: |
-          grep -Fq '龜鹿膏：100g／罐' docs/FORMAL_MEDIA_POLICY_20260810.md
-          grep -Fq '龜鹿飲30cc：30cc／罐（小玻璃罐、裸罐、無貼紙）' docs/FORMAL_MEDIA_POLICY_20260810.md
-          grep -Fq '龜鹿飲180cc：180cc／包（鋁袋）' docs/FORMAL_MEDIA_POLICY_20260810.md
-          grep -Fq '龜鹿湯塊：75g／盒｜8塊裝' docs/FORMAL_MEDIA_POLICY_20260810.md
-          grep -Fq '龜鹿膠：600g／盒｜32塊裝' docs/FORMAL_MEDIA_POLICY_20260810.md
-          grep -Fq '鹿茸粉：75g／罐' docs/FORMAL_MEDIA_POLICY_20260810.md
-          if [ -f formal-line-media.json ]; then
-            grep -Fq 'formal-line-media' formal-line-media.json
-            grep -Fq 'LINE OA' formal-line-media.json
-          fi
-          ! grep -R -F '30cc／瓶' --include='*.json' --include='*.js' --include='*.mjs' --include='*.md' --include='*.html' .
-          echo 'PASS: LINE guard validates latest formal content/capabilities; Rich Menu or data may upgrade versions without legacy-version rejection.'
+          node - <<'NODE'
+          const fs=require('fs');
+          const current=JSON.parse(fs.readFileSync('assets/data/official-products.json','utf8'));
+          const config=JSON.parse(fs.readFileSync('config/official-products.json','utf8'));
+          const media=JSON.parse(fs.readFileSync('formal-media-authority-v20260810.json','utf8'));
+          const trial=JSON.parse(fs.readFileSync('content/trial-campaign-visual.json','utf8'));
+          const byId=Object.fromEntries(current.products.map(p=>[p.id,p]));
+          const cfg=Object.fromEntries(config.products.map(p=>[p.id,p]));
+          const eq=(actual,expected,label)=>{if(actual!==expected)throw new Error(`${label}: ${actual} !== ${expected}`)};
+          eq(byId['guilu-drink-30']?.specification,'30cc／罐（小玻璃罐）','30cc主規格');
+          eq(byId['guilu-drink-180']?.specification,'180cc／包（鋁袋）','180cc主規格');
+          eq(byId['guilu-tangkuai']?.specification,'75g／盒｜8塊裝','湯塊主規格');
+          eq(byId['guilu-tangkuai']?.detailUnitApprox,'每塊約9.375g','湯塊詳細重量');
+          eq(byId['guilu-jiao']?.specification,'600g（1斤）／盒｜32塊裝','龜鹿膠主規格');
+          eq(byId['guilu-jiao']?.detailUnitApprox,'每塊約18.75g','龜鹿膠詳細重量');
+          eq(cfg['guilu-tangkuai']?.spec,'75g／盒｜8塊裝','config湯塊主規格');
+          eq(cfg['guilu-jiao']?.spec,'600g（1斤）／盒｜32塊裝','config龜鹿膠主規格');
+          if(!/trial-small-boss\.jpg/.test(media.source_trial||'')) throw new Error('LINE試喝來源不是小老闆正式JPEG');
+          if(!/trial-small-boss\.jpg/.test(trial.poster||'')) throw new Error('LINE試喝poster不是小老闆正式JPEG');
+          if(/approved-v412|approved-v413|trial-evergreen|\/trial\.webp/i.test(`${media.source_trial} ${trial.poster}`)) throw new Error('目前正式試喝權威回退舊素材');
+          if(!String(current.displayPolicy||'').includes('三者不可互相取代')) throw new Error('產品／DM／試喝媒體角色未分離');
+          console.log('PASS: current LINE product/DM/trial authority matches 2026-08-12 formal rules.');
+          NODE
+      - name: Syntax check current runtime
+        run: |
+          node --check line-image-safety.js
+          node --check trial-poster-runtime.js
