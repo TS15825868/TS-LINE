@@ -135,17 +135,18 @@ function currentAuthorityOverride(id, merged = {}) {
 }
 function photoOverride(id) {
   const photo = getPhotoAuthority();
-  const url = String(photo?.products?.[id] || "").trim();
+  const original = String(photo?.products?.[id] || "").trim();
   const official = authorityProduct(id);
   const approvedDm = String(official?.approvedDm || "").trim();
-  if (!url) throw new Error(`${id} 缺少 products-v3 正式產品原圖權威`);
+  if (!original) throw new Error(`${id} 缺少 products-v3 正式產品原圖權威`);
+  const customerDisplay = approvedDm || original;
   return {
-    image: url,
-    imageUrl: url,
-    image_url: url,
-    dmImage: approvedDm || url,
-    officialOriginalImage: url,
-    imagePolicy: "approved-original-product-photo-contain-no-crop",
+    image: customerDisplay,
+    imageUrl: customerDisplay,
+    image_url: customerDisplay,
+    dmImage: customerDisplay,
+    officialOriginalImage: original,
+    imagePolicy: "current-formal-dm-customer-display-preserve-products-v3-identity",
   };
 }
 
@@ -195,14 +196,16 @@ function applyMaster(data) {
       ...((data.runtime || {}).imagePolicy || {}),
       ...(policy.imagePolicy || {}),
       actualProductPhotoAuthority: getPhotoAuthority().version,
-      productMainImageSource: "products-v3-user-approved-originals",
+      customerMainImageSource: "current-user-approved-formal-dm",
+      productIdentityReference: "products-v3-user-approved-originals",
       productsV2Use: "legacy-reference-only",
-      productScalePolicy: "uniform-only-no-equal-height-equal-width",
-      dmFallback: "current-user-approved-dm-otherwise-products-v3",
+      productScalePolicy: "uniform-only-no-stretch-preserve-real-product-proportion",
+      dmFallback: "current-user-approved-dm-otherwise-products-v3-reference",
     },
-    productMainImageSource: "products-v3-user-approved-originals",
+    productMainImageSource: "current-user-approved-formal-dm",
+    productIdentityReference: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
-    productScalePolicy: "uniform-only-no-equal-height-equal-width",
+    productScalePolicy: "uniform-only-no-stretch-preserve-real-product-proportion",
     formalCopyVersion: authority.version,
     formalCopyAuthority: authority.authority,
     trialAuthority: "assets/data/official-products.json",
