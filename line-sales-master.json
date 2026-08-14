@@ -1,5 +1,5 @@
 {
-  "version": "2026-08-15-personal-routine-usage-v2",
+  "version": "2026-08-15-personal-routine-usage-v3",
   "source": "仙加味六個正式產品、六個正式規格、正式成分與使用資料、目前LINE售價、買10送1、試喝與產品別出貨政策；產品圖片唯一由 line-product-photo-authority.json 的 products-v3 使用者核准正式原圖提供，銷售主檔不再保存舊 products-v2 圖片。",
   "products": {
     "guilu-gao": {
@@ -20,7 +20,6 @@
       ],
       "usage": [
         "食用時間可依個人使用習慣與作息時間安排",
-        "可依個人使用習慣與作息時間安排",
         "初次可先從半匙開始",
         "可直接食用或加入約100～300mL熱水化開"
       ],
@@ -70,7 +69,6 @@
         "飲用時間可依個人使用習慣與作息時間安排",
         "開罐即可飲用",
         "可隔水加熱或溫熱後飲用",
-        "可依個人使用習慣與作息時間飲用",
         "避免冰飲",
         "開罐後請儘速飲用完畢"
       ],
@@ -123,7 +121,6 @@
         "飲用時間可依個人使用習慣與作息時間安排",
         "撕開包裝即可飲用",
         "可隔水加熱或溫熱後飲用",
-        "可依個人使用習慣與作息時間飲用",
         "避免冰飲",
         "開封後請儘速飲用完畢"
       ],
@@ -155,9 +152,9 @@
     "guilu-tangkuai": {
       "name": "龜鹿湯塊",
       "displayName": "龜鹿湯塊",
-      "specification": "75g／盒｜8塊裝｜每塊約9.375g",
-      "size": "75g／盒｜8塊裝｜每塊約9.375g",
-      "spec": "75g／盒｜8塊裝｜每塊約9.375g",
+      "specification": "75g／盒｜8塊裝",
+      "size": "75g／盒｜8塊裝",
+      "spec": "75g／盒｜8塊裝",
       "unit": "盒",
       "description": "75g深藍盒、8塊裝、每塊約9.375g；目前只有此一正式規格。",
       "ingredients": [
@@ -189,14 +186,16 @@
       "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
       "productionLeadTime": null,
       "readyStock": true,
-      "physicalScalePolicy": "深藍正式盒；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現；不得建立其他龜鹿湯塊容量。"
+      "physicalScalePolicy": "深藍正式盒；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現；不得建立其他龜鹿湯塊容量。",
+      "detailUnitApprox": "每塊約9.375g",
+      "detailUnitRule": "僅詳細資料，不放產品圖、DM或貼文主規格"
     },
     "guilu-jiao": {
       "name": "龜鹿膠",
       "displayName": "龜鹿膠",
-      "specification": "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
-      "size": "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
-      "spec": "600g（1斤）／盒｜32塊裝｜每塊約18.75g",
+      "specification": "600g（1斤）／盒｜32塊裝",
+      "size": "600g（1斤）／盒｜32塊裝",
+      "spec": "600g（1斤）／盒｜32塊裝",
       "unit": "盒",
       "description": "600g一斤淡紫盒、32塊裝，適合家庭大規格、熱水化開或燉湯。",
       "ingredients": [
@@ -230,7 +229,9 @@
       "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
       "productionLeadTime": null,
       "readyStock": true,
-      "physicalScalePolicy": "淡紫正式盒；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現，不可橫向拉長。"
+      "physicalScalePolicy": "淡紫正式盒；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現，不可橫向拉長。",
+      "detailUnitApprox": "每塊約18.75g",
+      "detailUnitRule": "僅詳細資料，不放產品圖、DM或貼文主規格"
     },
     "luerong-fen": {
       "name": "鹿茸粉",

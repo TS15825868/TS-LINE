@@ -48,7 +48,6 @@
       ],
       "usage": [
         "食用時間可依個人使用習慣與作息時間安排",
-        "可依個人使用習慣與作息時間安排",
         "初次可先從半匙開始",
         "可直接食用或加入約100～300mL熱水化開"
       ],
@@ -113,7 +112,6 @@
         "飲用時間可依個人使用習慣與作息時間安排",
         "開罐即可飲用",
         "可隔水加熱或溫熱後飲用",
-        "可依個人使用習慣與作息時間飲用",
         "避免冰飲",
         "開罐後請儘速飲用完畢"
       ],
@@ -188,7 +186,6 @@
         "飲用時間可依個人使用習慣與作息時間安排",
         "撕開包裝即可飲用",
         "可隔水加熱或溫熱後飲用",
-        "可依個人使用習慣與作息時間飲用",
         "避免冰飲",
         "開封後請儘速飲用完畢"
       ],
@@ -713,7 +710,7 @@
     }
   },
   "store": {},
-  "salesMasterVersion": "2026-08-15-personal-routine-usage-v2-authority-driven-current",
+  "salesMasterVersion": "2026-08-15-personal-routine-usage-v3-authority-driven-current",
   "salesMasterSource": "仙加味六個正式產品、六個正式規格、正式成分與使用資料、目前LINE售價、買10送1、試喝與產品別出貨政策；產品圖片唯一由 line-product-photo-authority.json 的 products-v3 使用者核准正式原圖提供，銷售主檔不再保存舊 products-v2 圖片。; product image / detailed DM / trial roles separated by current official authority",
   "trialPosterAuthority": {
     "assetId": "20260814-user-small-boss-trial-poster",
