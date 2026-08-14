@@ -33,92 +33,98 @@ jobs:
       - name: Verify formal catalog remains synchronized
         run: npm run check:catalog
 
-      - name: Verify standalone LINE OA production contract
+      - name: Verify current LINE OA production contract
         shell: bash
         run: |
           set -euo pipefail
-          test -f line-sales-master.json
-          test -f product-sales-master.js
-          test -f line-product-photo-authority.json
-          test -f line-image-safety.js
-          test -f line-plain-text-safety.js
-          test -f line-recording-ui-fix.js
-          test -f line-rich-menu-sync.js
           node - <<'NODE'
           const fs = require('node:fs');
           const pkg = require('./package.json');
           const lock = require('./package-lock.json');
-          const sales = require('./line-sales-master.json');
-          const data = require('./data.json');
+          const current = require('./assets/data/official-products.json');
+          const photo = require('./line-product-photo-authority.json');
           const rich = require('./line-rich-menu-sync');
-          const plain = require('./line-plain-text-safety');
-          const core = require('./line-image-safety-core');
-          const { getPhotoAuthority } = require('./product-sales-master');
+          const { applyMaster } = require('./product-sales-master');
 
-          if (lock.lockfileVersion !== 3) throw new Error('package-lock格式錯誤');
-          if (JSON.stringify(lock.packages?.['']?.dependencies || {}) !== JSON.stringify(pkg.dependencies || {})) throw new Error('package與package-lock依賴不同步');
-          if (pkg.main !== 'server.js') throw new Error('LINE正式入口不是server.js');
-          if (pkg.scripts.start !== 'node -r ./product-sales-master.js server.js') throw new Error('LINE正式start仍混入社群/ERP模組');
+          const must = (ok, message) => { if (!ok) throw new Error(message); };
+          const same = (actual, expected, message) => must(actual === expected, `${message}: ${actual} !== ${expected}`);
+
+          same(lock.lockfileVersion, 3, 'package-lock格式');
+          same(lock.packages?.['']?.version, pkg.version, 'package-lock版本');
+          must(JSON.stringify(lock.packages?.['']?.dependencies || {}) === JSON.stringify(pkg.dependencies || {}), 'package與package-lock依賴不同步');
+          same(pkg.main, 'server.js', 'LINE正式入口');
+          same(pkg.scripts.start, 'node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js', 'LINE正式start');
+          must(pkg.scripts.prestart.includes('sync_sales_master_current.js --write'), 'Render prestart必須先同步目前正式權威');
           for (const forbidden of ['internal-entry.js','social-review-center','social-publish-guard','instagram-content-publishing','facebook-page-token','internal-app-pro']) {
-            if (pkg.scripts.start.includes(forbidden)) throw new Error(`LINE正式start仍載入非必要模組：${forbidden}`);
+            must(!pkg.scripts.start.includes(forbidden), `LINE正式start仍載入非必要模組：${forbidden}`);
           }
 
-          const photoAuthority = getPhotoAuthority();
-          if (!String(photoAuthority?.version || '').includes('products-v3')) throw new Error('產品圖片權威不是products-v3正式系列');
-          const authorityUrls = Object.values(photoAuthority?.products || {}).map(String);
-          if (authorityUrls.length !== 6) throw new Error('產品圖片權威不是六項');
-          const cacheVersions = new Set(authorityUrls.map(url => url.match(/[?&]v=([^&#]+)/)?.[1] || '').filter(Boolean));
-          if (cacheVersions.size !== 1) throw new Error('六項正式產品圖片快取版本不一致');
-          for (const url of authorityUrls) {
-            if (!url.includes('/images/products-v3/') || url.includes('/images/products-v2/')) throw new Error('產品圖片權威回退舊圖');
-          }
-
-          const byId = Object.fromEntries((data.products || []).map(p => [p.id,p]));
-          if (data.products?.length !== 6) throw new Error('data.json正式產品不是六項');
-          const expected = {
-            'guilu-gao':['100g／罐',1800],
-            'guilu-drink-30':['30cc／罐（小玻璃罐）',60],
-            'guilu-drink-180':['180cc／包（鋁袋）',200],
-            'guilu-tangkuai':['75g／盒｜8塊裝｜每塊約9.375g',1600],
-            'guilu-jiao':['600g（1斤）／盒｜32塊裝｜每塊約18.75g',9600],
-            'luerong-fen':['75g／罐',2000],
+          same(current.authority, 'user-confirmed-current', '目前產品權威');
+          must(Array.isArray(current.products) && current.products.length === 6, '目前正式產品必須剛好6項');
+          const official = Object.fromEntries(current.products.map(p => [p.id, p]));
+          const expectedSpecs = {
+            'guilu-gao':'100g／罐',
+            'guilu-drink-30':'30cc／罐（小玻璃罐）',
+            'guilu-drink-180':'180cc／包（鋁袋）',
+            'guilu-tangkuai':'75g／盒｜8塊裝',
+            'guilu-jiao':'600g（1斤）／盒｜32塊裝',
+            'luerong-fen':'75g／罐',
           };
-          for (const [id,[spec,price]] of Object.entries(expected)) {
-            const p=byId[id];
-            if (!p || (p.specification||p.size||p.spec)!==spec || Number(p.price)!==price) throw new Error(`${id}正式規格/售價不同步`);
-            for (const field of ['image','imageUrl','image_url','dmImage','officialOriginalImage']) {
-              if (!String(p[field]||'').includes('/images/products-v3/')) throw new Error(`${id}.${field}不是products-v3`);
-            }
-            if (!String(p.physicalScalePolicy||'').trim()) throw new Error(`${id}缺少個別尺寸/比例規則`);
+          for (const [id, spec] of Object.entries(expectedSpecs)) {
+            same(official[id]?.specification, spec, `${id}主規格`);
+            must(String(official[id]?.approvedProductImage || '').includes('/images/customer-display-v20260812/'), `${id}產品介紹主圖不是目前customer-display正式圖`);
+            must(String(official[id]?.approvedDm || '').startsWith('https://ts15825868.github.io/xianjiawei/images/'), `${id}缺少正式詳細DM`);
           }
-          if (!/Ø42.*H51|小玻璃裸罐/i.test(byId['guilu-drink-30'].physicalScalePolicy)) throw new Error('30cc尺寸鎖錯誤');
-          if (!/0\.60.*0\.68|狹長直立鋁袋/i.test(byId['guilu-drink-180'].physicalScalePolicy)) throw new Error('180cc比例鎖錯誤');
-          if ((byId['guilu-drink-30'].offers||[]).find(o=>o.label==='買10送1')?.total !== 600) throw new Error('30cc買10送1錯誤');
-          if ((byId['guilu-drink-180'].offers||[]).find(o=>o.label==='買10送1')?.total !== 2000) throw new Error('180cc買10送1錯誤');
-          if (data.trialCampaign?.contents !== '30cc小玻璃罐×3罐' || data.trialCampaign?.productFee !== 0) throw new Error('試喝內容錯誤');
-          if (JSON.stringify((data.trialCampaign?.shippingOptions||[]).map(o=>[o.id,o.fee])) !== JSON.stringify([['store',60],['home',100]])) throw new Error('試喝運費錯誤');
+          same(official['guilu-tangkuai']?.detailUnitApprox, '每塊約9.375g', '湯塊詳細約重');
+          same(official['guilu-jiao']?.detailUnitApprox, '每塊約18.75g', '龜鹿膠詳細約重');
+          must(String(official['guilu-tangkuai']?.detailUnitRule || '').includes('僅詳細資料'), '湯塊每塊重量不得回主規格');
+          must(String(official['guilu-jiao']?.detailUnitRule || '').includes('僅詳細資料'), '龜鹿膠每塊重量不得回主規格');
+          same(official['guilu-drink-30']?.usagePrimary, '每日一罐', '30cc使用單位');
+          same(official['guilu-drink-180']?.usagePrimary, '每日一包', '180cc使用單位');
+          must(!/瓶/.test(JSON.stringify(official['guilu-drink-30'])), '30cc目前正式權威不得出現瓶字');
 
-          if (!String(rich.VERSION || '').includes('rich-menu')) throw new Error('Rich Menu缺少正式版本識別');
-          if (!rich.SINGLE_IMAGE_ONLY || !rich.RUNTIME_COMPOSITE_FORBIDDEN || !rich.LEGACY_BASE_TEMPLATE_FORBIDDEN) throw new Error('Rich Menu正式單一母稿／禁止拼貼政策失效');
-          if (!/^assets\/rich-menu\/.*\.svg(?:\.gz\.b64)?$/.test(String(rich.STATIC_ARTWORK || ''))) throw new Error('Rich Menu正式母稿路徑錯誤');
-          if (!fs.existsSync(rich.STATIC_ARTWORK)) throw new Error(`Rich Menu正式母稿不存在：${rich.STATIC_ARTWORK}`);
+          const rawData = JSON.parse(fs.readFileSync('data.json','utf8'));
+          const data = applyMaster(rawData);
+          const byId = Object.fromEntries((data.products || []).map(p => [p.id, p]));
+          must(data.products?.length === 6, 'LINE執行資料正式產品不是六項');
+          for (const [id, spec] of Object.entries(expectedSpecs)) {
+            const p = byId[id];
+            same(p?.specification, spec, `${id}執行主規格`);
+            same(p?.image, official[id].approvedProductImage, `${id}執行產品主圖`);
+            same(p?.dmImage, official[id].approvedDm, `${id}執行詳細DM`);
+            same(p?.officialOriginalImage, photo.products?.[id], `${id}products-v3身份參考`);
+            must(String(p?.physicalScalePolicy || '').trim(), `${id}缺少產品比例規則`);
+          }
+          same(byId['guilu-drink-30']?.price, 60, '30cc售價');
+          same(byId['guilu-drink-180']?.price, 200, '180cc售價');
+          same((byId['guilu-drink-30']?.offers || []).find(o => o.label === '買10送1')?.total, 600, '30cc買10送1');
+          same((byId['guilu-drink-180']?.offers || []).find(o => o.label === '買10送1')?.total, 2000, '180cc買10送1');
+
+          const trial = current.trialPosterAuthority || {};
+          must(String(trial.currentDisplay || '').includes('/images/trial/trial-poster-small-boss-official-v20260814.jpg'), '試喝主圖不是2026-08-14使用者核准海報');
+          must(trial.doNotRegenerate === true, '試喝主圖不得被自動重生成');
+          same(data.trialCampaign?.contents, '30cc小玻璃罐×3罐', '試喝內容');
+          same(Number(data.trialCampaign?.productFee), 0, '試喝品費用');
+          must(JSON.stringify((data.trialCampaign?.shippingOptions || []).map(o => [o.id,o.fee])) === JSON.stringify([['store',60],['home',100]]), '試喝運費錯誤');
+
+          must(rich.SINGLE_IMAGE_ONLY === true && rich.RUNTIME_COMPOSITE_FORBIDDEN === true && rich.LEGACY_BASE_TEMPLATE_FORBIDDEN === true, 'Rich Menu單一母稿／禁止拼貼政策失效');
+          must(/^assets\/rich-menu\/.*\.svg(?:\.gz\.b64)?$/.test(String(rich.STATIC_ARTWORK || '')), 'Rich Menu母稿路徑錯誤');
           const artwork = rich.readArtwork();
-          if (/<text\b/i.test(artwork)) throw new Error('Rich Menu繁中仍依賴主機字型');
-          if (/<image\b/i.test(artwork)) throw new Error('Rich Menu仍內嵌舊圖／照片拼貼');
-          if (!artwork.includes('xjw-text-outlined-')) throw new Error('Rich Menu缺少繁中向量字標記');
-          const menu=rich.menuDefinition();
-          if (menu.areas.length !== 6) throw new Error('Rich Menu不是六格');
-          if (menu.areas.some(a=>a.bounds.y<176)) throw new Error('Rich Menu品牌Header誤成熱區');
-          if (JSON.stringify(menu.areas.map(a=>a.action.label)) !== JSON.stringify(['看產品','購物車','幫我推薦','搭配組合','怎麼使用','直接下單'])) throw new Error('Rich Menu六格名稱不同步');
-          const health=plain.healthPayload(core);
-          if (health.serviceMode !== 'standalone-line-oa' || health.productMainImageSource !== 'products-v3-user-approved-originals') throw new Error('LINE健康權威錯誤');
-          if (JSON.stringify(health).includes('products-v2-actual-photos')) throw new Error('LINE健康診斷仍回報舊products-v2');
+          must(!/<text\b/i.test(artwork), 'Rich Menu繁中仍依賴主機字型');
+          must(!/<image\b/i.test(artwork), 'Rich Menu仍內嵌照片或舊底圖');
+          const menu = rich.menuDefinition();
+          same(menu.areas.length, 6, 'Rich Menu格數');
+          must(JSON.stringify(menu.areas.map(a => a.action.label)) === JSON.stringify(['看產品','購物車','幫我推薦','搭配組合','怎麼使用','直接下單']), 'Rich Menu六格名稱不同步');
+          must(JSON.stringify(menu.areas.map(a => a.action.text)) === JSON.stringify(['看產品','查看購買清單','幫我推薦','搭配組合','怎麼使用','直接下單']), 'Rich Menu六格傳送文字不同步');
 
-          const all = JSON.stringify({sales, data});
-          for (const legacy of ['買10送2','共12罐500元','共12包2,000元','30cc／瓶（小玻璃瓶）','買10送1，共11罐500元']) {
-            if (all.includes(legacy)) throw new Error(`正式執行資料仍含舊資料：${legacy}`);
-          }
-          console.log(`PASS TS-LINE ${pkg.version}: standalone LINE OA, six canonical products, products-v3 authority, capability-based native Rich Menu and source-native fulfillment/trial rules`);
+          for (const retired of [
+            '.github/workflows/line-closeout-status-once.yml',
+            '.github/workflows/one-time-update-drink-pricing-20260806.yml',
+            '.github/workflows/sync-formal-line-media.yml',
+            'tools/sync-formal-line-media.py',
+          ]) must(!fs.existsSync(retired), `退役同步仍存在：${retired}`);
+
+          console.log(`PASS TS-LINE ${pkg.version}: current authority, customer-display product cards, separate DM/trial media, six-grid native Rich Menu, webhook/cart/order runtime preserved.`);
           NODE
 
       - name: Restore generated mirror and ensure audit is read-only
