@@ -56,8 +56,12 @@ for (const [id,spec] of Object.entries(specs)) {
   must(String(byId[id]?.physicalScalePolicy || "").trim(), `${id}缺少尺寸比例政策`);
 }
 
-assert.equal(byId["guilu-gao"].usage?.[0], "可依個人使用習慣與作息時間安排");
-must(!(byId["guilu-gao"].usage || []).some(line => /一天一次一小匙|早晚各一小匙/.test(String(line))), "龜鹿膏不得回退舊用法");
+assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
+must(!(byId["guilu-gao"].usage || []).some(line => /一天一次一小匙|早晚各一小匙|每日早上及下午各一小匙/.test(String(line))), "龜鹿膏不得回退舊固定時段用法");
+assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1-2罐");
+must((byId["guilu-drink-30"].usage || []).some(line => String(line).includes("飲用時間可依個人使用習慣與作息時間安排")), "30cc必須保留個人作息時間原則");
+assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
+must((byId["guilu-drink-180"].usage || []).some(line => String(line).includes("飲用時間可依個人使用習慣與作息時間安排")), "180cc必須保留每日一包並取消固定白天時段");
 assert.equal(official["guilu-tangkuai"].detailUnitApprox, "每塊約9.375g");
 must(String(official["guilu-tangkuai"].detailUnitRule || "").includes("僅詳細資料"), "湯塊約重必須只在詳細資料");
 assert.equal(official["guilu-jiao"].detailUnitApprox, "每塊約18.75g");
@@ -126,4 +130,4 @@ if (guardMode.mode === "paused_for_full_system_update") assert.equal(guardMode.b
 
 for (const retired of [".github/workflows/line-closeout-status-once.yml",".github/workflows/one-time-update-drink-pricing-20260806.yml",".github/workflows/sync-formal-line-media.yml","tools/sync-formal-line-media.py"]) assert.equal(fs.existsSync(path.join(__dirname,retired)),false,`退役同步仍存在：${retired}`);
 
-console.log(`PASS：LINE OA readiness依 ${authority.version} 目前權威驗收：六項產品、媒體角色、8/14試喝、價格、交期、Webhook、Rich Menu與守門員均一致。`);
+console.log(`PASS：LINE OA readiness依 ${authority.version} 目前權威驗收：六項產品、使用時間個人化、30cc每日 1-2罐、180cc每日一包、媒體角色、8/14試喝、價格、交期、Webhook、Rich Menu與守門員均一致。`);
