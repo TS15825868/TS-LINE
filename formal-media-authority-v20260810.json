@@ -1,40 +1,57 @@
 {
-  "runtime":"line-formal-media-20260812-formal-image-fix-v3",
-  "approval_batch":"20260812-small-boss-trial-v1",
-  "post_approval_batch":"20260811-latest-user-post-images",
-  "source":"https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
-  "source_product_dm":{
-    "龜鹿膏":"https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=20260812-formal-image-fix-v3",
-    "龜鹿飲30cc玻璃罐":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-30cc.webp?v=20260812-formal-image-fix-v3",
-    "龜鹿飲180cc鋁袋":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp?v=20260812-formal-image-fix-v3",
-    "龜鹿湯塊":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp?v=20260812-formal-image-fix-v3",
-    "龜鹿膠":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp?v=20260812-formal-image-fix-v3",
-    "鹿茸粉":"https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp?v=20260812-formal-image-fix-v3"
+  "runtime": "line-formal-media-current-authority-v20260814",
+  "approval_batch": "20260814-product-modal-media-v3",
+  "source": "assets/data/official-products.json",
+  "public_authority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
+  "source_product_image": {
+    "龜鹿膏": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-gao.avif?v=20260814-product-modal-media-v3",
+    "龜鹿飲30cc玻璃罐": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-30cc.avif?v=20260814-product-modal-media-v3",
+    "龜鹿飲180cc鋁袋": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-180cc-product.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿湯塊": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.avif?v=20260814-product-modal-media-v3",
+    "龜鹿膠": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.avif?v=20260814-product-modal-media-v3",
+    "鹿茸粉": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/luerong-fen.avif?v=20260814-product-modal-media-v3"
   },
-  "source_trial":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial-small-boss.jpg?v=20260812-formal-image-fix-v3",
-  "product_dm":{
-    "龜鹿膏":"https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=20260812-formal-image-fix-v3",
-    "龜鹿飲30cc玻璃罐":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30cc.jpg?v=20260812-formal-image-fix-v3",
-    "龜鹿飲180cc鋁袋":"https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180cc.jpg?v=20260812-formal-image-fix-v3",
-    "龜鹿湯塊":"https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=20260812-formal-image-fix-v3",
-    "龜鹿膠":"https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=20260812-formal-image-fix-v3",
-    "鹿茸粉":"https://ts-line.onrender.com/assets/formal-dm/lurong-fen.jpg?v=20260812-formal-image-fix-v3"
+  "source_product_dm": {
+    "龜鹿膏": "https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿飲30cc玻璃罐": "https://ts15825868.github.io/xianjiawei/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿飲180cc鋁袋": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp?v=20260814-product-modal-media-v3",
+    "龜鹿湯塊": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp?v=20260814-product-modal-media-v3",
+    "龜鹿膠": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp?v=20260814-product-modal-media-v3",
+    "鹿茸粉": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp?v=20260814-product-modal-media-v3"
   },
-  "trial":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial-small-boss.jpg?v=20260812-formal-image-fix-v3",
-  "post_image_catalog":"https://ts15825868.github.io/xianjiawei/data/post-library-userzip3-v20260811.json",
-  "post_image_policy":{
-    "priority":"user_zip_approved",
-    "source":"新貼文的圖(3).zip",
-    "candidate_count":20,
-    "original_file_count":21,
-    "duplicate_count":1,
-    "match_dimensions":["season","scene","environment","temperature","expression","action","props","copy_semantics"],
-    "states":["approved_existing","needs_binary_sync","regenerate_if_missing"],
-    "binary_sync_status":"pending",
-    "rule":"產品圖、詳細DM、試喝正式主圖三個角色分開；產品與試喝文優先使用目前正式權威，生活情境圖需依文案語意匹配；有符合既有素材就沿用，真的沒有才重生成。",
-    "invalidate_old_approval_after_change":true,
-    "review_after_change":16
+  "source_trial": "https://ts15825868.github.io/xianjiawei/images/trial/trial-poster-small-boss-official-v20260814.jpg?v=20260814-product-modal-media-v3",
+  "product_image": {
+    "龜鹿膏": "https://ts-line.onrender.com/assets/formal-product/guilu-gao.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿飲30cc玻璃罐": "https://ts-line.onrender.com/assets/formal-product/guilu-drink-30.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿飲180cc鋁袋": "https://ts-line.onrender.com/assets/formal-product/guilu-drink-180.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿湯塊": "https://ts-line.onrender.com/assets/formal-product/guilu-tangkuai.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿膠": "https://ts-line.onrender.com/assets/formal-product/guilu-jiao.jpg?v=20260814-product-modal-media-v3",
+    "鹿茸粉": "https://ts-line.onrender.com/assets/formal-product/luerong-fen.jpg?v=20260814-product-modal-media-v3"
   },
-  "hard_rules":["six product images, six detailed DMs and trial master are separate media roles","products-v3 remains true original package identity authority","30cc is a small naked glass jar with no sticker and must never be called a bottle","180cc is an aluminum pouch","tangkuai main spec is 75g／盒｜8塊裝 and piece weight is detail only","jiao main spec is 600g（1斤）／盒｜32塊裝 and piece weight is detail only","trial always uses trial-small-boss current master","AI must not redraw product identity","latest user-approved data and copy supersede obsolete fixed copy"],
-  "guard_principle":"validate current authority, current copy validity, actual media availability, specs and capabilities; never restore retired trial/evergreen assets, obsolete DM paths, fixed old version numbers or obsolete wording"
+  "product_dm": {
+    "龜鹿膏": "https://ts-line.onrender.com/assets/formal-dm/guilu-gao.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿飲30cc玻璃罐": "https://ts-line.onrender.com/assets/formal-dm/guilu-drink-30.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿飲180cc鋁袋": "https://ts-line.onrender.com/assets/formal-dm/guilu-drink-180.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿湯塊": "https://ts-line.onrender.com/assets/formal-dm/guilu-tangkuai.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿膠": "https://ts-line.onrender.com/assets/formal-dm/guilu-jiao.jpg?v=20260814-product-modal-media-v3",
+    "鹿茸粉": "https://ts-line.onrender.com/assets/formal-dm/luerong-fen.jpg?v=20260814-product-modal-media-v3"
+  },
+  "trial": "https://ts-line.onrender.com/assets/formal-trial/trial.jpg?v=20260814-product-modal-media-v3",
+  "media_roles": {
+    "product": "目前六張正式產品圖轉LINE相容JPEG；只作產品介紹hero",
+    "dm": "目前各產品獨立詳細DM轉LINE相容JPEG；不得取代產品hero",
+    "trial": "2026-08-14使用者核准小老闆試喝海報；不得取代產品圖或DM",
+    "identity": "products-v3只作實際產品外觀、包裝與比例校正，亦供看實際產品照片"
+  },
+  "hard_rules": [
+    "產品圖、詳細DM、試喝圖、products-v3身份參考四種角色不得互相取代",
+    "30cc是小玻璃裸罐、無貼紙，不得稱瓶或改罐型比例",
+    "180cc是狹長鋁袋，不得拉胖或放大成巨大飲料包",
+    "龜鹿湯塊主規格為75g／盒｜8塊裝；每塊約9.375g只屬詳細資料",
+    "龜鹿膠主規格為600g（1斤）／盒｜32塊裝；每塊約18.75g只屬詳細資料",
+    "龜鹿膏目前用法為每日早上及下午各一小匙；初次可先半匙",
+    "試喝固定使用2026-08-14使用者核准小老闆正式海報",
+    "AI不得重畫正式產品本體"
+  ],
+  "guard_principle": "只驗目前正式權威、媒體角色、規格、圖片可用性與功能能力；新版正確資料取代舊資料，不得由歷史workflow或固定舊文案反向覆蓋。"
 }
