@@ -1,6 +1,6 @@
 name: 仙加味 LINE 目前正式版一次性驗收
 
-# rerun-2: retired fulfillment patch removed from the formal runtime and test chain
+# rerun-3: recommendation semantics now take priority over generic usage words
 on:
   push:
     branches: [main]
