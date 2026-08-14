@@ -89,7 +89,7 @@ assert(sales.products["guilu-drink-30"].offers.includes("買10送1"));
 assert.strictEqual(sales.products["guilu-drink-180"].price, 200);
 assert(sales.products["guilu-drink-180"].offers.includes("買10送1"));
 assert.strictEqual(sales.products["guilu-tangkuai"].price, 1600);
-assert.strictEqual(sales.products["guilu-tangkuai"].specification, "75g／盒｜8塊裝｜每塊約9.375g");
+assert.strictEqual(sales.products["guilu-tangkuai"].specification, "75g （2兩）／盒｜8塊裝｜每塊約9.375g");
 assert.ok(!sales.products["guilu-tangkuai"].variants);
 assert.strictEqual(sales.products["luerong-fen"].price, 2000);
 assert.strictEqual(sales.products["guilu-jiao"].price, 9600);

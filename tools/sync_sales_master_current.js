@@ -33,9 +33,9 @@ function assertCurrent(merged, authority, photoAuthority) {
   const drink180=(merged.products||[]).find(item=>item.id==="guilu-drink-180");
   if(!String(drink180?.image||"").includes("/images/customer-display-v20260812/guilu-drink-180cc-product.jpg"))throw new Error("180cc未使用正式產品圖");
   const tangkuai=official.get("guilu-tangkuai");
-  if(tangkuai?.specification!=="75g／盒｜8塊裝"||tangkuai?.detailUnitApprox!=="每塊約9.375g"||!String(tangkuai?.detailUnitRule||"").includes("僅詳細資料"))throw new Error("龜鹿湯塊主規格／詳細約重規則不同步");
+  if(tangkuai?.specification!=="75g （2兩）／盒｜8塊裝"||tangkuai?.detailUnitApprox!=="每塊約9.375g"||!String(tangkuai?.detailUnitRule||"").includes("可顯示完整規格"))throw new Error("龜鹿湯塊主規格／詳細約重規則不同步");
   const jiao=official.get("guilu-jiao");
-  if(jiao?.specification!=="600g（1斤）／盒｜32塊裝"||jiao?.detailUnitApprox!=="每塊約18.75g"||!String(jiao?.detailUnitRule||"").includes("僅詳細資料"))throw new Error("龜鹿膠主規格／詳細約重規則不同步");
+  if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||jiao?.detailUnitApprox!=="每塊約18.75 g"||!String(jiao?.detailUnitRule||"").includes("可顯示完整規格"))throw new Error("龜鹿膠主規格／詳細約重規則不同步");
 
   const trial=authority.trialPosterAuthority||{};
   const trialDisplay=String(trial.currentDisplay||"").trim();

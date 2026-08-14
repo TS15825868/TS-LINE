@@ -8,7 +8,7 @@ const sales = require("./line-sales-master.json");
 const source = fs.readFileSync("server.js", "utf8");
 const transformed = guard.transformServer(source);
 const jiao = sales.products["guilu-jiao"];
-const officialSpecification = "600g（1斤）／盒｜32塊裝｜每塊約18.75g";
+const officialSpecification = "600g （1斤）／盒｜32塊裝｜每塊約18.75 g";
 
 assert.strictEqual(guard.VERSION, "2026-07-25-quote-only-v2");
 assert.strictEqual(jiao.quoteOnly, false);

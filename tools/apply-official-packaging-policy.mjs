@@ -52,9 +52,9 @@ function normalizeProduct(record, keyHint = '') {
 
   if (id === 'guilu-tangkuai' || name.includes('龜鹿湯塊')) {
     record.name = record.name || '龜鹿湯塊75g';
-    record.specification = '75g／盒｜8塊裝｜每塊約9.375g';
-    if ('size' in record) record.size = '75g／盒｜8塊裝｜每塊約9.375g';
-    if ('spec' in record) record.spec = '75g／盒｜8塊裝｜每塊約9.375g';
+    record.specification = '75g （2兩）／盒｜8塊裝｜每塊約9.375g';
+    if ('size' in record) record.size = '75g （2兩）／盒｜8塊裝｜每塊約9.375g';
+    if ('spec' in record) record.spec = '75g （2兩）／盒｜8塊裝｜每塊約9.375g';
     for (const field of ['sizes', 'variants', 'specifications']) {
       if (!Array.isArray(record[field])) continue;
       const kept = record[field].filter((entry) => !/\b(?:300|600)\s*g\b/i.test(JSON.stringify(entry)));

@@ -59,8 +59,8 @@ assert.ok(byId["guilu-drink-30"].offers.some((offer) => offer.label === "買10�
 assert.equal(byId["guilu-drink-180"].price, 200);
 assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長直立鋁袋/i);
 assert.ok(byId["guilu-drink-180"].offers.some((offer) => offer.label === "買10送1" && offer.qty === 11 && offer.total === 2000));
-assert.equal(byId["guilu-tangkuai"].specification, "75g／盒｜8塊裝");
-assert.equal(byId["guilu-jiao"].specification, "600g（1斤）／盒｜32塊裝");
+assert.equal(byId["guilu-tangkuai"].specification, "75g （2兩）／盒｜8塊裝");
+assert.equal(byId["guilu-jiao"].specification, "600g （1斤）／盒｜32塊裝");
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
 
 assert.equal(data.runtime.productMainImageSource, "six-user-confirmed-product-images");

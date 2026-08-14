@@ -237,9 +237,9 @@
       "id": "guilu-tangkuai",
       "name": "龜鹿湯塊",
       "displayName": "龜鹿湯塊",
-      "specification": "75g／盒｜8塊裝",
-      "size": "75g／盒｜8塊裝",
-      "spec": "75g／盒｜8塊裝",
+      "specification": "75g （2兩）／盒｜8塊裝",
+      "size": "75g （2兩）／盒｜8塊裝",
+      "spec": "75g （2兩）／盒｜8塊裝",
       "unit": "盒",
       "price": 1600,
       "originalPrice": null,
@@ -285,15 +285,16 @@
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.avif?v=20260814-product-modal-media-v3",
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-tangkuai.jpg?v=20260810-products-v3-latest-originals-v3",
-      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
+      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
+      "detailUnitApprox": "每塊約9.375g"
     },
     {
       "id": "guilu-jiao",
       "name": "龜鹿膠",
       "displayName": "龜鹿膠",
-      "specification": "600g（1斤）／盒｜32塊裝",
-      "size": "600g（1斤）／盒｜32塊裝",
-      "spec": "600g（1斤）／盒｜32塊裝",
+      "specification": "600g （1斤）／盒｜32塊裝",
+      "size": "600g （1斤）／盒｜32塊裝",
+      "spec": "600g （1斤）／盒｜32塊裝",
       "unit": "盒",
       "price": 9600,
       "originalPrice": 12000,
@@ -340,7 +341,8 @@
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.avif?v=20260814-product-modal-media-v3",
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-jiao.jpg?v=20260810-products-v3-latest-originals-v3",
-      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
+      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
+      "detailUnitApprox": "每塊約18.75 g"
     },
     {
       "id": "luerong-fen",
@@ -535,7 +537,7 @@
     "productMainImageSource": "six-user-confirmed-product-images",
     "productsV2Use": "legacy-reference-only",
     "productScalePolicy": "uniform-only-no-stretch-preserve-real-product-proportion",
-    "formalCopyVersion": "20260815-personal-routine-usage-v2",
+    "formalCopyVersion": "20260815-block-spec-2li-1jin-v3",
     "formalCopyAuthority": "user-confirmed-current",
     "trialAuthority": "assets/data/official-products.json",
     "detailedDmSource": "separate-corrected-dm",
@@ -710,7 +712,7 @@
     }
   },
   "store": {},
-  "salesMasterVersion": "2026-08-15-personal-routine-usage-v3-authority-driven-current",
+  "salesMasterVersion": "2026-08-15-block-spec-2li-1jin-v4-authority-driven-current",
   "salesMasterSource": "仙加味六個正式產品、六個正式規格、正式成分與使用資料、目前LINE售價、買10送1、試喝與產品別出貨政策；產品圖片唯一由 line-product-photo-authority.json 的 products-v3 使用者核准正式原圖提供，銷售主檔不再保存舊 products-v2 圖片。; product image / detailed DM / trial roles separated by current official authority",
   "trialPosterAuthority": {
     "assetId": "20260814-user-small-boss-trial-poster",
@@ -728,5 +730,5 @@
     ],
     "doNotRegenerate": true
   },
-  "currentProductAuthorityVersion": "20260815-personal-routine-usage-v2"
+  "currentProductAuthorityVersion": "20260815-block-spec-2li-1jin-v3"
 }

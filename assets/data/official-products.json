@@ -1,5 +1,5 @@
 {
-  "version": "20260815-personal-routine-usage-v2",
+  "version": "20260815-block-spec-2li-1jin-v3",
   "authority": "user-confirmed-current",
   "publicAuthority": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "formalMediaAuthority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
@@ -73,9 +73,9 @@
     {
       "id": "guilu-tangkuai",
       "name": "龜鹿湯塊",
-      "specification": "75g／盒｜8塊裝",
+      "specification": "75g （2兩）／盒｜8塊裝",
       "detailUnitApprox": "每塊約9.375g",
-      "detailUnitRule": "僅詳細資料，不放產品圖或DM主規格",
+      "detailUnitRule": "顧客文字頁／FAQ／LINE文字回覆可顯示完整規格與每塊約重；產品圖、DM與貼文主圖仍依正式原圖，不自行加字",
       "package": "深藍正式盒裝",
       "ingredients": [
         "龜板萃取物",
@@ -90,9 +90,9 @@
     {
       "id": "guilu-jiao",
       "name": "龜鹿膠",
-      "specification": "600g（1斤）／盒｜32塊裝",
-      "detailUnitApprox": "每塊約18.75g",
-      "detailUnitRule": "僅詳細資料，不放產品圖或DM主規格",
+      "specification": "600g （1斤）／盒｜32塊裝",
+      "detailUnitApprox": "每塊約18.75 g",
+      "detailUnitRule": "顧客文字頁／FAQ／LINE文字回覆可顯示完整規格與每塊約重；產品圖、DM與貼文主圖仍依正式原圖，不自行加字",
       "package": "淡紫色正式盒裝",
       "ingredients": [
         "龜板萃取物",
@@ -170,9 +170,9 @@
     "30cc詳細DM固定使用2026-08-14使用者核准JPG",
     "180cc必須維持狹長鋁袋",
     "龜鹿膏目前正式使用方式為可依個人使用習慣與作息時間安排，初次可先半匙，不得回退一天一次",
-    "龜鹿湯塊主圖與DM主規格只放75g／盒｜8塊裝",
-    "龜鹿膠主圖與DM主規格只放600g（1斤）／盒｜32塊裝",
-    "每塊約9.375g與18.75g只屬詳細資料",
+    "龜鹿湯塊文字規格為75g （2兩）／盒｜8塊裝，每塊約9.375g；產品圖與DM維持正式原圖，不自行加字",
+    "龜鹿膠文字規格為600g （1斤）／盒｜32塊裝，每塊約18.75 g；產品圖與DM維持正式原圖，不自行加字",
+    "每塊約9.375g與18.75 g可在顧客文字產品資訊、FAQ與LINE文字回覆顯示",
     "products-v3只作實物身份校正",
     "龜鹿膏不設定固定早上／下午時段；食用時間可依個人使用習慣與作息時間安排",
     "龜鹿飲30cc目前使用方式為「每日 1-2罐」；飲用時間可依個人使用習慣與作息時間安排",

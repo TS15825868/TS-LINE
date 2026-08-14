@@ -120,7 +120,7 @@ assert(!/5\s*[～~〜－-]\s*7/.test(health.readyStockNotice));
 assert(health.cleanDrinkImageSource.includes("guilu-drink-30cc-glass.jpg"));
 assert.equal(health.cleanDrinkImagePolicy, "official-original-contain-no-crop");
 assert.equal(health.guiluDrink30Specification, "30cc／罐（小玻璃罐）");
-assert.equal(health.guiluJiaoSpecification, "600g／盒（1斤）｜32塊裝｜每塊約18.75g");
+assert.equal(health.guiluJiaoSpecification, "600g／盒（1斤）｜32塊裝｜每塊約18.75 g");
 assert.equal(health.unapprovedPostPublishingAllowed, false);
 assert.equal(health.lineVoomManualOnly, true);
 

@@ -52,13 +52,13 @@ assert.equal(drink180.spec, "180cc／包（鋁袋）");
 assert.deepEqual(drink180.ingredients, drink30.ingredients);
 
 const soup = server.getProduct("guilu-tangkuai");
-assert.equal(soup.spec, "75g／盒｜8塊裝｜每塊約9.375g");
+assert.equal(soup.spec, "75g （2兩）／盒｜8塊裝｜每塊約9.375g");
 assert.ok(!JSON.stringify(soup).includes("300g"));
 assert.ok(!JSON.stringify(soup).includes("600g"));
 assert.deepEqual(soup.ingredients, ["龜板萃取物", "鹿角萃取物"]);
 
 const jiao = server.getProduct("guilu-jiao");
-assert.equal(jiao.spec, "600g（1斤）／盒｜32塊裝｜每塊約18.75g");
+assert.equal(jiao.spec, "600g （1斤）／盒｜32塊裝｜每塊約18.75 g");
 assert.deepEqual(jiao.ingredients, ["龜板萃取物", "鹿角萃取物"]);
 
 const antler = server.getProduct("luerong-fen");

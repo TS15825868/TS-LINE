@@ -31,9 +31,8 @@ const RETIRED_COPY_REPLACEMENTS = Object.freeze([
   [/每日 1～2罐/g, "每日 1-2罐"],
   [/一天一次一小匙/g, "可依個人使用習慣與作息時間安排"],
   [/早晚各一小匙/g, "可依個人使用習慣與作息時間安排"],
-  [/75g／盒｜8塊裝｜每塊約9\.375g/g, "75g／盒｜8塊裝"],
   [/75g深藍盒、8塊裝、每塊約9\.375g/g, "75g深藍盒、8塊裝"],
-  [/600g（1斤）／盒｜32塊裝｜每塊約18\.75g/g, "600g（1斤）／盒｜32塊裝"],
+  [/600g （1斤）／盒｜32塊裝｜每塊約18\.75g/g, "600g （1斤）／盒｜32塊裝"],
   [/600g一斤淡紫盒/g, "600g（1斤）淡紫盒"],
   [/一斤大規格/g, "600g（1斤）大規格"],
 ]);
@@ -64,7 +63,7 @@ function currentAuthorityOverride(id,merged={}){
   const usage=(Array.isArray(merged.usage)?[...merged.usage]:[]).map(sanitizeCurrentCopy); if(official.usagePrimary){if(usage.length)usage[0]=official.usagePrimary;else usage.push(official.usagePrimary);}
   const aliases=(Array.isArray(merged.aliases)?merged.aliases:[]).map(v=>sanitizeCurrentCopy(String(v||"").trim())).filter(Boolean).filter(v=>id!=="guilu-drink-30"||!/瓶/.test(v)).filter(v=>id!=="guilu-jiao"||!/^一斤$/.test(v));
   const cleaned=sanitizeCurrentCopy({description:merged.description,storage:merged.storage,fit:merged.fit,purposeDirection:merged.purposeDirection,physicalScalePolicy:merged.physicalScalePolicy});
-  return {name:official.name,displayName:official.name,specification:spec,size:spec,spec,ingredients:official.ingredients||merged.ingredients,...(official.usagePrimary?{usage}:{}),aliases,...Object.fromEntries(Object.entries(cleaned).filter(([,v])=>v!==undefined))};
+  return {name:official.name,displayName:official.name,specification:spec,size:spec,spec,ingredients:official.ingredients||merged.ingredients,...(String(official.detailUnitApprox||"").trim()?{detailUnitApprox:String(official.detailUnitApprox).trim()}:{}),...(official.usagePrimary?{usage}:{}),aliases,...Object.fromEntries(Object.entries(cleaned).filter(([,v])=>v!==undefined))};
 }
 function photoOverride(id){
   const photo=getPhotoAuthority(); const original=String(photo?.products?.[id]||"").trim(); const official=authorityProduct(id);

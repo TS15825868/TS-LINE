@@ -53,9 +53,9 @@ function normalize(value, keyHint = '') {
 
   if (id === 'guilu-tangkuai' || name.includes('龜鹿湯塊')) {
     value.name = value.name || '龜鹿湯塊75g';
-    value.specification = '75g／盒｜8塊裝｜每塊約9.375g';
-    if ('size' in value) value.size = '75g／盒｜8塊裝｜每塊約9.375g';
-    if ('spec' in value) value.spec = '75g／盒｜8塊裝｜每塊約9.375g';
+    value.specification = '75g （2兩）／盒｜8塊裝｜每塊約9.375g';
+    if ('size' in value) value.size = '75g （2兩）／盒｜8塊裝｜每塊約9.375g';
+    if ('spec' in value) value.spec = '75g （2兩）／盒｜8塊裝｜每塊約9.375g';
     for (const field of ['sizes', 'variants', 'specifications']) {
       if (!Array.isArray(value[field])) continue;
       const kept = value[field].filter((entry) => !/\b(?:300|600)\s*g\b/i.test(JSON.stringify(entry)));

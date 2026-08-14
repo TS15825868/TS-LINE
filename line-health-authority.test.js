@@ -22,10 +22,10 @@ assert.equal(payload.guiluDrink180Specification, "180cc／包（鋁袋）");
 assert.match(payload.guiluDrink180PhysicalScale, /0\.64|0\.60.*0\.68|狹長直立鋁袋/i);
 assert.equal(payload.guiluGaoSpecification, "100g／罐");
 assert.equal(payload.guiluGaoUsagePrimary, "可依個人使用習慣與作息時間安排");
-assert.equal(payload.guiluTangkuaiSpecification, "75g／盒｜8塊裝");
-assert.match(payload.guiluTangkuaiDetailUnitApprox, /9\.375g.*僅詳細資料/);
-assert.equal(payload.guiluJiaoSpecification, "600g（1斤）／盒｜32塊裝");
-assert.match(payload.guiluJiaoDetailUnitApprox, /18\.75g.*僅詳細資料/);
+assert.equal(payload.guiluTangkuaiSpecification, "75g （2兩）／盒｜8塊裝");
+assert.match(payload.guiluTangkuaiDetailUnitApprox, /9\.375g.*顧客文字可顯示/);
+assert.equal(payload.guiluJiaoSpecification, "600g （1斤）／盒｜32塊裝");
+assert.match(payload.guiluJiaoDetailUnitApprox, /18\.75 g.*顧客文字可顯示/);
 assert.equal(payload.luerongFenSpecification, "75g／罐");
 assert.match(payload.guardPolicy, /current-authority|capability/i);
 

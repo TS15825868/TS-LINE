@@ -4,7 +4,7 @@ const authority=JSON.parse(fs.readFileSync('formal-media-authority-v20260810.jso
 const master=JSON.parse(fs.readFileSync('line-sales-master.json','utf8'));
 const safety=fs.readFileSync('line-image-safety.js','utf8');
 const text=JSON.stringify(master);
-const expected=['100g／罐','30cc／罐（小玻璃罐）','180cc／包（鋁袋）','75g／盒｜8塊裝','600g／盒｜32塊裝','75g／罐'];
+const expected=['100g／罐','30cc／罐（小玻璃罐）','180cc／包（鋁袋）','75g （2兩）／盒｜8塊裝','600g／盒｜32塊裝','75g／罐'];
 for(const spec of expected) must(text.includes(spec),`LINE正式銷售母本缺少最新規格：${spec}`);
 must(Object.keys(authority.source_product_dm||{}).length===6,'LINE必須有六項使用者核准DM來源');
 for(const url of Object.values(authority.source_product_dm||{})) must(/^https:\/\/ts15825868\.github\.io\/xianjiawei\/images\/dm-approved-v20260810\/.+\.webp$/.test(url),`核准DM來源不正確：${url}`);

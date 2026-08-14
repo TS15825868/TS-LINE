@@ -113,6 +113,8 @@ function money(value) {
   return `$${Number(value || 0).toLocaleString("zh-TW")}`;
 }
 
+function productSpecText(product){const spec=String(product?.spec||product?.size||product?.specification||"").trim();const detail=String(product?.detailUnitApprox||"").trim();if(!detail||spec.includes(detail))return spec;return `${spec}，${detail}`;}
+
 function absoluteUrl(asset = "") {
   if (/^https?:\/\//i.test(asset)) return encodeURI(asset);
   return encodeURI(`${DATA.siteUrl.replace(/\/?$/, "/")}${String(asset).replace(/^\/+/, "")}`);
@@ -377,7 +379,7 @@ function productBubble(product) {
         { type: "text", text: product.displayName, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
         {
           type: "text",
-          text: `規格：${product.spec}\n${product.purpose ? `用途方向：${product.purpose}\n` : ""}${priceLine}${offers}`,
+          text: `規格：${productSpecText(product)}\n${product.purpose ? `用途方向：${product.purpose}\n` : ""}${priceLine}${offers}`,
           size: "sm",
           color: "#555555",
           wrap: true,
@@ -444,7 +446,7 @@ function priceCarousel() {
         const offers = product.offers.length
           ? `\n\n活動：\n${product.offers.map((offer) => `・${offer.label} ${money(offer.total)}`).join("\n")}`
           : "";
-        return flexCard(product.displayName, `規格：${product.spec}\n${original}${offers}\n\n${orderNoticeForProduct(product)}`, [
+        return flexCard(product.displayName, `規格：${productSpecText(product)}\n${original}${offers}\n\n${orderNoticeForProduct(product)}`, [
           { label: "選擇數量", text: `選擇數量｜${product.id}` },
           { label: "看實際產品照片", uri: absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png") },
           { label: "看產品", text: "看產品" },

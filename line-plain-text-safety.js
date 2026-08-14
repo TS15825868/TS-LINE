@@ -2,7 +2,7 @@
 
 const line = require("@line/bot-sdk");
 
-const POLICY_VERSION = "2026-08-14-current-authority-separated-media-health";
+const POLICY_VERSION = "2026-08-15-current-authority-2li-1jin-health";
 const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
 const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
 const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
@@ -111,12 +111,12 @@ function healthPayload(core) {
     guiluGaoUsagePrimary: "可依個人使用習慣與作息時間安排",
     guiluGaoIngredients: ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
     guiluDrinkIngredients: ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
-    guiluTangkuaiSpecification: "75g／盒｜8塊裝",
-    guiluTangkuaiDetailUnitApprox: "每塊約9.375g（僅詳細資料）",
+    guiluTangkuaiSpecification: "75g （2兩）／盒｜8塊裝",
+    guiluTangkuaiDetailUnitApprox: "每塊約9.375g（顧客文字可顯示）",
     guiluTangkuaiPackage: "深藍正式盒裝",
     guiluTangkuaiIngredients: ["龜板萃取物", "鹿角萃取物"],
-    guiluJiaoSpecification: "600g（1斤）／盒｜32塊裝",
-    guiluJiaoDetailUnitApprox: "每塊約18.75g（僅詳細資料）",
+    guiluJiaoSpecification: "600g （1斤）／盒｜32塊裝",
+    guiluJiaoDetailUnitApprox: "每塊約18.75 g（顧客文字可顯示）",
     guiluJiaoPackage: "淡紫色正式盒裝",
     guiluJiaoIngredients: ["龜板萃取物", "鹿角萃取物"],
     luerongFenSpecification: "75g／罐",
