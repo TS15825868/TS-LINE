@@ -1,5 +1,5 @@
 name: 仙加味 LINE 20260815 使用方式一次性更新
-# rerun-v3-align-gao-usage-expectation
+# rerun-v4-capability-media-readiness
 on:
   push:
     branches: [main]
@@ -22,16 +22,6 @@ jobs:
           python-version: '3.12'
       - name: Apply current usage rules
         run: python tools/apply-usage-flex-v20260815.py
-      - name: Align validator with current non-fixed-time wording
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('line-products-v3-authority.test.js')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace('assert.equal(byId["guilu-gao"].usage?.[0], "可依個人使用習慣與作息時間安排");','assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");')
-          p.write_text(s,encoding='utf-8')
-          PY
       - name: Run full LINE validation
         run: |
           npm install
