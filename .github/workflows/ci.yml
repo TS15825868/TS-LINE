@@ -89,7 +89,7 @@ jobs:
           same(official['guilu-drink-180']?.usagePrimary,'每日一包','180cc目前用法');
           same(official['guilu-drink-180']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','180cc時間原則');
           same(official['guilu-tangkuai']?.detailUnitApprox,'每塊約9.375g','湯塊每塊約重');
-          same(official['guilu-jiao']?.detailUnitApprox,'每塊約18.75g','龜鹿膠每塊約重');
+          same(official['guilu-jiao']?.detailUnitApprox,'每塊約18.75 g','龜鹿膠每塊約重');
           must(String(official['guilu-tangkuai']?.detailUnitRule||'').includes('可顯示完整規格'),'湯塊顧客完整文字規格政策缺失');
           must(String(official['guilu-jiao']?.detailUnitRule||'').includes('可顯示完整規格'),'龜鹿膠顧客完整文字規格政策缺失');
           must(!/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(official['guilu-drink-30'])),'30cc目前正式權威不得回退瓶字');
