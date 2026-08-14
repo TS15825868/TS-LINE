@@ -1,5 +1,6 @@
 name: 仙加味 LINE 目前權威一次性同步驗收
 
+# retry 2：已同步目前龜鹿膠每塊約18.75g與完整顧客文字規格權威。
 on:
   push:
     branches: [main]
@@ -40,7 +41,6 @@ jobs:
         run: |
           set -euo pipefail
           node - <<'NODE'
-          const fs=require('fs');
           const current=require('./assets/data/official-products.json');
           const media=require('./formal-media-authority-v20260810.json');
           const data=require('./data.json');
