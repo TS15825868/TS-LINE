@@ -8,7 +8,8 @@ const rawData = JSON.parse(rawText);
 const safety = require("./line-image-safety");
 
 assert.match(String(safety.VERSION || ""), /current|line|media/i);
-assert.match(String(safety.FORMAL_MEDIA_VERSION || ""), /20260814|current|product-modal-media-v3/i);
+assert.ok(String(safety.FORMAL_MEDIA_VERSION || "").trim(), "正式媒體版本識別不得為空");
+assert.ok(!/products-v2|legacy|retired/i.test(String(safety.FORMAL_MEDIA_VERSION || "")), "正式媒體版本不得回退舊權威");
 assert.match(String(safety.photoAuthority?.version || ""), /products-v3/i);
 assert.equal(safety.currentAuthority?.authority, "user-confirmed-current");
 assert.equal(safety.richMenuSync.SINGLE_IMAGE_ONLY, true);
@@ -71,4 +72,4 @@ const menu = safety.richMenuSync.menuDefinition();
 assert.equal(menu.areas.length,6);
 assert.equal(menu.areas.at(-1).action.text,"直接下單");
 
-console.log("PASS：LINE直接啟動使用目前正式產品JPEG、獨立DM JPEG、8/14試喝JPEG與products-v3身份原圖；六格Rich Menu與促銷數量維持正常。");
+console.log("PASS：LINE直接啟動以能力與目前權威驗收，不鎖歷史日期版號；產品JPEG、獨立DM、試喝JPEG、products-v3身份原圖與六格Rich Menu維持正常。");
