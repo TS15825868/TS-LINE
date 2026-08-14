@@ -1,0 +1,87 @@
+name: 仙加味 LINE 目前權威一次性同步驗收
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-current-line-authority-v20260815.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-line-current-authority-20260815
+  cancel-in-progress: true
+
+jobs:
+  sync-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Sync generated LINE runtime data from current authority
+        run: node tools/sync_sales_master_current.js --write
+      - name: Run current LINE release contracts
+        run: |
+          npm test
+          npm run check:catalog
+          npm run guard:full
+          npm run security:audit
+      - name: Assert latest public facts and media roles
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs');
+          const current=require('./assets/data/official-products.json');
+          const media=require('./formal-media-authority-v20260810.json');
+          const data=require('./data.json');
+          const by=Object.fromEntries(current.products.map(x=>[x.id,x]));
+          const runtime=Object.fromEntries((data.products||[]).map(x=>[x.id,x]));
+          const must=(v,m)=>{if(!v)throw new Error(m)};
+          const facts={
+            'guilu-gao':['100g／罐','/images/dm-final/01_guilu-gao-100g-dm.jpg'],
+            'guilu-drink-30':['30cc／罐（小玻璃罐）','/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg'],
+            'guilu-drink-180':['180cc／包（鋁袋）','/images/dm-final/03_guilu-drink-180cc-dm.jpg'],
+            'guilu-tangkuai':['75g （2兩）／盒｜8塊裝','/images/dm-final/05_guilu-tangkuai-75g-dm.jpg'],
+            'guilu-jiao':['600g （1斤）／盒｜32塊裝','/images/dm-final/06_guilu-jiao-600g-dm.jpg'],
+            'luerong-fen':['75g／罐','/images/dm-final/04_luerong-fen-75g-dm.jpg'],
+          };
+          for(const [id,[spec,dm]] of Object.entries(facts)){
+            must(by[id]?.specification===spec,`${id} current spec mismatch`);
+            must(String(by[id]?.approvedDm||'').includes(dm),`${id} current DM mismatch`);
+            must(runtime[id]?.specification===spec,`${id} runtime spec mismatch`);
+            must(runtime[id]?.dmImage===by[id]?.approvedDm,`${id} runtime DM mismatch`);
+          }
+          must(by['guilu-gao'].usagePrimary==='食用時間可依個人使用習慣與作息時間安排','gao timing regressed');
+          must(by['guilu-drink-30'].usagePrimary==='每日 1-2罐','30cc usage regressed');
+          must(by['guilu-drink-30'].usageTiming==='飲用時間可依個人使用習慣與作息時間安排','30cc timing regressed');
+          must(by['guilu-tangkuai'].detailUnitApprox==='每塊約9.375g','tangkuai detail mismatch');
+          must(by['guilu-jiao'].detailUnitApprox==='每塊約18.75g','jiao detail mismatch');
+          must(String(by['guilu-tangkuai'].detailUnitRule).includes('可顯示完整規格'),'tangkuai customer text policy missing');
+          must(String(by['guilu-jiao'].detailUnitRule).includes('可顯示完整規格'),'jiao customer text policy missing');
+          must(Object.values(media.source_product_dm||{}).every(x=>String(x).includes('/images/dm-final/')),'formal media still has retired DM source');
+          must(!JSON.stringify(current).includes('/images/dm-approved-v20260810/'),'official authority still has retired DM source');
+          must(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(by['guilu-drink-30'])),'30cc bottle wording regressed');
+          console.log('PASS: current six-product facts, full customer text specs, six dm-final DMs and runtime mirror are aligned.');
+          NODE
+      - name: Commit generated runtime mirror and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data.json
+          git rm .github/workflows/one-shot-current-line-authority-v20260815.yml
+          git diff --cached --check
+          git commit -m 'sync(line): apply current product and DM authority to runtime data'
+          git pull --rebase origin main
+          git push origin HEAD:main
