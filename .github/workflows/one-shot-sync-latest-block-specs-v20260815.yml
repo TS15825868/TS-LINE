@@ -1,0 +1,87 @@
+name: 仙加味 LINE 最新湯塊與龜鹿膠規格同步
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-sync-latest-block-specs-v20260815.yml'
+permissions:
+  contents: write
+jobs:
+  sync-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Update current authorities and customer text display
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          files=subprocess.check_output(['git','ls-files'],text=True).splitlines()
+          binary_ext={'.png','.jpg','.jpeg','.webp','.avif','.gif','.ico','.zip','.pdf','.mp4','.mov','.woff','.woff2','.ttf','.otf'}
+          old_rule='僅詳細資料，不放產品圖、DM或貼文主規格'
+          new_rule='顧客文字頁／FAQ／LINE文字回覆可顯示完整規格與每塊約重；產品圖、DM與貼文主圖仍依正式原圖，不自行加字'
+          for name in files:
+              if name.startswith('.github/workflows/'):
+                  continue
+              p=Path(name)
+              if p.suffix.lower() in binary_ext or not p.is_file():
+                  continue
+              try: s=p.read_text(encoding='utf-8')
+              except Exception: continue
+              old=s
+              s=s.replace('75g／盒｜8塊裝','75g （2兩）／盒｜8塊裝')
+              s=s.replace('600g（1斤）／盒｜32塊裝','600g （1斤）／盒｜32塊裝')
+              s=s.replace('每塊約18.75g','每塊約18.75 g')
+              s=s.replace(old_rule,new_rule)
+              s=s.replace('includes("僅詳細資料")','includes("可顯示完整規格")')
+              if s!=old: p.write_text(s,encoding='utf-8')
+          def patch(path,pairs):
+              p=Path(path); s=p.read_text(encoding='utf-8'); old=s
+              for a,b in pairs: s=s.replace(a,b)
+              if s!=old:p.write_text(s,encoding='utf-8')
+          patch('product-sales-master.js',[
+            ('return {name:official.name,displayName:official.name,specification:spec,size:spec,spec,ingredients:official.ingredients||merged.ingredients,', 'return {name:official.name,displayName:official.name,specification:spec,size:spec,spec,ingredients:official.ingredients||merged.ingredients,...(String(official.detailUnitApprox||"").trim()?{detailUnitApprox:String(official.detailUnitApprox).trim()}:{}),'),
+          ])
+          helper='function productSpecText(product){const spec=String(product?.spec||product?.size||product?.specification||"").trim();const detail=String(product?.detailUnitApprox||"").trim();if(!detail||spec.includes(detail))return spec;return `${spec}，${detail}`;}'
+          patch('server.js',[
+            ('function absoluteUrl(asset = "") {', helper+'\n\nfunction absoluteUrl(asset = "") {'),
+            ('${product.spec}', '${productSpecText(product)}'),
+          ])
+          PY
+      - name: Rebuild current LINE runtime
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund --no-package-lock
+          node tools/sync_sales_master_current.js --write
+      - name: Assert exact current specs and customer reply helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq '75g （2兩）／盒｜8塊裝' line-sales-master.json
+          grep -Fq '每塊約9.375g' line-sales-master.json
+          grep -Fq '600g （1斤）／盒｜32塊裝' line-sales-master.json
+          grep -Fq '每塊約18.75 g' line-sales-master.json
+          grep -Fq '75g （2兩）／盒｜8塊裝' data.json
+          grep -Fq '600g （1斤）／盒｜32塊裝' data.json
+          grep -Fq 'detailUnitApprox' data.json
+          grep -Fq 'function productSpecText' server.js
+      - name: Validate LINE runtime and guards
+        run: |
+          node --check server.js
+          node --check product-sales-master.js
+          npm test
+          npm run guard:full
+      - name: Commit verified current specs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- ':!.github/workflows'
+          if git diff --cached --quiet; then echo 'No runtime changes'; exit 0; fi
+          git commit -m 'fix(line): sync 2兩 soup block and 1斤 guilu jiao specs'
+          git push origin HEAD:main
