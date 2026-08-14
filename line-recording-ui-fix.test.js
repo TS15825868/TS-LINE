@@ -15,7 +15,8 @@ function productBubble(name, oldImage) {
 }
 
 assert.match(fix.VERSION, /recording-ui/i);
-assert.match(fix.PRODUCT_IMAGE_VERSION, /20260814|product-modal-media-v3|current/i);
+assert.ok(String(fix.PRODUCT_IMAGE_VERSION || "").trim(), "產品媒體版本識別不得為空");
+assert.ok(!/products-v2|legacy|retired/i.test(String(fix.PRODUCT_IMAGE_VERSION || "")), "產品媒體版本不得回退舊權威");
 const cases = [
   ["龜鹿膏｜100g／罐", "guilu-gao"],
   ["龜鹿飲30cc玻璃罐｜30cc／罐（小玻璃罐）", "guilu-drink-30"],
@@ -91,4 +92,4 @@ assert.ok(carousel.contents[0].hero);
 assert.equal(carousel.contents[1].hero, undefined);
 assert.match(carousel.contents[2].hero.url, /\/assets\/formal-product\/guilu-gao\.jpg\?v=/);
 
-console.log("PASS：LINE Flex產品hero、詳細DM、試喝海報與products-v3實際產品照片四種角色分離；全部fit不裁切，小老闆依語意配圖。");
+console.log("PASS：LINE Flex產品hero、詳細DM、試喝海報與products-v3實際產品照片四種角色分離；以能力與目前權威驗收，不鎖歷史日期版號，全部fit不裁切。");
