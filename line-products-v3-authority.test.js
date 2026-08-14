@@ -42,8 +42,14 @@ for (const product of data.products) {
 }
 
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
-assert.equal(byId["guilu-gao"].usage?.[0], "可依個人使用習慣與作息時間安排");
-assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|早晚各一小匙/.test(String(line))));
+assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
+assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|早晚各一小匙|每日早上及下午各一小匙/.test(String(line))));
+assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1-2罐");
+assert.ok((byId["guilu-drink-30"].usage || []).some((line) => /飲用時間可依個人使用習慣與作息時間安排/.test(String(line))));
+assert.ok(!(byId["guilu-drink-30"].usage || []).some((line) => /建議白天飲用|每日一罐/.test(String(line))));
+assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
+assert.ok((byId["guilu-drink-180"].usage || []).some((line) => /飲用時間可依個人使用習慣與作息時間安排/.test(String(line))));
+assert.ok(!(byId["guilu-drink-180"].usage || []).some((line) => /建議白天飲用/.test(String(line))));
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.equal(byId["guilu-drink-30"].specification, "30cc／罐（小玻璃罐）");
 assert.ok(!byId["guilu-drink-30"].aliases.some((alias) => /瓶/.test(String(alias))));
@@ -62,4 +68,4 @@ assert.equal(data.runtime.detailedDmSource, "separate-corrected-dm");
 assert.equal(data.runtime.productIdentityReference, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 
-console.log(`PASS：LINE OA六項產品以 ${currentAuthority.version} 目前權威驗收；顧客產品圖、詳細DM與products-v3身份原圖角色分離，舊用法與舊規格不再反向覆蓋。`);
+console.log(`PASS：LINE OA六項產品以 ${currentAuthority.version} 目前權威驗收；使用時間依個人作息，30cc每日 1-2罐，180cc每日一包，顧客產品圖、詳細DM與products-v3身份原圖角色分離。`);
