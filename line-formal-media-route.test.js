@@ -1,14 +1,29 @@
 "use strict";
-const fs=require("fs");
-const assert=require("assert");
-const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
-const bootstrap=fs.readFileSync("line-app-bootstrap.js","utf8");
-const safety=fs.readFileSync("line-image-safety.js","utf8");
-const start=String(pkg.scripts?.start||"");
-assert(start.includes("-r ./line-app-bootstrap.js"),"正式啟動沒有預載LINE媒體路由bootstrap");
-assert(bootstrap.includes('safety.installImageRoutes(app)'),"bootstrap沒有把正式媒體路由掛到實際Express app");
-assert(bootstrap.includes('formal-dm-routes-mounted-on-runtime-app'),"bootstrap缺少正式媒體路由能力標記");
-assert(safety.includes('app.get("/assets/formal-dm/:id.jpg"'),"正式媒體安全層缺少DM／試喝JPEG路由");
-assert(safety.includes('resize({ width: 1024, height: 1024, fit: "inside"'),"正式DM轉LINE JPEG必須等比例縮放、不可裁切");
-assert(safety.includes('products-v3-remains-identity-authority'),"正式DM顯示不得取代products-v3產品識別權威");
-console.log("PASS：LINE正式啟動會掛載DM／試喝JPEG路由，並保留等比例與products-v3產品權威；守門驗能力、不綁舊版號。");
+const fs = require("fs");
+const assert = require("node:assert/strict");
+const pkg = JSON.parse(fs.readFileSync("package.json","utf8"));
+const bootstrap = fs.readFileSync("line-app-bootstrap.js","utf8");
+const safetySource = fs.readFileSync("line-image-safety.js","utf8");
+const safety = require("./line-image-safety");
+
+const start = String(pkg.scripts?.start || "");
+assert.ok(start.includes("-r ./line-app-bootstrap.js"), "正式啟動沒有預載LINE媒體路由bootstrap");
+assert.ok(bootstrap.includes("safety.installImageRoutes(app)"), "bootstrap沒有把正式媒體路由掛到實際Express app");
+for (const route of [
+  'app.get("/assets/formal-product/:id.jpg"',
+  'app.get("/assets/formal-dm/:id.jpg"',
+  'app.get("/assets/formal-trial/trial.jpg"',
+]) assert.ok(safetySource.includes(route), `正式媒體安全層缺少路由：${route}`);
+assert.ok(safetySource.includes('fit: "inside"'), "轉LINE JPEG必須等比例縮放");
+assert.ok(safetySource.includes('withoutEnlargement: true'), "正式媒體不得不必要放大");
+assert.ok(safetySource.includes('product-dm-trial-identity-four-roles-separated'), "正式媒體角色沒有明確分離");
+
+assert.match(safety.formalLineProductImageUrl("guilu-drink-30"), /\/assets\/formal-product\/guilu-drink-30\.jpg\?v=/);
+assert.match(safety.formalLineDmImageUrl("guilu-drink-30"), /\/assets\/formal-dm\/guilu-drink-30\.jpg\?v=/);
+assert.match(safety.formalLineTrialImageUrl(), /\/assets\/formal-trial\/trial\.jpg\?v=/);
+assert.notEqual(safety.formalLineProductImageUrl("guilu-drink-30"), safety.formalLineDmImageUrl("guilu-drink-30"));
+assert.ok(String(safety.formalSourceUrl("product","guilu-drink-30")).includes("/images/customer-display-v20260812/guilu-drink-30cc.avif"));
+assert.ok(String(safety.formalSourceUrl("dm","guilu-drink-30")).includes("/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg"));
+assert.ok(String(safety.formalSourceUrl("trial")).includes("/images/trial/trial-poster-small-boss-official-v20260814.jpg"));
+
+console.log("PASS：LINE正式啟動分別掛載產品、詳細DM、試喝三種JPEG route；products-v3只保留身份參考，轉檔等比例不裁切。");
