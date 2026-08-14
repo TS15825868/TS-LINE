@@ -2,7 +2,7 @@
 
 const line = require("@line/bot-sdk");
 
-const POLICY_VERSION = "2026-08-14-current-authority-line-health";
+const POLICY_VERSION = "2026-08-14-current-authority-separated-media-health";
 const HEALTH_PATH = "/internal/api/v2/fulfillment-policy/healthz";
 const DRINK_PRODUCT_IDS = ["guilu-drink-30", "guilu-drink-180"];
 const READY_STOCK_PRODUCT_IDS = ["guilu-gao", "guilu-tangkuai", "guilu-jiao", "luerong-fen"];
@@ -29,10 +29,7 @@ function kindFromText(value) {
 
 function collectContextText(node, output = []) {
   if (!node || typeof node !== "object") return output;
-  if (Array.isArray(node)) {
-    for (const item of node) collectContextText(item, output);
-    return output;
-  }
+  if (Array.isArray(node)) { for (const item of node) collectContextText(item, output); return output; }
   if (node.type === "text" && typeof node.text === "string" && !NOTICE_MARKER.test(node.text)) output.push(normalizePublicCopy(node.text));
   for (const value of Object.values(node)) collectContextText(value, output);
   return output;
@@ -51,8 +48,7 @@ function replaceKnownNotices(text, replacement, core) {
 function replacePlainTextNotice(text, core) {
   const value = normalizePublicCopy(text);
   const context = replaceKnownNotices(value, "", core);
-  const replacement = core.fulfillmentNotice(kindFromText(context));
-  return replaceKnownNotices(value, replacement, core);
+  return replaceKnownNotices(value, core.fulfillmentNotice(kindFromText(context)), core);
 }
 
 function patchTextNodes(node, replacement, core) {
@@ -63,7 +59,7 @@ function patchTextNodes(node, replacement, core) {
     if (typeof node.action.label === "string") node.action.label = normalizePublicCopy(node.action.label);
     if (typeof node.action.text === "string") node.action.text = normalizePublicCopy(node.action.text);
   }
-  for (const [key, value] of Object.entries(node)) { if (key !== "action") patchTextNodes(value, replacement, core); }
+  for (const [key, value] of Object.entries(node)) if (key !== "action") patchTextNodes(value, replacement, core);
 }
 
 function patchMessages(messages, core) {
@@ -94,14 +90,17 @@ function healthPayload(core) {
     drinkNotice: core.DRINK_FULFILLMENT_NOTICE,
     readyStockNotice: core.STOCK_FULFILLMENT_NOTICE,
     generalNotice: core.GENERAL_FULFILLMENT_NOTICE,
-    productMainImageSource: "products-v3-user-approved-originals",
+    productMainImageSource: "current-approved-product-image-line-compatible-jpeg",
+    detailedDmImageSource: "current-approved-dm-line-compatible-jpeg",
+    trialImageSource: "20260814-user-approved-trial-line-compatible-jpeg",
+    productIdentitySource: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only-forbidden-in-live-cards",
-    imagePolicy: "approved-original-product-photo-contain-no-crop-no-stretch-no-ai-redraw",
-    customerDisplayPolicy: "copy-validated-formal-dm-or-products-v3-fallback",
+    imagePolicy: "product-dm-trial-identity-separated; contain-no-crop-no-stretch-no-ai-redraw",
+    customerDisplayPolicy: "current-approved-product-image; separate-dm; separate-trial; products-v3-identity-only",
     cleanDrinkImagePath: core.CLEAN_DRINK_IMAGE_PATH,
     cleanDrinkImageUrl: core.CLEAN_DRINK_IMAGE_URL,
     cleanDrinkImageSource: core.OFFICIAL_DRINK_SOURCE,
-    cleanDrinkImagePolicy: "products-v3-official-original-contain-no-crop",
+    cleanDrinkImagePolicy: "legacy-compatibility-route-only-products-v3-identity-contain-no-crop",
     mascotImagePathPrefix: core.CLEAN_MASCOT_PATH_PREFIX,
     mascotPolicy: "approved-website-chibi-character-clean-jpeg-route",
     guiluDrink30Specification: "30cc／罐（小玻璃罐）",
@@ -113,9 +112,11 @@ function healthPayload(core) {
     guiluGaoIngredients: ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
     guiluDrinkIngredients: ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
     guiluTangkuaiSpecification: "75g／盒｜8塊裝",
+    guiluTangkuaiDetailUnitApprox: "每塊約9.375g（僅詳細資料）",
     guiluTangkuaiPackage: "深藍正式盒裝",
     guiluTangkuaiIngredients: ["龜板萃取物", "鹿角萃取物"],
     guiluJiaoSpecification: "600g（1斤）／盒｜32塊裝",
+    guiluJiaoDetailUnitApprox: "每塊約18.75g（僅詳細資料）",
     guiluJiaoPackage: "淡紫色正式盒裝",
     guiluJiaoIngredients: ["龜板萃取物", "鹿角萃取物"],
     luerongFenSpecification: "75g／罐",
@@ -133,7 +134,7 @@ function installHealthRoute(core) {
   appPrototype.listen = function patchedFulfillmentHealthListen(...args) {
     if (!this.locals.__xjwFulfillmentHealthRegistered) {
       this.get(HEALTH_PATH, (_req, res) => {
-        res.set({"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-XJW-Fulfillment-Policy":POLICY_VERSION,"X-XJW-Product-Image-Authority":"products-v3-user-approved-originals"});
+        res.set({"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-XJW-Fulfillment-Policy":POLICY_VERSION,"X-XJW-Product-Image-Authority":"current-approved-product-image-line-jpeg"});
         res.status(200).json(healthPayload(core));
       });
       this.locals.__xjwFulfillmentHealthRegistered = true;
