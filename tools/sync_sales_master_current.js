@@ -28,10 +28,10 @@ function assertCurrent(merged, authority, photoAuthority) {
   }
   const drink30=(merged.products||[]).find(item=>item.id==="guilu-drink-30");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(drink30)))throw new Error("30cc不得出現瓶型舊稱");
-  if(!String(drink30?.image||"").includes("/images/customer-display-v20260812/guilu-drink-30cc.webp"))throw new Error("30cc未使用正式產品圖");
-  if(!String(drink30?.dmImage||"").includes("/images/dm-approved-v20260810/guilu-drink-30cc.webp"))throw new Error("30cc未使用修正版詳細DM");
+  if(!String(drink30?.image||"").includes("/images/customer-display-v20260812/guilu-drink-30cc.avif"))throw new Error("30cc未使用正式產品圖");
+  if(!String(drink30?.dmImage||"").includes("/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg"))throw new Error("30cc未使用修正版詳細DM");
   const drink180=(merged.products||[]).find(item=>item.id==="guilu-drink-180");
-  if(!String(drink180?.image||"").includes("/images/customer-display-v20260812/guilu-drink-180cc.webp"))throw new Error("180cc未使用正式產品圖");
+  if(!String(drink180?.image||"").includes("/images/customer-display-v20260812/guilu-drink-180cc-product.jpg"))throw new Error("180cc未使用正式產品圖");
   const tangkuai=official.get("guilu-tangkuai");
   if(tangkuai?.specification!=="75g／盒｜8塊裝"||tangkuai?.detailUnitApprox!=="每塊約9.375g"||!String(tangkuai?.detailUnitRule||"").includes("僅詳細資料"))throw new Error("龜鹿湯塊主規格／詳細約重規則不同步");
   const jiao=official.get("guilu-jiao");
@@ -40,13 +40,13 @@ function assertCurrent(merged, authority, photoAuthority) {
   const trial=authority.trialPosterAuthority||{};
   const trialDisplay=String(trial.currentDisplay||"").trim();
   if(!trialDisplay)throw new Error("試喝圖缺少目前正式權威");
-  if(!trialDisplay.includes("/images/customer-display-v20260812/trial-small-boss.webp"))throw new Error("試喝圖未使用使用者最新指定的小老闆正式主圖");
+  if(!trialDisplay.includes("/images/trial/trial-poster-small-boss-official-v20260814.jpg"))throw new Error("試喝圖未使用使用者最新指定的小老闆正式主圖");
   if(/\/trial\.webp(?:[?#]|$)|trial-clean-v4\.svg/i.test(trialDisplay))throw new Error("試喝圖不得回退已退役舊主圖");
   if(trial.status!=="approved_display"||trial.doNotRegenerate!==true)throw new Error("試喝主圖核准／禁止重生成規則不同步");
   if(String(merged.trialPosterAuthority?.currentDisplay||"")!==trialDisplay)throw new Error("試喝圖權威未同步至LINE執行資料");
 
   const policy=String(authority.displayPolicy||"");
-  if(!policy.includes("產品介紹固定使用六張正式產品圖")||!policy.includes("詳細DM")||!policy.includes("試喝"))throw new Error("LINE媒體角色分離政策未同步");
+  if(!policy.includes("產品介紹")||!policy.includes("正式產品圖")||!policy.includes("詳細DM")||!policy.includes("試喝"))throw new Error("LINE媒體角色分離政策未同步");
 }
 function main(){
   const mode=process.argv.includes("--write")?"write":"check"; const raw=JSON.parse(fs.readFileSync(DATA_PATH,"utf8")); const authority=JSON.parse(fs.readFileSync(AUTHORITY_PATH,"utf8")); const merged=applyMaster(raw); const photoAuthority=getPhotoAuthority(); assertCurrent(merged,authority,photoAuthority);

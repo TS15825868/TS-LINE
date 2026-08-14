@@ -22,8 +22,8 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
 
 const FORMAL_PRODUCT_COPY = Object.freeze({});
 const RETIRED_COPY_REPLACEMENTS = Object.freeze([
-  [/每日早上及下午各一小匙/g, "一天一次一小匙"],
-  [/早晚各一小匙/g, "一天一次一小匙"],
+  [/一天一次一小匙/g, "每日早上及下午各一小匙"],
+  [/早晚各一小匙/g, "每日早上及下午各一小匙"],
   [/75g／盒｜8塊裝｜每塊約9\.375g/g, "75g／盒｜8塊裝"],
   [/75g深藍盒、8塊裝、每塊約9\.375g/g, "75g深藍盒、8塊裝"],
   [/600g（1斤）／盒｜32塊裝｜每塊約18\.75g/g, "600g（1斤）／盒｜32塊裝"],
