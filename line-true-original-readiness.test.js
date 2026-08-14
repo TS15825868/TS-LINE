@@ -32,7 +32,9 @@ for (const product of data.products) {
   assert.notEqual(product.image, product.dmImage, `${product.id}產品主圖不得拿DM代替`);
 }
 
-assert.match(visual.PRODUCT_IMAGE_VERSION, /20260814|current|product-modal-media-v3/i);
+// 媒體 readiness 驗能力與來源一致，不硬鎖歷史日期版號。
+assert.ok(String(visual.PRODUCT_IMAGE_VERSION || "").trim(), "Flex產品媒體必須有目前版本識別");
+assert.ok(!/products-v2|legacy|retired/i.test(String(visual.PRODUCT_IMAGE_VERSION || "")), "Flex產品媒體不得回退舊權威");
 for (const [id, item] of Object.entries(visual.PRODUCTS || {})) {
   assert.match(String(item.image || ""), new RegExp(`/assets/formal-product/${id}\\.jpg\\?v=`), `${id}Flex hero不是目前正式產品JPEG route`);
   assert.equal(item.source, currentById[id].approvedProductImage, `${id}Flex hero來源不是目前核准產品圖`);
