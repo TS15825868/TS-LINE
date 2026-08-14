@@ -1,5 +1,5 @@
 {
-  "runtime": "line-formal-media-current-authority-v20260814",
+  "runtime": "line-formal-media-current-authority-v20260815",
   "approval_batch": "20260814-product-modal-media-v3",
   "source": "assets/data/official-products.json",
   "public_authority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
@@ -14,10 +14,10 @@
   "source_product_dm": {
     "龜鹿膏": "https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=20260814-product-modal-media-v3",
     "龜鹿飲30cc玻璃罐": "https://ts15825868.github.io/xianjiawei/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg?v=20260814-product-modal-media-v3",
-    "龜鹿飲180cc鋁袋": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp?v=20260814-product-modal-media-v3",
-    "龜鹿湯塊": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp?v=20260814-product-modal-media-v3",
-    "龜鹿膠": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp?v=20260814-product-modal-media-v3",
-    "鹿茸粉": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp?v=20260814-product-modal-media-v3"
+    "龜鹿飲180cc鋁袋": "https://ts15825868.github.io/xianjiawei/images/dm-final/03_guilu-drink-180cc-dm.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿湯塊": "https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=20260814-product-modal-media-v3",
+    "龜鹿膠": "https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=20260814-product-modal-media-v3",
+    "鹿茸粉": "https://ts15825868.github.io/xianjiawei/images/dm-final/04_luerong-fen-75g-dm.jpg?v=20260814-product-modal-media-v3"
   },
   "source_trial": "https://ts15825868.github.io/xianjiawei/images/trial/trial-poster-small-boss-official-v20260814.jpg?v=20260814-product-modal-media-v3",
   "product_image": {
@@ -43,13 +43,16 @@
     "trial": "2026-08-14使用者核准小老闆試喝海報；不得取代產品圖或DM",
     "identity": "products-v3只作實際產品外觀、包裝與比例校正，亦供看實際產品照片"
   },
+  "customer_text_spec_policy": "顧客產品文字、FAQ與LINE文字回覆可顯示目前完整文字規格與每塊約重；產品主圖、詳細DM與包裝本體不得因此自行加字、重畫或改比例。",
   "hard_rules": [
     "產品圖、詳細DM、試喝圖、products-v3身份參考四種角色不得互相取代",
     "30cc是小玻璃裸罐、無貼紙，不得稱瓶或改罐型比例",
     "180cc是狹長鋁袋，不得拉胖或放大成巨大飲料包",
-    "龜鹿湯塊主規格為75g （2兩）／盒｜8塊裝；每塊約9.375g只屬詳細資料",
-    "龜鹿膠主規格為600g （1斤）／盒｜32塊裝；每塊約18.75 g只屬詳細資料",
-    "龜鹿膏目前用法為可依個人使用習慣與作息時間安排；初次可先半匙",
+    "龜鹿湯塊文字規格為75g （2兩）／盒｜8塊裝，每塊約9.375g；顧客文字可顯示完整規格，產品主圖與詳細DM維持正式原圖，不自行加字",
+    "龜鹿膠文字規格為600g （1斤）／盒｜32塊裝，每塊約18.75g；顧客文字可顯示完整規格，產品主圖與詳細DM維持正式原圖，不自行加字",
+    "龜鹿膏目前用法為可依個人使用習慣與作息時間安排；初次可先半匙，不設定固定早上／下午",
+    "龜鹿飲30cc目前使用方式為每日 1-2罐；飲用時間可依個人使用習慣與作息時間安排",
+    "龜鹿飲180cc保留每日一包；飲用時間可依個人使用習慣與作息時間安排",
     "試喝固定使用2026-08-14使用者核准小老闆正式海報",
     "AI不得重畫正式產品本體"
   ],
