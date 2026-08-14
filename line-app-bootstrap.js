@@ -1,16 +1,16 @@
 "use strict";
 
 /**
- * LINE OA Express bootstrap｜2026-08-10
+ * LINE OA Express bootstrap｜目前正式媒體版
  *
- * server.js historically creates its own Express app after loading line-image-safety.
- * The formal-media layer owns the latest user-approved DM -> LINE-compatible JPEG
- * routes, so install those routes at app creation time instead of merely exporting
- * an unused installImageRoutes() function.
+ * server.js 建立自己的 Express app；本 bootstrap 在 app 建立當下掛上
+ * line-image-safety 的目前正式媒體路由：
+ * - /assets/formal-product/:id.jpg 產品介紹圖
+ * - /assets/formal-dm/:id.jpg      詳細 DM
+ * - /assets/formal-trial/trial.jpg 試喝海報
  *
- * This is capability based: it does not care about old/new Rich Menu, copy, or UI
- * version strings. It only guarantees that the running Express app actually serves
- * the current formal media endpoints.
+ * 三種路由各自從目前正式 authority 取得來源並轉成 LINE 相容 JPEG，
+ * products-v3 仍只作真實產品外觀／包裝／比例身份參考。
  */
 const express = require("express");
 const safety = require("./line-image-safety");
@@ -35,8 +35,8 @@ if (!global.__XJW_LINE_EXPRESS_BOOTSTRAP__) {
   require.cache[require.resolve("express")].exports = xjwExpress;
   global.__XJW_LINE_EXPRESS_BOOTSTRAP__ = Object.freeze({
     installed: true,
-    version: "20260810-formal-media-route-bootstrap-v1",
-    capability: "formal-dm-routes-mounted-on-runtime-app",
+    version: "current-separated-formal-media-route-bootstrap-v20260814",
+    capability: "formal-product-dm-trial-routes-mounted-on-runtime-app",
   });
 }
 
