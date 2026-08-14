@@ -95,9 +95,9 @@ function mascotSceneForText(value = "") {
   const text = String(value || "");
   if (/常見問題|FAQ|問題整理/.test(text)) return "faq";
   if (/客服|聯絡|訂單|結帳|門市|配送|付款|下單/.test(text)) return "service";
-  if (/使用|沖泡|燉湯|料理/.test(text)) return "usage";
   if (/搭配組合|搭配方案|組合/.test(text)) return "combo";
   if (/推薦|幫你選|幫我推薦|怎麼選|產品差異|依日常|依生活/.test(text)) return "recommend";
+  if (/使用|沖泡|燉湯|料理/.test(text)) return "usage";
   if (/品牌|四代|萬華|傳承|故事|漢方|資料/.test(text)) return "brand";
   if (/產品|商品/.test(text)) return "products";
   return "welcome";
