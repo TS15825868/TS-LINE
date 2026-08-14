@@ -229,7 +229,7 @@
       "image": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-180cc-product.jpg?v=20260814-product-modal-media-v3",
       "imageUrl": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-180cc-product.jpg?v=20260814-product-modal-media-v3",
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-180cc-product.jpg?v=20260814-product-modal-media-v3",
-      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-drink-180cc.webp?v=20260814-product-modal-media-v3",
+      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/03_guilu-drink-180cc-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-180.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
     },
@@ -283,7 +283,7 @@
       "image": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.avif?v=20260814-product-modal-media-v3",
       "imageUrl": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.avif?v=20260814-product-modal-media-v3",
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.avif?v=20260814-product-modal-media-v3",
-      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-tangkuai-75g.webp?v=20260814-product-modal-media-v3",
+      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-tangkuai.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
       "detailUnitApprox": "每塊約9.375g"
@@ -339,10 +339,10 @@
       "image": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.avif?v=20260814-product-modal-media-v3",
       "imageUrl": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.avif?v=20260814-product-modal-media-v3",
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.avif?v=20260814-product-modal-media-v3",
-      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/guilu-jiao-600g.webp?v=20260814-product-modal-media-v3",
+      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-jiao.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
-      "detailUnitApprox": "每塊約18.75 g"
+      "detailUnitApprox": "每塊約18.75g"
     },
     {
       "id": "luerong-fen",
@@ -391,7 +391,7 @@
       "image": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/luerong-fen.avif?v=20260814-product-modal-media-v3",
       "imageUrl": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/luerong-fen.avif?v=20260814-product-modal-media-v3",
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/luerong-fen.avif?v=20260814-product-modal-media-v3",
-      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-approved-v20260810/lurong-fen-75g.webp?v=20260814-product-modal-media-v3",
+      "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/04_luerong-fen-75g-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/luerong-fen.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
     }
@@ -537,7 +537,7 @@
     "productMainImageSource": "six-user-confirmed-product-images",
     "productsV2Use": "legacy-reference-only",
     "productScalePolicy": "uniform-only-no-stretch-preserve-real-product-proportion",
-    "formalCopyVersion": "20260815-block-spec-2li-1jin-v3",
+    "formalCopyVersion": "20260815-current-product-media-v4",
     "formalCopyAuthority": "user-confirmed-current",
     "trialAuthority": "assets/data/official-products.json",
     "detailedDmSource": "separate-corrected-dm",
@@ -730,5 +730,5 @@
     ],
     "doNotRegenerate": true
   },
-  "currentProductAuthorityVersion": "20260815-block-spec-2li-1jin-v3"
+  "currentProductAuthorityVersion": "20260815-current-product-media-v4"
 }
