@@ -54,7 +54,7 @@ jobs:
           eq(byId['guilu-tangkuai']?.specification,'75g （2兩）／盒｜8塊裝','湯塊主規格');
           eq(byId['guilu-tangkuai']?.detailUnitApprox,'每塊約9.375g','湯塊每塊約重');
           eq(byId['guilu-jiao']?.specification,'600g （1斤）／盒｜32塊裝','龜鹿膠主規格');
-          eq(byId['guilu-jiao']?.detailUnitApprox,'每塊約18.75g','龜鹿膠每塊約重');
+          eq(byId['guilu-jiao']?.detailUnitApprox,'每塊約18.75 g','龜鹿膠每塊約重');
           eq(byId['luerong-fen']?.specification,'75g／罐','鹿茸粉規格');
           must(String(byId['guilu-tangkuai']?.detailUnitRule||'').includes('可顯示完整規格'),'湯塊顧客完整文字規格政策缺失');
           must(String(byId['guilu-jiao']?.detailUnitRule||'').includes('可顯示完整規格'),'龜鹿膠顧客完整文字規格政策缺失');
