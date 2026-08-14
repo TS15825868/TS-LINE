@@ -108,7 +108,7 @@ function healthPayload(core) {
     guiluDrink180Specification: "180cc／包（鋁袋）",
     guiluDrink180PhysicalScale: "狹長直立鋁袋；寬高比目標約0.64（0.60～0.68）",
     guiluGaoSpecification: "100g／罐",
-    guiluGaoUsagePrimary: "每日早上及下午各一小匙",
+    guiluGaoUsagePrimary: "可依個人使用習慣與作息時間安排",
     guiluGaoIngredients: ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
     guiluDrinkIngredients: ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
     guiluTangkuaiSpecification: "75g／盒｜8塊裝",

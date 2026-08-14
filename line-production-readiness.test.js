@@ -56,7 +56,7 @@ for (const [id,spec] of Object.entries(specs)) {
   must(String(byId[id]?.physicalScalePolicy || "").trim(), `${id}缺少尺寸比例政策`);
 }
 
-assert.equal(byId["guilu-gao"].usage?.[0], "每日早上及下午各一小匙");
+assert.equal(byId["guilu-gao"].usage?.[0], "可依個人使用習慣與作息時間安排");
 must(!(byId["guilu-gao"].usage || []).some(line => /一天一次一小匙|早晚各一小匙/.test(String(line))), "龜鹿膏不得回退舊用法");
 assert.equal(official["guilu-tangkuai"].detailUnitApprox, "每塊約9.375g");
 must(String(official["guilu-tangkuai"].detailUnitRule || "").includes("僅詳細資料"), "湯塊約重必須只在詳細資料");

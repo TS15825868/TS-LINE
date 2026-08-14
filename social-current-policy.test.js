@@ -79,7 +79,7 @@ for (const [id, ingredients] of Object.entries(ingredientAuthority)) {
 }
 assert.strictEqual(merged.runtime.imagePolicy.dmFallback, "actual-product-photo-until-new-dm-reviewed");
 assert.strictEqual(merged.runtime.imagePolicy.productMainImageSource, "products-v2-actual-photos");
-assert.strictEqual(sales.products["guilu-gao"].usage[0], "每日早上及下午各一小匙");
+assert.strictEqual(sales.products["guilu-gao"].usage[0], "可依個人使用習慣與作息時間安排");
 assert(!sales.products["guilu-gao"].usage.some((line) => String(line).includes("每天一次，每次一小匙")));
 
 assert.strictEqual(sales.products["guilu-gao"].price, 1800);

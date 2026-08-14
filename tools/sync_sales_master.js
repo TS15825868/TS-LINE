@@ -142,7 +142,7 @@ function main() {
   assertPhysicalScaleAuthority(merged.products);
   const gao = merged.products.find((item) => item.id === "guilu-gao");
   if (gao?.usage?.[0] !== authorityById.get("guilu-gao")?.usagePrimary) throw new Error("龜鹿膏主要使用方式未跟目前權威同步");
-  if ((gao?.usage || []).some((line) => /每日早上及下午各一小匙|早晚各一小匙/.test(String(line)))) throw new Error("龜鹿膏不得回退早晚各一次舊用法");
+  if ((gao?.usage || []).some((line) => /可依個人使用習慣與作息時間安排|早晚各一小匙/.test(String(line)))) throw new Error("龜鹿膏不得回退早晚各一次舊用法");
   const tang = merged.products.find((item) => item.id === "guilu-tangkuai");
   const jiao = merged.products.find((item) => item.id === "guilu-jiao");
   assertSoupAuthority(tang, specs["guilu-tangkuai"]);

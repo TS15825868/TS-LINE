@@ -24,7 +24,7 @@ for(const id of Object.keys(official)){
 assert.equal(products['guilu-gao'].price,1800);
 assert.equal(products['guilu-gao'].originalPrice,2100);
 assert.equal(products['guilu-gao'].usage?.[0],official['guilu-gao'].usagePrimary);
-assert.ok(!(products['guilu-gao'].usage||[]).some(line=>/每日早上及下午各一小匙|早晚各一小匙/.test(String(line))));
+assert.ok(!(products['guilu-gao'].usage||[]).some(line=>/可依個人使用習慣與作息時間安排|早晚各一小匙/.test(String(line))));
 
 const drink30=products['guilu-drink-30'];
 assert.equal(drink30.unit,'罐');

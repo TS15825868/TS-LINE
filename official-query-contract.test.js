@@ -37,7 +37,7 @@ assert.deepEqual(products.map((item) => item.id).sort(), [
 
 const gao = server.getProduct("guilu-gao");
 assert.equal(gao.spec, "100g／罐");
-assert.equal(gao.usage[0], "每日早上及下午各一小匙");
+assert.equal(gao.usage[0], "可依個人使用習慣與作息時間安排");
 assert.deepEqual(gao.ingredients, ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"]);
 
 const drink30 = server.getProduct("guilu-drink-30");
@@ -83,7 +83,7 @@ assert.ok(!priceCarousel.includes("龜鹿湯塊300g"));
 assert.ok(!priceCarousel.includes("龜鹿湯塊600g"));
 
 const gaoUsage = text(server.usageReply(gao));
-assert.ok(gaoUsage.includes("每日早上及下午各一小匙"));
+assert.ok(gaoUsage.includes("可依個人使用習慣與作息時間安排"));
 assert.ok(gaoUsage.includes("鹿角萃取物"));
 assert.ok(gaoUsage.includes("粉光蔘"));
 assert.ok(gaoUsage.includes(READY_STOCK_NOTICE));

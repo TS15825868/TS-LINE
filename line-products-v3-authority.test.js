@@ -42,7 +42,7 @@ for (const product of data.products) {
 }
 
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
-assert.equal(byId["guilu-gao"].usage?.[0], "每日早上及下午各一小匙");
+assert.equal(byId["guilu-gao"].usage?.[0], "可依個人使用習慣與作息時間安排");
 assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|早晚各一小匙/.test(String(line))));
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.equal(byId["guilu-drink-30"].specification, "30cc／罐（小玻璃罐）");
