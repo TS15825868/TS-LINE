@@ -1,7 +1,6 @@
 name: 仙加味 LINE 正式媒體能力驗收（手動）
 
-# 全面整理期間 blocking guards 保持暫停。
-# 此 workflow 保留完整驗收能力，但不在 push / PR 自動阻擋新版正確資料。
+# 全面整理期間 blocking guards 保持暫停；此 workflow 只手動驗目前正式媒體能力。
 on:
   workflow_dispatch:
 
@@ -34,27 +33,52 @@ jobs:
           const byId=Object.fromEntries((current.products||[]).map(p=>[p.id,p]));
           const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
           const eq=(actual,expected,label)=>must(actual===expected,`${label}: ${actual} !== ${expected}`);
+          const dmExpected={
+            'guilu-gao':'01_guilu-gao-100g-dm.jpg',
+            'guilu-drink-30':'02_guilu-drink-30cc-dm-official-v20260814.jpg',
+            'guilu-drink-180':'03_guilu-drink-180cc-dm.jpg',
+            'guilu-tangkuai':'05_guilu-tangkuai-75g-dm.jpg',
+            'guilu-jiao':'06_guilu-jiao-600g-dm.jpg',
+            'luerong-fen':'04_luerong-fen-75g-dm.jpg',
+          };
 
           eq(current.authority,'user-confirmed-current','目前權威');
           eq((current.products||[]).length,6,'正式產品數');
+          eq(byId['guilu-gao']?.specification,'100g／罐','龜鹿膏規格');
+          eq(byId['guilu-gao']?.usagePrimary,'食用時間可依個人使用習慣與作息時間安排','龜鹿膏目前用法');
           eq(byId['guilu-drink-30']?.specification,'30cc／罐（小玻璃罐）','30cc主規格');
+          eq(byId['guilu-drink-30']?.usagePrimary,'每日 1-2罐','30cc目前用法');
+          eq(byId['guilu-drink-30']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','30cc時間原則');
           eq(byId['guilu-drink-180']?.specification,'180cc／包（鋁袋）','180cc主規格');
-          eq(byId['guilu-tangkuai']?.specification,'75g／盒｜8塊裝','湯塊主規格');
-          eq(byId['guilu-tangkuai']?.detailUnitApprox,'每塊約9.375g','湯塊詳細約重');
-          eq(byId['guilu-jiao']?.specification,'600g（1斤）／盒｜32塊裝','龜鹿膠主規格');
-          eq(byId['guilu-jiao']?.detailUnitApprox,'每塊約18.75g','龜鹿膠詳細約重');
-          eq(byId['guilu-gao']?.usagePrimary,'每日早上及下午各一小匙','龜鹿膏目前用法');
+          eq(byId['guilu-drink-180']?.usagePrimary,'每日一包','180cc目前用法');
+          eq(byId['guilu-tangkuai']?.specification,'75g （2兩）／盒｜8塊裝','湯塊主規格');
+          eq(byId['guilu-tangkuai']?.detailUnitApprox,'每塊約9.375g','湯塊每塊約重');
+          eq(byId['guilu-jiao']?.specification,'600g （1斤）／盒｜32塊裝','龜鹿膠主規格');
+          eq(byId['guilu-jiao']?.detailUnitApprox,'每塊約18.75g','龜鹿膠每塊約重');
+          eq(byId['luerong-fen']?.specification,'75g／罐','鹿茸粉規格');
+          must(String(byId['guilu-tangkuai']?.detailUnitRule||'').includes('可顯示完整規格'),'湯塊顧客完整文字規格政策缺失');
+          must(String(byId['guilu-jiao']?.detailUnitRule||'').includes('可顯示完整規格'),'龜鹿膠顧客完整文字規格政策缺失');
           must(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(byId['guilu-drink-30'])),'30cc不得稱瓶');
+
+          for(const [id,file] of Object.entries(dmExpected)){
+            must(String(byId[id]?.approvedDm||'').includes(`/images/dm-final/${file}`),`${id}目前正式DM來源錯誤`);
+            must(!String(byId[id]?.approvedDm||'').includes('/images/dm-approved-v20260810/'),`${id}仍使用退役DM來源`);
+          }
+          const mediaDmById={
+            'guilu-gao':'龜鹿膏','guilu-drink-30':'龜鹿飲30cc玻璃罐','guilu-drink-180':'龜鹿飲180cc鋁袋','guilu-tangkuai':'龜鹿湯塊','guilu-jiao':'龜鹿膠','luerong-fen':'鹿茸粉'
+          };
+          for(const [id,name] of Object.entries(mediaDmById))must(String(media.source_product_dm?.[name]||'').includes(`/images/dm-final/${dmExpected[id]}`),`${name}媒體鏡像DM不同步`);
+          must(String(media.customer_text_spec_policy||'').includes('顧客產品文字'),'LINE媒體權威缺少完整文字規格政策');
 
           must(String(current.trialPosterAuthority?.currentDisplay||'').includes('trial-poster-small-boss-official-v20260814.jpg'),'目前試喝權威不是8/14正式海報');
           eq(current.trialPosterAuthority?.doNotRegenerate,true,'試喝禁止重生成');
           must(String(media.source_trial||'').includes('trial-poster-small-boss-official-v20260814.jpg'),'LINE媒體鏡像試喝來源不同步');
           must(String(trial.poster||'').includes('trial-poster-small-boss-official-v20260814.jpg'),'LINE試喝visual不同步');
           must(String(trial.lineCompatiblePoster||'').includes('/assets/formal-trial/trial.jpg'),'LINE試喝相容route缺失');
-          must(String(media.source_product_dm?.['龜鹿飲30cc玻璃罐']||'').includes('02_guilu-drink-30cc-dm-official-v20260814.jpg'),'30cc詳細DM不是8/14核准JPG');
           must(String(media.source_product_image?.['龜鹿飲30cc玻璃罐']||'').includes('/images/customer-display-v20260812/guilu-drink-30cc.avif'),'30cc產品圖不是目前正式產品圖');
-          must(String(current.displayPolicy||'').includes('三者不可互相取代'),'產品／DM／試喝媒體角色未分離');
-          console.log('PASS: current LINE product, DM, trial and identity media authority are aligned.');
+          must(String(current.displayPolicy||'').includes('不可互相取代'),'產品／DM／試喝媒體角色未分離');
+          must((media.hard_rules||[]).some(x=>String(x).includes('AI不得重畫正式產品本體')),'禁止AI重畫產品規則缺失');
+          console.log('PASS: current LINE product, six dm-final DMs, trial, identity and full-text specification authority are aligned.');
           NODE
 
       - name: Validate current media routes and Flex behavior
@@ -68,6 +92,11 @@ jobs:
         run: |
           node - <<'NODE'
           const mode=require('./guard-mode.json');
-          if(mode.mode!=='paused_for_full_system_update'||mode.blocking_runtime_guards!==false||mode.keep_minimum_safety!==true) throw new Error('maintenance guard mode changed unexpectedly');
+          if(mode.mode!=='paused_for_full_system_update'||mode.blocking_runtime_guards!==false||mode.keep_minimum_safety!==true)throw new Error('maintenance guard mode changed unexpectedly');
           console.log('PASS: full media guard remains manual-only during cleanup; minimum runtime safety stays enabled.');
           NODE
+
+      - name: Ensure audit is read-only
+        run: |
+          git checkout -- data.json
+          git diff --exit-code
