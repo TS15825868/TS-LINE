@@ -1,0 +1,107 @@
+name: 仙加味 LINE 20260815 銷售母本最終清理
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-clean-line-sales-master-v20260815.yml'
+permissions:
+  contents: write
+jobs:
+  clean-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Clean current sales master only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const file='line-sales-master.json';
+          const data=JSON.parse(fs.readFileSync(file,'utf8'));
+          data.version='2026-08-15-personal-routine-usage-v3';
+          const p=data.products||{};
+          if(p['guilu-gao']){
+            p['guilu-gao'].usage=[
+              '食用時間可依個人使用習慣與作息時間安排',
+              '初次可先從半匙開始',
+              '可直接食用或加入約100～300mL熱水化開'
+            ];
+          }
+          if(p['guilu-drink-30']){
+            p['guilu-drink-30'].usage=[
+              '每日 1-2罐',
+              '飲用時間可依個人使用習慣與作息時間安排',
+              '開罐即可飲用',
+              '可隔水加熱或溫熱後飲用',
+              '避免冰飲',
+              '開罐後請儘速飲用完畢'
+            ];
+          }
+          if(p['guilu-drink-180']){
+            p['guilu-drink-180'].usage=[
+              '每日一包',
+              '飲用時間可依個人使用習慣與作息時間安排',
+              '撕開包裝即可飲用',
+              '可隔水加熱或溫熱後飲用',
+              '避免冰飲',
+              '開封後請儘速飲用完畢'
+            ];
+          }
+          if(p['guilu-tangkuai']){
+            p['guilu-tangkuai'].specification='75g／盒｜8塊裝';
+            p['guilu-tangkuai'].size='75g／盒｜8塊裝';
+            p['guilu-tangkuai'].spec='75g／盒｜8塊裝';
+            p['guilu-tangkuai'].detailUnitApprox='每塊約9.375g';
+            p['guilu-tangkuai'].detailUnitRule='僅詳細資料，不放產品圖、DM或貼文主規格';
+          }
+          if(p['guilu-jiao']){
+            p['guilu-jiao'].specification='600g（1斤）／盒｜32塊裝';
+            p['guilu-jiao'].size='600g（1斤）／盒｜32塊裝';
+            p['guilu-jiao'].spec='600g（1斤）／盒｜32塊裝';
+            p['guilu-jiao'].detailUnitApprox='每塊約18.75g';
+            p['guilu-jiao'].detailUnitRule='僅詳細資料，不放產品圖、DM或貼文主規格';
+          }
+          fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');
+          NODE
+      - name: Rebuild current runtime and validate
+        run: |
+          npm install
+          node tools/sync_sales_master_current.js --write
+          npm test
+          npm run guard:full
+      - name: Assert clean customer usage
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const d=JSON.parse(fs.readFileSync('data.json','utf8'));
+          const p=Object.fromEntries(d.products.map(x=>[x.id,x]));
+          const eq=(a,b,m)=>{if(JSON.stringify(a)!==JSON.stringify(b))throw new Error(m+'\n'+JSON.stringify(a));};
+          eq(p['guilu-gao'].usage,[
+            '食用時間可依個人使用習慣與作息時間安排',
+            '初次可先從半匙開始',
+            '可直接食用或加入約100～300mL熱水化開'
+          ],'龜鹿膏使用方式仍有重複／舊時段');
+          eq(p['guilu-drink-30'].usage,[
+            '每日 1-2罐','飲用時間可依個人使用習慣與作息時間安排','開罐即可飲用','可隔水加熱或溫熱後飲用','避免冰飲','開罐後請儘速飲用完畢'
+          ],'30cc使用方式仍有重複／舊時段');
+          eq(p['guilu-drink-180'].usage,[
+            '每日一包','飲用時間可依個人使用習慣與作息時間安排','撕開包裝即可飲用','可隔水加熱或溫熱後飲用','避免冰飲','開封後請儘速飲用完畢'
+          ],'180cc使用方式仍有重複／舊時段');
+          if(p['guilu-tangkuai'].specification!=='75g／盒｜8塊裝')throw new Error('湯塊主規格被詳細約重污染');
+          if(p['guilu-jiao'].specification!=='600g（1斤）／盒｜32塊裝')throw new Error('龜鹿膠主規格被詳細約重污染');
+          NODE
+      - name: Commit verified regular files
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add line-sales-master.json data.json
+          if git diff --cached --quiet; then echo 'No runtime changes'; exit 0; fi
+          git commit -m 'fix(line): clean usage copy and detail-only specifications'
+          git push origin HEAD:main
