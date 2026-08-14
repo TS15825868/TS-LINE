@@ -1,18 +1,29 @@
 {
-  "version":"20260812-formal-image-fix-v3",
-  "title":"龜鹿飲試喝組｜先試喝，再決定",
-  "currentFinalAssetId":"trial-small-boss-20260812",
-  "currentFinalManifest":"https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
-  "currentFinalPreview":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial-small-boss.webp?v=20260812-formal-image-fix-v3",
-  "currentFinalPublishedOn":"2026-08-12",
-  "poster":"https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/trial-small-boss.jpg?v=20260812-formal-image-fix-v3",
-  "posterRole":"line-compatible-current-small-boss-trial-master",
-  "posterNote":"固定使用2026-08-12核准小老闆試喝主圖的同圖JPEG相容版；禁止回退approved-v412 evergreen、trial.webp或舊試喝DM。",
-  "trial":{"contents":"30cc小玻璃罐×3罐","productFee":0,"shipping711":60,"shippingPost":100,"leadTime":"5～7個工作天","limit":"每位顧客、電話及地址限申請一次"},
-  "pricing":{"drink30":"正式售價60元／罐｜買10送1｜11罐600元","drink180":"單包200元｜買10送1｜11包2,000元"},
-  "lineId":"@762jybnm",
-  "lineUrl":"https://lin.ee/sHZW7NkR",
-  "imagePolicy":"current-small-boss-trial-master-only-product-dm-trial-separated",
-  "preventRepublish":true,
-  "doNotRegenerate":true
+  "version": "20260814-product-modal-media-v3",
+  "title": "龜鹿飲試喝組｜先試喝，再決定",
+  "currentFinalAssetId": "20260814-user-small-boss-trial-poster",
+  "currentFinalManifest": "assets/data/official-products.json",
+  "currentFinalPreview": "https://ts15825868.github.io/xianjiawei/images/trial/trial-poster-small-boss-official-v20260814.jpg?v=20260814-product-modal-media-v3",
+  "currentFinalPublishedOn": "2026-08-14",
+  "poster": "https://ts15825868.github.io/xianjiawei/images/trial/trial-poster-small-boss-official-v20260814.jpg?v=20260814-product-modal-media-v3",
+  "lineCompatiblePoster": "https://ts-line.onrender.com/assets/formal-trial/trial.jpg?v=20260814-product-modal-media-v3",
+  "posterRole": "fixed-current-user-approved-trial-master-only",
+  "posterNote": "固定使用2026-08-14使用者核准小老闆試喝海報；產品圖、詳細DM、試喝圖三者分離；禁止回退trial.webp、trial-clean-v4.svg、trial-small-boss.webp或2026-08-12舊相容圖。",
+  "trial": {
+    "contents": "30cc小玻璃罐×3罐",
+    "productFee": 0,
+    "shipping711": 60,
+    "shippingPost": 100,
+    "leadTime": "5～7個工作天",
+    "limit": "每位顧客、電話及地址限申請一次"
+  },
+  "pricing": {
+    "drink30": "正式售價60元／罐｜買10送1｜11罐600元",
+    "drink180": "單包200元｜買10送1｜11包2,000元"
+  },
+  "lineId": "@762jybnm",
+  "lineUrl": "https://lin.ee/sHZW7NkR",
+  "imagePolicy": "20260814-user-approved-trial-master-only-product-dm-trial-separated",
+  "preventRepublish": true,
+  "doNotRegenerate": true
 }
