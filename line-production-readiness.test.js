@@ -74,7 +74,7 @@ assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 must((byId["guilu-drink-180"].usage || []).some(line => String(line).includes("飲用時間可依個人使用習慣與作息時間安排")), "180cc必須保留每日一包並取消固定白天時段");
 assert.equal(official["guilu-tangkuai"].detailUnitApprox, "每塊約9.375g");
 must(String(official["guilu-tangkuai"].detailUnitRule || "").includes("可顯示完整規格"), "湯塊顧客文字必須可顯示目前完整規格與每塊約重");
-assert.equal(official["guilu-jiao"].detailUnitApprox, "每塊約18.75g");
+assert.equal(official["guilu-jiao"].detailUnitApprox, "每塊約18.75 g");
 must(String(official["guilu-jiao"].detailUnitRule || "").includes("可顯示完整規格"), "龜鹿膠顧客文字必須可顯示目前完整規格與每塊約重");
 must(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(byId["guilu-drink-30"])), "30cc不得稱瓶");
 assert.match(String(byId["guilu-drink-30"].physicalScalePolicy || ""), /Ø42.*H51|小玻璃裸罐/i);

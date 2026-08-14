@@ -50,7 +50,7 @@ function assertCurrent(merged, authority, photoAuthority) {
   const tangkuai=official.get("guilu-tangkuai");
   if(tangkuai?.specification!=="75g （2兩）／盒｜8塊裝"||tangkuai?.detailUnitApprox!=="每塊約9.375g"||!String(tangkuai?.detailUnitRule||"").includes("可顯示完整規格"))throw new Error("龜鹿湯塊目前規格／約重／顧客文字規則不同步");
   const jiao=official.get("guilu-jiao");
-  if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||jiao?.detailUnitApprox!=="每塊約18.75g"||!String(jiao?.detailUnitRule||"").includes("可顯示完整規格"))throw new Error("龜鹿膠目前規格／約重／顧客文字規則不同步");
+  if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||jiao?.detailUnitApprox!=="每塊約18.75 g"||!String(jiao?.detailUnitRule||"").includes("可顯示完整規格"))throw new Error("龜鹿膠目前規格／約重／顧客文字規則不同步");
 
   const trial=authority.trialPosterAuthority||{};
   const trialDisplay=String(trial.currentDisplay||"").trim();
