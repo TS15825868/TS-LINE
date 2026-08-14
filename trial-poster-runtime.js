@@ -2,8 +2,8 @@
 
 const line=require("@line/bot-sdk");
 const visual=require("./content/trial-campaign-visual.json");
-const POSTER=visual.poster;
-const FINAL_ASSET_ID=visual.currentFinalAssetId||"guilu-drink-trial-final-20260808";
+const POSTER=visual.lineCompatiblePoster||visual.poster;
+const FINAL_ASSET_ID=visual.currentFinalAssetId||"20260814-user-small-boss-trial-poster";
 const proto=line?.messagingApi?.MessagingApiClient?.prototype;
 const original=proto?.replyMessage;
 
@@ -39,6 +39,7 @@ function fixTrialMessage(message){
     backgroundColor:"#F7F1E6",
     action:{type:"uri",uri:"https://ts15825868.github.io/xianjiawei/trial.html"}
   };
+  bubble.xjwTrialMediaAuthority=FINAL_ASSET_ID;
   return next;
 }
 
