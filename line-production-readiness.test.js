@@ -42,6 +42,14 @@ const prices = {
   "guilu-jiao":9600,
   "luerong-fen":2000,
 };
+const currentDm = {
+  "guilu-gao":"/images/dm-final/01_guilu-gao-100g-dm.jpg",
+  "guilu-drink-30":"/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg",
+  "guilu-drink-180":"/images/dm-final/03_guilu-drink-180cc-dm.jpg",
+  "guilu-tangkuai":"/images/dm-final/05_guilu-tangkuai-75g-dm.jpg",
+  "guilu-jiao":"/images/dm-final/06_guilu-jiao-600g-dm.jpg",
+  "luerong-fen":"/images/dm-final/04_luerong-fen-75g-dm.jpg",
+};
 
 for (const [id,spec] of Object.entries(specs)) {
   assert.equal(official[id]?.specification, spec, `${id} authority主規格`);
@@ -51,6 +59,8 @@ for (const [id,spec] of Object.entries(specs)) {
   assert.equal(Number(byId[id]?.price), prices[id], `${id}售價`);
   assert.equal(byId[id]?.image, official[id]?.approvedProductImage, `${id}顧客產品主圖`);
   assert.equal(byId[id]?.dmImage, official[id]?.approvedDm, `${id}詳細DM`);
+  assert.ok(String(official[id]?.approvedDm||"").includes(currentDm[id]), `${id}詳細DM必須使用目前dm-final來源`);
+  assert.ok(!String(official[id]?.approvedDm||"").includes("/images/dm-approved-v20260810/"), `${id}不得回退舊DM來源`);
   assert.equal(byId[id]?.officialOriginalImage, photoAuthority.products?.[id], `${id}products-v3身份原圖`);
   assert.notEqual(byId[id]?.image, byId[id]?.dmImage, `${id}產品主圖不得等於DM`);
   must(String(byId[id]?.physicalScalePolicy || "").trim(), `${id}缺少尺寸比例政策`);
@@ -63,9 +73,9 @@ must((byId["guilu-drink-30"].usage || []).some(line => String(line).includes("�
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 must((byId["guilu-drink-180"].usage || []).some(line => String(line).includes("飲用時間可依個人使用習慣與作息時間安排")), "180cc必須保留每日一包並取消固定白天時段");
 assert.equal(official["guilu-tangkuai"].detailUnitApprox, "每塊約9.375g");
-must(String(official["guilu-tangkuai"].detailUnitRule || "").includes("可顯示完整規格"), "湯塊約重必須只在詳細資料");
-assert.equal(official["guilu-jiao"].detailUnitApprox, "每塊約18.75 g");
-must(String(official["guilu-jiao"].detailUnitRule || "").includes("可顯示完整規格"), "龜鹿膠約重必須只在詳細資料");
+must(String(official["guilu-tangkuai"].detailUnitRule || "").includes("可顯示完整規格"), "湯塊顧客文字必須可顯示目前完整規格與每塊約重");
+assert.equal(official["guilu-jiao"].detailUnitApprox, "每塊約18.75g");
+must(String(official["guilu-jiao"].detailUnitRule || "").includes("可顯示完整規格"), "龜鹿膠顧客文字必須可顯示目前完整規格與每塊約重");
 must(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(byId["guilu-drink-30"])), "30cc不得稱瓶");
 assert.match(String(byId["guilu-drink-30"].physicalScalePolicy || ""), /Ø42.*H51|小玻璃裸罐/i);
 assert.match(String(byId["guilu-drink-180"].physicalScalePolicy || ""), /0\.60.*0\.68|狹長直立鋁袋/i);
@@ -90,10 +100,11 @@ assert.match(String(photoAuthority.version || ""),/products-v3/i);
 assert.equal(Object.keys(photoAuthority.products || {}).length,6);
 for (const url of Object.values(photoAuthority.products || {})) must(String(url).includes('/images/products-v3/'), 'products-v3身份原圖權威錯誤');
 
-assert.match(String(formal.runtime || ""),/current|20260814/i);
+assert.match(String(formal.runtime || ""),/current|20260815/i);
 assert.equal(formal.approval_batch,"20260814-product-modal-media-v3");
 assert.ok(String(formal.source_trial || "").includes("trial-poster-small-boss-official-v20260814.jpg"));
-assert.ok(String(formal.source_product_dm?.["龜鹿飲30cc玻璃罐"] || "").includes("02_guilu-drink-30cc-dm-official-v20260814.jpg"));
+assert.ok(String(formal.customer_text_spec_policy || "").includes("顧客產品文字"));
+for (const [name,url] of Object.entries(formal.source_product_dm || {})) assert.ok(String(url).includes('/images/dm-final/'), `${name}正式媒體來源必須是目前dm-final`);
 for (const route of ['formal-product/:id.jpg','formal-dm/:id.jpg','formal-trial/trial.jpg']) must(safetySource.includes(route),`缺少LINE正式媒體route：${route}`);
 assert.equal(safety.normalizeProductPhotos(JSON.parse(read("data.json"))).runtime.productMainImageSource,"current-approved-product-image-line-compatible-jpeg");
 
@@ -122,6 +133,7 @@ assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf
 
 assert.ok(syncSource.includes("official-products.json"));
 assert.ok(syncSource.includes("assertCurrent"));
+assert.ok(syncSource.includes("CURRENT_DM"));
 assert.equal(packageJson.main,"server.js");
 assert.equal(packageJson.scripts.start,"node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js");
 assert.ok(packageJson.scripts.prestart.includes("sync_sales_master_current.js --write"));
@@ -130,4 +142,4 @@ if (guardMode.mode === "paused_for_full_system_update") assert.equal(guardMode.b
 
 for (const retired of [".github/workflows/line-closeout-status-once.yml",".github/workflows/one-time-update-drink-pricing-20260806.yml",".github/workflows/sync-formal-line-media.yml","tools/sync-formal-line-media.py"]) assert.equal(fs.existsSync(path.join(__dirname,retired)),false,`退役同步仍存在：${retired}`);
 
-console.log(`PASS：LINE OA readiness依 ${authority.version} 目前權威驗收：六項產品、使用時間個人化、30cc每日 1-2罐、180cc每日一包、媒體角色、8/14試喝、價格、交期、Webhook、Rich Menu與守門員均一致。`);
+console.log(`PASS：LINE OA readiness依 ${authority.version} 目前權威驗收：六項產品、個人作息用法、30cc每日 1-2罐、180cc每日一包、六張產品圖、六張dm-final詳細DM、8/14試喝、價格、交期、Webhook、Rich Menu與守門員均一致。`);
