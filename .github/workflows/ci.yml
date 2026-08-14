@@ -1,5 +1,6 @@
-name: 仙加味 LINE OA 正式版手動驗收
+name: 仙加味 LINE OA 目前正式版完整驗收（手動）
 
+# 全面整理期間只手動執行，不用舊規格或舊固定時段阻擋新版正確內容。
 on:
   workflow_dispatch:
 
@@ -7,13 +8,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: xianjiawei-lineoa-manual-audit
+  group: xianjiawei-lineoa-current-release-audit
   cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - name: Checkout main
         uses: actions/checkout@v5
@@ -27,104 +28,117 @@ jobs:
       - name: Install exact dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Run LINE OA release tests
-        run: npm test
+      - name: Run LINE OA current release tests
+        run: |
+          npm test
+          npm run check:catalog
+          npm run guard:full
+          npm run security:audit
 
-      - name: Verify formal catalog remains synchronized
-        run: npm run check:catalog
-
-      - name: Verify current LINE OA production contract
+      - name: Verify current product, media, trial and Rich Menu authority
         shell: bash
         run: |
           set -euo pipefail
           node - <<'NODE'
-          const fs = require('node:fs');
-          const pkg = require('./package.json');
-          const lock = require('./package-lock.json');
-          const current = require('./assets/data/official-products.json');
-          const photo = require('./line-product-photo-authority.json');
-          const rich = require('./line-rich-menu-sync');
-          const { applyMaster } = require('./product-sales-master');
+          const fs=require('node:fs');
+          const pkg=require('./package.json');
+          const lock=require('./package-lock.json');
+          const current=require('./assets/data/official-products.json');
+          const media=require('./formal-media-authority-v20260810.json');
+          const photo=require('./line-product-photo-authority.json');
+          const rich=require('./line-rich-menu-sync');
+          const {applyMaster}=require('./product-sales-master');
+          const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
+          const same=(a,b,msg)=>must(a===b,`${msg}: ${a} !== ${b}`);
+          const dmExpected={
+            'guilu-gao':'/images/dm-final/01_guilu-gao-100g-dm.jpg',
+            'guilu-drink-30':'/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg',
+            'guilu-drink-180':'/images/dm-final/03_guilu-drink-180cc-dm.jpg',
+            'guilu-tangkuai':'/images/dm-final/05_guilu-tangkuai-75g-dm.jpg',
+            'guilu-jiao':'/images/dm-final/06_guilu-jiao-600g-dm.jpg',
+            'luerong-fen':'/images/dm-final/04_luerong-fen-75g-dm.jpg',
+          };
+          same(lock.lockfileVersion,3,'package-lock格式');
+          same(lock.packages?.['']?.version,pkg.version,'package-lock版本');
+          must(JSON.stringify(lock.packages?.['']?.dependencies||{})===JSON.stringify(pkg.dependencies||{}),'package與package-lock依賴不同步');
+          same(pkg.main,'server.js','LINE正式入口');
+          same(pkg.scripts.start,'node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js','LINE正式start');
+          must(pkg.scripts.prestart.includes('sync_sales_master_current.js --write'),'Render prestart必須先同步目前正式權威');
+          for(const forbidden of ['internal-entry.js','social-review-center','social-publish-guard','instagram-content-publishing','facebook-page-token','internal-app-pro'])must(!pkg.scripts.start.includes(forbidden),`LINE正式start仍載入非必要模組：${forbidden}`);
 
-          const must = (ok, message) => { if (!ok) throw new Error(message); };
-          const same = (actual, expected, message) => must(actual === expected, `${message}: ${actual} !== ${expected}`);
-
-          same(lock.lockfileVersion, 3, 'package-lock格式');
-          same(lock.packages?.['']?.version, pkg.version, 'package-lock版本');
-          must(JSON.stringify(lock.packages?.['']?.dependencies || {}) === JSON.stringify(pkg.dependencies || {}), 'package與package-lock依賴不同步');
-          same(pkg.main, 'server.js', 'LINE正式入口');
-          same(pkg.scripts.start, 'node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js', 'LINE正式start');
-          must(pkg.scripts.prestart.includes('sync_sales_master_current.js --write'), 'Render prestart必須先同步目前正式權威');
-          for (const forbidden of ['internal-entry.js','social-review-center','social-publish-guard','instagram-content-publishing','facebook-page-token','internal-app-pro']) {
-            must(!pkg.scripts.start.includes(forbidden), `LINE正式start仍載入非必要模組：${forbidden}`);
-          }
-
-          same(current.authority, 'user-confirmed-current', '目前產品權威');
-          must(Array.isArray(current.products) && current.products.length === 6, '目前正式產品必須剛好6項');
-          const official = Object.fromEntries(current.products.map(p => [p.id, p]));
-          const expectedSpecs = {
+          same(current.authority,'user-confirmed-current','目前產品權威');
+          must(Array.isArray(current.products)&&current.products.length===6,'目前正式產品必須剛好6項');
+          const official=Object.fromEntries(current.products.map(p=>[p.id,p]));
+          const expectedSpecs={
             'guilu-gao':'100g／罐',
             'guilu-drink-30':'30cc／罐（小玻璃罐）',
             'guilu-drink-180':'180cc／包（鋁袋）',
-            'guilu-tangkuai':'75g／盒｜8塊裝',
-            'guilu-jiao':'600g（1斤）／盒｜32塊裝',
+            'guilu-tangkuai':'75g （2兩）／盒｜8塊裝',
+            'guilu-jiao':'600g （1斤）／盒｜32塊裝',
             'luerong-fen':'75g／罐',
           };
-          for (const [id, spec] of Object.entries(expectedSpecs)) {
-            same(official[id]?.specification, spec, `${id}主規格`);
-            must(String(official[id]?.approvedProductImage || '').includes('/images/customer-display-v20260812/'), `${id}產品介紹主圖不是目前customer-display正式圖`);
-            must(String(official[id]?.approvedDm || '').startsWith('https://ts15825868.github.io/xianjiawei/images/'), `${id}缺少正式詳細DM`);
+          for(const [id,spec] of Object.entries(expectedSpecs)){
+            same(official[id]?.specification,spec,`${id}目前規格`);
+            must(String(official[id]?.approvedProductImage||'').includes('/images/customer-display-v20260812/'),`${id}產品介紹主圖不是目前customer-display正式圖`);
+            must(String(official[id]?.approvedDm||'').includes(dmExpected[id]),`${id}詳細DM不是目前dm-final權威`);
+            must(!String(official[id]?.approvedDm||'').includes('/images/dm-approved-v20260810/'),`${id}仍使用退役DM來源`);
           }
-          same(official['guilu-tangkuai']?.detailUnitApprox, '每塊約9.375g', '湯塊詳細約重');
-          same(official['guilu-jiao']?.detailUnitApprox, '每塊約18.75g', '龜鹿膠詳細約重');
-          must(String(official['guilu-tangkuai']?.detailUnitRule || '').includes('僅詳細資料'), '湯塊每塊重量不得回主規格');
-          must(String(official['guilu-jiao']?.detailUnitRule || '').includes('僅詳細資料'), '龜鹿膠每塊重量不得回主規格');
-          same(official['guilu-drink-30']?.usagePrimary, '每日一罐', '30cc使用單位');
-          same(official['guilu-drink-180']?.usagePrimary, '每日一包', '180cc使用單位');
-          must(!/瓶/.test(JSON.stringify(official['guilu-drink-30'])), '30cc目前正式權威不得出現瓶字');
+          same(official['guilu-gao']?.usagePrimary,'食用時間可依個人使用習慣與作息時間安排','龜鹿膏目前用法');
+          same(official['guilu-drink-30']?.usagePrimary,'每日 1-2罐','30cc目前用法');
+          same(official['guilu-drink-30']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','30cc時間原則');
+          same(official['guilu-drink-180']?.usagePrimary,'每日一包','180cc目前用法');
+          same(official['guilu-drink-180']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','180cc時間原則');
+          same(official['guilu-tangkuai']?.detailUnitApprox,'每塊約9.375g','湯塊每塊約重');
+          same(official['guilu-jiao']?.detailUnitApprox,'每塊約18.75g','龜鹿膠每塊約重');
+          must(String(official['guilu-tangkuai']?.detailUnitRule||'').includes('可顯示完整規格'),'湯塊顧客完整文字規格政策缺失');
+          must(String(official['guilu-jiao']?.detailUnitRule||'').includes('可顯示完整規格'),'龜鹿膠顧客完整文字規格政策缺失');
+          must(!/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(official['guilu-drink-30'])),'30cc目前正式權威不得回退瓶字');
 
-          const rawData = JSON.parse(fs.readFileSync('data.json','utf8'));
-          const data = applyMaster(rawData);
-          const byId = Object.fromEntries((data.products || []).map(p => [p.id, p]));
-          must(data.products?.length === 6, 'LINE執行資料正式產品不是六項');
-          for (const [id, spec] of Object.entries(expectedSpecs)) {
-            const p = byId[id];
-            same(p?.specification, spec, `${id}執行主規格`);
-            same(p?.image, official[id].approvedProductImage, `${id}執行產品主圖`);
-            same(p?.dmImage, official[id].approvedDm, `${id}執行詳細DM`);
-            same(p?.officialOriginalImage, photo.products?.[id], `${id}products-v3身份參考`);
-            must(String(p?.physicalScalePolicy || '').trim(), `${id}缺少產品比例規則`);
+          const data=applyMaster(JSON.parse(fs.readFileSync('data.json','utf8')));
+          const byId=Object.fromEntries((data.products||[]).map(p=>[p.id,p]));
+          must(data.products?.length===6,'LINE執行資料正式產品不是六項');
+          for(const [id,spec] of Object.entries(expectedSpecs)){
+            const p=byId[id];
+            same(p?.specification,spec,`${id}執行規格`);
+            same(p?.image,official[id].approvedProductImage,`${id}執行產品主圖`);
+            same(p?.dmImage,official[id].approvedDm,`${id}執行詳細DM`);
+            same(p?.officialOriginalImage,photo.products?.[id],`${id} products-v3身份參考`);
+            must(String(p?.physicalScalePolicy||'').trim(),`${id}缺少產品比例規則`);
           }
-          same(byId['guilu-drink-30']?.price, 60, '30cc售價');
-          same(byId['guilu-drink-180']?.price, 200, '180cc售價');
-          same((byId['guilu-drink-30']?.offers || []).find(o => o.label === '買10送1')?.total, 600, '30cc買10送1');
-          same((byId['guilu-drink-180']?.offers || []).find(o => o.label === '買10送1')?.total, 2000, '180cc買10送1');
+          same(byId['guilu-drink-30']?.price,60,'30cc售價');
+          same(byId['guilu-drink-180']?.price,200,'180cc售價');
+          same((byId['guilu-drink-30']?.offers||[]).find(o=>o.label==='買10送1')?.total,600,'30cc買10送1');
+          same((byId['guilu-drink-180']?.offers||[]).find(o=>o.label==='買10送1')?.total,2000,'180cc買10送1');
 
-          const trial = current.trialPosterAuthority || {};
-          must(String(trial.currentDisplay || '').includes('/images/trial/trial-poster-small-boss-official-v20260814.jpg'), '試喝主圖不是2026-08-14使用者核准海報');
-          must(trial.doNotRegenerate === true, '試喝主圖不得被自動重生成');
-          same(data.trialCampaign?.contents, '30cc小玻璃罐×3罐', '試喝內容');
-          same(Number(data.trialCampaign?.productFee), 0, '試喝品費用');
-          must(JSON.stringify((data.trialCampaign?.shippingOptions || []).map(o => [o.id,o.fee])) === JSON.stringify([['store',60],['home',100]]), '試喝運費錯誤');
+          must(String(media.customer_text_spec_policy||'').includes('顧客產品文字'),'LINE媒體權威缺少顧客完整文字規格政策');
+          for(const [name,url] of Object.entries(media.source_product_dm||{}))must(url.includes('/images/dm-final/'),`${name}媒體權威仍非目前dm-final`);
+          const trial=current.trialPosterAuthority||{};
+          must(String(trial.currentDisplay||'').includes('/images/trial/trial-poster-small-boss-official-v20260814.jpg'),'試喝主圖不是2026-08-14使用者核准海報');
+          must(trial.doNotRegenerate===true,'試喝主圖不得被自動重生成');
+          same(data.trialCampaign?.contents,'30cc小玻璃罐×3罐','試喝內容');
+          same(Number(data.trialCampaign?.productFee),0,'試喝品費用');
+          must(JSON.stringify((data.trialCampaign?.shippingOptions||[]).map(o=>[o.id,o.fee]))===JSON.stringify([['store',60],['home',100]]),'試喝運費錯誤');
 
-          must(rich.SINGLE_IMAGE_ONLY === true && rich.RUNTIME_COMPOSITE_FORBIDDEN === true && rich.LEGACY_BASE_TEMPLATE_FORBIDDEN === true, 'Rich Menu單一母稿／禁止拼貼政策失效');
-          must(/^assets\/rich-menu\/.*\.svg(?:\.gz\.b64)?$/.test(String(rich.STATIC_ARTWORK || '')), 'Rich Menu母稿路徑錯誤');
-          const artwork = rich.readArtwork();
-          must(!/<text\b/i.test(artwork), 'Rich Menu繁中仍依賴主機字型');
-          must(!/<image\b/i.test(artwork), 'Rich Menu仍內嵌照片或舊底圖');
-          const menu = rich.menuDefinition();
-          same(menu.areas.length, 6, 'Rich Menu格數');
-          must(JSON.stringify(menu.areas.map(a => a.action.label)) === JSON.stringify(['看產品','購物車','幫我推薦','搭配組合','怎麼使用','直接下單']), 'Rich Menu六格名稱不同步');
-          must(JSON.stringify(menu.areas.map(a => a.action.text)) === JSON.stringify(['看產品','查看購買清單','幫我推薦','搭配組合','怎麼使用','直接下單']), 'Rich Menu六格傳送文字不同步');
+          must(rich.SINGLE_IMAGE_ONLY===true&&rich.RUNTIME_COMPOSITE_FORBIDDEN===true&&rich.LEGACY_BASE_TEMPLATE_FORBIDDEN===true,'Rich Menu單一母稿／禁止拼貼政策失效');
+          must(/^assets\/rich-menu\/.*\.svg(?:\.gz\.b64)?$/.test(String(rich.STATIC_ARTWORK||'')),'Rich Menu母稿路徑錯誤');
+          const artwork=rich.readArtwork();
+          must(!/<text\b/i.test(artwork),'Rich Menu繁中仍依賴主機字型');
+          must(!/<image\b/i.test(artwork),'Rich Menu仍內嵌照片或舊底圖');
+          const menu=rich.menuDefinition();
+          same(menu.areas.length,6,'Rich Menu格數');
+          must(JSON.stringify(menu.areas.map(a=>a.action.label))===JSON.stringify(['看產品','購物車','幫我推薦','搭配組合','怎麼使用','直接下單']),'Rich Menu六格名稱不同步');
+          must(JSON.stringify(menu.areas.map(a=>a.action.text))===JSON.stringify(['看產品','查看購買清單','幫我推薦','搭配組合','怎麼使用','直接下單']),'Rich Menu六格傳送文字不同步');
 
-          for (const retired of [
-            '.github/workflows/line-closeout-status-once.yml',
-            '.github/workflows/one-time-update-drink-pricing-20260806.yml',
-            '.github/workflows/sync-formal-line-media.yml',
-            'tools/sync-formal-line-media.py',
-          ]) must(!fs.existsSync(retired), `退役同步仍存在：${retired}`);
+          for(const retired of ['.github/workflows/line-closeout-status-once.yml','.github/workflows/one-time-update-drink-pricing-20260806.yml','.github/workflows/sync-formal-line-media.yml','tools/sync-formal-line-media.py'])must(!fs.existsSync(retired),`退役同步仍存在：${retired}`);
+          console.log(`PASS TS-LINE ${pkg.version}: current specs/usage, six product images, six dm-final DMs, trial poster, Rich Menu and webhook/cart/order runtime are aligned.`);
+          NODE
 
-          console.log(`PASS TS-LINE ${pkg.version}: current authority, customer-display product cards, separate DM/trial media, six-grid native Rich Menu, webhook/cart/order runtime preserved.`);
+      - name: Verify maintenance mode remains nonblocking
+        run: |
+          node - <<'NODE'
+          const mode=require('./guard-mode.json');
+          if(mode.mode!=='paused_for_full_system_update'||mode.blocking_runtime_guards!==false||mode.keep_minimum_safety!==true)throw new Error('maintenance guard mode changed unexpectedly');
+          console.log('PASS: automatic blockers remain paused; current full release audit is manual-only during cleanup.');
           NODE
 
       - name: Restore generated mirror and ensure audit is read-only
