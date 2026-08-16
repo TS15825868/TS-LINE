@@ -1,0 +1,33 @@
+{
+  "version": "2026-08-17-social-content-authority-v1",
+  "brand": "仙加味",
+  "status": "pending_review_only",
+  "total_active_working_posts": 76,
+  "published_history_preserved": true,
+  "releases": [
+    {
+      "name": "priority10",
+      "count": 10,
+      "authority": "https://ts15825868.github.io/xianjiawei/images/posts/priority10-v20260817/manifest.json"
+    },
+    {
+      "name": "remainder66",
+      "count": 66,
+      "authority": "https://ts15825868.github.io/xianjiawei/images/posts/remainder66-v20260817/manifest.json"
+    }
+  ],
+  "rules": {
+    "lifestyle_context_required": true,
+    "brand_or_product_link_required": true,
+    "copy_image_match_required": true,
+    "duplicate_copy_forbidden": true,
+    "duplicate_image_forbidden": true,
+    "duplicate_published_angle_forbidden": true,
+    "website_q_mascot_required": true,
+    "official_product_art_required": true,
+    "ai_product_redraw_forbidden": true,
+    "blocked_public_name": "台興山產",
+    "approval_required": true,
+    "auto_publish": false
+  }
+}
