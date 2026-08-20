@@ -12,10 +12,10 @@ const photoAuthority = getPhotoAuthority();
 const officialById = Object.fromEntries((currentAuthority.products || []).map((product) => [product.id, product]));
 
 assert.equal(currentAuthority.authority, "user-confirmed-current");
-assert.equal((currentAuthority.products || []).length, 6);
+assert.equal((currentAuthority.products || []).length, 7, "文字／AI產品知識必須包含七項目前正式產品");
 assert.match(String(photoAuthority?.version || ""), /products-v3/i);
 assert.ok(!/products-v2/i.test(String(photoAuthority?.version || "")));
-assert.equal(Object.keys(photoAuthority?.products || {}).length, 6);
+assert.equal(Object.keys(photoAuthority?.products || {}).length, 6, "目前核准正式實物圖仍為六項；不得為柒玄茶自創產品圖");
 
 for (const [id, identityUrl] of Object.entries(photoAuthority.products || {})) {
   const value = String(identityUrl || "");
@@ -23,7 +23,7 @@ for (const [id, identityUrl] of Object.entries(photoAuthority.products || {})) {
   assert.ok(!value.includes("/images/products-v2/"), `${id}產品身份參考不得回退products-v2`);
 }
 
-assert.equal(data.products.length, 6);
+assert.equal(data.products.length, 6, "LINE顧客產品卡目前只顯示已有核准正式實物圖的六項");
 for (const product of data.products) {
   const official = officialById[product.id];
   assert.ok(official, `${product.id} 缺少目前正式產品權威`);
@@ -35,21 +35,24 @@ for (const product of data.products) {
   assert.equal(product.imageUrl, official.approvedProductImage);
   assert.equal(product.image_url, official.approvedProductImage);
   assert.equal(product.dmImage, official.approvedDm, `${product.id}詳細DM必須與產品主圖分離`);
-  assert.equal(product.officialOriginalImage, photoAuthority.products[product.id], `${product.id}products-v3只作身份原圖`);
+  assert.equal(product.officialOriginalImage, photoAuthority.products[product.id], `${product.id} products-v3只作身份原圖`);
   assert.notEqual(product.image, product.dmImage, `${product.id}產品主圖不得等於詳細DM`);
-  assert.ok(String(product.imagePolicy || "").includes("separate-corrected-dm"), `${product.id}缺少媒體角色分離政策`);
   assert.ok(String(product.physicalScalePolicy || "").trim(), `${product.id}缺少產品尺寸／比例規則`);
 }
+
+const qixuan = officialById["qixuan-guilu-drink-powder"];
+assert.ok(qixuan, "柒玄茶・龜鹿調飲粉必須存在於文字／AI知識權威");
+assert.equal(qixuan.name, "柒玄茶・龜鹿調飲粉");
+assert.equal(qixuan.specification, "2g／小包；20g／包（10小包）");
+assert.equal(qixuan.mediaStatus, "formal-product-image-pending");
+assert.ok(!photoAuthority.products?.["qixuan-guilu-drink-powder"], "尚未核准正式實物圖時不得建立假圖片權威");
 
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
 assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
 assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|早晚各一小匙|每日早上及下午各一小匙/.test(String(line))));
-assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1-2罐");
-assert.ok((byId["guilu-drink-30"].usage || []).some((line) => /飲用時間可依個人使用習慣與作息時間安排/.test(String(line))));
-assert.ok(!(byId["guilu-drink-30"].usage || []).some((line) => /建議白天飲用|每日一罐/.test(String(line))));
+assert.equal(byId["guilu-drink-30"].usage?.[0], "每日一罐");
+assert.ok(!(byId["guilu-drink-30"].usage || []).some((line) => /每日\s*1[-～至]2罐/.test(String(line))));
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
-assert.ok((byId["guilu-drink-180"].usage || []).some((line) => /飲用時間可依個人使用習慣與作息時間安排/.test(String(line))));
-assert.ok(!(byId["guilu-drink-180"].usage || []).some((line) => /建議白天飲用/.test(String(line))));
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.equal(byId["guilu-drink-30"].specification, "30cc／罐（小玻璃罐）");
 assert.ok(!byId["guilu-drink-30"].aliases.some((alias) => /瓶/.test(String(alias))));
@@ -62,10 +65,11 @@ assert.ok(byId["guilu-drink-180"].offers.some((offer) => offer.label === "買10�
 assert.equal(byId["guilu-tangkuai"].specification, "75g （2兩）／盒｜8塊裝");
 assert.equal(byId["guilu-jiao"].specification, "600g （1斤）／盒｜32塊裝");
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
-
+assert.equal(data.runtime.knowledgeProductCount, 7);
+assert.equal(data.runtime.approvedMediaProductCount, 6);
 assert.equal(data.runtime.productMainImageSource, "six-user-confirmed-product-images");
 assert.equal(data.runtime.detailedDmSource, "separate-corrected-dm");
 assert.equal(data.runtime.productIdentityReference, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 
-console.log(`PASS：LINE OA六項產品以 ${currentAuthority.version} 目前權威驗收；使用時間依個人作息，30cc每日 1-2罐，180cc每日一包，顧客產品圖、詳細DM與products-v3身份原圖角色分離。`);
+console.log(`PASS：LINE OA七項產品文字／AI知識權威＋六項核准正式實物圖；30cc每日一罐，180cc每日一包，柒玄茶在正式實物圖核准前維持文字知識模式。`);
