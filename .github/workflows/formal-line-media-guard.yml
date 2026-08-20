@@ -34,6 +34,7 @@ jobs:
           const byId=Object.fromEntries((current.products||[]).map(p=>[p.id,p]));
           const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
           const eq=(actual,expected,label)=>must(actual===expected,`${label}: ${actual} !== ${expected}`);
+          const current30='每日 1–2 罐';
           const dmExpected={
             'guilu-gao':'01_guilu-gao-100g-dm.jpg',
             'guilu-drink-30':'02_guilu-drink-30cc-dm-official-v20260814.jpg',
@@ -49,7 +50,7 @@ jobs:
           eq(byId['guilu-gao']?.specification,'100g／罐','龜鹿膏規格');
           eq(byId['guilu-gao']?.usagePrimary,'食用時間可依個人使用習慣與作息時間安排','龜鹿膏目前用法');
           eq(byId['guilu-drink-30']?.specification,'30cc／罐（小玻璃罐）','30cc主規格');
-          eq(byId['guilu-drink-30']?.usagePrimary,'每日一罐','30cc目前用法');
+          eq(byId['guilu-drink-30']?.usagePrimary,current30,'30cc目前用法');
           eq(byId['guilu-drink-30']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','30cc時間原則');
           eq(byId['guilu-drink-180']?.specification,'180cc／包（鋁袋）','180cc主規格');
           eq(byId['guilu-drink-180']?.usagePrimary,'每日一包','180cc目前用法');
@@ -63,6 +64,7 @@ jobs:
           must(!photo.products?.['qixuan-guilu-drink-powder'],'柒玄茶尚未核准正式實物圖時不得建立假產品圖');
           must(String(byId['guilu-tangkuai']?.detailUnitRule||'').includes('可顯示完整規格'),'湯塊顧客完整文字規格政策缺失');
           must(String(byId['guilu-jiao']?.detailUnitRule||'').includes('可顯示完整規格'),'龜鹿膠顧客完整文字規格政策缺失');
+          must((current.guardRules||[]).some(x=>String(x).includes(current30)),'目前守門規則未鎖定30cc每日1–2罐');
           must(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(byId['guilu-drink-30'])),'30cc不得稱瓶');
 
           for(const [id,file] of Object.entries(dmExpected)){
@@ -84,7 +86,7 @@ jobs:
           must(String(media.source_product_image?.['龜鹿飲30cc玻璃罐']||'').includes('/images/customer-display-v20260812/guilu-drink-30cc.avif'),'30cc產品圖不是目前正式產品圖');
           must((current.guardRules||[]).some(x=>String(x).includes('產品圖、詳細DM、試喝圖三個媒體角色必須分開')),'產品／DM／試喝媒體角色未分離');
           must((media.hard_rules||[]).some(x=>String(x).includes('AI不得重畫正式產品本體')),'禁止AI重畫產品規則缺失');
-          console.log('PASS: seven LINE product knowledge items + six approved product images/DMs + trial + identity authority are aligned.');
+          console.log('PASS: seven LINE product knowledge items + six approved product images/DMs + current 30cc daily 1–2 cans + trial + identity authority are aligned.');
           NODE
 
       - name: Validate current media routes and Flex behavior
