@@ -22,7 +22,7 @@ const guardMode = fs.existsSync(path.join(__dirname,"guard-mode.json")) ? JSON.p
 const must = (ok,msg) => { if(!ok) throw new Error(msg); };
 
 assert.equal(authority.authority, "user-confirmed-current");
-assert.equal((authority.products || []).length, 7, "目前文字／AI知識必須七項");
+assert.equal((authority.products || []).length, 7, "目前LINE文字／AI知識必須七項");
 assert.equal(data.products.length, 6, "顧客產品卡目前維持六項已有核准實物圖產品");
 assert.equal(data.runtime?.knowledgeProductCount, 7);
 assert.equal(data.runtime?.approvedMediaProductCount, 6);
@@ -75,8 +75,8 @@ assert.ok(!photoAuthority.products?.["qixuan-guilu-drink-powder"], "柒玄茶尚
 
 assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
 must(!(byId["guilu-gao"].usage || []).some(line => /一天一次一小匙|早晚各一小匙|每日早上及下午各一小匙/.test(String(line))), "龜鹿膏不得回退舊固定時段用法");
-assert.equal(byId["guilu-drink-30"].usage?.[0], "每日一罐");
-must(!(byId["guilu-drink-30"].usage || []).some(line => /每日\s*1[-～至]2罐/.test(String(line))), "30cc不得回退每日1-2罐");
+assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
+must(!(byId["guilu-drink-30"].usage || []).some(line => /^每日一罐$/.test(String(line).trim())), "30cc不得回退每日一罐");
 must((byId["guilu-drink-30"].usage || []).some(line => String(line).includes("飲用時間可依個人使用習慣與作息時間安排")), "30cc必須保留個人作息時間原則");
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 must((byId["guilu-drink-180"].usage || []).some(line => String(line).includes("飲用時間可依個人使用習慣與作息時間安排")), "180cc必須保留每日一包並取消固定白天時段");
@@ -123,6 +123,11 @@ for (const [id,item] of Object.entries(visual.PRODUCTS || {})) {
 }
 assert.match(visual.TRIAL_IMAGE,/\/assets\/formal-trial\/trial\.jpg\?v=/);
 assert.equal(visual.productHero("guilu-drink-30").aspectMode,"fit");
+const outboundProbe = { type:"bubble", body:{ type:"box", layout:"vertical", contents:[{type:"text", text:"龜鹿膏｜100g／罐"}] } };
+visual.applyVisualFix(outboundProbe);
+assert.ok(outboundProbe.xjwProductPhoto, "內部視覺判斷標記應先建立");
+visual.stripInternalMetadata(outboundProbe);
+must(!/"xjw/i.test(JSON.stringify(outboundProbe)), "送入LINE Messaging API前不得保留任何xjw內部欄位");
 
 assert.match(String(rich.VERSION || ""),/rich-menu/i);
 assert.equal(rich.SINGLE_IMAGE_ONLY,true);
@@ -139,7 +144,7 @@ for (const token of ["申請試喝","價格方案","搭配組合","怎麼使用"
 assert.ok(serverSource.includes('res.json({ ok: true });'));
 assert.ok(serverSource.indexOf('res.json({ ok: true });') < serverSource.indexOf('Promise.allSettled((req.body.events || []).map(handleEvent))'));
 
-assert.ok(syncSource.includes("public-product-master.json"), "LINE prestart必須以七項公開產品母資料為文字SSOT");
+assert.ok(syncSource.includes("public-product-master.json"), "LINE prestart需讀官網六項公開母資料，並保留LINE第七項柒玄茶文字知識，不得用固定產品數互相覆蓋");
 assert.ok(syncSource.includes("assertCurrent"));
 assert.ok(syncSource.includes("CURRENT_DM"));
 assert.equal(packageJson.main,"server.js");
@@ -150,4 +155,4 @@ if (guardMode.mode === "paused_for_full_system_update") assert.equal(guardMode.b
 
 for (const retired of [".github/workflows/line-closeout-status-once.yml",".github/workflows/one-time-update-drink-pricing-20260806.yml",".github/workflows/sync-formal-line-media.yml","tools/sync-formal-line-media.py"]) assert.equal(fs.existsSync(path.join(__dirname,retired)),false,`退役同步仍存在：${retired}`);
 
-console.log(`PASS：LINE OA readiness依 ${authority.version} 目前權威驗收：七項產品文字／AI知識、六項核准實物圖與DM、30cc每日一罐、180cc每日一包、8/14試喝、價格、交期、Webhook、Rich Menu與守門員均一致。`);
+console.log(`PASS：LINE OA readiness依 ${authority.version} 目前權威驗收：LINE七項文字／AI知識、六項核准實物圖與DM、30cc每日 1–2 罐、180cc每日一包、試喝、價格、交期、Webhook、Rich Menu與Outbound payload均一致。`);
