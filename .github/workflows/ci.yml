@@ -51,6 +51,7 @@ jobs:
           const {applyMaster}=require('./product-sales-master');
           const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
           const same=(a,b,msg)=>must(a===b,`${msg}: ${a} !== ${b}`);
+          const current30='每日 1–2 罐';
           const dmExpected={
             'guilu-gao':'/images/dm-final/01_guilu-gao-100g-dm.jpg',
             'guilu-drink-30':'/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg',
@@ -89,7 +90,7 @@ jobs:
           same(official['qixuan-guilu-drink-powder']?.mediaStatus,'formal-product-image-pending','柒玄茶媒體狀態');
           must(!official['qixuan-guilu-drink-powder']?.approvedProductImage,'柒玄茶尚未核准正式實物圖時不得建立假產品圖');
           same(official['guilu-gao']?.usagePrimary,'食用時間可依個人使用習慣與作息時間安排','龜鹿膏目前用法');
-          same(official['guilu-drink-30']?.usagePrimary,'每日一罐','30cc目前用法');
+          same(official['guilu-drink-30']?.usagePrimary,current30,'30cc目前用法');
           same(official['guilu-drink-30']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','30cc時間原則');
           same(official['guilu-drink-180']?.usagePrimary,'每日一包','180cc目前用法');
           same(official['guilu-drink-180']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','180cc時間原則');
@@ -112,7 +113,7 @@ jobs:
           }
           same(data.runtime?.knowledgeProductCount,7,'LINE執行資料知識產品數');
           same(data.runtime?.approvedMediaProductCount,6,'LINE執行資料核准媒體產品數');
-          same(byId['guilu-drink-30']?.usage?.[0],'每日一罐','30cc執行用法');
+          same(byId['guilu-drink-30']?.usage?.[0],current30,'30cc執行用法');
           same(byId['guilu-drink-30']?.price,60,'30cc售價');
           same(byId['guilu-drink-180']?.price,200,'180cc售價');
           same((byId['guilu-drink-30']?.offers||[]).find(o=>o.label==='買10送1')?.total,600,'30cc買10送1');
@@ -120,6 +121,7 @@ jobs:
 
           must(Array.isArray(ai.answers)&&ai.answers.length>=5,'LINE自然語言AI問答權威缺失');
           for(const id of ['difference-gao-drink','gift-for-elder','first-time-choice','drink-30-vs-180','all-products'])must(ai.answers.some(x=>x.id===id),`LINE自然語言AI問答缺少 ${id}`);
+          must(ai.rules.some(x=>String(x).includes(current30)),'LINE AI問答規則未鎖定30cc每日1–2罐');
           must(String(media.customer_text_spec_policy||'').includes('顧客產品文字'),'LINE媒體權威缺少顧客完整文字規格政策');
           for(const [name,url] of Object.entries(media.source_product_dm||{}))must(url.includes('/images/dm-final/'),`${name}媒體權威仍非目前dm-final`);
           const trial=current.trialPosterAuthority||{};
@@ -140,7 +142,7 @@ jobs:
           must(JSON.stringify(menu.areas.map(a=>a.action.text))===JSON.stringify(['看產品','查看購買清單','幫我推薦','搭配組合','怎麼使用','直接下單']),'Rich Menu六格傳送文字不同步');
 
           for(const retired of ['.github/workflows/line-closeout-status-once.yml','.github/workflows/one-time-update-drink-pricing-20260806.yml','.github/workflows/sync-formal-line-media.yml','tools/sync-formal-line-media.py'])must(!fs.existsSync(retired),`退役同步仍存在：${retired}`);
-          console.log(`PASS TS-LINE ${pkg.version}: seven-product knowledge, six approved product images/DMs, current drink usage, trial poster, Rich Menu and webhook/cart/order runtime are aligned.`);
+          console.log(`PASS TS-LINE ${pkg.version}: seven-product knowledge, six approved product images/DMs, current 30cc daily 1–2 cans, trial poster, Rich Menu and webhook/cart/order runtime are aligned.`);
           NODE
 
       - name: Verify maintenance mode remains nonblocking
