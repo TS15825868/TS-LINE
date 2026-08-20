@@ -13,6 +13,7 @@ const MASTER_URL = process.env.PRODUCT_MASTER_URL || "https://raw.githubusercont
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 const MEDIA_PRODUCT_IDS = ["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
 const KNOWLEDGE_PRODUCT_IDS = [...MEDIA_PRODUCT_IDS,"qixuan-guilu-drink-powder"];
+const CURRENT_30_USAGE = "每日 1–2 罐";
 const CURRENT_DM = Object.freeze({
   "guilu-gao": "/images/dm-final/01_guilu-gao-100g-dm.jpg",
   "guilu-drink-30": "/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg",
@@ -192,8 +193,8 @@ function assertCurrent(merged, authority, photoAuthority, master) {
   if(gao?.usagePrimary!=="食用時間可依個人使用習慣與作息時間安排")throw new Error("龜鹿膏不得回退固定早上／下午時段");
   const drink30=(merged.products||[]).find(item=>item.id==="guilu-drink-30");
   const drink30Rule=official.get("guilu-drink-30");
-  if(drink30Rule?.usagePrimary!=="每日一罐"||drink30Rule?.usageTiming!=="飲用時間可依個人使用習慣與作息時間安排")throw new Error("30cc目前新版用法／時間原則不同步");
-  if(drink30?.usage?.[0]!=="每日一罐")throw new Error("30cc執行資料不得回退每日1-2罐");
+  if(drink30Rule?.usagePrimary!==CURRENT_30_USAGE||drink30Rule?.usageTiming!=="飲用時間可依個人使用習慣與作息時間安排")throw new Error("30cc目前新版用法／時間原則不同步");
+  if(drink30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error("30cc執行資料必須維持每日 1–2 罐，不得回退每日一罐");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(drink30)))throw new Error("30cc不得出現瓶型舊稱");
 
   const tangkuai=official.get("guilu-tangkuai");
