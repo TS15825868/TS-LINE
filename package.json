@@ -17,5 +17,5 @@
     "check:legacy-social": "node --check social-server.js && node --check internal-entry.js && node --check social-publish-guard.js && node --check social-review-only-mode.js"
   },
   "dependencies": {"@line/bot-sdk": "10.8.0", "express": "^4.18.2", "satori": "0.28.0", "sharp": "0.35.3"},
-  "description": "仙加味 LINE OA 正式獨立服務｜六項目前正式產品與規格｜產品圖／詳細DM／2026-08-14試喝海報分離｜products-v3身份比例參考｜單一完整六格Rich Menu｜Webhook快速回覆｜龜鹿飲5～7工作天、其他產品依現貨"
+  "description": "仙加味 LINE OA 正式獨立服務｜七項目前正式產品文字／AI知識｜六項已核准產品圖與詳細DM｜第七項柒玄茶未核准實物圖前維持文字模式｜單一完整六格Rich Menu｜Webhook快速回覆｜龜鹿飲5～7工作天、其他產品依現貨"
 }
