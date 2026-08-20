@@ -7,9 +7,13 @@ const { applyMaster, getPhotoAuthority } = require("../product-sales-master");
 const ROOT = path.resolve(__dirname, "..");
 const DATA_PATH = path.join(ROOT, "data.json");
 const AUTHORITY_PATH = path.join(ROOT, "assets/data/official-products.json");
+// 舊 product-master 目前只承擔「六項已有正式產品圖／DM的通路媒體與核心商品資料」同步；
+// 七項公開文字／AI知識權威由 official-products.json.publicAuthority 指向 public-product-master.json，
+// 不得再用六項媒體母檔把第七項柒玄茶刪掉，也不得把30cc新版用法改回舊值。
 const MASTER_URL = process.env.PRODUCT_MASTER_URL || "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/product-master.json";
 const stable = (value) => JSON.stringify(value, null, 2) + "\n";
 const PRODUCT_IDS = ["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
+const KNOWLEDGE_ONLY_IDS = ["qixuan-guilu-drink-powder"];
 const SHARED_FIELDS = [
   "series","name","displayName","specification","size","form","package","description","ingredients",
   "usagePrimary","usageTiming","usage","storage","fit","purpose","purposeDirection","fulfillmentType",
@@ -25,21 +29,21 @@ const CURRENT_DM = Object.freeze({
 });
 
 function validateMaster(master){
-  if(master?.authority!=="xianjiawei-product-ssot")throw new Error("產品母資料 authority 錯誤");
-  if(master?.productCount!==6||!Array.isArray(master?.products)||master.products.length!==6)throw new Error("產品母資料必須剛好6項正式產品");
+  if(master?.authority!=="xianjiawei-product-ssot")throw new Error("六項媒體產品母資料 authority 錯誤");
+  if(master?.productCount!==6||!Array.isArray(master?.products)||master.products.length!==6)throw new Error("六項媒體產品母資料必須剛好6項已有正式產品圖／DM的產品");
   const ids=master.products.map(item=>item.id);
-  if(JSON.stringify(ids)!==JSON.stringify(PRODUCT_IDS))throw new Error(`產品母資料品項或順序錯誤：${ids.join(",")}`);
+  if(JSON.stringify(ids)!==JSON.stringify(PRODUCT_IDS))throw new Error(`六項媒體產品母資料品項或順序錯誤：${ids.join(",")}`);
   for(const product of master.products){
     for(const field of ["id","name","specification","ingredients","fulfillmentType","approvedProductImage","approvedDm","officialOriginalImage"]){
       const value=product[field];
-      if(value===undefined||value===null||value===""||(Array.isArray(value)&&!value.length))throw new Error(`${product.id} 母資料缺少 ${field}`);
+      if(value===undefined||value===null||value===""||(Array.isArray(value)&&!value.length))throw new Error(`${product.id} 六項媒體母資料缺少 ${field}`);
     }
   }
 }
 
 async function fetchMaster(){
-  const response=await fetch(MASTER_URL,{headers:{"user-agent":"xianjiawei-lineoa-product-ssot"}});
-  if(!response.ok)throw new Error(`無法下載產品母資料：HTTP ${response.status}`);
+  const response=await fetch(MASTER_URL,{headers:{"user-agent":"xianjiawei-lineoa-product-media-ssot"}});
+  if(!response.ok)throw new Error(`無法下載六項媒體產品母資料：HTTP ${response.status}`);
   const master=await response.json();
   validateMaster(master);
   return master;
@@ -47,7 +51,7 @@ async function fetchMaster(){
 
 function mergeAuthority(localAuthority,master){
   const localById=new Map((localAuthority.products||[]).map(item=>[item.id,item]));
-  const products=master.products.map(source=>{
+  const mediaProducts=master.products.map(source=>{
     const local=localById.get(source.id)||{};
     return {
       ...local,
@@ -56,27 +60,34 @@ function mergeAuthority(localAuthority,master){
       specification:source.specification,
       ...(source.package?{package:source.package}:{}),
       ingredients:[...source.ingredients],
-      ...(source.usagePrimary?{usagePrimary:source.usagePrimary}:{}),
-      ...(source.usageTiming?{usageTiming:source.usageTiming}:{}),
-      ...(source.detailUnitApprox?{detailUnitApprox:source.detailUnitApprox}:{}),
+      // 使用方式與每塊約重優先保留目前新版 authority；六項舊媒體母檔不得覆蓋新版正確文字。
+      ...((local.usagePrimary||source.usagePrimary)?{usagePrimary:local.usagePrimary||source.usagePrimary}:{}),
+      ...((local.usageTiming||source.usageTiming)?{usageTiming:local.usageTiming||source.usageTiming}:{}),
+      ...((local.detailUnitApprox||source.detailUnitApprox)?{detailUnitApprox:local.detailUnitApprox||source.detailUnitApprox}:{}),
       fulfillmentType:source.fulfillmentType,
       approvedProductImage:source.approvedProductImage,
       approvedDm:source.approvedDm,
       productMasterVersion:master.version
     };
   });
+  const knowledgeOnly=KNOWLEDGE_ONLY_IDS.map(id=>localById.get(id)).filter(Boolean).map(item=>({...item}));
+  const products=[...mediaProducts,...knowledgeOnly];
   return {
     ...localAuthority,
-    version:`${master.version}-line-channel-v1`,
+    version:`${master.version}-line-seven-knowledge-v2`,
     authority:"user-confirmed-current",
-    publicAuthority:MASTER_URL,
+    publicAuthority:localAuthority.publicAuthority||"https://ts15825868.github.io/xianjiawei/public-product-master.json",
+    aiAnswerAuthority:localAuthority.aiAnswerAuthority||"https://ts15825868.github.io/xianjiawei/ai-answers.json",
+    mediaProductMasterAuthority:MASTER_URL,
     productMasterAuthority:master.authority,
     productMasterVersion:master.version,
     products,
+    knowledgeProductIds:products.map(item=>item.id),
+    approvedMediaProductIds:[...PRODUCT_IDS],
     fulfillmentPolicy:{...(localAuthority.fulfillmentPolicy||{}),...(master.fulfillmentPolicy||{})},
     guardRules:[
-      `六項產品核心事實唯一來源：${MASTER_URL} (${master.version})`,
-      ...((localAuthority.guardRules||[]).filter(rule=>!String(rule).startsWith("六項產品核心事實唯一來源：")))
+      `七項文字／AI知識使用目前公開權威；六項正式產品圖／DM由媒體母檔同步：${MASTER_URL} (${master.version})`,
+      ...((localAuthority.guardRules||[]).filter(rule=>!String(rule).startsWith("六項產品核心事實唯一來源：")&&!String(rule).startsWith("七項文字／AI知識使用目前公開權威；")))
     ]
   };
 }
@@ -108,6 +119,7 @@ function mergeData(localData,master){
     ...localData,
     products,
     fulfillmentPolicy:{...(localData.fulfillmentPolicy||{}),...(master.fulfillmentPolicy||{})},
+    // 這兩個欄位代表可直接顯示正式產品圖／DM的六項通路商品，不代表AI文字知識總數。
     officialProductIds:[...master.officialProductIds],
     officialProductCount:master.productCount,
     productMasterVersion:master.version,
@@ -118,15 +130,16 @@ function mergeData(localData,master){
 
 function assertCurrent(merged, authority, photoAuthority, master) {
   if (authority?.authority !== "user-confirmed-current") throw new Error("LINE目前產品權威不是user-confirmed-current");
-  if(authority?.productMasterVersion!==master.version||merged?.productMasterVersion!==master.version)throw new Error("LINE未同步目前產品母資料版本");
+  if(authority?.productMasterVersion!==master.version||merged?.productMasterVersion!==master.version)throw new Error("LINE六項媒體商品未同步目前產品母資料版本");
   const official = new Map((authority.products || []).map((item) => [item.id, item]));
-  if (official.size !== 6 || (merged.products || []).length !== 6) throw new Error("LINE正式產品必須剛好6項");
+  if (official.size !== 7) throw new Error("LINE文字／AI產品知識必須剛好7項");
+  if ((merged.products || []).length !== 6) throw new Error("LINE顧客產品卡目前必須剛好6項已有核准正式實物圖產品");
   for (const id of PRODUCT_IDS) {
     const product=(merged.products||[]).find(item=>item.id===id), rule=official.get(id), source=(master.products||[]).find(item=>item.id===id), photo=String(photoAuthority?.products?.[id]||"").trim();
     if(!product||!rule||!source||!photo)throw new Error(`${id}缺少目前正式產品權威`);
-    if(product.name!==source.name||rule.name!==source.name)throw new Error(`${id}正式名稱未由母資料同步`);
-    if(product.specification!==source.specification||product.size!==source.specification||product.spec!==source.specification||rule.specification!==source.specification)throw new Error(`${id}正式規格未由母資料同步`);
-    if(JSON.stringify(product.ingredients)!==JSON.stringify(source.ingredients))throw new Error(`${id}成分未由母資料同步`);
+    if(product.name!==source.name||rule.name!==source.name)throw new Error(`${id}正式名稱未由六項媒體母資料同步`);
+    if(product.specification!==source.specification||product.size!==source.specification||product.spec!==source.specification||rule.specification!==source.specification)throw new Error(`${id}正式規格未由六項媒體母資料同步`);
+    if(JSON.stringify(product.ingredients)!==JSON.stringify(source.ingredients))throw new Error(`${id}成分未由六項媒體母資料同步`);
     const productImage=String(source.approvedProductImage||"").trim(), detailedDm=String(source.approvedDm||"").trim();
     if(!productImage||!detailedDm)throw new Error(`${id}缺少正式產品圖或詳細DM`);
     if(!detailedDm.includes(CURRENT_DM[id]))throw new Error(`${id}詳細DM不是目前dm-final權威：${detailedDm}`);
@@ -136,17 +149,22 @@ function assertCurrent(merged, authority, photoAuthority, master) {
     if(String(product.officialOriginalImage||"")!==photo)throw new Error(`${id}.officialOriginalImage 必須保留products-v3實物身份參考`);
   }
 
-  const gao=(master.products||[]).find(item=>item.id==="guilu-gao");
+  const qixuan=official.get("qixuan-guilu-drink-powder");
+  if(!qixuan||qixuan.name!=="柒玄茶・龜鹿調飲粉"||qixuan.specification!=="2g／小包；20g／包（10小包）")throw new Error("柒玄茶文字／AI知識權威缺失或規格錯誤");
+  if(String(qixuan.approvedProductImage||"").trim()||photoAuthority?.products?.["qixuan-guilu-drink-powder"])throw new Error("柒玄茶尚未核准正式實物圖時不得建立假產品圖");
+
+  const gao=official.get("guilu-gao");
   if(gao?.usagePrimary!=="食用時間可依個人使用習慣與作息時間安排")throw new Error("龜鹿膏不得回退固定早上／下午時段");
   const drink30=(merged.products||[]).find(item=>item.id==="guilu-drink-30");
-  const drink30Master=(master.products||[]).find(item=>item.id==="guilu-drink-30");
-  if(drink30Master?.usagePrimary!=="每日 1-2罐"||drink30Master?.usageTiming!=="飲用時間可依個人使用習慣與作息時間安排")throw new Error("30cc母資料用法／時間原則不同步");
+  const drink30Rule=official.get("guilu-drink-30");
+  if(drink30Rule?.usagePrimary!=="每日一罐"||drink30Rule?.usageTiming!=="飲用時間可依個人使用習慣與作息時間安排")throw new Error("30cc目前新版用法／時間原則不同步");
+  if(drink30?.usage?.[0]!=="每日一罐")throw new Error("30cc執行資料不得回退每日1-2罐");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(drink30)))throw new Error("30cc不得出現瓶型舊稱");
 
-  const tangkuai=(master.products||[]).find(item=>item.id==="guilu-tangkuai");
-  if(tangkuai?.specification!=="75g （2兩）／盒｜8塊裝"||tangkuai?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊母資料規格／約重不同步");
-  const jiao=(master.products||[]).find(item=>item.id==="guilu-jiao");
-  if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||jiao?.detailUnitApprox!=="每塊約18.75 g")throw new Error("龜鹿膠母資料規格／約重不同步");
+  const tangkuai=official.get("guilu-tangkuai");
+  if(tangkuai?.specification!=="75g （2兩）／盒｜8塊裝"||tangkuai?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊目前規格／約重不同步");
+  const jiao=official.get("guilu-jiao");
+  if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||!/^每塊約18\.75\s*g$/.test(String(jiao?.detailUnitApprox||"")))throw new Error("龜鹿膠目前規格／約重不同步");
 
   const trial=authority.trialPosterAuthority||{};
   const trialDisplay=String(trial.currentDisplay||"").trim();
@@ -179,10 +197,10 @@ async function main(){
     if(previous!==next)fs.writeFileSync(DATA_PATH,next,"utf8");
   }else{
     const currentAuthority=stable(localAuthority);
-    if(currentAuthority!==stable(nextAuthority))throw new Error("LINE official-products.json 尚未同步目前產品母資料；請執行 npm run sync:catalog");
-    if(stable(raw)!==stable(merged))throw new Error("LINE data.json 尚未同步目前產品母資料；請執行 npm run sync:catalog");
+    if(currentAuthority!==stable(nextAuthority))throw new Error("LINE official-products.json 尚未同步目前六項媒體母資料／七項知識權威；請執行 npm run sync:catalog");
+    if(stable(raw)!==stable(merged))throw new Error("LINE data.json 尚未同步目前執行資料；請執行 npm run sync:catalog");
   }
-  console.log(`PASS: LINE product SSOT ${master.version} ${mode}; channel prices/promotions remain local.`);
+  console.log(`PASS: LINE media SSOT ${master.version} ${mode}; seven knowledge products + six approved media products; channel prices/promotions remain local.`);
 }
 
 main().catch(error=>{
