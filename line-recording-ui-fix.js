@@ -6,12 +6,13 @@
  * - 「看實際產品照片」連到 products-v3 身份原圖，不拿 DM 取代產品本體。
  * - 試喝卡固定使用 2026-08-14 使用者核准試喝海報 JPEG route。
  * - 非產品說明卡才使用 LINE OA 專用 Q 版小老闆情境圖。
+ * - xjw* 欄位僅供內部視覺判斷，送入 LINE Messaging API 前必須完整移除。
  */
 const line = require("@line/bot-sdk");
 const currentAuthority = require("./assets/data/official-products.json");
 const photoAuthority = require("./line-product-photo-authority.json");
 
-const VERSION = "current-recording-ui-media-role-separation-v20260814";
+const VERSION = "current-recording-ui-media-role-separation-v20260820-outbound-scrub";
 const PRODUCT_IMAGE_VERSION = String(currentAuthority.version || "current-formal-media");
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
@@ -177,11 +178,30 @@ function applyVisualFix(node) {
   if (node.type === "carousel") pruneRepeatedMascotHeroes(node);
   return node;
 }
+function stripInternalMetadata(node) {
+  if (!node || typeof node !== "object") return node;
+  if (Array.isArray(node)) {
+    for (const item of node) stripInternalMetadata(item);
+    return node;
+  }
+  for (const key of Object.keys(node)) {
+    if (/^xjw/i.test(key)) {
+      delete node[key];
+      continue;
+    }
+    stripInternalMetadata(node[key]);
+  }
+  return node;
+}
 
 const Client = line?.messagingApi?.MessagingApiClient;
 if (Client?.prototype?.replyMessage && !Client.prototype.__xjwRecordingUiFixInstalled) {
   const previous = Client.prototype.replyMessage;
-  Client.prototype.replyMessage = function patchedRecordingUiReply(payload) { applyVisualFix(payload?.messages); return previous.call(this, payload); };
+  Client.prototype.replyMessage = function patchedRecordingUiReply(payload) {
+    applyVisualFix(payload?.messages);
+    stripInternalMetadata(payload?.messages);
+    return previous.call(this, payload);
+  };
   Object.defineProperty(Client.prototype, "__xjwRecordingUiFixInstalled", { value: true, enumerable: false });
 }
 
@@ -210,4 +230,5 @@ module.exports = {
   applyBubbleFix,
   pruneRepeatedMascotHeroes,
   applyVisualFix,
+  stripInternalMetadata,
 };
