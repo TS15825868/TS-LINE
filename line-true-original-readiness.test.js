@@ -13,7 +13,7 @@ const currentById = Object.fromEntries((current.products || []).map((item) => [i
 
 assert.match(String(authority.version || ""), /products-v3/i, "products-v3必須維持產品身份權威");
 assert.ok(!/products-v2/i.test(String(authority.version || "")));
-assert.equal(identityEntries.length, 6);
+assert.equal(identityEntries.length, 6, "目前核准正式實物圖必須維持六項");
 for (const [id, url] of identityEntries) {
   const value = String(url || "");
   assert.ok(value.includes("/images/products-v3/"), `${id}身份原圖不得離開products-v3`);
@@ -21,8 +21,10 @@ for (const [id, url] of identityEntries) {
 }
 
 assert.equal(current.authority, "user-confirmed-current");
-assert.equal((current.products || []).length, 6);
-assert.equal(data.products.length, 6);
+assert.equal((current.products || []).length, 7, "目前文字／AI產品知識必須七項");
+assert.equal(data.products.length, 6, "LINE顧客產品卡目前只顯示六項已有核准實物圖產品");
+assert.equal(currentById["qixuan-guilu-drink-powder"]?.specification, "2g／小包；20g／包（10小包）");
+assert.ok(!authority.products?.["qixuan-guilu-drink-powder"], "柒玄茶尚未核准正式實物圖時不得建立假圖片權威");
 for (const product of data.products) {
   const official = currentById[product.id];
   assert.ok(official, `${product.id}缺少目前權威`);
@@ -43,4 +45,4 @@ for (const [id, item] of Object.entries(visual.PRODUCTS || {})) {
 }
 assert.match(visual.TRIAL_IMAGE, /\/assets\/formal-trial\/trial\.jpg\?v=/);
 
-console.log(`PASS：LINE目前顧客產品圖與詳細DM分開，products-v3只作六項真實產品身份／比例參考；Flex使用LINE相容JPEG而不混用媒體角色。`);
+console.log(`PASS：LINE七項文字／AI產品知識下，六項核准顧客產品圖與詳細DM分開；products-v3只作六項真實產品身份／比例參考，柒玄茶未核准原圖前不建立假媒體。`);
