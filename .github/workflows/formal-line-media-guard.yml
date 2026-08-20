@@ -1,6 +1,6 @@
 name: 仙加味 LINE 正式媒體能力驗收（手動）
 
-# 全面整理期間 blocking guards 保持暫停；此 workflow 只手動驗目前正式媒體能力。
+# 全面整理期間 blocking guards 保持暫停；此 workflow 只手動驗目前正式媒體能力與七項文字知識。
 on:
   workflow_dispatch:
 
@@ -30,6 +30,7 @@ jobs:
           const current=JSON.parse(fs.readFileSync('assets/data/official-products.json','utf8'));
           const media=JSON.parse(fs.readFileSync('formal-media-authority-v20260810.json','utf8'));
           const trial=JSON.parse(fs.readFileSync('content/trial-campaign-visual.json','utf8'));
+          const photo=JSON.parse(fs.readFileSync('line-product-photo-authority.json','utf8'));
           const byId=Object.fromEntries((current.products||[]).map(p=>[p.id,p]));
           const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
           const eq=(actual,expected,label)=>must(actual===expected,`${label}: ${actual} !== ${expected}`);
@@ -43,24 +44,29 @@ jobs:
           };
 
           eq(current.authority,'user-confirmed-current','目前權威');
-          eq((current.products||[]).length,6,'正式產品數');
+          eq((current.products||[]).length,7,'正式文字／AI產品知識數');
+          eq(Object.keys(photo.products||{}).length,6,'目前核准正式實物圖數');
           eq(byId['guilu-gao']?.specification,'100g／罐','龜鹿膏規格');
           eq(byId['guilu-gao']?.usagePrimary,'食用時間可依個人使用習慣與作息時間安排','龜鹿膏目前用法');
           eq(byId['guilu-drink-30']?.specification,'30cc／罐（小玻璃罐）','30cc主規格');
-          eq(byId['guilu-drink-30']?.usagePrimary,'每日 1-2罐','30cc目前用法');
+          eq(byId['guilu-drink-30']?.usagePrimary,'每日一罐','30cc目前用法');
           eq(byId['guilu-drink-30']?.usageTiming,'飲用時間可依個人使用習慣與作息時間安排','30cc時間原則');
           eq(byId['guilu-drink-180']?.specification,'180cc／包（鋁袋）','180cc主規格');
           eq(byId['guilu-drink-180']?.usagePrimary,'每日一包','180cc目前用法');
           eq(byId['guilu-tangkuai']?.specification,'75g （2兩）／盒｜8塊裝','湯塊主規格');
           eq(byId['guilu-tangkuai']?.detailUnitApprox,'每塊約9.375g','湯塊每塊約重');
           eq(byId['guilu-jiao']?.specification,'600g （1斤）／盒｜32塊裝','龜鹿膠主規格');
-          eq(byId['guilu-jiao']?.detailUnitApprox,'每塊約18.75 g','龜鹿膠每塊約重');
+          eq(byId['guilu-jiao']?.detailUnitApprox,'每塊約18.75g','龜鹿膠每塊約重');
           eq(byId['luerong-fen']?.specification,'75g／罐','鹿茸粉規格');
+          eq(byId['qixuan-guilu-drink-powder']?.specification,'2g／小包；20g／包（10小包）','柒玄茶規格');
+          eq(byId['qixuan-guilu-drink-powder']?.mediaStatus,'formal-product-image-pending','柒玄茶媒體狀態');
+          must(!photo.products?.['qixuan-guilu-drink-powder'],'柒玄茶尚未核准正式實物圖時不得建立假產品圖');
           must(String(byId['guilu-tangkuai']?.detailUnitRule||'').includes('可顯示完整規格'),'湯塊顧客完整文字規格政策缺失');
           must(String(byId['guilu-jiao']?.detailUnitRule||'').includes('可顯示完整規格'),'龜鹿膠顧客完整文字規格政策缺失');
           must(!/玻璃瓶|30cc／瓶|瓶裝/.test(JSON.stringify(byId['guilu-drink-30'])),'30cc不得稱瓶');
 
           for(const [id,file] of Object.entries(dmExpected)){
+            must(String(byId[id]?.approvedProductImage||'').includes('/images/customer-display-v20260812/'),`${id}目前正式產品圖來源錯誤`);
             must(String(byId[id]?.approvedDm||'').includes(`/images/dm-final/${file}`),`${id}目前正式DM來源錯誤`);
             must(!String(byId[id]?.approvedDm||'').includes('/images/dm-approved-v20260810/'),`${id}仍使用退役DM來源`);
           }
@@ -76,9 +82,9 @@ jobs:
           must(String(trial.poster||'').includes('trial-poster-small-boss-official-v20260814.jpg'),'LINE試喝visual不同步');
           must(String(trial.lineCompatiblePoster||'').includes('/assets/formal-trial/trial.jpg'),'LINE試喝相容route缺失');
           must(String(media.source_product_image?.['龜鹿飲30cc玻璃罐']||'').includes('/images/customer-display-v20260812/guilu-drink-30cc.avif'),'30cc產品圖不是目前正式產品圖');
-          must(String(current.displayPolicy||'').includes('不可互相取代'),'產品／DM／試喝媒體角色未分離');
+          must((current.guardRules||[]).some(x=>String(x).includes('產品圖、詳細DM、試喝圖三個媒體角色必須分開')),'產品／DM／試喝媒體角色未分離');
           must((media.hard_rules||[]).some(x=>String(x).includes('AI不得重畫正式產品本體')),'禁止AI重畫產品規則缺失');
-          console.log('PASS: current LINE product, six dm-final DMs, trial, identity and full-text specification authority are aligned.');
+          console.log('PASS: seven LINE product knowledge items + six approved product images/DMs + trial + identity authority are aligned.');
           NODE
 
       - name: Validate current media routes and Flex behavior
