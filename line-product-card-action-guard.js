@@ -4,17 +4,19 @@
  * LINE OA 產品卡片動作守門
  * - 移除「看實際產品照片」等額外圖片跳轉：卡片本身已顯示正式產品圖。
  * - 「完整介紹」改為「官網完整介紹」，讓顧客清楚知道會開啟官網完整頁。
- * - 龜鹿飲30cc玻璃罐在產品／價格／使用摘要卡加入「申請試喝」，直接沿用正式試喝下單流程。
+ * - 「看產品」六張產品卡維持相同高度；試喝不插入產品 carousel，避免30cc單卡把整組拉長。
+ * - 試喝入口由 LINE 歡迎第一層、官網／FB／IG 試喝入口承接。
  * - 不修改產品圖、價格、規格、用法或購物車計價。
  */
 const line = require("@line/bot-sdk");
 const data = require("./data.json");
 
-const VERSION = "20260821-product-card-actions-v1";
+const VERSION = "20260821-product-card-actions-v2-separated-trial";
 const SITE_BASE = String(data.siteUrl || "https://ts15825868.github.io/xianjiawei/").replace(/\/?$/, "/");
 const PRODUCTS = Object.freeze(Object.fromEntries((data.products || []).map((product) => [product.id, product])));
 const PHOTO_LABEL = /看實際產品照片|看正式產品照片|看正確產品圖|產品大圖|看產品照片/;
 const COMPLETE_LABEL = /^(?:完整介紹|官網完整介紹)$/;
+const TRIAL_LABEL = /申請試喝|試喝申請|我要試喝/;
 
 const PRODUCT_PATTERNS = Object.freeze({
   "guilu-drink-30": [/龜鹿飲\s*30\s*cc/i, /30\s*cc.*(?:玻璃罐|小玻璃罐)/i],
@@ -87,8 +89,12 @@ function normalizeActions(bubble) {
   const productId = detectProductId(bubble);
   const items = Array.isArray(bubble.footer.contents) ? bubble.footer.contents : [];
 
-  // 所有顧客流程都不再提供額外「實際照片」跳轉；卡片 hero 即為正式展示圖。
-  let next = items.filter((item) => !PHOTO_LABEL.test(String(item?.action?.label || "")));
+  // 卡片 hero 已是正式產品圖，不再提供額外圖片跳轉。
+  // 試喝也不插入產品 carousel；即使舊層曾加過，這裡一律清掉以維持六張等高。
+  let next = items.filter((item) => {
+    const label = String(item?.action?.label || "");
+    return !PHOTO_LABEL.test(label) && !TRIAL_LABEL.test(label);
+  });
 
   // 清楚標示官網跳轉。
   for (const item of next) {
@@ -110,16 +116,10 @@ function normalizeActions(bubble) {
       const insertAt = Math.min(1, next.length);
       next.splice(insertAt, 0, button("官網完整介紹", { type: "uri", uri: productPage(productId) }));
     }
-
-    // 30cc 試喝只在摘要類產品卡出現，不塞進數量選擇或結帳流程。
-    if (productId === "guilu-drink-30" && !next.some((item) => /申請試喝/.test(String(item?.action?.label || "")))) {
-      const primaryIndex = next.findIndex((item) => String(item?.action?.label || "") === "選擇數量");
-      const insertAt = primaryIndex >= 0 ? primaryIndex + 1 : 0;
-      next.splice(insertAt, 0, button("申請試喝", { type: "message", text: "申請試喝" }));
-    }
   }
 
-  bubble.footer.contents = next.slice(0, 5);
+  // 正常產品摘要卡最多三顆核心按鈕，避免任何單一卡片把整組 carousel 拉高。
+  bubble.footer.contents = next.slice(0, 3);
   return bubble;
 }
 
@@ -147,4 +147,4 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwProductCardActionG
   Object.defineProperty(Client.prototype, "__xjwProductCardActionGuardInstalled", { value: true, enumerable: false });
 }
 
-module.exports = { VERSION, PHOTO_LABEL, COMPLETE_LABEL, detectProductId, isSummaryCard, normalizeActions, walk };
+module.exports = { VERSION, PHOTO_LABEL, COMPLETE_LABEL, TRIAL_LABEL, detectProductId, isSummaryCard, normalizeActions, walk };
