@@ -4,7 +4,8 @@
  * LINE OA 顧客畫面修正｜目前正式媒體角色版
  * - 產品 hero 使用目前核准產品圖的 LINE 相容 JPEG route。
  * - 「看實際產品照片」連到 products-v3 身份原圖，不拿 DM 取代產品本體。
- * - 試喝卡固定使用 2026-08-14 使用者核准試喝海報 JPEG route。
+ * - 真正的試喝內容卡固定使用 2026-08-14 使用者核准試喝海報 JPEG route。
+ * - 試喝辨識只讀卡片正文，不讀 footer 按鈕；「申請試喝」按鈕不得把30cc產品卡誤判成試喝卡。
  * - 非產品說明卡使用 LINE OA 專用 Q 版小老闆情境圖。
  * - 推薦／搭配／使用三組卡片 hero 統一 16:9、fit、不裁切；carousel 不再刪除重複 hero 造成大片空白。
  * - 產品辨識優先只讀卡片正文，不讓「看30cc／看180cc」等切換按鈕污染產品判斷。
@@ -14,7 +15,7 @@ const line = require("@line/bot-sdk");
 const currentAuthority = require("./assets/data/official-products.json");
 const photoAuthority = require("./line-product-photo-authority.json");
 
-const VERSION = "current-recording-ui-landscape-heroes-v20260821";
+const VERSION = "current-recording-ui-product-trial-separated-v20260821";
 const PRODUCT_IMAGE_VERSION = String(currentAuthority.version || "current-formal-media");
 const HERO_ASPECT_RATIO = "16:9";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
@@ -144,8 +145,14 @@ function rewriteProductImageActions(node, key) {
   }
   for (const [name, value] of Object.entries(node)) if (name !== "action") rewriteProductImageActions(value, key);
 }
-function isRecommendationBubble(bubble) { return MASCOT_CARD_PATTERN.test(collectTexts(bubble, []).join("\n")); }
-function isTrialBubble(bubble) { return TRIAL_PATTERN.test(collectTexts(bubble, []).join("\n")); }
+function isRecommendationBubble(bubble) {
+  return MASCOT_CARD_PATTERN.test(collectContentTexts([bubble?.header, bubble?.body].filter(Boolean), []).join("\n"));
+}
+function isTrialBubble(bubble) {
+  // 只看卡片正文，絕對不看 footer 的「申請試喝」按鈕；避免30cc產品卡被誤換成試喝海報。
+  const text = collectContentTexts([bubble?.header, bubble?.body].filter(Boolean), []).join("\n");
+  return TRIAL_PATTERN.test(text);
+}
 function applyBubbleFix(bubble) {
   if (!bubble || bubble.type !== "bubble") return bubble;
   normalizeVisibleText(bubble);
@@ -168,9 +175,8 @@ function applyBubbleFix(bubble) {
     return bubble;
   }
   if (isRecommendationBubble(bubble)) {
-    const text = collectTexts(bubble, []).join("\n");
+    const text = collectContentTexts([bubble?.header, bubble?.body].filter(Boolean), []).join("\n");
     const scene = mascotSceneForText(text);
-    // 不沿用舊 4:3 cover 或直式「使用」海報；正式三組卡片一律換成語意情境圖的 16:9 fit hero。
     bubble.hero = mascotHero(scene);
     bubble.xjwRecommendationHero = true;
     bubble.xjwRecommendationScene = scene;
