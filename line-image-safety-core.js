@@ -2,27 +2,28 @@
 
 /**
  * LINE OA outbound safety layer.
- * - 小老闆 hero 只使用官網 approved-v405 衍生的 LINE OA 專用圖，再由伺服器裁出角色區輸出乾淨 JPEG。
- * - 角色 hero 不承載產品規格或包裝；產品只由正式產品原圖卡呈現。
+ * - 小老闆 hero 使用官網已核准的 LINE OA 完整情境圖，不裁切、不拉伸、不只截角色。
+ * - 「幫我推薦／搭配組合／怎麼使用」依卡片語意選對應情境；推薦與搭配不共用同一張圖。
+ * - 若前一層已判定為目前正式產品 hero，安全層不得再用通用情境圖覆蓋。
  * - 30cc 一律使用目前正式裸小玻璃罐原圖，不從舊DM裁切、不改成瓶型。
  * - 5～7個工作天只套用龜鹿飲30cc與180cc。
  * - 龜鹿膏、龜鹿湯塊、龜鹿膠、鹿茸粉只顯示預先備貨說明。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260808-line-oa-clean-mascot-v5";
+const VERSION = "20260821-line-oa-full-scene-v6";
 const PRODUCT_IMAGE_VERSION = "20260810-products-v3-latest-originals-v3";
 const SOURCE_BASE = "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/images/brand/line-oa";
 const BASE = SOURCE_BASE;
 const APPROVED_MASCOT_NAMES = ["welcome", "products", "recommend", "combo", "usage", "faq", "service", "brand"];
 const MASCOT_SOURCE_MAP = Object.freeze({
-  welcome: "brand",
-  products: "brand",
+  welcome: "welcome",
+  products: "products",
   recommend: "recommend",
-  combo: "recommend",
+  combo: "combo",
   usage: "usage",
   faq: "faq",
-  service: "brand",
+  service: "service",
   brand: "brand",
 });
 const LEGACY_MASCOT_NAMES = ["welcome.jpg", "service.jpg", "brand.jpg", "products.jpg", "cart.jpg", "recommend.jpg", "combo.jpg", "usage.jpg", "faq.jpg"];
@@ -33,6 +34,8 @@ const STOCK_PRODUCT_PATTERN = /龜鹿膏|龜鹿湯塊|龜鹿膠|鹿茸粉/;
 const DRINK_30_PATTERN = /龜鹿飲\s*30\s*cc|30\s*cc.*(?:小玻璃罐|玻璃罐)/i;
 const LEGACY_IMAGE_PATTERN = /(?:images\/guilu-drink-30cc-glass\.jpg|images\/dm-final\/02_guilu-drink-30cc-dm\.jpg|images\/products-v3\/guilu-drink-30-clean\.svg)/i;
 const LEGACY_ORDER_NOTICE_PATTERN = /(?:訂單資料與付款方式|資料及運費)確認後安排製作加工[，,；;\s]*製作加工約需\s*5\s*[～~〜－-]\s*7\s*個工作天[；;，,\s]*完成後才安排出貨[，,；;\s]*物流配送時間另計[。.]?/g;
+const CURRENT_FORMAL_PRODUCT_HERO_PATTERN = /\/assets\/formal-product\/(?:guilu-gao|guilu-drink-30|guilu-drink-180|guilu-tangkuai|guilu-jiao|luerong-fen)\.jpg(?:[?#]|$)/i;
+const CURRENT_DIRECT_PRODUCT_HERO_PATTERN = /\/images\/(?:customer-display-v20260812|products-v3)\//i;
 
 const DRINK_FULFILLMENT_NOTICE = "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
 const STOCK_FULFILLMENT_NOTICE = "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。";
@@ -76,6 +79,10 @@ function isBlockedMascotUrl(value) {
   if (/TS15825868\/TS-LINE\/main\/public\/mascot\//i.test(url)) return true;
   if (/TS15825868\/xianjiawei\/main\/images\/brand\/line-oa\//i.test(url)) return true;
   return BLOCKED_MASCOT_ASSETS.some((asset) => url.includes(`/mascot/${asset}`));
+}
+function isCurrentProductHero(value) {
+  const url = String(value || "");
+  return CURRENT_FORMAL_PRODUCT_HERO_PATTERN.test(url) || CURRENT_DIRECT_PRODUCT_HERO_PATTERN.test(url);
 }
 
 function collectBodyTexts(node, output = []) {
@@ -124,10 +131,12 @@ function sceneForBubble(bubble) {
   return "";
 }
 function approvedHero(scene) {
-  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "1:1", aspectMode: "fit", backgroundColor: "#EFE4D2" };
+  return { type: "image", url: approvedUrl(scene), size: "full", aspectRatio: "4:3", aspectMode: "fit", backgroundColor: "#EFE4D2" };
 }
 function rewriteMascotHero(bubble) {
   if (!bubble || bubble.type !== "bubble") return;
+  // 前一層已經辨識出單一正式產品時，這裡只能保護，不得再被「使用方式」等語意改回通用情境圖。
+  if (isCurrentProductHero(bubble.hero?.url)) return;
   const semanticScene = sceneForBubble(bubble);
   if (semanticScene) {
     bubble.hero = approvedHero(semanticScene);
@@ -237,18 +246,9 @@ async function buildCleanMascotImage(name) {
   const promise = (async () => {
     const sharp = require("sharp");
     const input = await fetchImageBuffer(mascotSourceUrl(safe), `mascot ${safe}`);
-    const metadata = await sharp(input).metadata();
-    const width = Number(metadata.width || 1024);
-    const height = Number(metadata.height || 768);
-    const left = Math.max(0, Math.min(width - 1, Math.round(width * 0.64)));
-    const top = Math.max(0, Math.min(height - 1, Math.round(height * 0.06)));
-    const rightMargin = Math.max(0, Math.round(width * 0.01));
-    const bottomMargin = Math.max(0, Math.round(height * 0.06));
-    const cropWidth = Math.max(1, width - left - rightMargin);
-    const cropHeight = Math.max(1, height - top - bottomMargin);
     return sharp(input)
-      .extract({ left, top, width: cropWidth, height: cropHeight })
-      .resize(900, 900, { fit: "contain", background: "#EFE4D2", withoutEnlargement: false })
+      .rotate()
+      .resize({ width: 1200, height: 900, fit: "inside", withoutEnlargement: true })
       .flatten({ background: "#EFE4D2" })
       .jpeg({ quality: 91, progressive: true })
       .toBuffer();
@@ -296,11 +296,11 @@ function installImageRoutes() {
             "Content-Type": "image/jpeg",
             "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
             "X-Content-Type-Options": "nosniff",
-            "X-XJW-Image-Source": "approved-website-chibi-character-crop",
+            "X-XJW-Image-Source": "approved-website-chibi-full-scene-no-crop",
           });
           return res.status(200).send(image);
         } catch (error) {
-          console.error(`小老闆角色圖產生失敗 ${name}：`, error?.message || error);
+          console.error(`小老闆完整情境圖產生失敗 ${name}：`, error?.message || error);
           return res.status(503).type("text/plain").send("image temporarily unavailable");
         }
       });
@@ -346,6 +346,7 @@ module.exports = {
   mascotSourceUrl,
   mascotNameFromUrl,
   isBlockedMascotUrl,
+  isCurrentProductHero,
   bubbleTexts,
   collectAllTexts,
   sceneForBubble,
