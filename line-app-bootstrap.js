@@ -12,12 +12,14 @@
  * 三種路由各自從目前正式 authority 取得來源並轉成 LINE 相容 JPEG，
  * products-v3 仍只作真實產品外觀／包裝／比例身份參考。
  *
- * 最後再掛 line-final-card-hero-guard：只補「缺 hero」的推薦／搭配／使用卡，
- * 不覆蓋已正確辨識的正式產品圖、DM 或試喝圖。
+ * 最後掛兩層手機顯示守門：
+ * 1) line-final-card-hero-guard 只補缺 hero，不覆蓋正式產品圖。
+ * 2) line-card-compact-guard 縮短 carousel 公開摘要，完整資料仍由完整介紹／產品頁承接。
  */
 const express = require("express");
 const safety = require("./line-image-safety");
 require("./line-final-card-hero-guard");
+require("./line-card-compact-guard");
 
 if (!global.__XJW_LINE_EXPRESS_BOOTSTRAP__) {
   const originalExpress = express;
@@ -39,8 +41,8 @@ if (!global.__XJW_LINE_EXPRESS_BOOTSTRAP__) {
   require.cache[require.resolve("express")].exports = xjwExpress;
   global.__XJW_LINE_EXPRESS_BOOTSTRAP__ = Object.freeze({
     installed: true,
-    version: "current-separated-formal-media-route-bootstrap-v20260821-final-hero-guard",
-    capability: "formal-product-dm-trial-routes-mounted-on-runtime-app-plus-final-no-blank-card-hero-guard",
+    version: "current-separated-formal-media-route-bootstrap-v20260821-compact-mobile-cards",
+    capability: "formal-media-routes-plus-no-blank-hero-and-compact-mobile-carousel-guards",
   });
 }
 
