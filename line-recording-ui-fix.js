@@ -5,15 +5,18 @@
  * - 產品 hero 使用目前核准產品圖的 LINE 相容 JPEG route。
  * - 「看實際產品照片」連到 products-v3 身份原圖，不拿 DM 取代產品本體。
  * - 試喝卡固定使用 2026-08-14 使用者核准試喝海報 JPEG route。
- * - 非產品說明卡才使用 LINE OA 專用 Q 版小老闆情境圖。
+ * - 非產品說明卡使用 LINE OA 專用 Q 版小老闆情境圖。
+ * - 推薦／搭配／使用三組卡片 hero 統一 16:9、fit、不裁切；carousel 不再刪除重複 hero 造成大片空白。
+ * - 產品辨識優先只讀卡片正文，不讓「看30cc／看180cc」等切換按鈕污染產品判斷。
  * - xjw* 欄位僅供內部視覺判斷，送入 LINE Messaging API 前必須完整移除。
  */
 const line = require("@line/bot-sdk");
 const currentAuthority = require("./assets/data/official-products.json");
 const photoAuthority = require("./line-product-photo-authority.json");
 
-const VERSION = "current-recording-ui-media-role-separation-v20260820-outbound-scrub";
+const VERSION = "current-recording-ui-landscape-heroes-v20260821";
 const PRODUCT_IMAGE_VERSION = String(currentAuthority.version || "current-formal-media");
+const HERO_ASPECT_RATIO = "16:9";
 const SITE_BASE = "https://ts15825868.github.io/xianjiawei/";
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const currentById = Object.freeze(Object.fromEntries((currentAuthority.products || []).map((item) => [item.id, item])));
@@ -80,14 +83,31 @@ function collectTexts(node, output = []) {
   for (const [key, value] of Object.entries(node)) if (key !== "action") collectTexts(value, output);
   return output;
 }
+function collectContentTexts(node, output = []) {
+  if (!node || typeof node !== "object") return output;
+  if (Array.isArray(node)) { for (const item of node) collectContentTexts(item, output); return output; }
+  if (node.type === "text" && node.text) output.push(String(node.text));
+  for (const [key, value] of Object.entries(node)) if (key !== "action" && !/^xjw/i.test(key)) collectContentTexts(value, output);
+  return output;
+}
+function matchedProductKeys(text) {
+  const source = String(text || "");
+  return Object.entries(PRODUCTS)
+    .filter(([, product]) => product.patterns.some((pattern) => pattern.test(source)))
+    .map(([key]) => key);
+}
 function uniqueProductKey(bubble) {
-  const text = collectTexts(bubble, []).join("\n");
-  const found = [];
-  for (const [key, product] of Object.entries(PRODUCTS)) if (product.patterns.some((pattern) => pattern.test(text))) found.push(key);
-  return found.length === 1 ? found[0] : "";
+  // 產品使用卡常帶有「看30cc／看180cc」等切換按鈕；那些不是本卡產品身份。
+  // 優先只看 header/body 的正文，再看整張卡不含 action 的文字，避免被按鈕污染。
+  const primary = [bubble?.header, bubble?.body].filter(Boolean);
+  const primaryFound = matchedProductKeys(collectContentTexts(primary, []).join("\n"));
+  if (primaryFound.length === 1) return primaryFound[0];
+
+  const contentFound = matchedProductKeys(collectContentTexts(bubble, []).join("\n"));
+  return contentFound.length === 1 ? contentFound[0] : "";
 }
 function productHero(key) {
-  return { type: "image", url: PRODUCTS[key].image, size: "full", aspectRatio: "1:1", aspectMode: "fit", backgroundColor: "#EFE4D2" };
+  return { type: "image", url: PRODUCTS[key].image, size: "full", aspectRatio: HERO_ASPECT_RATIO, aspectMode: "fit", backgroundColor: "#EFE4D2" };
 }
 function trialHero() {
   return { type: "image", url: TRIAL_IMAGE, size: "full", aspectRatio: "1:1", aspectMode: "fit", backgroundColor: "#F7F1E6", action: { type: "uri", uri: `${SITE_BASE}trial.html` } };
@@ -104,7 +124,7 @@ function mascotSceneForText(value = "") {
   return "welcome";
 }
 function mascotHero(scene = "welcome") {
-  return { type: "image", url: MASCOT_HEROES[scene] || MASCOT_HEROES.welcome, size: "full", aspectRatio: "4:3", aspectMode: "fit", backgroundColor: "#EFE4D2" };
+  return { type: "image", url: MASCOT_HEROES[scene] || MASCOT_HEROES.welcome, size: "full", aspectRatio: HERO_ASPECT_RATIO, aspectMode: "fit", backgroundColor: "#EFE4D2" };
 }
 function rewriteProductImageActions(node, key) {
   if (!node || typeof node !== "object") return;
@@ -144,12 +164,13 @@ function applyBubbleFix(bubble) {
     bubble.xjwProductPhoto = key;
     bubble.xjwProductPhotoAuthority = "current-approved-product-image-line-jpeg";
     bubble.xjwProductIdentityAuthority = "products-v3-user-approved-originals";
-    bubble.xjwProductScalePolicy = "uniform-only-no-crop-no-stretch";
+    bubble.xjwProductScalePolicy = "landscape-fit-no-crop-no-stretch";
     return bubble;
   }
   if (isRecommendationBubble(bubble)) {
     const text = collectTexts(bubble, []).join("\n");
     const scene = mascotSceneForText(text);
+    // 不沿用舊 4:3 cover 或直式「使用」海報；正式三組卡片一律換成語意情境圖的 16:9 fit hero。
     bubble.hero = mascotHero(scene);
     bubble.xjwRecommendationHero = true;
     bubble.xjwRecommendationScene = scene;
@@ -158,15 +179,8 @@ function applyBubbleFix(bubble) {
   return bubble;
 }
 function pruneRepeatedMascotHeroes(carousel) {
-  if (!carousel || carousel.type !== "carousel" || !Array.isArray(carousel.contents)) return carousel;
-  let mascotHeroKept = false;
-  for (const bubble of carousel.contents) {
-    if (!bubble || bubble.type !== "bubble" || bubble.xjwProductPhoto || bubble.xjwTrialMedia || !bubble.xjwRecommendationHero) continue;
-    if (!mascotHeroKept) { mascotHeroKept = true; continue; }
-    delete bubble.hero;
-    bubble.xjwRecommendationHero = false;
-    bubble.xjwRecommendationHeroSuppressed = true;
-  }
+  // 舊版為避免重複曾刪除後續 mascot hero；LINE carousel 會以最高卡片對齊高度，
+  // 導致被刪 hero 的卡片留下巨大空白。現在每張情境卡都保留自己的 hero。
   return carousel;
 }
 function applyVisualFix(node) {
@@ -208,6 +222,7 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwRecordingUiFixInst
 module.exports = {
   VERSION,
   PRODUCT_IMAGE_VERSION,
+  HERO_ASPECT_RATIO,
   PUBLIC_BASE_URL,
   PRODUCTS,
   TRIAL_IMAGE,
@@ -219,6 +234,8 @@ module.exports = {
   rewriteVisibleText,
   normalizeVisibleText,
   collectTexts,
+  collectContentTexts,
+  matchedProductKeys,
   uniqueProductKey,
   productHero,
   trialHero,
