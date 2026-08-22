@@ -1,17 +1,18 @@
 "use strict";
 
 /**
- * LINE OA 手機卡片高度守門 v2
+ * LINE OA 手機卡片高度守門 v3
  * - 卡片只保留手機上最重要的摘要，不刪除正式資料來源。
  * - 幫我推薦：使用明確短摘要，不靠硬截斷。
  * - 怎麼使用：只留用法重點；成分、保存、出貨資訊由完整介紹承接。
  * - 搭配組合：保留商品、價格、優惠與必要出貨摘要。
  * - 試喝：維持正式試喝海報，改成清楚的獨立試喝下單入口。
+ * - 情境卡 Hero 採 16:9 + fit 與較緊湊內距；不裁切、不拉伸、不改產品卡與試喝海報。
  * - 不改產品圖、包裝、價格與正式規格。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260821-mobile-card-compact-v2";
+const VERSION = "20260822-mobile-card-compact-v3";
 const USAGE_PATTERN = /怎麼使用|使用方式|產品使用方式導覽|龜鹿膏\s*[｜|]\s*使用方式|龜鹿飲\s*30\s*cc.*使用方式|龜鹿飲\s*180\s*cc.*使用方式|龜鹿湯塊.*使用方式|龜鹿膠.*使用方式|鹿茸粉.*使用方式/i;
 const COMBO_PATTERN = /搭配組合|搭配方案|日常節奏組|完整體驗組|料理搭配|組合/i;
 const RECOMMEND_PATTERN = /幫我推薦|固定日常安排|方便即飲|自行搭配飲品|沖泡、燉湯與家庭使用|依日常使用方式幫你選|怎麼選/i;
@@ -159,6 +160,23 @@ function walkTextNodes(node, fn, maxLines) {
   }
 }
 
+function compactSceneLayout(bubble) {
+  if (!bubble || bubble.type !== "bubble") return;
+  if (bubble.hero?.type === "image") {
+    bubble.hero.aspectRatio = "16:9";
+    bubble.hero.aspectMode = "fit";
+    bubble.hero.backgroundColor = bubble.hero.backgroundColor || "#F7F4ED";
+  }
+  if (bubble.body?.type === "box") {
+    bubble.body.spacing = "xs";
+    bubble.body.paddingAll = "16px";
+  }
+  if (bubble.footer?.type === "box") {
+    bubble.footer.spacing = "xs";
+    bubble.footer.paddingAll = "12px";
+  }
+}
+
 function compactBubble(bubble) {
   if (!bubble || bubble.type !== "bubble") return bubble;
   const text = collectText([bubble.header, bubble.body].filter(Boolean), []).join("\n");
@@ -175,23 +193,20 @@ function compactBubble(bubble) {
   if (USAGE_PATTERN.test(text)) {
     const original = String(firstDescriptionNode(bubble)?.text || "");
     if (!setDescription(bubble, usageSummary(title, original), 5)) walkTextNodes(bubble.body, compactUsageText, 5);
-    if (bubble.body?.spacing) bubble.body.spacing = "sm";
-    if (bubble.footer?.spacing) bubble.footer.spacing = "xs";
+    compactSceneLayout(bubble);
     return bubble;
   }
 
   if (COMBO_PATTERN.test(text)) {
     walkTextNodes(bubble.body, compactComboText, 6);
-    if (bubble.body?.spacing) bubble.body.spacing = "sm";
-    if (bubble.footer?.spacing) bubble.footer.spacing = "xs";
+    compactSceneLayout(bubble);
     return bubble;
   }
 
   if (RECOMMEND_PATTERN.test(text)) {
     const original = String(firstDescriptionNode(bubble)?.text || "");
     if (!setDescription(bubble, recommendationSummary(title, original), 4)) walkTextNodes(bubble.body, compactCommon, 4);
-    if (bubble.body?.spacing) bubble.body.spacing = "sm";
-    if (bubble.footer?.spacing) bubble.footer.spacing = "xs";
+    compactSceneLayout(bubble);
   }
   return bubble;
 }
@@ -229,6 +244,7 @@ module.exports = {
   usageSummary,
   recommendationSummary,
   compactTrialText,
+  compactSceneLayout,
   compactBubble,
   walk,
 };
