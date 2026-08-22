@@ -4,15 +4,15 @@
  * LINE OA 入口試喝守門 v3
  * - 新好友 Webhook 歡迎卡第一層固定為：申請試喝／看產品／幫我推薦。
  * - 優先以 Flex altText「歡迎來到仙加味」辨識，不再只依賴 bubble 內文。
- * - 歡迎卡 hero 使用正式 welcome.jpg，並固定更新版本參數避免 LINE 沿用舊快取。
+ * - 歡迎 Hero 強制使用正式 welcome.jpg 並採唯一 cache key，避免 LINE 沿用舊「料理搭配」快取。
  * - 不修改 Rich Menu、不更動產品價格、產品圖或試喝規格。
- * - 歡迎卡只保留 3 顆核心按鈕，避免卡片被額外入口拉長。
  */
 const line = require("@line/bot-sdk");
 
 const VERSION = "20260822-entry-trial-v3";
 const WELCOME_PATTERN = /歡迎來到仙加味/;
-const WELCOME_IMAGE_VERSION = "20260822-formal-welcome-v1";
+const FORMAL_WELCOME_HERO_URL =
+  "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/welcome.jpg?v=20260822-formal-welcome-3";
 
 function collectText(node, out = []) {
   if (!node || typeof node !== "object") return out;
@@ -45,15 +45,15 @@ function welcomeButtons() {
   ];
 }
 
-function refreshWelcomeHero(bubble) {
-  const hero = bubble?.hero;
-  if (!hero || hero.type !== "image" || typeof hero.url !== "string") return bubble;
-  if (!/\/mascot\/welcome\.jpg(?:[?#]|$)/i.test(hero.url)) return bubble;
-  if (/[?&]v=[^&]*/i.test(hero.url)) {
-    hero.url = hero.url.replace(/([?&])v=[^&]*/i, `$1v=${WELCOME_IMAGE_VERSION}`);
-  } else {
-    hero.url += `${hero.url.includes("?") ? "&" : "?"}v=${WELCOME_IMAGE_VERSION}`;
-  }
+function applyFormalWelcomeHero(bubble) {
+  if (!bubble || bubble.type !== "bubble") return bubble;
+  bubble.hero = {
+    type: "image",
+    url: FORMAL_WELCOME_HERO_URL,
+    size: "full",
+    aspectRatio: "1:1",
+    aspectMode: "cover",
+  };
   return bubble;
 }
 
@@ -62,7 +62,7 @@ function normalizeWelcomeBubble(bubble, force = false) {
   const text = collectText([bubble.header, bubble.body].filter(Boolean)).join("\n");
   if (!force && !WELCOME_PATTERN.test(text)) return bubble;
 
-  refreshWelcomeHero(bubble);
+  applyFormalWelcomeHero(bubble);
   if (!bubble.footer || bubble.footer.type !== "box") {
     bubble.footer = { type: "box", layout: "vertical", spacing: "sm", contents: [] };
   }
@@ -109,11 +109,11 @@ if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardIns
 module.exports = {
   VERSION,
   WELCOME_PATTERN,
-  WELCOME_IMAGE_VERSION,
+  FORMAL_WELCOME_HERO_URL,
   collectText,
   button,
   welcomeButtons,
-  refreshWelcomeHero,
+  applyFormalWelcomeHero,
   normalizeWelcomeBubble,
   normalizeWelcomeMessage,
   walk,
