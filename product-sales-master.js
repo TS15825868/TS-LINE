@@ -23,7 +23,6 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
 const FORMAL_PRODUCT_COPY = Object.freeze({});
 const CURRENT_30_USAGE = "每日 1–2 罐";
 
-// 只清掉已退休舊文案與舊標點格式；新版正確資料不可被舊守門員改回去。
 const RETIRED_COPY_REPLACEMENTS = Object.freeze([
   [/每日早上及下午各一小匙/g, "食用時間可依個人使用習慣與作息時間安排"],
   [/建議白天飲用/g, "飲用時間可依個人使用習慣與作息時間安排"],
@@ -176,8 +175,8 @@ function applyMaster(data) {
   const productOverrides = policy.products || {};
   const comboOffers = Array.isArray(policy.comboOffers) ? sanitizeCurrentCopy(policy.comboOffers) : [];
 
-  // LINE 顧客產品卡目前仍只顯示有正式實物圖的六項；第七項柒玄茶文字知識由 authority / AI answer layer 提供，
-  // 在正式實物圖核准前不得用假圖硬塞產品卡。
+  // LINE 對外與可見文字知識目前只顯示六項正式產品；柒玄茶資料僅保留在 authority 作內部隱藏資料，
+  // 在使用者明確重新啟用前，不得進產品卡、推薦、公開文字知識或主動回覆。
   data.products = (data.products || []).filter((product) => productOverrides[product.id]).map((product) => {
     const rawOverride = formalCopy(product.id, productOverrides[product.id] || {});
     const override = salesOverride(rawOverride);
@@ -232,7 +231,7 @@ function applyMaster(data) {
     productScalePolicy: "uniform-only-no-stretch-preserve-real-product-proportion",
     formalCopyVersion: authority.version,
     formalCopyAuthority: authority.authority,
-    knowledgeProductCount: (authority.products || []).length,
+    knowledgeProductCount: Array.isArray(authority.knowledgeProductIds) ? authority.knowledgeProductIds.length : data.products.length,
     approvedMediaProductCount: Object.keys(getPhotoAuthority().products || {}).length,
     trialAuthority: "assets/data/official-products.json",
     contentApproval: {
