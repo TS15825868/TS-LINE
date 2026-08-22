@@ -1,23 +1,20 @@
 "use strict";
 
 /**
- * LINE OA 入口試喝守門 v6
+ * LINE OA 入口試喝守門 v7
  * - 新好友 Webhook 歡迎卡第一層固定為：申請試喝／看產品／幫我推薦。
  * - 優先以 Flex altText「歡迎來到仙加味」辨識，不再只依賴 bubble 內文。
- * - 歡迎 Hero 固定使用 TS-LINE/public/mascot/welcome.jpg 對應的 Render 靜態路由。
+ * - 歡迎 Hero 改走官網 GitHub Pages 靜態圖片，不再依賴 Render Free 圖片路由與冷啟動。
  * - 歡迎卡第一層文案固定精簡，不顯示龜鹿飲 5～7 個工作天長文；交期留在試喝／產品／下單流程。
  * - 「看產品」產品總覽圖不受此守門影響。
  * - 不修改 Rich Menu、不更動產品價格、產品圖或試喝規格。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260822-entry-trial-v6";
+const VERSION = "20260822-entry-trial-v7-static-pages";
 const WELCOME_PATTERN = /歡迎來到仙加味/;
-const LINE_ASSET_BASE = String(
-  process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com"
-).replace(/\/$/, "");
 const FORMAL_WELCOME_HERO_URL =
-  `${LINE_ASSET_BASE}/mascot/welcome.jpg?v=20260822-formal-welcome-static-1`;
+  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/welcome.jpg?v=20260822-static-pages-1";
 const FORMAL_WELCOME_DESCRIPTION =
   "您好，歡迎來到仙加味。\n想了解產品、怎麼選、日常搭配或申請試喝，都可以從下方開始。";
 
@@ -58,7 +55,7 @@ function applyFormalWelcomeHero(bubble) {
     type: "image",
     url: FORMAL_WELCOME_HERO_URL,
     size: "full",
-    aspectRatio: "1:1",
+    aspectRatio: "4:3",
     aspectMode: "fit",
     backgroundColor: "#F7F4ED",
   };
@@ -133,19 +130,18 @@ function walk(node) {
 }
 
 const Client = line?.messagingApi?.MessagingApiClient;
-if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV6) {
+if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV7) {
   const previous = Client.prototype.replyMessage;
-  Client.prototype.replyMessage = function xjwEntryTrialReplyV6(payload) {
+  Client.prototype.replyMessage = function xjwEntryTrialReplyV7(payload) {
     walk(payload?.messages);
     return previous.call(this, payload);
   };
-  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV6", { value: true, enumerable: false });
+  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV7", { value: true, enumerable: false });
 }
 
 module.exports = {
   VERSION,
   WELCOME_PATTERN,
-  LINE_ASSET_BASE,
   FORMAL_WELCOME_HERO_URL,
   FORMAL_WELCOME_DESCRIPTION,
   collectText,
