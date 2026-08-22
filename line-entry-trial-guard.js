@@ -1,22 +1,25 @@
 "use strict";
 
 /**
- * LINE OA 入口試喝守門 v5
+ * LINE OA 入口試喝守門 v6
  * - 新好友 Webhook 歡迎卡第一層固定為：申請試喝／看產品／幫我推薦。
  * - 優先以 Flex altText「歡迎來到仙加味」辨識，不再只依賴 bubble 內文。
- * - 歡迎 Hero 固定使用 Render 既有 /assets/mascot-clean/welcome.jpg LINE 相容 JPEG 路由。
- * - Hero 採 4:3 + fit，保留完整正式小老闆情境圖，不裁切、不放大變形。
+ * - 歡迎 Hero 固定使用 TS-LINE/public/mascot/welcome.jpg 對應的 Render 靜態路由。
+ * - 歡迎卡第一層文案固定精簡，不顯示龜鹿飲 5～7 個工作天長文；交期留在試喝／產品／下單流程。
+ * - 「看產品」產品總覽圖不受此守門影響。
  * - 不修改 Rich Menu、不更動產品價格、產品圖或試喝規格。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260822-entry-trial-v5";
+const VERSION = "20260822-entry-trial-v6";
 const WELCOME_PATTERN = /歡迎來到仙加味/;
 const LINE_ASSET_BASE = String(
   process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com"
 ).replace(/\/$/, "");
 const FORMAL_WELCOME_HERO_URL =
-  `${LINE_ASSET_BASE}/assets/mascot-clean/welcome.jpg?v=20260822-formal-welcome-render-2`;
+  `${LINE_ASSET_BASE}/mascot/welcome.jpg?v=20260822-formal-welcome-static-1`;
+const FORMAL_WELCOME_DESCRIPTION =
+  "您好，歡迎來到仙加味。\n想了解產品、怎麼選、日常搭配或申請試喝，都可以從下方開始。";
 
 function collectText(node, out = []) {
   if (!node || typeof node !== "object") return out;
@@ -55,9 +58,36 @@ function applyFormalWelcomeHero(bubble) {
     type: "image",
     url: FORMAL_WELCOME_HERO_URL,
     size: "full",
-    aspectRatio: "4:3",
+    aspectRatio: "1:1",
     aspectMode: "fit",
-    backgroundColor: "#EFE4D2",
+    backgroundColor: "#F7F4ED",
+  };
+  return bubble;
+}
+
+function applyFormalWelcomeCopy(bubble) {
+  if (!bubble || bubble.type !== "bubble") return bubble;
+  bubble.body = {
+    type: "box",
+    layout: "vertical",
+    spacing: "md",
+    contents: [
+      {
+        type: "text",
+        text: "歡迎來到仙加味",
+        weight: "bold",
+        size: "xl",
+        color: "#7B1E1E",
+        wrap: true,
+      },
+      {
+        type: "text",
+        text: FORMAL_WELCOME_DESCRIPTION,
+        size: "sm",
+        color: "#555555",
+        wrap: true,
+      },
+    ],
   };
   return bubble;
 }
@@ -68,6 +98,7 @@ function normalizeWelcomeBubble(bubble, force = false) {
   if (!force && !WELCOME_PATTERN.test(text)) return bubble;
 
   applyFormalWelcomeHero(bubble);
+  applyFormalWelcomeCopy(bubble);
   if (!bubble.footer || bubble.footer.type !== "box") {
     bubble.footer = { type: "box", layout: "vertical", spacing: "sm", contents: [] };
   }
@@ -102,13 +133,13 @@ function walk(node) {
 }
 
 const Client = line?.messagingApi?.MessagingApiClient;
-if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV5) {
+if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV6) {
   const previous = Client.prototype.replyMessage;
-  Client.prototype.replyMessage = function xjwEntryTrialReplyV5(payload) {
+  Client.prototype.replyMessage = function xjwEntryTrialReplyV6(payload) {
     walk(payload?.messages);
     return previous.call(this, payload);
   };
-  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV5", { value: true, enumerable: false });
+  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV6", { value: true, enumerable: false });
 }
 
 module.exports = {
@@ -116,10 +147,12 @@ module.exports = {
   WELCOME_PATTERN,
   LINE_ASSET_BASE,
   FORMAL_WELCOME_HERO_URL,
+  FORMAL_WELCOME_DESCRIPTION,
   collectText,
   button,
   welcomeButtons,
   applyFormalWelcomeHero,
+  applyFormalWelcomeCopy,
   normalizeWelcomeBubble,
   normalizeWelcomeMessage,
   walk,
