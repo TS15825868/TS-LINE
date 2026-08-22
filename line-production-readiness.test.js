@@ -13,6 +13,7 @@ const read = (file) => fs.readFileSync(path.join(__dirname, file), "utf8");
 const data = applyMaster(JSON.parse(read("data.json")));
 const authority = getCurrentAuthority();
 const photoAuthority = getPhotoAuthority();
+const aiAnswers = JSON.parse(read("config/ai-commerce-answers.json"));
 const serverSource = read("server.js");
 const syncSource = read("tools/sync_sales_master_current.js");
 const safetySource = read("line-image-safety.js");
@@ -47,6 +48,17 @@ assert.ok(!photoAuthority.products?.[qixuanId], "柒玄茶隱藏期間不得建�
 assert.ok(!String(qixuan?.approvedProductImage || "").trim());
 assert.ok(!String(qixuan?.approvedDm || "").trim());
 assert.ok(!Array.isArray(qixuan?.ingredients), "未確認公開成分前不得自行建立柒玄茶成分");
+
+// LINE 自然語言公開回答不得繞過產品可見性規則重新曝光柒玄茶。
+assert.ok(Array.isArray(aiAnswers.answers) && aiAnswers.answers.length >= 5, "LINE AI公開答案權威缺失");
+const allProductsAnswer = aiAnswers.answers.find((item) => item.id === "all-products");
+assert.ok(allProductsAnswer, "LINE AI缺少 all-products 回答");
+assert.match(String(allProductsAnswer.answer || ""), /六項/, "LINE AI產品總覽必須說明目前六項對外產品");
+assert.ok(!String(allProductsAnswer.answer || "").includes("柒玄茶"), "LINE AI產品總覽不得公開柒玄茶");
+for (const answer of aiAnswers.answers) {
+  assert.ok(!String(answer.answer || "").includes("柒玄茶"), `${answer.id} 公開回答不得曝光柒玄茶`);
+}
+assert.ok((aiAnswers.rules || []).some((rule) => String(rule).includes("柒玄茶") && String(rule).includes("暫時隱藏")), "LINE AI內部規則必須保留柒玄茶隱藏政策");
 
 const specs = {
   "guilu-gao":"100g／罐",
@@ -128,8 +140,8 @@ assert.equal(packageJson.main, "server.js");
 assert.equal(packageJson.scripts.start, "node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js");
 assert.ok(packageJson.scripts.prestart.includes("sync_sales_master_current.js --write"));
 
-for (const retired of [".github/workflows/line-closeout-status-once.yml",".github/workflows/one-time-update-drink-pricing-20260806.yml",".github/workflows/sync-formal-line-media.yml","tools/sync-formal-line-media.py"]) {
+for (const retired of [".github/workflows/line-closeout-status-once.yml",".github/workflows/one-time-update-drink-pricing-20260806.yml",".github/workflows/sync-formal-line-media.yml",".github/workflows/sync-social-content-v20260817.yml","tools/sync-formal-line-media.py"]) {
   assert.equal(fs.existsSync(path.join(__dirname,retired)), false, `退役同步仍存在：${retired}`);
 }
 
-console.log(`PASS：LINE OA readiness依 ${authority.version} 驗收；六項正式產品可見，柒玄茶維持內部資料但暫時隱藏。`);
+console.log(`PASS：LINE OA readiness依 ${authority.version} 驗收；六項正式產品可見，柒玄茶維持內部資料但暫時隱藏，公開AI回答不曝光柒玄茶。`);
