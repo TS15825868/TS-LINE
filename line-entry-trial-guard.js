@@ -1,18 +1,19 @@
 "use strict";
 
 /**
- * LINE OA 入口試喝守門 v3
+ * LINE OA 入口試喝守門 v4
  * - 新好友 Webhook 歡迎卡第一層固定為：申請試喝／看產品／幫我推薦。
  * - 優先以 Flex altText「歡迎來到仙加味」辨識，不再只依賴 bubble 內文。
- * - 歡迎 Hero 強制使用正式 welcome.jpg 並採唯一 cache key，避免 LINE 沿用舊「料理搭配」快取。
+ * - 歡迎 Hero 強制使用 Render 的 LINE 專用圖片路由，避免 GitHub Raw / LINE CDN 快取造成舊圖或空白。
  * - 不修改 Rich Menu、不更動產品價格、產品圖或試喝規格。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260822-entry-trial-v3";
+const VERSION = "20260822-entry-trial-v4";
 const WELCOME_PATTERN = /歡迎來到仙加味/;
+const LINE_ASSET_BASE = (process.env.RENDER_EXTERNAL_URL || "https://ts-line.onrender.com").replace(/\/$/, "");
 const FORMAL_WELCOME_HERO_URL =
-  "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/welcome.jpg?v=20260822-formal-welcome-3";
+  `${LINE_ASSET_BASE}/line-assets/mascot/welcome.jpg?v=20260822-formal-welcome-render-1`;
 
 function collectText(node, out = []) {
   if (!node || typeof node !== "object") return out;
@@ -97,18 +98,19 @@ function walk(node) {
 }
 
 const Client = line?.messagingApi?.MessagingApiClient;
-if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV3) {
+if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV4) {
   const previous = Client.prototype.replyMessage;
-  Client.prototype.replyMessage = function xjwEntryTrialReplyV3(payload) {
+  Client.prototype.replyMessage = function xjwEntryTrialReplyV4(payload) {
     walk(payload?.messages);
     return previous.call(this, payload);
   };
-  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV3", { value: true, enumerable: false });
+  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV4", { value: true, enumerable: false });
 }
 
 module.exports = {
   VERSION,
   WELCOME_PATTERN,
+  LINE_ASSET_BASE,
   FORMAL_WELCOME_HERO_URL,
   collectText,
   button,
