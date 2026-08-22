@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": "2026-08-20-ai-commerce-answer-authority-v2",
-  "updatedAt": "2026-08-20",
+  "version": "2026-08-22-ai-commerce-answer-authority-v3-qixuan-hidden",
+  "updatedAt": "2026-08-22",
   "source": "https://ts15825868.github.io/xianjiawei/ai-answers.json",
   "productAuthority": "https://ts15825868.github.io/xianjiawei/public-product-master.json",
   "role": "LINE OA自然語言問答的共用答案權威。固定產品事實可直接使用；價格、促銷、庫存與活動仍以LINE目前銷售資料與人工客服最新狀態為準。",
@@ -29,15 +29,16 @@
     {
       "id":"all-products",
       "patterns":["仙加味有哪些產品","仙加味產品有哪些","仙加味龜鹿系列有哪些"],
-      "answer":"目前公開正式產品共七項：龜鹿膏、龜鹿飲30cc玻璃罐、龜鹿飲180cc鋁袋、龜鹿湯塊、龜鹿膠、鹿茸粉，以及柒玄茶・龜鹿調飲粉。"
+      "answer":"目前對外正式產品共六項：龜鹿膏、龜鹿飲30cc玻璃罐、龜鹿飲180cc鋁袋、龜鹿湯塊、龜鹿膠、鹿茸粉。想了解哪一種產品，可直接告訴我你的使用情境或偏好的產品型態。"
     }
   ],
   "rules": [
     "LINE公開主品牌只使用仙加味",
+    "目前LINE OA對外產品與自然語言回答只顯示六項正式產品",
+    "柒玄茶・龜鹿調飲粉目前暫時隱藏；不得出現在產品介紹、推薦、產品總覽或公開自然語言回答，資料保留至使用者明確重新啟用",
     "30cc最新正式使用方式為每日 1–2 罐，禁止回退成每日一罐；180cc為每日一包",
     "龜鹿飲5～7個工作天交期只適用30cc與180cc",
     "價格、促銷、庫存與活動不可由本固定檔覆蓋LINE目前銷售資料",
-    "柒玄茶尚未核准正式產品實物圖時只可文字回答，不可生成或替代包裝",
     "不得自行加入疾病治療、預防、改善或保證功效宣稱"
   ]
 }
