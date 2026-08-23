@@ -38,7 +38,7 @@ assert.equal(buttons[2].style, "secondary");
 assert.equal(buttons.length, 3, "歡迎卡不得因增加試喝而被拉長");
 
 assert.equal(bubble.hero?.url, guard.FORMAL_WELCOME_HERO_URL, "歡迎 Hero 必須使用唯一正式來源");
-assert.match(String(bubble.hero?.url || ""), /^https:\/\/raw\.githubusercontent\.com\/TS15825868\/TS-LINE\/main\/public\/mascot\/welcome\.jpg\?v=/, "歡迎 Hero 必須走 TS-LINE 專用 GitHub Raw 靜態圖，避免誤用產品總覽或 Render Free 冷啟動造成空白");
+assert.match(String(bubble.hero?.url || ""), /^https:\/\/ts-line\.onrender\.com\/mascot\/welcome-hd\.jpg\?v=/, "歡迎 Hero 必須走 TS-LINE Render 正式高解析 welcome-hd.jpg，不得回退舊低解析 welcome.jpg 或產品總覽圖");
 assert.equal(bubble.hero?.aspectRatio, "4:3");
 assert.equal(bubble.hero?.aspectMode, "fit");
 
@@ -69,4 +69,4 @@ const before = JSON.stringify(normal);
 guard.walk(normal);
 assert.equal(JSON.stringify(normal), before, "非歡迎卡不得被入口守門修改，產品圖與產品流程必須維持原樣");
 
-console.log("PASS：歡迎卡固定 TS-LINE 專用 Hero／精簡文案／申請試喝・看產品・幫我推薦三入口；非歡迎卡完全不受影響。");
+console.log("PASS：歡迎卡固定正式高解析 Hero／精簡文案／申請試喝・看產品・幫我推薦三入口；非歡迎卡完全不受影響。");
