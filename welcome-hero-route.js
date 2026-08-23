@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "20260823-approved-hd-welcome-v2";
+const VERSION = "20260823-approved-hd-welcome-v3";
 
 function loadWelcomeHeroBuffer() {
   const file = path.join(__dirname, "welcome-hero-data.js");
@@ -18,8 +18,14 @@ function loadWelcomeHeroBuffer() {
   encoded = encoded.replace(/\s+/g, "");
 
   const image = Buffer.from(encoded, "base64");
-  if (image.length < 100000 || image[0] !== 0xff || image[1] !== 0xd8) {
-    throw new Error("正式歡迎圖資料不是有效高解析 JPEG");
+  const isJpeg =
+    image.length >= 30000 &&
+    image[0] === 0xff &&
+    image[1] === 0xd8 &&
+    image[image.length - 2] === 0xff &&
+    image[image.length - 1] === 0xd9;
+  if (!isJpeg) {
+    throw new Error(`正式歡迎圖資料不是完整 JPEG（${image.length} bytes）`);
   }
   return image;
 }
