@@ -5,6 +5,7 @@
  *
  * server.js 建立自己的 Express app；本 bootstrap 在 app 建立當下掛上：
  * - line-entry-trial-guard：最先載入、成為最內層 outbound guard，確保其他卡片規則跑完後，歡迎卡最後仍固定為申請試喝／看產品／幫我推薦。
+ * - welcome-hero-route：使用者核准的高解析歡迎 Hero，避免舊 600x600 圖在 LINE 放大模糊。
  * - line-image-safety 正式產品／DM／試喝 JPEG 路由
  * - line-final-card-hero-guard：只補缺 hero，不覆蓋正式產品圖
  * - line-card-compact-guard：手機卡片瘦身與獨立試喝下單摘要
@@ -17,6 +18,7 @@ const express = require("express");
 // 讓其他 guard 先處理完 payload，最後才由歡迎卡 guard 固定三顆按鈕再送 LINE API。
 require("./line-entry-trial-guard");
 
+const welcomeHero = require("./welcome-hero-route");
 const safety = require("./line-image-safety");
 const ownerAlert = require("./line-owner-alert-runtime");
 require("./line-final-card-hero-guard");
@@ -28,6 +30,7 @@ if (!global.__XJW_LINE_EXPRESS_BOOTSTRAP__) {
   function xjwExpress(...args) {
     const app = originalExpress(...args);
     ownerAlert.install(app);
+    welcomeHero.install(app);
     safety.installImageRoutes(app);
     return app;
   }
@@ -44,8 +47,9 @@ if (!global.__XJW_LINE_EXPRESS_BOOTSTRAP__) {
   require.cache[require.resolve("express")].exports = xjwExpress;
   global.__XJW_LINE_EXPRESS_BOOTSTRAP__ = Object.freeze({
     installed: true,
-    version: "current-separated-formal-media-route-bootstrap-v20260822-welcome-final-outbound",
-    capability: "formal-media-routes-no-blank-hero-compact-mobile-cards-independent-trial-checkout-owner-alert-simplified-product-actions-and-final-welcome-trial-entry",
+    version: "current-separated-formal-media-route-bootstrap-v20260823-approved-hd-welcome",
+    capability: "formal-media-routes-approved-hd-welcome-no-blank-hero-compact-mobile-cards-independent-trial-checkout-owner-alert-simplified-product-actions-and-final-welcome-trial-entry",
+    welcomeHeroVersion: welcomeHero.VERSION,
     ownerAlertVersion: ownerAlert.VERSION,
   });
 }
