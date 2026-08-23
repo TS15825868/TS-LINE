@@ -1,20 +1,21 @@
 "use strict";
 
 /**
- * LINE OA 入口試喝守門 v7
+ * LINE OA 入口試喝守門 v8
  * - 新好友 Webhook 歡迎卡第一層固定為：申請試喝／看產品／幫我推薦。
  * - 優先以 Flex altText「歡迎來到仙加味」辨識，不再只依賴 bubble 內文。
- * - 歡迎 Hero 改走官網 GitHub Pages 靜態圖片，不再依賴 Render Free 圖片路由與冷啟動。
+ * - 歡迎 Hero 固定使用 TS-LINE 內獨立 welcome.jpg，不再誤用官網產品總覽圖。
+ * - 圖片走 GitHub Raw CDN，不依賴 Render Free 圖片路由與冷啟動。
  * - 歡迎卡第一層文案固定精簡，不顯示龜鹿飲 5～7 個工作天長文；交期留在試喝／產品／下單流程。
  * - 「看產品」產品總覽圖不受此守門影響。
  * - 不修改 Rich Menu、不更動產品價格、產品圖或試喝規格。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260822-entry-trial-v7-static-pages";
+const VERSION = "20260823-entry-trial-v8-dedicated-welcome";
 const WELCOME_PATTERN = /歡迎來到仙加味/;
 const FORMAL_WELCOME_HERO_URL =
-  "https://ts15825868.github.io/xianjiawei/images/brand/line-oa/welcome.jpg?v=20260822-static-pages-1";
+  "https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/welcome.jpg?v=20260823-dedicated-welcome-1";
 const FORMAL_WELCOME_DESCRIPTION =
   "您好，歡迎來到仙加味。\n想了解產品、怎麼選、日常搭配或申請試喝，都可以從下方開始。";
 
@@ -130,13 +131,13 @@ function walk(node) {
 }
 
 const Client = line?.messagingApi?.MessagingApiClient;
-if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV7) {
+if (Client?.prototype?.replyMessage && !Client.prototype.__xjwEntryTrialGuardInstalledV8) {
   const previous = Client.prototype.replyMessage;
-  Client.prototype.replyMessage = function xjwEntryTrialReplyV7(payload) {
+  Client.prototype.replyMessage = function xjwEntryTrialReplyV8(payload) {
     walk(payload?.messages);
     return previous.call(this, payload);
   };
-  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV7", { value: true, enumerable: false });
+  Object.defineProperty(Client.prototype, "__xjwEntryTrialGuardInstalledV8", { value: true, enumerable: false });
 }
 
 module.exports = {
