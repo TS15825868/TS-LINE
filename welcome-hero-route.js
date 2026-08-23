@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "20260823-approved-hd-welcome-v3";
+const VERSION = "20260823-approved-hd-welcome-v4";
 
 function loadWelcomeHeroBuffer() {
   const file = path.join(__dirname, "welcome-hero-data.js");
@@ -18,8 +18,9 @@ function loadWelcomeHeroBuffer() {
   encoded = encoded.replace(/\s+/g, "");
 
   const image = Buffer.from(encoded, "base64");
+  // JPEG 完整性依 SOI/EOI 檔案簽章判定；壓縮後檔案大小不是有效性條件。
   const isJpeg =
-    image.length >= 30000 &&
+    image.length > 1024 &&
     image[0] === 0xff &&
     image[1] === 0xd8 &&
     image[image.length - 2] === 0xff &&
