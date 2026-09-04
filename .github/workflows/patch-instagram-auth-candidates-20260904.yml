@@ -1,0 +1,50 @@
+name: 修正 Instagram 多授權正式發布
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-instagram-auth-candidates-20260904.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 套用 Instagram 多授權與雙 API Host 修正
+        run: python tools/patch_instagram_auth_candidates_20260904.py
+
+      - name: 安裝依賴並驗證正式橋接
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          node --check erp-publish-bridge.js
+          node --check server.js
+          node - <<'NODE'
+          const bridge = require('./erp-publish-bridge');
+          if (bridge.VERSION !== '2.1.0-20260904-multi-instagram-auth') throw new Error(`unexpected bridge version ${bridge.VERSION}`);
+          const { app } = require('./server');
+          const routes = (app._router?.stack || []).filter(x => x.route).map(x => ({path:x.route.path,methods:x.route.methods}));
+          if (!routes.some(r => r.path === '/internal/api/v2/publish-bridge' && r.methods.post)) throw new Error('publish bridge POST route missing');
+          if (!routes.some(r => r.path === '/internal/api/v2/publish-bridge/healthz' && r.methods.get)) throw new Error('publish bridge health route missing');
+          console.log('Instagram multi-auth bridge syntax and routes OK');
+          NODE
+
+      - name: 提交正式修正並清理暫存檔
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/patch-instagram-auth-candidates-20260904.yml tools/patch_instagram_auth_candidates_20260904.py
+          git config user.name 'TS15825868'
+          git config user.email 'tung314069@gmail.com'
+          git add erp-publish-bridge.js .github/workflows/patch-instagram-auth-candidates-20260904.yml tools/patch_instagram_auth_candidates_20260904.py
+          git commit -m '修正 Instagram 多授權正式發布路徑'
+          git push origin HEAD:main
