@@ -1,0 +1,18 @@
+name: 查驗 Render 正式發布橋接
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/probe-render-bridge-20260904.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 查驗 ts-line Render 路由
+        run: |
+          set -x
+          curl -sS -i --max-time 30 https://ts-line.onrender.com/healthz | head -80 || true
+          echo '=== bridge health ==='
+          curl -sS -i --max-time 30 https://ts-line.onrender.com/internal/api/v2/publish-bridge/healthz | head -120 || true
