@@ -1440,6 +1440,8 @@ if (config.channelAccessToken && config.channelSecret) {
   });
 }
 
+require("./erp-publish-bridge").mount(app);
+
 const port = process.env.PORT || 3000;
 if (require.main === module) {
   app.listen(port, () => console.log(`仙加味 LINE OA ${VERSION} running on ${port}`));
