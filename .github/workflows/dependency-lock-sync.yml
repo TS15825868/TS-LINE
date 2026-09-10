@@ -1,0 +1,57 @@
+name: 仙加味 LINE OA 相依套件鎖定同步
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xianjiawei-lineoa-dependency-lock-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Refresh package-lock from package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Install exact refreshed dependency tree
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run formal LINE OA checks
+        run: npm test
+
+      - name: Block remaining high or critical production advisories
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Commit refreshed package-lock when needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "package-lock.json already synchronized"
+            exit 0
+          fi
+          git commit -m "chore: sync LINE OA dependency lock"
+          git push origin HEAD:main
