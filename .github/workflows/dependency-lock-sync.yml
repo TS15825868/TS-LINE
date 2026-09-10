@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - package.json
+      - .github/workflows/dependency-lock-sync.yml
   workflow_dispatch:
 
 permissions:
@@ -33,14 +34,17 @@ jobs:
       - name: Refresh package-lock from package.json
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
+      - name: Apply only nonbreaking npm audit fixes to lockfile
+        run: npm audit fix --package-lock-only --omit=dev --ignore-scripts
+
       - name: Install exact refreshed dependency tree
         run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Run formal LINE OA checks
         run: npm test
 
-      - name: Block remaining high or critical production advisories
-        run: npm audit --omit=dev --audit-level=high
+      - name: Require zero moderate, high or critical production advisories
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Commit refreshed package-lock when needed
         shell: bash
@@ -53,5 +57,5 @@ jobs:
             echo "package-lock.json already synchronized"
             exit 0
           fi
-          git commit -m "chore: sync LINE OA dependency lock"
+          git commit -m "chore: apply safe LINE OA dependency audit fixes"
           git push origin HEAD:main
