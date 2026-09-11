@@ -68,13 +68,13 @@ function mergeAuthority(local,master){
   delete qixuan.approvedProductImage;
   delete qixuan.approvedDm;
   delete qixuan.ingredients;
-  const guardRules=[
+  const guardRules=[...new Set([
     "目前對外與LINE OA均只顯示六項正式產品；柒玄茶暫時隱藏，直到使用者明確重新啟用",
     "柒玄茶資料保留但不得出現在產品卡、推薦、公開文字知識或主動回覆",
     "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分",
     "30cc目前正式使用方式為每日 1–2 罐，不得回退成每日一罐",
     ...((local.guardRules||[]).filter(x=>!String(x).includes("LINE可保留柒玄茶文字知識")&&!String(x).includes("七項產品文字知識完整")&&!String(x).includes("LINE文字知識必須保留7項")))
-  ];
+  ])];
   return {
     ...local,
     version:`${master.version}-six-line-visible-qixuan-hidden-v9`,
