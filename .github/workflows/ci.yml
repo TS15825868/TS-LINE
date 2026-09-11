@@ -10,6 +10,7 @@ on:
       - 'package.json'
       - 'assets/data/official-products.json'
       - 'data.json'
+      - 'tools/sync_sales_master_current.js'
       - 'product-sales-master.js'
       - 'line-app-bootstrap.js'
       - 'brand-content-runtime.js'
