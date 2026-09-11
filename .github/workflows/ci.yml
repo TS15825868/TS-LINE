@@ -1,9 +1,28 @@
-name: 仙加味 LINE OA 目前正式版完整驗收（手動）
+name: 仙加味 LINE OA 目前正式版完整驗收
 
-# 全面整理期間維持手動執行，避免不必要的 Actions 消耗。
+# 核心 LINE OA 權威／runtime／顧客資料變更時自動驗收；其他一般素材或文件更新不浪費 Actions。
 # 正式規格只由 repo 目前權威與正式測試判斷，不在 workflow 複製第二套舊資料。
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'assets/data/official-products.json'
+      - 'data.json'
+      - 'product-sales-master.js'
+      - 'line-app-bootstrap.js'
+      - 'brand-content-runtime.js'
+      - 'server.js'
+      - 'approved-post-library.js'
+      - 'approved-post-static.js'
+      - 'line-public-copy-authority.test.js'
+      - 'line-production-readiness.test.js'
+      - 'line-products-v3-authority.test.js'
+      - 'line-formal-media-route.test.js'
+      - 'line-rich-menu-sync.js'
+      - 'line-rich-menu-sync.test.js'
+      - '.github/workflows/ci.yml'
 
 permissions:
   contents: read
@@ -51,6 +70,7 @@ jobs:
           must(pkg.main==='server.js','LINE正式入口必須是 server.js');
           must(pkg.scripts.start==='node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js','LINE正式 start 不同步');
           must(pkg.scripts.prestart.includes('sync_sales_master_current.js --write'),'prestart 必須先同步目前正式權威');
+          must(pkg.scripts.prestart.includes('line-public-copy-authority.test.js'),'prestart 必須包含公開資料防回流守門');
           must(pkg.scripts.prestart.includes('line-production-readiness.test.js'),'prestart 必須包含正式 readiness');
 
           must(current.authority==='user-confirmed-current','目前產品權威錯誤');
@@ -67,7 +87,7 @@ jobs:
 
           const workflows=fs.readdirSync('.github/workflows');
           must(!workflows.includes('sync-social-content-v20260817.yml'),'退役社群同步 workflow 不得回流 TS-LINE');
-          console.log('PASS: LINE OA six visible products, Qixuan hidden, LINE-only runtime, manual audit only.');
+          console.log('PASS: LINE OA six visible products, Qixuan hidden, current public-copy guard active, LINE-only runtime.');
           NODE
 
       - name: Ensure audit is read-only
