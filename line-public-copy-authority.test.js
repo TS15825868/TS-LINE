@@ -71,8 +71,10 @@ const gao = byId['guilu-gao'];
 
 must(drink30 && drink30.name === '龜鹿飲30cc玻璃罐', '30cc 正式名稱不是龜鹿飲30cc玻璃罐');
 must(drink30.specification === '30cc／罐（小玻璃罐）', '30cc 正式規格回退');
-must(String(drink30.package || '').includes('小玻璃裸罐'), '30cc 正式包裝未鎖定小玻璃裸罐');
-must(String(drink30.package || '').includes('無貼紙'), '30cc 正式包裝未鎖定無貼紙');
+const drink30Package = String(drink30.package || '');
+must(drink30Package.includes('小玻璃罐'), '30cc 正式包裝未鎖定小玻璃罐');
+must(drink30Package.includes('裸罐'), '30cc 正式包裝未鎖定裸罐');
+must(drink30Package.includes('無貼紙'), '30cc 正式包裝未鎖定無貼紙');
 must(drink30.usagePrimary === '每日 1–2 罐', '30cc 正式使用方式被舊資料回退');
 must(drink30.usageTiming === '飲用時間可依個人使用習慣與作息時間安排', '30cc 飲用時段不是目前彈性規則');
 must(drink180 && drink180.name === '龜鹿飲180cc鋁袋', '180cc 正式名稱回退');
@@ -93,4 +95,4 @@ must(salesMasterSource.includes('/建議白天飲用/g, "飲用時間可依個�
 must(salesMasterSource.includes('/每日早上及下午各一小匙/g, "食用時間可依個人使用習慣與作息時間安排"'), '龜鹿膏舊固定時段清洗規則遺失或方向錯誤');
 must(salesMasterSource.includes(".filter((v) => id !== \"guilu-drink-30\" || !/瓶/.test(v))"), '30cc 舊瓶別名過濾規則遺失');
 
-console.log('PASS: LINE OA customer-facing copy authority; six visible products; 30cc small glass jar/bare/no sticker; flexible timing; stale-source sanitizers remain active; no stale public brand/product/timing or high-risk claim regression.');
+console.log('PASS: LINE OA customer-facing copy authority; six visible products; 30cc small glass jar + bare jar + no sticker; flexible timing; stale-source sanitizers remain active; no stale public brand/product/timing or high-risk claim regression.');
