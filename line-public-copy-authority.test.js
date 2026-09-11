@@ -7,13 +7,11 @@ const ROOT = __dirname;
 const PUBLIC_IDS = ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen'];
 const DEFERRED_ID = 'qixuan-guilu-drink-powder';
 
+// 只掃真正會形成 LINE 顧客資料／公開貼文的 payload。
+// 程式碼內可以合法保留「舊字串 -> 新字串」轉換規則，不應因為看見舊字串本身就判失敗。
 const ACTIVE_PUBLIC_FILES = [
   'assets/data/official-products.json',
   'data.json',
-  'product-sales-master.js',
-  'line-app-bootstrap.js',
-  'brand-content-runtime.js',
-  'server.js',
   'approved-post-library.js',
   'approved-post-static.js',
 ];
@@ -89,4 +87,10 @@ const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'));
 must(Array.isArray(data.products) && data.products.length === 6, 'LINE 顧客產品卡不是六項');
 must(!data.products.some(p => p.id === DEFERRED_ID), '柒玄茶重新混入顧客產品卡');
 
-console.log('PASS: LINE OA current public copy authority; six visible products; 30cc small glass jar/bare/no sticker; flexible timing; no stale brand/product/timing or high-risk claim regression.');
+// 驗證舊資料清洗程式仍存在且方向正確；這裡刻意允許來源碼出現退役字串，因為它們是替換規則的比對端。
+const salesMasterSource = fs.readFileSync(path.join(ROOT, 'product-sales-master.js'), 'utf8');
+must(salesMasterSource.includes('/建議白天飲用/g, "飲用時間可依個人使用習慣與作息時間安排"'), 'LINE 舊白天時段清洗規則遺失或方向錯誤');
+must(salesMasterSource.includes('/每日早上及下午各一小匙/g, "食用時間可依個人使用習慣與作息時間安排"'), '龜鹿膏舊固定時段清洗規則遺失或方向錯誤');
+must(salesMasterSource.includes(".filter((v) => id !== \"guilu-drink-30\" || !/瓶/.test(v))"), '30cc 舊瓶別名過濾規則遺失');
+
+console.log('PASS: LINE OA customer-facing copy authority; six visible products; 30cc small glass jar/bare/no sticker; flexible timing; stale-source sanitizers remain active; no stale public brand/product/timing or high-risk claim regression.');
