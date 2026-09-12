@@ -70,9 +70,9 @@ jobs:
 
           must(pkg.main==='server.js','LINE正式入口必須是 server.js');
           must(pkg.scripts.start==='node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js','LINE正式 start 不同步');
-          must(pkg.scripts.prestart.includes('sync_sales_master_current.js --write'),'prestart 必須先同步目前正式權威');
-          must(pkg.scripts.prestart.includes('line-public-copy-authority.test.js'),'prestart 必須包含公開資料防回流守門');
-          must(pkg.scripts.prestart.includes('line-production-readiness.test.js'),'prestart 必須包含正式 readiness');
+          must(pkg.scripts.prestart==='node tools/sync_sales_master_current.js --write','prestart 只應同步目前正式權威，避免正式冷啟動重跑完整測試');
+          must(pkg.scripts['guard:full'].includes('line-public-copy-authority.test.js'),'guard:full 必須包含公開資料防回流守門');
+          must(pkg.scripts['guard:full'].includes('line-production-readiness.test.js'),'guard:full 必須包含正式 readiness');
 
           must(current.authority==='user-confirmed-current','目前產品權威錯誤');
           must(Array.isArray(current.knowledgeProductIds)&&current.knowledgeProductIds.length===6,'LINE目前可見產品知識必須六項');
@@ -88,7 +88,7 @@ jobs:
 
           const workflows=fs.readdirSync('.github/workflows');
           must(!workflows.includes('sync-social-content-v20260817.yml'),'退役社群同步 workflow 不得回流 TS-LINE');
-          console.log('PASS: LINE OA six visible products, Qixuan hidden, current public-copy guard active, LINE-only runtime.');
+          console.log('PASS: LINE OA six visible products, Qixuan hidden, guards stay in CI, runtime cold start stays lean.');
           NODE
 
       - name: Ensure audit is read-only
