@@ -1,0 +1,127 @@
+name: 仙加味 LINE OA 現行完整驗收
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.js'
+      - '**/*.json'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/full-line-verification-current.yml'
+  schedule:
+    - cron: '31 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xianjiawei-full-line-verification-current
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Full code and content guards
+        run: |
+          npm test
+          npm run guard:full
+          npm run security:audit
+
+      - name: Fetch website current public product authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --retry 3 --max-time 30 \
+            'https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json' \
+            -o website-public-product-master.json
+          node -e "const x=require('./website-public-product-master.json');if(!Array.isArray(x.products)||!x.products.length||Number(x.productCount)!==x.products.length)process.exit(1)"
+
+      - name: Verify LINE data follows website current public master
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs');
+          const line=JSON.parse(fs.readFileSync('data.json','utf8'));
+          const master=JSON.parse(fs.readFileSync('website-public-product-master.json','utf8'));
+          const errors=[];
+          if(line.brand!=='仙加味')errors.push(`LINE brand=${line.brand}`);
+          if(!Array.isArray(line.products))errors.push('LINE products不是陣列');
+          const lineProducts=Array.isArray(line.products)?line.products:[];
+          const masterProducts=master.products||[];
+          if(lineProducts.length!==masterProducts.length)errors.push(`LINE產品數 ${lineProducts.length} != 官網母資料 ${masterProducts.length}`);
+          const byId=new Map(lineProducts.map(p=>[p.id,p]));
+          for(const p of masterProducts){
+            const x=byId.get(p.id);
+            if(!x){errors.push(`LINE缺產品 ${p.id}`);continue}
+            if(x.name!==p.name)errors.push(`${p.id}: name ${x.name} != ${p.name}`);
+            if(String(x.specification||'')!==String(p.specification||''))errors.push(`${p.id}: specification ${x.specification} != ${p.specification}`);
+            if(Array.isArray(p.ingredients)&&JSON.stringify(x.ingredients||[])!==JSON.stringify(p.ingredients))errors.push(`${p.id}: ingredients未同步`);
+            if(p.fulfillment&&String(x.productionLeadTime||'')!==String((p.fulfillment.match(/約?\s*(5～7個工作天)/)||[])[1]||x.productionLeadTime||'')){
+              // fulfillment文字差異不單獨失敗；由下方飲品交期範圍硬規則驗證。
+            }
+          }
+          for(const x of lineProducts)if(!masterProducts.some(p=>p.id===x.id))errors.push(`LINE多出非官網公開母資料產品 ${x.id}`);
+          const text=JSON.stringify(line);
+          if(text.includes('台興山產'))errors.push('LINE公開資料含舊品牌名台興山產');
+          if(/30cc.{0,12}(玻璃瓶|／瓶|瓶裝)/.test(text))errors.push('LINE公開資料含30cc舊瓶稱');
+          const madeToOrder=new Set(master.fulfillmentPolicy?.madeToOrderProducts||[]);
+          for(const p of lineProducts){
+            const hasLead=String(p.productionLeadTime||'').includes('5～7個工作天')||String(p.fulfillmentNotice||'').includes('5～7個工作天');
+            if(hasLead&&!madeToOrder.has(p.id))errors.push(`${p.id}: 非龜鹿飲卻出現5～7個工作天交期`);
+            if(madeToOrder.has(p.id)&&!hasLead)errors.push(`${p.id}: 龜鹿飲缺5～7個工作天製作交期`);
+          }
+          if(errors.length){console.error(errors.join('\n'));process.exit(1)}
+          console.log(`PASS LINE data.json follows website authority: ${masterProducts.length} products, version=${master.version}`);
+          NODE
+
+      - name: Verify live Render service against current authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://ts-line.onrender.com'
+          curl -LsS --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 150 "$base/" -o live-root.json
+          curl -LsS --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 150 "$base/healthz" -o live-health.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const master=JSON.parse(fs.readFileSync('website-public-product-master.json','utf8'));
+          const root=JSON.parse(fs.readFileSync('live-root.json','utf8'));
+          const h=JSON.parse(fs.readFileSync('live-health.json','utf8'));
+          if(root.ok!==true||root.service!=='仙加味 LINE OA') throw new Error('LINE root live 異常');
+          if(h.ok!==true) throw new Error('LINE healthz live 異常');
+          if(h.credentialsConfigured!==true) throw new Error('LINE credentialsConfigured=false');
+          if(h.orderOpen!==true) throw new Error('LINE orderOpen=false');
+          if(Number(h.productCount)!==Number(master.productCount)) throw new Error(`LINE live productCount ${h.productCount} != master ${master.productCount}`);
+          if(h.mascotAssetsReady!==true) throw new Error('LINE mascotAssetsReady=false');
+          console.log('PASS LINE live',h.version,h.catalogVersion,h.productCount,'master',master.version);
+          NODE
+          for asset in welcome recommend usage faq service; do
+            url="https://raw.githubusercontent.com/TS15825868/TS-LINE/main/public/mascot/${asset}.jpg"
+            code="$(curl -LsS --retry 2 --max-time 45 -o /tmp/mascot -w '%{http_code}' "$url")"
+            test "$code" = '200'
+            test -s /tmp/mascot
+          done
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: xianjiawei-full-line-current-${{ github.run_id }}
+          path: |
+            website-public-product-master.json
+            live-root.json
+            live-health.json
+          if-no-files-found: error
+          retention-days: 7
