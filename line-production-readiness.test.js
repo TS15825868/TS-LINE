@@ -49,7 +49,6 @@ assert.ok(!String(qixuan?.approvedProductImage || "").trim());
 assert.ok(!String(qixuan?.approvedDm || "").trim());
 assert.ok(!Array.isArray(qixuan?.ingredients), "未確認公開成分前不得自行建立柒玄茶成分");
 
-// LINE 自然語言公開回答不得繞過產品可見性規則重新曝光柒玄茶。
 assert.ok(Array.isArray(aiAnswers.answers) && aiAnswers.answers.length >= 5, "LINE AI公開答案權威缺失");
 const allProductsAnswer = aiAnswers.answers.find((item) => item.id === "all-products");
 assert.ok(allProductsAnswer, "LINE AI缺少 all-products 回答");
@@ -137,7 +136,21 @@ assert.ok(syncSource.includes("QIXUAN_HIDDEN"), "同步程式必須保留柒玄�
 assert.ok(syncSource.includes("knowledgeProductCount:6"), "同步程式不得再回寫7項LINE可見知識");
 assert.ok(!syncSource.includes("LINE 7 text knowledge products"), "同步程式不得保留舊7項成功訊息");
 assert.equal(packageJson.main, "server.js");
-assert.equal(packageJson.scripts.start, "node -r ./product-sales-master.js -r ./line-app-bootstrap.js -r ./brand-content-runtime.js server.js");
+const startCommand = String(packageJson.scripts.start || "");
+const requiredStartParts = [
+  "node",
+  "-r ./product-sales-master.js",
+  "-r ./line-app-bootstrap.js",
+  "-r ./brand-content-runtime.js",
+  "-r ./line-source-attribution.js",
+  "server.js",
+];
+let previousIndex = -1;
+for (const part of requiredStartParts) {
+  const currentIndex = startCommand.indexOf(part);
+  assert.ok(currentIndex > previousIndex, `LINE啟動指令缺少或順序錯誤：${part}`);
+  previousIndex = currentIndex;
+}
 assert.ok(packageJson.scripts.prestart.includes("sync_sales_master_current.js --write"));
 
 for (const retired of [".github/workflows/line-closeout-status-once.yml",".github/workflows/one-time-update-drink-pricing-20260806.yml",".github/workflows/sync-formal-line-media.yml",".github/workflows/sync-social-content-v20260817.yml","tools/sync-formal-line-media.py"]) {
