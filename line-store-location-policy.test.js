@@ -11,6 +11,7 @@ require("./line-store-location-policy");
 const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data.json"), "utf8"));
 const store = data.store || {};
 const serverSource = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
+const ecosystemAuthority = JSON.parse(fs.readFileSync(path.join(__dirname, "config/ecosystem-authority-v20260910.json"), "utf8"));
 
 assert.equal(store.publicAddressEnabled, false, "未設定 PUBLIC_STORE_ADDRESS 時不得公開固定門牌");
 assert.equal(store.addressAuthority, "line-confirmation-only");
@@ -24,5 +25,14 @@ assert.equal(store.hours, "週一至週五 10:30－20:00；週六、週日休息
 assert.match(serverSource, /官網：24 小時可瀏覽產品、品牌、使用方式與常見問題。/, "LINE 門市資訊應同步說明官網 24 小時可瀏覽");
 assert.ok(!serverSource.includes("週一至週六 09:30–18:30"), "server.js 不得保留舊營業時間備援");
 assert.ok(!serverSource.includes("下一個營業時段"), "server.js 不得回退成固定下一營業時段才回覆");
+assert.equal(ecosystemAuthority.funnel?.lineOA?.id, "@762jybnm");
+assert.equal(ecosystemAuthority.funnel?.lineOA?.url, "https://lin.ee/sHZW7NkR");
+assert.equal(ecosystemAuthority.funnel?.lineOA?.primary, true, "LINE OA 必須是主要入口");
+assert.equal(ecosystemAuthority.funnel?.lineOA?.defaultCta, true, "LINE OA 必須是預設CTA");
+assert.equal(ecosystemAuthority.funnel?.lineCommunity?.notTransactionCenter, true, "LINE 社群不得成為交易中心");
+assert.equal(ecosystemAuthority.funnel?.lineCommunity?.defaultCta, false, "LINE 社群不得成為預設CTA");
+assert.equal(ecosystemAuthority.funnel?.lineCommunity?.optionalOnly, true, "LINE 社群只能選擇性提及");
+assert.equal(ecosystemAuthority.funnel?.lineCommunity?.noPersonalOrTransactionData, true, "LINE 社群不得承接個資或交易資料");
+assert.ok(!serverSource.includes("line.me/ti/g2"), "LINE OA runtime 不得把社群邀請連結做成預設客服／交易導流");
 
-console.log("PASS：LINE OA 店面週一至週五 10:30－20:00、週末店休；LINE 可隨時留言、官網24小時可瀏覽、週末配送／自取採事先詢問協調；舊時間備援不得回流。");
+console.log("PASS：LINE OA 為唯一主要客服／交易導流；社群只供選擇性交流；服務時間與舊資料防回退正常。");
