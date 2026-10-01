@@ -1,4 +1,5 @@
 name: 仙加味 LINE OA 目前正式版完整驗收
+# security-lock-refresh-verified-20261001
 
 # 核心 LINE OA 權威／runtime／顧客資料變更時自動驗收；其他一般素材或文件更新不浪費 Actions。
 # 正式規格只由 repo 目前權威與正式測試判斷，不在 workflow 複製第二套舊資料。
@@ -8,6 +9,7 @@ on:
     branches: [main]
     paths:
       - 'package.json'
+      - 'package-lock.json'
       - 'assets/data/official-products.json'
       - 'data.json'
       - 'tools/sync_sales_master_current.js'
