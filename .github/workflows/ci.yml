@@ -17,6 +17,9 @@ on:
       - 'line-source-attribution.js'
       - 'line-source-attribution.test.js'
       - 'server.js'
+      - 'config/ecosystem-authority-v20260910.json'
+      - 'line-store-location-policy.test.js'
+      - 'line-store-location-policy.js'
       - 'approved-post-library.js'
       - 'approved-post-static.js'
       - 'line-public-copy-authority.test.js'
@@ -72,7 +75,7 @@ jobs:
 
           must(pkg.main==='server.js','LINE正式入口必須是 server.js');
           const start=String(pkg.scripts.start||'');
-          const requiredStartParts=['node','-r ./product-sales-master.js','-r ./line-app-bootstrap.js','-r ./brand-content-runtime.js','-r ./line-source-attribution.js','server.js'];
+          const requiredStartParts=['node','-r ./product-sales-master.js','-r ./line-store-location-policy.js','-r ./line-app-bootstrap.js','-r ./brand-content-runtime.js','-r ./line-source-attribution.js','server.js'];
           let previous=-1;
           for(const part of requiredStartParts){
             const index=start.indexOf(part);
