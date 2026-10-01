@@ -1,4 +1,5 @@
 name: 仙加味 LINE OA 完整驗收 20260913
+# security-lock-refresh-verified-20261001
 
 on:
   push:
