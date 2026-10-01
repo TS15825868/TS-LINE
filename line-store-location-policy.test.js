@@ -25,6 +25,11 @@ assert.equal(store.hours, "週一至週五 10:30－20:00；週六、週日休息
 assert.match(serverSource, /官網：24 小時可瀏覽產品、品牌、使用方式與常見問題。/, "LINE 門市資訊應同步說明官網 24 小時可瀏覽");
 assert.ok(!serverSource.includes("週一至週六 09:30–18:30"), "server.js 不得保留舊營業時間備援");
 assert.ok(!serverSource.includes("下一個營業時段"), "server.js 不得回退成固定下一營業時段才回覆");
+assert.equal(ecosystemAuthority.brand?.publicName, "仙加味", "公開主品牌必須是仙加味");
+assert.equal(ecosystemAuthority.brandNaming?.publicBrandName, "仙加味", "品牌命名權威必須是仙加味");
+assert.equal(ecosystemAuthority.brandNaming?.googleDesiredPublicName, "仙加味", "Google最終名稱必須是仙加味");
+assert.equal(ecosystemAuthority.funnel?.lineCommunity?.name, "仙加味｜日常交流", "LINE 社群名稱應為仙加味｜日常交流");
+assert.ok(!serverSource.includes("仙加味・龜鹿"), "LINE OA runtime 不得把仙加味・龜鹿當品牌名稱");
 assert.equal(ecosystemAuthority.funnel?.lineOA?.id, "@762jybnm");
 assert.equal(ecosystemAuthority.funnel?.lineOA?.url, "https://lin.ee/sHZW7NkR");
 assert.equal(ecosystemAuthority.funnel?.lineOA?.primary, true, "LINE OA 必須是主要入口");
