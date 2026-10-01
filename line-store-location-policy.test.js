@@ -27,7 +27,8 @@ assert.ok(!serverSource.includes("週一至週六 09:30–18:30"), "server.js �
 assert.ok(!serverSource.includes("下一個營業時段"), "server.js 不得回退成固定下一營業時段才回覆");
 assert.equal(ecosystemAuthority.brand?.publicName, "仙加味", "公開主品牌必須是仙加味");
 assert.equal(ecosystemAuthority.brandNaming?.publicBrandName, "仙加味", "品牌命名權威必須是仙加味");
-assert.equal(ecosystemAuthority.brandNaming?.googleDesiredPublicName, "仙加味", "Google最終名稱必須是仙加味");
+assert.equal(ecosystemAuthority.brandNaming?.googleBusiness?.currentName, "仙加味｜台興山產有限公司", "Google商家目前應使用品牌＋法律主體名稱");
+assert.equal(ecosystemAuthority.brandNaming?.googleBusiness?.doNotTreatAsMainBrand, true, "Google例外名稱不得取代仙加味主品牌");
 assert.equal(ecosystemAuthority.funnel?.lineCommunity?.name, "仙加味｜日常交流", "LINE 社群名稱應為仙加味｜日常交流");
 assert.ok(!serverSource.includes("仙加味・龜鹿"), "LINE OA runtime 不得把仙加味・龜鹿當品牌名稱");
 assert.equal(ecosystemAuthority.funnel?.lineOA?.id, "@762jybnm");
