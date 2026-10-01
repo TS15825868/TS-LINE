@@ -13,10 +13,10 @@
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "2026-09-16-store-location-policy-v1";
+const VERSION = "2026-10-01-store-hours-v2";
 const DATA_PATH = path.join(__dirname, "data.json");
 const DEFAULT_ADDRESS_MESSAGE = "最新門市／自取資訊請先透過官方 LINE 確認";
-const DEFAULT_HOURS = "週一至週六 09:30–18:30";
+const DEFAULT_HOURS = "週一至週五 10:30–20:00；週六、週日休息";
 const DEFAULT_NOTE = "如需到店／自取，請先透過官方 LINE 確認最新安排。";
 
 if (!global.__XJW_STORE_LOCATION_POLICY__) {
