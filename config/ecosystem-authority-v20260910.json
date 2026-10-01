@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-01-v4-brand-name",
+  "version": "2026-10-01-v5-google-legal-entity-exception",
   "authority": "user-confirmed-current",
   "brand": {
     "publicName": "仙加味",
@@ -68,13 +68,18 @@
   },
   "brandNaming": {
     "publicBrandName": "仙加味",
+    "legalEntityName": "台興山產有限公司",
     "guiluRole": "龜鹿只作為產品／系列名稱，不再綁在品牌名稱後面",
     "futureProductRule": "未來其他產品仍統一使用仙加味主品牌",
     "forbiddenPublicBrandForms": [
       "仙加味・龜鹿",
-      "仙加味｜台興山產有限公司",
       "台興山產・仙加味"
     ],
-    "googleDesiredPublicName": "仙加味"
+    "googleBusiness": {
+      "currentName": "仙加味｜台興山產有限公司",
+      "doNotTreatAsMainBrand": true,
+      "futurePreferredName": "仙加味",
+      "futureCondition": "待仙加味有可被 Google 接受的商業登記、實體招牌或其他一致實際證明後再評估簡化"
+    }
   }
 }
