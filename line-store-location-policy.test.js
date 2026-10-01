@@ -15,7 +15,10 @@ assert.equal(store.publicAddressEnabled, false, "未設定 PUBLIC_STORE_ADDRESS 
 assert.equal(store.addressAuthority, "line-confirmation-only");
 assert.match(String(store.address || ""), /LINE/);
 assert.ok(!/西昌街|52號/.test(String(store.address || "")), "不得回退舊門牌備援");
-assert.match(String(store.holidayNote || ""), /到店|自取/);
-assert.equal(store.hours, "週一至週五 10:30–20:00；週六、週日休息", "門市營業時間應使用 2026-10-01 正式新版");
+assert.match(String(store.holidayNote || ""), /隨時留言/);
+assert.match(String(store.holidayNote || ""), /週末/);
+assert.match(String(store.holidayNote || ""), /配送/);
+assert.match(String(store.holidayNote || ""), /自取/);
+assert.equal(store.hours, "週一至週五 10:30－20:00；週六、週日休息", "門市營業時間應使用 2026-10-01 正式新版");
 
-console.log("PASS：LINE OA 預設不公開固定門牌；門市／自取資訊改由官方 LINE 確認，未來地址可用單一環境值更新。");
+console.log("PASS：LINE OA 店面週一至週五 10:30－20:00、週末店休；LINE 可隨時留言，週末配送／自取採事先詢問協調；門牌維持由 LINE 確認。");
