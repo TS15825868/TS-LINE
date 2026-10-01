@@ -14,7 +14,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v401.7";
+const VERSION = "v401.8";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const DRINK_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
 const READY_STOCK_ORDER_NOTICE = "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。";
@@ -1414,6 +1414,8 @@ app.get("/healthz", (_req, res) => {
     mascotVersion: MASCOT_VERSION,
     productCount: DATA.products.length,
     mascotAssetsReady: Object.values(MASCOT_PATHS).every((asset) => Boolean(asset)),
+    storeHours: String(DATA.store?.hours || ""),
+    storeHolidayNote: String(DATA.store?.holidayNote || ""),
     activeStates: states.size,
     processedWebhookEvents: processedWebhookEvents.size,
     processingWebhookEvents: processingWebhookEvents.size,
