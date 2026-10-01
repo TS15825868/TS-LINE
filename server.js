@@ -14,7 +14,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const VERSION = "v401.6";
+const VERSION = "v401.7";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const DRINK_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
 const READY_STOCK_ORDER_NOTICE = "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。";
@@ -252,8 +252,8 @@ function mainQuick() {
 function storeServiceText() {
   const store = DATA.store || {};
   return `門市地址：${store.address || "台北市萬華區西昌街52號"}。
-營業時間：${store.hours || "週一至週六 09:30–18:30"}。
-${store.holidayNote || "假日如未外出，可提前透過官方 LINE 預約。"}
+營業時間：${store.hours || "週一至週五 10:30－20:00；週六、週日休息"}。
+${store.holidayNote || "官方 LINE 可隨時留言；店休及非營業時間的訊息，將依實際情況回覆。週末如有配送、自取需求，也可先透過 LINE 詢問安排。"}
 
 請直接留下想詢問的產品、規格、數量、配送或取貨需求，我們會由人工協助回覆。`;
 }
