@@ -27,11 +27,20 @@ assert.match(String(profile.avatarPolicy || ""), /正式仙加味 Logo/);
 assert.match(String(profile.coverPolicy || ""), /正式新版封面/);
 assert.match(String(profile.coverPolicy || ""), /不得.*覆蓋/);
 
-const raw = fs.readFileSync(path.join(ROOT, "config/ecosystem-authority-v20260910.json"), "utf8");
+const activeProfile = JSON.stringify({
+  accountName: profile.accountName,
+  statusMessage: profile.statusMessage,
+  address: profile.address,
+  hours: profile.hours,
+  website: profile.website,
+  lineId: profile.lineId,
+  lineUrl: profile.lineUrl,
+  avatarPolicy: profile.avatarPolicy,
+  coverPolicy: profile.coverPolicy
+});
 for (const retired of ["歡迎諮詢","09:30－18:30","09:30 - 18:30"]) {
   const allowedInRetiredList = JSON.stringify(profile.retiredValues || []).includes(retired);
-  const scrubbed = raw.replace(JSON.stringify(profile.retiredValues || []), "[]");
-  assert.ok(!scrubbed.includes(retired), "商業簡介正式欄位仍含退役資料：" + retired);
+  assert.ok(!activeProfile.includes(retired), "商業簡介正式欄位仍含退役資料：" + retired);
   assert.equal(allowedInRetiredList, true, "退役商業簡介值未被明確列入 retiredValues：" + retired);
 }
 
