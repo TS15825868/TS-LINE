@@ -68,11 +68,11 @@ LINE Official Account Manager 的「商業簡介」屬 OA Manager 手動發布�
 - 網站：仙加味｜連結入口 → https://ts15825868.github.io/xianjiawei/links.html
 - LINE OA：@762jybnm
 - 頭像：維持正式仙加味 Logo
-- 封面：維持使用者已手動更新的正式新版封面，不得由程式或舊素材覆蓋
+- 封面：2026-10-04 截圖確認現圖仍含舊 09:30－18:30，且產品為美術化外觀，已判定需更換；新版不把營業時間寫死，產品若出現一律使用正式實物原圖
 - 編輯完成後必須在 OA Manager 發布；僅儲存不視為完成
 
 正式權威：`config/ecosystem-authority-v20260910.json > lineBusinessProfile`。
-舊「歡迎諮詢」與週一至週六 09:30－18:30 均視為退役商業簡介資料。
+舊「歡迎諮詢」、週一至週六 09:30－18:30，以及封面上的週一至週五 09:30－18:30 均視為退役商業簡介資料。
 
 ## Rich Menu
 

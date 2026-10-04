@@ -24,8 +24,14 @@ assert.equal(profile.lineId, "@762jybnm");
 assert.equal(profile.lineUrl, "https://lin.ee/sHZW7NkR");
 assert.equal(profile.publishRequired, true);
 assert.match(String(profile.avatarPolicy || ""), /正式仙加味 Logo/);
-assert.match(String(profile.coverPolicy || ""), /正式新版封面/);
-assert.match(String(profile.coverPolicy || ""), /不得.*覆蓋/);
+assert.equal(profile.coverStatus, "replace-required");
+assert.equal(profile.coverFixedHoursForbidden, true);
+assert.equal(profile.managerPublishStatus, "pending-business-profile-and-cover-update");
+assert.match(String(profile.coverIssue || ""), /09:30/);
+assert.match(String(profile.coverIssue || ""), /產品外觀/);
+assert.match(String(profile.coverPolicy || ""), /不寫固定營業時間/);
+assert.match(String(profile.coverPolicy || ""), /正式仙加味 Logo/);
+assert.match(String(profile.coverPolicy || ""), /正式實物原圖/);
 
 const activeProfile = JSON.stringify({
   accountName: profile.accountName,
@@ -36,7 +42,8 @@ const activeProfile = JSON.stringify({
   lineId: profile.lineId,
   lineUrl: profile.lineUrl,
   avatarPolicy: profile.avatarPolicy,
-  coverPolicy: profile.coverPolicy
+  coverPolicy: profile.coverPolicy,
+  coverStatus: profile.coverStatus
 });
 for (const retired of ["歡迎諮詢","09:30－18:30","09:30 - 18:30"]) {
   const allowedInRetiredList = JSON.stringify(profile.retiredValues || []).includes(retired);
@@ -47,4 +54,4 @@ for (const retired of ["歡迎諮詢","09:30－18:30","09:30 - 18:30"]) {
 const storePolicy = fs.readFileSync(path.join(ROOT, "line-store-location-policy.js"), "utf8");
 assert.match(storePolicy, /週一至週五 10:30－20:00；週六、週日休息/);
 
-console.log("PASS：LINE OA 商業簡介權威已鎖定仙加味、18字品牌狀態消息、週一至週五10:30－20:00、週末公休、正式連結入口與封面保護。");
+console.log("PASS：LINE OA 商業簡介權威已鎖定新版狀態消息、週一至週五10:30－20:00、週末公休與正式連結入口；舊時段封面標記為必須更換。");
