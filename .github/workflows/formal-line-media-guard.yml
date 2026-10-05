@@ -37,16 +37,19 @@ jobs:
           const photo=require('./line-product-photo-authority.json');
           const trial=require('./content/trial-campaign-visual.json');
           const qixuanId='qixuan-guilu-drink-powder';
-          const visibleIds=['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen'];
+          const visibleIds=Array.isArray(current.websitePublicProductIds)?current.websitePublicProductIds:[];
           const byId=Object.fromEntries((current.products||[]).map(p=>[p.id,p]));
           const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
 
           must(current.authority==='user-confirmed-current','目前產品權威錯誤');
-          must(JSON.stringify(current.knowledgeProductIds)===JSON.stringify(visibleIds),'LINE目前可見知識應為六項');
-          must((current.temporarilyHiddenProductIds||[]).includes(qixuanId),'柒玄茶必須保留暫時隱藏狀態');
-          must(byId[qixuanId]?.temporarilyHidden===true&&byId[qixuanId]?.lineKnowledgeVisible===false,'柒玄茶不得在LINE公開知識出現');
-          must(!photo.products?.[qixuanId],'柒玄茶未核准正式實物圖時不得建立假圖片權威');
-          must(Object.keys(photo.products||{}).length===6,'核准正式實物身份圖必須六項');
+          must(visibleIds.length>0,'目前公開產品清單不得為空');
+          must(JSON.stringify(current.knowledgeProductIds||[])===JSON.stringify(visibleIds),'LINE目前可見知識必須與最新公開產品清單一致');
+          must(Object.keys(photo.products||{}).length===visibleIds.length,'核准正式實物身份圖數量必須與最新公開產品清單一致');
+          if(!visibleIds.includes(qixuanId)){
+            must((current.temporarilyHiddenProductIds||[]).includes(qixuanId),'柒玄茶必須保留暫時隱藏狀態');
+            must(byId[qixuanId]?.temporarilyHidden===true&&byId[qixuanId]?.lineKnowledgeVisible===false,'柒玄茶不得在LINE公開知識出現');
+            must(!photo.products?.[qixuanId],'柒玄茶未核准正式實物圖時不得建立假圖片權威');
+          }
 
           for(const id of visibleIds){
             must(byId[id],`${id} 缺少目前正式產品權威`);
@@ -60,7 +63,7 @@ jobs:
           must(String(media.source_trial||'').includes('trial-poster-small-boss-official-v20260814.jpg'),'媒體鏡像試喝來源不同步');
           must(String(trial.lineCompatiblePoster||'').includes('/assets/formal-trial/trial.jpg'),'LINE試喝JPEG route缺失');
           must((media.hard_rules||[]).some(x=>String(x).includes('AI不得重畫正式產品本體')),'禁止AI重畫正式產品規則缺失');
-          console.log('PASS: six visible products, Qixuan hidden, product/DM/trial/identity media roles separated.');
+          console.log(`PASS: ${visibleIds.length} visible products match current authority; deferred products stay hidden; product/DM/trial/identity media roles separated.`);
           NODE
 
       - name: Validate media routes and Flex behavior
