@@ -16,6 +16,8 @@ const ACTIVE_PUBLIC_FILES = [
   'approved-post-static.js',
 ];
 
+// 注意：目前守門規則可合法提到「每日 1–2 罐」或舊2兩標示作為負面拒絕條件；
+// 這兩項改由下方正式產品欄位斷言驗證，不以全文掃描誤判守門文字。
 const STALE_PUBLIC_LITERALS = [
   '台興山產',
   '30cc玻璃瓶',
@@ -30,8 +32,6 @@ const STALE_PUBLIC_LITERALS = [
   '早晚各一小匙',
   '每日早上及下午各一小匙',
   '一天一次一小匙',
-  '每日 1–2 罐',
-  '75g （2兩）／盒｜8塊裝',
 ];
 
 const PUBLIC_CLAIM_LITERALS = [
