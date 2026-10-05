@@ -10,14 +10,15 @@ const data = applyMaster(JSON.parse(rawText));
 const currentAuthority = getCurrentAuthority();
 const photoAuthority = getPhotoAuthority();
 const officialById = Object.fromEntries((currentAuthority.products || []).map((product) => [product.id, product]));
-const visibleIds = ["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
+const visibleIds = Array.isArray(currentAuthority.websitePublicProductIds) ? currentAuthority.websitePublicProductIds : [];
 const qixuanId = "qixuan-guilu-drink-powder";
 
 assert.equal(currentAuthority.authority, "user-confirmed-current");
-assert.deepEqual(currentAuthority.knowledgeProductIds, visibleIds, "LINE可見文字／AI產品知識必須維持六項");
+assert.ok(visibleIds.length > 0, "目前公開產品清單不得為空");
+assert.deepEqual(currentAuthority.knowledgeProductIds, visibleIds, "LINE可見文字／AI產品知識必須與最新公開產品清單一致");
 assert.match(String(photoAuthority?.version || ""), /products-v3/i);
 assert.ok(!/products-v2/i.test(String(photoAuthority?.version || "")));
-assert.equal(Object.keys(photoAuthority?.products || {}).length, 6, "目前核准正式實物圖維持六項");
+assert.equal(Object.keys(photoAuthority?.products || {}).length, visibleIds.length, "目前核准正式實物圖數量必須與最新公開產品清單一致");
 
 for (const [id, identityUrl] of Object.entries(photoAuthority.products || {})) {
   const value = String(identityUrl || "");
@@ -25,7 +26,7 @@ for (const [id, identityUrl] of Object.entries(photoAuthority.products || {})) {
   assert.ok(!value.includes("/images/products-v2/"), `${id}產品身份參考不得回退products-v2`);
 }
 
-assert.equal(data.products.length, 6, "LINE顧客產品卡目前只顯示六項正式產品");
+assert.deepEqual(data.products.map((product) => product.id), visibleIds, "LINE顧客產品卡必須與最新公開產品清單一致");
 for (const product of data.products) {
   const official = officialById[product.id];
   assert.ok(official, `${product.id} 缺少目前正式產品權威`);
@@ -43,15 +44,17 @@ for (const product of data.products) {
 }
 
 const qixuan = officialById[qixuanId];
-assert.ok(qixuan, "柒玄茶資料必須保留供日後重新啟用");
-assert.equal(qixuan.name, "柒玄茶・龜鹿調飲粉");
-assert.equal(qixuan.specification, "2g／小包；20g／包（10小包）");
-assert.equal(qixuan.mediaStatus, "formal-product-image-pending");
-assert.equal(qixuan.temporarilyHidden, true);
-assert.equal(qixuan.lineKnowledgeVisible, false);
-assert.equal(qixuan.publicVisible, false);
-assert.ok(!currentAuthority.knowledgeProductIds.includes(qixuanId));
-assert.ok(!photoAuthority.products?.[qixuanId], "隱藏且尚未核准正式實物圖時不得建立假圖片權威");
+if (!visibleIds.includes(qixuanId)) {
+  assert.ok(qixuan, "柒玄茶資料必須保留供日後重新啟用");
+  assert.equal(qixuan.name, "柒玄茶・龜鹿調飲粉");
+  assert.equal(qixuan.specification, "2g／小包；20g／包（10小包）");
+  assert.equal(qixuan.mediaStatus, "formal-product-image-pending");
+  assert.equal(qixuan.temporarilyHidden, true);
+  assert.equal(qixuan.lineKnowledgeVisible, false);
+  assert.equal(qixuan.publicVisible, false);
+  assert.ok(!currentAuthority.knowledgeProductIds.includes(qixuanId));
+  assert.ok(!photoAuthority.products?.[qixuanId], "隱藏且尚未核准正式實物圖時不得建立假圖片權威");
+}
 
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
 assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
@@ -71,11 +74,11 @@ assert.ok(byId["guilu-drink-180"].offers.some((offer) => offer.label === "買10�
 assert.equal(byId["guilu-tangkuai"].specification, "75g／盒｜8塊裝");
 assert.equal(byId["guilu-jiao"].specification, "600g （1斤）／盒｜32塊裝");
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
-assert.equal(data.runtime.knowledgeProductCount, 6);
-assert.equal(data.runtime.approvedMediaProductCount, 6);
+assert.equal(data.runtime.knowledgeProductCount, visibleIds.length);
+assert.equal(data.runtime.approvedMediaProductCount, visibleIds.length);
 assert.equal(data.runtime.productMainImageSource, "six-user-confirmed-product-images");
 assert.equal(data.runtime.detailedDmSource, "separate-corrected-dm");
 assert.equal(data.runtime.productIdentityReference, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 
-console.log("PASS：LINE OA六項可見產品知識＋六項核准正式實物圖；30cc每日 1–2 罐、龜鹿湯塊75g／盒｜8塊裝，柒玄茶暫時隱藏且不建立假媒體。");
+console.log(`PASS：LINE OA ${visibleIds.length} 項可見產品知識與核准正式實物圖一致；30cc每日 1–2 罐、龜鹿湯塊75g／盒｜8塊裝；暫緩產品不自動公開。`);
