@@ -11,7 +11,7 @@ const stable=v=>JSON.stringify(v,null,2)+"\n";
 const PUBLIC_PRODUCT_IDS=["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
 const QIXUAN_ID="qixuan-guilu-drink-powder";
 const LINE_KNOWLEDGE_IDS=[...PUBLIC_PRODUCT_IDS];
-const CURRENT_30_USAGE="每日 1 罐";
+const CURRENT_30_USAGE="每日 1–2 罐";
 const QIXUAN_HIDDEN=Object.freeze({
   id:QIXUAN_ID,
   name:"柒玄茶・龜鹿調飲粉",
@@ -46,7 +46,7 @@ function validateMaster(master){
     if(!Array.isArray(p.ingredients)||!p.ingredients.length)throw new Error(`${p.id}缺少正式成分`);
   }
   const d30=master.products.find(x=>x.id==="guilu-drink-30");
-  if(d30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error("30cc公開母資料不是每日 1 罐");
+  if(d30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error(`30cc公開母資料未同步目前正式用法：${CURRENT_30_USAGE}`);
 }
 
 async function fetchMaster(){
@@ -72,9 +72,9 @@ function mergeAuthority(local,master){
     "目前對外與LINE OA均只顯示六項正式產品；柒玄茶暫時隱藏，直到使用者明確重新啟用",
     "柒玄茶資料保留但不得出現在產品卡、推薦、公開文字知識或主動回覆",
     "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分",
-    "30cc目前正式使用方式為每日 1 罐，不得回退成每日 1–2 罐",
+    "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1–2 罐，可依個人需求調整，舊守門員不得覆蓋新版正確資料。",
     "龜鹿湯塊目前正式規格為75g／盒｜8塊裝，不得回退舊2兩標示",
-    ...((local.guardRules||[]).filter(x=>!String(x).includes("LINE可保留柒玄茶文字知識")&&!String(x).includes("七項產品文字知識完整")&&!String(x).includes("LINE文字知識必須保留7項")&&!String(x).includes("每日 1–2 罐")&&!String(x).includes("75g （2兩）")))
+    ...((local.guardRules||[]).filter(x=>{const v=String(x);return !v.includes("LINE可保留柒玄茶文字知識")&&!v.includes("七項產品文字知識完整")&&!v.includes("LINE文字知識必須保留7項")&&!v.includes("30cc目前正式使用方式")&&!v.includes("30cc正式使用方式")&&!v.includes("75g （2兩）");}))
   ])];
   return {
     ...local,
