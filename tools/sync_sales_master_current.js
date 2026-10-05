@@ -11,7 +11,7 @@ const stable=v=>JSON.stringify(v,null,2)+"\n";
 const PUBLIC_PRODUCT_IDS=["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
 const QIXUAN_ID="qixuan-guilu-drink-powder";
 const LINE_KNOWLEDGE_IDS=[...PUBLIC_PRODUCT_IDS];
-const CURRENT_30_USAGE="每日 1–2 罐";
+const CURRENT_30_USAGE="每日 1 罐";
 const QIXUAN_HIDDEN=Object.freeze({
   id:QIXUAN_ID,
   name:"柒玄茶・龜鹿調飲粉",
@@ -46,7 +46,7 @@ function validateMaster(master){
     if(!Array.isArray(p.ingredients)||!p.ingredients.length)throw new Error(`${p.id}缺少正式成分`);
   }
   const d30=master.products.find(x=>x.id==="guilu-drink-30");
-  if(d30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error("30cc公開母資料不是每日 1–2 罐");
+  if(d30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error("30cc公開母資料不是每日 1 罐");
 }
 
 async function fetchMaster(){
@@ -72,8 +72,9 @@ function mergeAuthority(local,master){
     "目前對外與LINE OA均只顯示六項正式產品；柒玄茶暫時隱藏，直到使用者明確重新啟用",
     "柒玄茶資料保留但不得出現在產品卡、推薦、公開文字知識或主動回覆",
     "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分",
-    "30cc目前正式使用方式為每日 1–2 罐，不得回退成每日一罐",
-    ...((local.guardRules||[]).filter(x=>!String(x).includes("LINE可保留柒玄茶文字知識")&&!String(x).includes("七項產品文字知識完整")&&!String(x).includes("LINE文字知識必須保留7項")))
+    "30cc目前正式使用方式為每日 1 罐，不得回退成每日 1–2 罐",
+    "龜鹿湯塊目前正式規格為75g／盒｜8塊裝，不得回退舊2兩標示",
+    ...((local.guardRules||[]).filter(x=>!String(x).includes("LINE可保留柒玄茶文字知識")&&!String(x).includes("七項產品文字知識完整")&&!String(x).includes("LINE文字知識必須保留7項")&&!String(x).includes("每日 1–2 罐")&&!String(x).includes("75g （2兩）")))
   ])];
   return {
     ...local,
@@ -122,7 +123,7 @@ function assertCurrent(merged,authority,photoAuthority,master){
   if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error("30cc目前新版用法／時間原則不同步");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(raw30)))throw new Error("30cc不得出現瓶型舊稱");
   const tang=auth.get("guilu-tangkuai"),jiao=auth.get("guilu-jiao");
-  if(tang?.specification!=="75g （2兩）／盒｜8塊裝"||tang?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊規格不同步");
+  if(tang?.specification!=="75g／盒｜8塊裝"||tang?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊規格不同步");
   if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||!/^每塊約18\.75\s*g$/.test(String(jiao?.detailUnitApprox||"")))throw new Error("龜鹿膠規格不同步");
   const qixuan=auth.get(QIXUAN_ID);
   if(!qixuan||qixuan.name!==QIXUAN_HIDDEN.name||qixuan.specification!==QIXUAN_HIDDEN.specification||qixuan.websiteVisible!==false||qixuan.lineKnowledgeVisible!==false||qixuan.temporarilyHidden!==true)throw new Error("柒玄茶暫時隱藏規則不同步");
