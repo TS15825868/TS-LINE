@@ -42,7 +42,7 @@ for (const product of data.products) {
   assert.notEqual(product.image, product.dmImage, `${product.id}產品主圖不得拿DM代替`);
 }
 
-assert.equal(data.products.find((p)=>p.id==="guilu-drink-30")?.usage?.[0], "每日 1–2 罐");
+assert.equal(data.products.find((p)=>p.id==="guilu-drink-30")?.usage?.[0], "每日 1 罐");
 assert.equal(data.products.find((p)=>p.id==="guilu-drink-180")?.usage?.[0], "每日一包");
 
 assert.ok(String(visual.PRODUCT_IMAGE_VERSION || "").trim(), "Flex產品媒體必須有目前版本識別");
@@ -55,4 +55,4 @@ for (const [id, item] of Object.entries(visual.PRODUCTS || {})) {
 }
 assert.match(visual.TRIAL_IMAGE, /\/assets\/formal-trial\/trial\.jpg\?v=/);
 
-console.log("PASS：LINE六項可見產品知識與六項核准媒體一致；柒玄茶保留內部資料但暫時隱藏，30cc維持每日 1–2 罐。");
+console.log("PASS：LINE六項可見產品知識與六項核准媒體一致；柒玄茶保留內部資料但暫時隱藏，30cc維持每日 1 罐。");
