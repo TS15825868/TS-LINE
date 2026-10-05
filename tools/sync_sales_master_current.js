@@ -8,9 +8,9 @@ const DATA_PATH=path.join(ROOT,"data.json");
 const AUTHORITY_PATH=path.join(ROOT,"assets/data/official-products.json");
 const MASTER_URL=process.env.PRODUCT_MASTER_URL||"https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json";
 const stable=v=>JSON.stringify(v,null,2)+"\n";
-const PUBLIC_PRODUCT_IDS=["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
+const REQUIRED_CURRENT_IDS=["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
 const QIXUAN_ID="qixuan-guilu-drink-powder";
-const LINE_KNOWLEDGE_IDS=[...PUBLIC_PRODUCT_IDS];
+const publicIdsFromMaster=(master)=>[...new Set((master?.products||[]).map(x=>String(x?.id||"").trim()).filter(Boolean))];
 const CURRENT_30_USAGE="每日 1–2 罐";
 const QIXUAN_HIDDEN=Object.freeze({
   id:QIXUAN_ID,
@@ -38,9 +38,11 @@ const CURRENT_DM={
 
 function validateMaster(master){
   if(master?.authority!=="user-confirmed-current")throw new Error("公開產品母資料 authority 錯誤");
-  if(master?.productCount!==6||!Array.isArray(master?.products)||master.products.length!==6)throw new Error("官網公開產品母資料必須剛好6項");
-  const ids=master.products.map(x=>x.id);
-  if(JSON.stringify(ids)!==JSON.stringify(PUBLIC_PRODUCT_IDS))throw new Error(`官網公開產品品項或順序錯誤：${ids.join(",")}`);
+  if(!Array.isArray(master?.products)||master.products.length<1)throw new Error("官網公開產品母資料不得為空");
+  const ids=publicIdsFromMaster(master);
+  if(ids.length!==master.products.length)throw new Error("官網公開產品母資料含重複或空白產品 id");
+  if(Number(master?.productCount)!==ids.length)throw new Error(`官網公開產品 productCount 與實際清單不一致：${master?.productCount} vs ${ids.length}`);
+  for(const id of REQUIRED_CURRENT_IDS)if(!ids.includes(id))throw new Error(`目前核心公開產品缺失：${id}`);
   for(const p of master.products){
     for(const f of ["id","name","specification","form"])if(!p?.[f])throw new Error(`${p.id||"產品"}缺少${f}`);
     if(!Array.isArray(p.ingredients)||!p.ingredients.length)throw new Error(`${p.id}缺少正式成分`);
@@ -51,12 +53,14 @@ function validateMaster(master){
 
 async function fetchMaster(){
   const response=await fetch(MASTER_URL,{headers:{"user-agent":"xianjiawei-lineoa-public-product-ssot"}});
-  if(!response.ok)throw new Error(`無法下載六項官網公開產品母資料：HTTP ${response.status}`);
+  if(!response.ok)throw new Error(`無法下載官網公開產品母資料：HTTP ${response.status}`);
   const master=await response.json();validateMaster(master);return master;
 }
 
 function mergeAuthority(local,master){
   const localBy=new Map((local.products||[]).map(x=>[x.id,x]));
+  const publicIds=publicIdsFromMaster(master);
+  const qixuanIsPublic=publicIds.includes(QIXUAN_ID);
   const publicProducts=master.products.map(src=>{
     const old=localBy.get(src.id)||{};
     const primary=String(src?.usage?.[0]||old.usagePrimary||"").trim();
@@ -65,11 +69,13 @@ function mergeAuthority(local,master){
   });
   const previousQixuan=localBy.get(QIXUAN_ID)||{};
   const qixuan={...previousQixuan,...QIXUAN_HIDDEN};
-  delete qixuan.approvedProductImage;
-  delete qixuan.approvedDm;
-  delete qixuan.ingredients;
+  if(!qixuanIsPublic){
+    delete qixuan.approvedProductImage;
+    delete qixuan.approvedDm;
+    delete qixuan.ingredients;
+  }
   const guardRules=[...new Set([
-    "目前對外與LINE OA均只顯示六項正式產品；柒玄茶暫時隱藏，直到使用者明確重新啟用",
+    `目前對外與LINE OA依官網公開母資料顯示${publicIds.length}項正式產品；柒玄茶目前維持暫時隱藏，直到使用者明確重新啟用`,
     "柒玄茶資料保留但不得出現在產品卡、推薦、公開文字知識或主動回覆",
     "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分",
     "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1–2 罐，可依個人需求調整，舊守門員不得覆蓋新版正確資料。",
@@ -78,46 +84,53 @@ function mergeAuthority(local,master){
   ])];
   return {
     ...local,
-    version:`${master.version}-six-line-visible-qixuan-hidden-v9`,
+    version:`${master.version}-line-visible-${publicIds.length}-qixuan-${qixuanIsPublic?"public":"hidden"}-v10`,
     authority:"user-confirmed-current",
     publicAuthority:MASTER_URL,
     productMasterAuthority:master.authority,
     productMasterVersion:master.version,
-    displayPolicy:"目前對外與 LINE OA 均只顯示六項正式產品；柒玄茶・龜鹿調飲粉依使用者最新指示暫時隱藏，不進產品卡、推薦、公開文字知識或主動回覆。資料保留供日後重新啟用。",
-    products:[...publicProducts,qixuan],
-    knowledgeProductIds:[...LINE_KNOWLEDGE_IDS],
-    websitePublicProductIds:[...PUBLIC_PRODUCT_IDS],
-    approvedMediaProductIds:[...PUBLIC_PRODUCT_IDS],
-    temporarilyHiddenProductIds:[QIXUAN_ID],
+    displayPolicy:`目前對外與 LINE OA 依官網公開母資料顯示 ${publicIds.length} 項正式產品；未在公開母資料中的暫緩產品只保留內部資料，不進產品卡、推薦、公開文字知識或主動回覆。`,
+    products:[...publicProducts,...(qixuanIsPublic?[]:[qixuan])],
+    knowledgeProductIds:[...publicIds],
+    websitePublicProductIds:[...publicIds],
+    approvedMediaProductIds:[...publicIds],
+    temporarilyHiddenProductIds:qixuanIsPublic?[]:[QIXUAN_ID],
     guardRules
   };
 }
 
 function mergeData(localData,master,authority){
+  const publicIds=publicIdsFromMaster(master);
   const byMaster=new Map(master.products.map(x=>[x.id,x]));
   const byAuth=new Map((authority.products||[]).map(x=>[x.id,x]));
-  const products=(localData.products||[]).filter(x=>PUBLIC_PRODUCT_IDS.includes(x.id)).map(old=>{
-    const src=byMaster.get(old.id),rule=byAuth.get(old.id);if(!src||!rule)return old;
+  const localBy=new Map((localData.products||[]).map(x=>[x.id,x]));
+  const products=publicIds.map(id=>{
+    const old=localBy.get(id),src=byMaster.get(id),rule=byAuth.get(id);
+    if(!old)throw new Error(`${id} 尚未建立LINE銷售資料；新增公開產品前必須先完成價格、出貨與正式媒體設定`);
+    if(!src||!rule)throw new Error(`${id} 缺少公開母資料或LINE權威`);
     return {...old,name:src.name,displayName:src.name,specification:src.specification,size:src.specification,spec:src.specification,form:src.form||old.form,...(src.package?{package:src.package}:{}),ingredients:[...src.ingredients],...(src.usage?.length?{usage:[...src.usage]}:{}),...(rule.usagePrimary?{usagePrimary:rule.usagePrimary}:{}),...(rule.usageTiming?{usageTiming:rule.usageTiming}:{}),...(rule.detailUnitApprox?{detailUnitApprox:rule.detailUnitApprox}:{}),detailPage:src.page||old.detailPage,image:rule.approvedProductImage,imageUrl:rule.approvedProductImage,image_url:rule.approvedProductImage,dmImage:rule.approvedDm,productMasterVersion:master.version};
   });
-  return {...localData,products,officialProductIds:[...PUBLIC_PRODUCT_IDS],officialProductCount:6,knowledgeProductIds:[...LINE_KNOWLEDGE_IDS],knowledgeProductCount:6,websitePublicProductIds:[...PUBLIC_PRODUCT_IDS],websitePublicProductCount:6,temporarilyHiddenProductIds:[QIXUAN_ID],productMasterVersion:master.version,productMasterAuthority:master.authority,productMasterSource:MASTER_URL};
+  return {...localData,products,officialProductIds:[...publicIds],officialProductCount:products.length,knowledgeProductIds:[...publicIds],knowledgeProductCount:products.length,websitePublicProductIds:[...publicIds],websitePublicProductCount:products.length,temporarilyHiddenProductIds:publicIds.includes(QIXUAN_ID)?[]:[QIXUAN_ID],productMasterVersion:master.version,productMasterAuthority:master.authority,productMasterSource:MASTER_URL};
 }
 
 function assertCurrent(merged,authority,photoAuthority,master){
+  const publicIds=publicIdsFromMaster(master);
   if(authority?.authority!=="user-confirmed-current")throw new Error("LINE目前產品權威錯誤");
-  if((merged.products||[]).length!==6)throw new Error("LINE顧客產品卡必須維持6項正式產品");
-  if(JSON.stringify(authority.websitePublicProductIds)!==JSON.stringify(PUBLIC_PRODUCT_IDS))throw new Error("LINE記錄的官網公開產品必須剛好6項");
-  if(JSON.stringify(authority.knowledgeProductIds)!==JSON.stringify(LINE_KNOWLEDGE_IDS))throw new Error("LINE可見文字知識產品清單必須剛好6項");
-  if(Number(merged.knowledgeProductCount)!==6)throw new Error("LINE可見文字知識數量必須為6");
+  if((merged.products||[]).length!==publicIds.length)throw new Error(`LINE顧客產品卡數量未跟官網公開母資料同步：${merged.products?.length||0} vs ${publicIds.length}`);
+  if(JSON.stringify(authority.websitePublicProductIds)!==JSON.stringify(publicIds))throw new Error("LINE記錄的官網公開產品清單未跟最新母資料同步");
+  if(JSON.stringify(authority.knowledgeProductIds)!==JSON.stringify(publicIds))throw new Error("LINE可見文字知識產品清單未跟最新母資料同步");
+  if(Number(merged.knowledgeProductCount)!==publicIds.length)throw new Error("LINE可見文字知識數量未跟最新母資料同步");
   const auth=new Map(authority.products.map(x=>[x.id,x]));
   const src=new Map(master.products.map(x=>[x.id,x]));
-  for(const id of PUBLIC_PRODUCT_IDS){
+  for(const id of publicIds){
     const p=(merged.products||[]).find(x=>x.id===id),r=auth.get(id),s=src.get(id),photo=String(photoAuthority?.products?.[id]||"").trim();
     if(!p||!r||!s||!photo)throw new Error(`${id}缺少目前正式產品權威`);
     if(p.name!==s.name||r.name!==s.name)throw new Error(`${id}正式名稱未同步`);
     if(p.specification!==s.specification||p.size!==s.specification||p.spec!==s.specification||r.specification!==s.specification)throw new Error(`${id}正式規格未同步`);
     if(JSON.stringify(p.ingredients)!==JSON.stringify(s.ingredients))throw new Error(`${id}成分未同步`);
-    if(!String(r.approvedProductImage||"").trim()||!String(r.approvedDm||"").includes(CURRENT_DM[id]))throw new Error(`${id}正式產品圖或DM不同步`);
+    const dm=String(r.approvedDm||"").trim(),expectedDm=CURRENT_DM[id];
+    if(!String(r.approvedProductImage||"").trim()||!dm)throw new Error(`${id}缺少正式產品圖或DM`);
+    if(expectedDm?!dm.includes(expectedDm):!dm.includes("/images/dm-final/"))throw new Error(`${id}正式DM來源不同步`);
   }
   const d30=auth.get("guilu-drink-30"),raw30=(merged.products||[]).find(x=>x.id==="guilu-drink-30");
   if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error("30cc目前新版用法／時間原則不同步");
@@ -125,10 +138,12 @@ function assertCurrent(merged,authority,photoAuthority,master){
   const tang=auth.get("guilu-tangkuai"),jiao=auth.get("guilu-jiao");
   if(tang?.specification!=="75g／盒｜8塊裝"||tang?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊規格不同步");
   if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||!/^每塊約18\.75\s*g$/.test(String(jiao?.detailUnitApprox||"")))throw new Error("龜鹿膠規格不同步");
-  const qixuan=auth.get(QIXUAN_ID);
-  if(!qixuan||qixuan.name!==QIXUAN_HIDDEN.name||qixuan.specification!==QIXUAN_HIDDEN.specification||qixuan.websiteVisible!==false||qixuan.lineKnowledgeVisible!==false||qixuan.temporarilyHidden!==true)throw new Error("柒玄茶暫時隱藏規則不同步");
-  if((authority.knowledgeProductIds||[]).includes(QIXUAN_ID))throw new Error("柒玄茶暫時隱藏時不得進LINE可見文字知識清單");
-  if(String(qixuan.approvedProductImage||"").trim()||String(qixuan.approvedDm||"").trim()||Array.isArray(qixuan.ingredients))throw new Error("柒玄茶尚未核准正式媒體／成分時不得建立假資料");
+  if(!publicIds.includes(QIXUAN_ID)){
+    const qixuan=auth.get(QIXUAN_ID);
+    if(!qixuan||qixuan.name!==QIXUAN_HIDDEN.name||qixuan.specification!==QIXUAN_HIDDEN.specification||qixuan.websiteVisible!==false||qixuan.lineKnowledgeVisible!==false||qixuan.temporarilyHidden!==true)throw new Error("柒玄茶暫時隱藏規則不同步");
+    if((authority.knowledgeProductIds||[]).includes(QIXUAN_ID))throw new Error("柒玄茶暫時隱藏時不得進LINE可見文字知識清單");
+    if(String(qixuan.approvedProductImage||"").trim()||String(qixuan.approvedDm||"").trim()||Array.isArray(qixuan.ingredients))throw new Error("柒玄茶尚未核准正式媒體／成分時不得建立假資料");
+  }
   const trial=authority.trialPosterAuthority||{};
   if(!String(trial.currentDisplay||"").includes("/images/trial/trial-poster-small-boss-official-v20260814.jpg")||trial.status!=="approved_display"||trial.doNotRegenerate!==true)throw new Error("試喝主圖權威不同步");
 }
@@ -142,9 +157,10 @@ async function main(){
   const merged=applyMaster(nextRaw);assertCurrent(merged,nextAuthority,getPhotoAuthority(),master);
   if(write)fs.writeFileSync(DATA_PATH,stable(merged),"utf8");
   else{
-    if(stable(local)!==stable(nextAuthority))throw new Error("LINE official-products.json尚未同步六項正式可見產品＋柒玄茶內部隱藏架構；請執行 npm run sync:catalog");
+    if(stable(local)!==stable(nextAuthority))throw new Error("LINE official-products.json尚未同步最新官網公開產品清單與暫緩產品架構；請執行 npm run sync:catalog");
     if(stable(raw)!==stable(merged))throw new Error("LINE data.json尚未同步目前執行資料；請執行 npm run sync:catalog");
   }
-  console.log(`PASS: website 6 public products; LINE 6 visible knowledge products; Qixuan hidden; 6 approved-media product cards; 30cc ${CURRENT_30_USAGE}.`);
+  const publicCount=publicIdsFromMaster(master).length;
+  console.log(`PASS: website/LINE public product authority synchronized (${publicCount} visible); deferred products remain internal; 30cc ${CURRENT_30_USAGE}.`);
 }
 main().catch(e=>{console.error(e.message||e);process.exit(1);});
