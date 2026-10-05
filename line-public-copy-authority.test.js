@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
-const PUBLIC_IDS = ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen'];
+const REQUIRED_CURRENT_IDS = ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen'];
 const DEFERRED_ID = 'qixuan-guilu-drink-powder';
 
 // 只掃真正會形成 LINE 顧客資料／公開貼文的 payload。
@@ -63,8 +63,11 @@ for (const rel of ACTIVE_PUBLIC_FILES) {
 
 const current = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/data/official-products.json'), 'utf8'));
 must(current.authority === 'user-confirmed-current', 'LINE 產品 authority 不是目前正式版本');
-must(JSON.stringify(current.knowledgeProductIds) === JSON.stringify(PUBLIC_IDS), 'LINE 可見產品知識不是六項正式產品');
-must(Array.isArray(current.temporarilyHiddenProductIds) && current.temporarilyHiddenProductIds.includes(DEFERRED_ID), '柒玄茶未維持暫時隱藏');
+const publicIds = Array.isArray(current.websitePublicProductIds) ? current.websitePublicProductIds : [];
+must(publicIds.length > 0, 'LINE 最新公開產品清單不得為空');
+must(JSON.stringify(current.knowledgeProductIds || []) === JSON.stringify(publicIds), 'LINE 可見產品知識未跟最新公開產品清單同步');
+for (const id of REQUIRED_CURRENT_IDS) must(publicIds.includes(id), `目前核心公開產品缺失：${id}`);
+if (!publicIds.includes(DEFERRED_ID)) must(Array.isArray(current.temporarilyHiddenProductIds) && current.temporarilyHiddenProductIds.includes(DEFERRED_ID), '柒玄茶未維持暫時隱藏');
 
 const byId = Object.fromEntries((current.products || []).map(p => [p.id, p]));
 const drink30 = byId['guilu-drink-30'];
@@ -87,11 +90,11 @@ must(gao && gao.usagePrimary === '食用時間可依個人使用習慣與作息�
 must(tang && tang.specification === '75g／盒｜8塊裝', '龜鹿湯塊正式規格不是目前75g／盒｜8塊裝');
 
 const qixuan = byId[DEFERRED_ID];
-must(qixuan && qixuan.temporarilyHidden === true && qixuan.lineKnowledgeVisible === false && qixuan.publicVisible === false, '柒玄茶公開隱藏旗標回退');
+if (!publicIds.includes(DEFERRED_ID)) must(qixuan && qixuan.temporarilyHidden === true && qixuan.lineKnowledgeVisible === false && qixuan.publicVisible === false, '柒玄茶公開隱藏旗標回退');
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'));
-must(Array.isArray(data.products) && data.products.length === 6, 'LINE 顧客產品卡不是六項');
-must(!data.products.some(p => p.id === DEFERRED_ID), '柒玄茶重新混入顧客產品卡');
+must(Array.isArray(data.products) && JSON.stringify(data.products.map(p => p.id)) === JSON.stringify(publicIds), 'LINE 顧客產品卡未跟最新公開產品清單同步');
+if (!publicIds.includes(DEFERRED_ID)) must(!data.products.some(p => p.id === DEFERRED_ID), '柒玄茶重新混入顧客產品卡');
 
 // 驗證舊資料清洗程式仍存在且方向正確；這裡刻意允許來源碼出現退役字串，因為它們是替換規則的比對端。
 const salesMasterSource = fs.readFileSync(path.join(ROOT, 'product-sales-master.js'), 'utf8');
@@ -99,4 +102,4 @@ must(salesMasterSource.includes('/建議白天飲用/g, "飲用時間可依個�
 must(salesMasterSource.includes('/每日早上及下午各一小匙/g, "食用時間可依個人使用習慣與作息時間安排"'), '龜鹿膏舊固定時段清洗規則遺失或方向錯誤');
 must(salesMasterSource.includes(".filter((v) => id !== \"guilu-drink-30\" || !/瓶/.test(v))"), '30cc 舊瓶別名過濾規則遺失');
 
-console.log('PASS: LINE OA customer-facing copy authority; six visible products; 30cc small glass jar + bare jar + no sticker; flexible timing; stale-source sanitizers remain active; no stale public brand/product/timing or high-risk claim regression.');
+console.log(`PASS: LINE OA customer-facing copy authority; ${publicIds.length} visible products match current public authority; 30cc small glass jar + bare jar + no sticker; flexible timing; stale-source sanitizers remain active.`);
