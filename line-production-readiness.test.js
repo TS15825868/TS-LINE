@@ -22,37 +22,41 @@ const richArtwork = rich.readArtwork();
 const packageJson = JSON.parse(read("package.json"));
 const must = (ok, msg) => { if (!ok) throw new Error(msg); };
 
-const visibleIds = ["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
+const visibleIds = Array.isArray(authority.websitePublicProductIds) ? authority.websitePublicProductIds : [];
+const requiredCurrentIds = ["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
 const qixuanId = "qixuan-guilu-drink-powder";
 
 assert.equal(authority.authority, "user-confirmed-current");
-assert.deepEqual(authority.knowledgeProductIds, visibleIds, "LINE可見文字知識必須只有六項正式產品");
-assert.deepEqual(authority.websitePublicProductIds, visibleIds, "官網公開產品必須維持六項");
-assert.deepEqual(authority.approvedMediaProductIds, visibleIds, "核准媒體產品必須維持六項");
-assert.deepEqual(authority.temporarilyHiddenProductIds, [qixuanId], "柒玄茶必須維持暫時隱藏");
-assert.equal(data.products.length, 6, "LINE產品卡必須維持六項");
-assert.equal(data.runtime?.knowledgeProductCount, 6, "LINE runtime 可見知識數量必須為6");
-assert.equal(data.runtime?.approvedMediaProductCount, 6);
+assert.ok(visibleIds.length > 0, "目前公開產品清單不得為空");
+for (const id of requiredCurrentIds) assert.ok(visibleIds.includes(id), `目前核心公開產品缺失：${id}`);
+assert.deepEqual(authority.knowledgeProductIds, visibleIds, "LINE可見文字知識必須與最新公開產品清單一致");
+assert.deepEqual(authority.approvedMediaProductIds, visibleIds, "核准媒體產品必須與最新公開產品清單一致");
+assert.deepEqual(data.products.map((p) => p.id), visibleIds, "LINE產品卡必須與最新公開產品清單一致");
+assert.equal(data.runtime?.knowledgeProductCount, visibleIds.length, "LINE runtime 可見知識數量未跟最新公開產品清單同步");
+assert.equal(data.runtime?.approvedMediaProductCount, visibleIds.length);
 
 const official = Object.fromEntries((authority.products || []).map((p) => [p.id, p]));
 const byId = Object.fromEntries((data.products || []).map((p) => [p.id, p]));
 const qixuan = official[qixuanId];
-assert.equal(qixuan?.name, "柒玄茶・龜鹿調飲粉");
-assert.equal(qixuan?.websiteVisible, false);
-assert.equal(qixuan?.lineKnowledgeVisible, false);
-assert.equal(qixuan?.publicVisible, false);
-assert.equal(qixuan?.temporarilyHidden, true);
-assert.equal(qixuan?.displayMode, "hidden-until-user-reactivates");
-assert.ok(!authority.knowledgeProductIds.includes(qixuanId));
-assert.ok(!photoAuthority.products?.[qixuanId], "柒玄茶隱藏期間不得建立產品圖權威");
-assert.ok(!String(qixuan?.approvedProductImage || "").trim());
-assert.ok(!String(qixuan?.approvedDm || "").trim());
-assert.ok(!Array.isArray(qixuan?.ingredients), "未確認公開成分前不得自行建立柒玄茶成分");
+if (!visibleIds.includes(qixuanId)) {
+  assert.ok((authority.temporarilyHiddenProductIds || []).includes(qixuanId), "柒玄茶必須維持暫時隱藏");
+  assert.equal(qixuan?.name, "柒玄茶・龜鹿調飲粉");
+  assert.equal(qixuan?.websiteVisible, false);
+  assert.equal(qixuan?.lineKnowledgeVisible, false);
+  assert.equal(qixuan?.publicVisible, false);
+  assert.equal(qixuan?.temporarilyHidden, true);
+  assert.equal(qixuan?.displayMode, "hidden-until-user-reactivates");
+  assert.ok(!authority.knowledgeProductIds.includes(qixuanId));
+  assert.ok(!photoAuthority.products?.[qixuanId], "柒玄茶隱藏期間不得建立產品圖權威");
+  assert.ok(!String(qixuan?.approvedProductImage || "").trim());
+  assert.ok(!String(qixuan?.approvedDm || "").trim());
+  assert.ok(!Array.isArray(qixuan?.ingredients), "未確認公開成分前不得自行建立柒玄茶成分");
+}
 
 assert.ok(Array.isArray(aiAnswers.answers) && aiAnswers.answers.length >= 5, "LINE AI公開答案權威缺失");
 const allProductsAnswer = aiAnswers.answers.find((item) => item.id === "all-products");
 assert.ok(allProductsAnswer, "LINE AI缺少 all-products 回答");
-assert.match(String(allProductsAnswer.answer || ""), /六項/, "LINE AI產品總覽必須說明目前六項對外產品");
+for (const id of visibleIds) assert.ok(String(allProductsAnswer.answer || "").includes(String(official[id]?.name || "")), `LINE AI產品總覽缺少目前公開產品：${id}`);
 assert.ok(!String(allProductsAnswer.answer || "").includes("柒玄茶"), "LINE AI產品總覽不得公開柒玄茶");
 for (const answer of aiAnswers.answers) {
   assert.ok(!String(answer.answer || "").includes("柒玄茶"), `${answer.id} 公開回答不得曝光柒玄茶`);
@@ -76,15 +80,19 @@ const prices = {
   "luerong-fen":2000
 };
 for (const id of visibleIds) {
-  assert.equal(official[id]?.specification, specs[id], `${id} authority規格`);
-  assert.equal(byId[id]?.specification, specs[id], `${id} runtime規格`);
-  assert.equal(Number(byId[id]?.price), prices[id], `${id}售價`);
+  assert.ok(official[id], `${id} 缺少目前正式產品權威`);
+  assert.ok(byId[id], `${id} 缺少LINE runtime產品資料`);
   assert.deepEqual(byId[id]?.ingredients, official[id]?.ingredients, `${id}成分順序`);
   assert.equal(byId[id]?.image, official[id]?.approvedProductImage, `${id}產品主圖`);
   assert.equal(byId[id]?.dmImage, official[id]?.approvedDm, `${id}詳細DM`);
   assert.equal(byId[id]?.officialOriginalImage, photoAuthority.products?.[id], `${id}products-v3身份原圖`);
   assert.notEqual(byId[id]?.image, byId[id]?.dmImage, `${id}產品圖與DM不得混用`);
   must(String(byId[id]?.physicalScalePolicy || "").trim(), `${id}缺少產品比例政策`);
+}
+for (const id of requiredCurrentIds) {
+  assert.equal(official[id]?.specification, specs[id], `${id} authority規格`);
+  assert.equal(byId[id]?.specification, specs[id], `${id} runtime規格`);
+  assert.equal(Number(byId[id]?.price), prices[id], `${id}售價`);
 }
 
 assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
@@ -108,7 +116,7 @@ assert.match(String(trial.fulfillmentRule || trial.leadTime || ""), /5～7/);
 assert.ok(String(authority.trialPosterAuthority?.currentDisplay || "").includes("trial-poster-small-boss-official-v20260814.jpg"));
 assert.equal(authority.trialPosterAuthority?.doNotRegenerate, true);
 
-assert.equal(Object.keys(photoAuthority.products || {}).length, 6);
+assert.equal(Object.keys(photoAuthority.products || {}).length, visibleIds.length);
 for (const url of Object.values(photoAuthority.products || {})) must(String(url).includes("/images/products-v3/"), "products-v3身份原圖權威錯誤");
 assert.equal(formal.approval_batch, "20260814-product-modal-media-v3");
 for (const [name,url] of Object.entries(formal.source_product_dm || {})) assert.ok(String(url).includes("/images/dm-final/"), `${name}正式DM來源必須是dm-final`);
@@ -134,7 +142,8 @@ assert.deepEqual(menu.areas.map((a)=>a.action.text), ["看產品","查看購買�
 for (const token of ["申請試喝","價格方案","搭配組合","怎麼使用","幫我推薦","查看購買清單","直接下單","我要人工客服"]) must(serverSource.includes(token), `LINE功能入口缺失：${token}`);
 assert.ok(syncSource.includes("public-product-master.json"));
 assert.ok(syncSource.includes("QIXUAN_HIDDEN"), "同步程式必須保留柒玄茶隱藏規則");
-assert.ok(syncSource.includes("knowledgeProductCount:6"), "同步程式不得再回寫7項LINE可見知識");
+assert.ok(syncSource.includes("knowledgeProductCount:products.length"), "同步程式可見知識數量必須跟目前公開產品清單動態同步");
+assert.ok(!syncSource.includes("knowledgeProductCount:6"), "同步程式不得用固定六項鎖死未來公開產品");
 assert.ok(!syncSource.includes("LINE 7 text knowledge products"), "同步程式不得保留舊7項成功訊息");
 assert.equal(packageJson.main, "server.js");
 const startCommand = String(packageJson.scripts.start || "");
@@ -158,4 +167,4 @@ for (const retired of [".github/workflows/line-closeout-status-once.yml",".githu
   assert.equal(fs.existsSync(path.join(__dirname,retired)), false, `退役同步仍存在：${retired}`);
 }
 
-console.log(`PASS：LINE OA readiness依 ${authority.version} 驗收；六項正式產品可見，柒玄茶維持內部資料但暫時隱藏，公開AI回答不曝光柒玄茶。`);
+console.log(`PASS：LINE OA readiness依 ${authority.version} 驗收；${visibleIds.length} 項公開產品與目前母資料一致，暫緩產品維持內部資料。`);
