@@ -5,7 +5,7 @@
   "aiAnswerAuthority": "https://ts15825868.github.io/xianjiawei/ai-answers.json",
   "legacyDisplayCatalog": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "formalMediaAuthority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
-  "displayPolicy": "目前對外與 LINE OA 均只顯示六項正式產品；柒玄茶・龜鹿調飲粉依使用者最新指示暫時隱藏，不進產品卡、推薦、公開文字知識或主動回覆。資料保留供日後重新啟用。",
+  "displayPolicy": "目前對外與 LINE OA 依最新公開產品母資料顯示 6 項正式產品；未在公開母資料中的暫緩產品只保留內部資料，不進產品卡、推薦、公開文字知識或主動回覆。",
   "products": [
     {
       "id": "guilu-gao",
@@ -221,13 +221,13 @@
     "doNotRegenerate": true
   },
   "guardRules": [
-    "目前對外與LINE OA均只顯示六項正式產品；柒玄茶暫時隱藏，直到使用者明確重新啟用",
+    "目前對外與LINE OA依最新公開產品母資料顯示 6 項正式產品；暫緩產品不得由舊資料自動公開",
     "柒玄茶資料保留但不得出現在產品卡、推薦、公開文字知識或主動回覆",
     "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分",
     "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1–2 罐，可依個人需求調整，舊守門員不得覆蓋新版正確資料。",
     "龜鹿湯塊目前正式規格為75g／盒｜8塊裝，不得回退舊2兩標示",
     "新版正確資料優先於舊守門員與舊固定產品數",
-    "現有六項核准產品圖維持正式媒體；不得為柒玄茶自創包裝或替代產品圖",
+    "目前公開產品必須使用各自核准正式媒體；暫緩產品不得自創包裝或替代產品圖",
     "產品圖、詳細DM、試喝圖三個媒體角色必須分開",
     "180cc必須維持狹長鋁袋；正式使用方式為每日一包",
     "龜鹿飲30cc與180cc為接單後製作，約5～7個工作天出貨；此交期只適用龜鹿飲",
