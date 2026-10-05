@@ -7,9 +7,9 @@
   "rule": "LINE OA文字知識以七項目前正式產品與最新規格為準；現有六項核准正式產品圖／DM維持原媒體。柒玄茶・龜鹿調飲粉在正式實物圖核准前只提供文字知識，不由AI自創包裝。新版正確資料不得被舊固定六項守門員阻擋。",
   "products": [
     {"id":"guilu-gao","name":"龜鹿膏","spec":"100g／罐","ingredients":["鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"],"usagePrimary":"可依個人使用習慣與作息時間安排","fulfillmentType":"ready-stock"},
-    {"id":"guilu-drink-30","name":"龜鹿飲30cc玻璃罐","spec":"30cc／罐（小玻璃罐）","package":"小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"usagePrimary":"每日一罐","fulfillmentType":"made-to-order-drink","officialOriginalImage":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260812-formal-image-fix-v3","imagePolicy":"official-original-contain-no-crop"},
+    {"id":"guilu-drink-30","name":"龜鹿飲30cc玻璃罐","spec":"30cc／罐（小玻璃罐）","package":"小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"usagePrimary":"每日 1–2 罐","fulfillmentType":"made-to-order-drink","officialOriginalImage":"https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260812-formal-image-fix-v3","imagePolicy":"official-original-contain-no-crop"},
     {"id":"guilu-drink-180","name":"龜鹿飲180cc鋁袋","spec":"180cc／包（鋁袋）","package":"狹長鋁袋","ingredients":["水","龜板萃取物","鹿角萃取物","粉光蔘","枸杞","紅棗","黃耆"],"usagePrimary":"每日一包","fulfillmentType":"made-to-order-drink"},
-    {"id":"guilu-tangkuai","name":"龜鹿湯塊","spec":"75g （2兩）／盒｜8塊裝","detailUnitApprox":"每塊約9.375g","detailUnitRule":"顧客文字可顯示完整規格與約重；產品圖與DM不自行加字","package":"深藍正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"fulfillmentType":"ready-stock"},
+    {"id":"guilu-tangkuai","name":"龜鹿湯塊","spec":"75g／盒｜8塊裝","detailUnitApprox":"每塊約9.375g","detailUnitRule":"顧客文字可顯示完整規格與約重；產品圖與DM不自行加字","package":"深藍正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"fulfillmentType":"ready-stock"},
     {"id":"guilu-jiao","name":"龜鹿膠","spec":"600g （1斤）／盒｜32塊裝","detailUnitApprox":"每塊約18.75g","detailUnitRule":"顧客文字可顯示完整規格與約重；產品圖與DM不自行加字","package":"淡紫色正式盒裝","ingredients":["龜板萃取物","鹿角萃取物"],"fulfillmentType":"ready-stock"},
     {"id":"luerong-fen","name":"鹿茸粉","spec":"75g／罐","package":"白色塑膠罐","ingredients":["鹿茸"],"fulfillmentType":"ready-stock"},
     {"id":"qixuan-guilu-drink-powder","name":"柒玄茶・龜鹿調飲粉","spec":"2g／小包；20g／包（10小包）","form":"調飲粉","ingredientsStatus":"目前公開權威資料尚未提供正式成分表，不自行推測或補寫","fulfillmentType":"not-publicly-specified","displayMode":"text-knowledge-only-until-formal-product-image-approved"}
@@ -25,9 +25,9 @@
   },
   "guardRules": [
     "只允許目前products清單內的七項正式產品文字知識；不得用歷史固定六項規則擋新版",
-    "30cc正式名稱必須是龜鹿飲30cc玻璃罐，不得稱瓶；主規格30cc／罐（小玻璃罐）；每日一罐",
+    "30cc正式名稱必須是龜鹿飲30cc玻璃罐，不得稱瓶；主規格30cc／罐（小玻璃罐）；每日 1–2 罐，可依個人需求調整",
     "180cc主規格180cc／包（鋁袋）；每日一包",
-    "龜鹿湯塊主規格75g （2兩）／盒｜8塊裝；每塊約9.375g可作詳細文字資料",
+    "龜鹿湯塊主規格75g／盒｜8塊裝；每塊約9.375g可作詳細文字資料",
     "龜鹿膠主規格600g （1斤）／盒｜32塊裝；每塊約18.75g可作詳細文字資料",
     "龜鹿膠與龜鹿湯塊不得互換規格或包裝",
     "正式成分與順序不得回退舊版本",
