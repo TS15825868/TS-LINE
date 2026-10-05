@@ -593,7 +593,7 @@ function mascotWelcomeReply() {
     altText: "歡迎來到仙加味",
     contents: mascotBubble(
       "歡迎來到仙加味",
-      `您好，歡迎來到仙加味。\n\n我可以帶您查看六項產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。\n\n${MIXED_ORDER_NOTICE}`,
+      `您好，歡迎來到仙加味。\n\n我可以帶您查看目前正式產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。\n\n${MIXED_ORDER_NOTICE}`,
       [
         { label: "看產品", text: "看產品" },
         { label: "幫我推薦", text: "幫我推薦" },
@@ -1504,4 +1504,5 @@ module.exports = {
   beginWebhookEvent,
   finishWebhookEvent,
 };
+
 
