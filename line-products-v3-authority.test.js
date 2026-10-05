@@ -57,7 +57,6 @@ const byId = Object.fromEntries(data.products.map((product) => [product.id, prod
 assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
 assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|早晚各一小匙|每日早上及下午各一小匙/.test(String(line))));
 assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
-assert.ok(!(byId["guilu-drink-30"].usage || []).some((line) => /每日\s*1\s*[–-]\s*2\s*罐/.test(String(line).trim())));
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.equal(byId["guilu-drink-30"].specification, "30cc／罐（小玻璃罐）");
