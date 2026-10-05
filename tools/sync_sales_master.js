@@ -44,11 +44,13 @@ function assertOfficialImageSlots(product, id) {
   if (product.imagePolicy !== "approved-original-product-photo-contain-no-crop") throw new Error(`${id}圖片政策不同步`);
   if (!String(product.physicalScalePolicy || "").trim()) throw new Error(`${id}缺少個別產品實際尺寸／比例政策`);
 }
-function assertPhotoAuthority(photoAuthority) {
+function assertPhotoAuthority(photoAuthority, expectedIds = []) {
   const version = String(photoAuthority?.version || "").trim();
   if (!version) throw new Error("正式產品照片權威缺少版本識別");
   const entries = Object.entries(photoAuthority?.products || {});
-  if (entries.length !== 6) throw new Error("正式產品照片權威必須剛好6項");
+  if (entries.length !== expectedIds.length) throw new Error(`正式產品照片權威數量未跟目前公開產品清單同步：${entries.length} vs ${expectedIds.length}`);
+  const photoIds = entries.map(([id]) => id).sort();
+  if (JSON.stringify(photoIds) !== JSON.stringify([...expectedIds].sort())) throw new Error("正式產品照片權威品項未跟目前公開產品清單同步");
   const cacheVersions = new Set();
   for (const [id, url] of entries) {
     const value = String(url || "");
@@ -58,7 +60,7 @@ function assertPhotoAuthority(photoAuthority) {
     if (!cacheVersion) throw new Error(`${id}照片網址缺少快取版本`);
     cacheVersions.add(cacheVersion);
   }
-  if (cacheVersions.size !== 1) throw new Error("六項正式產品照片網址快取版本必須一致");
+  if (cacheVersions.size !== 1) throw new Error("目前正式產品照片網址快取版本必須一致");
   return { version, cacheVersion: [...cacheVersions][0] };
 }
 function assertPhysicalScaleAuthority(products) {
@@ -91,13 +93,16 @@ function main() {
   const merged = applyMaster(data);
   const photoAuthority = getPhotoAuthority();
   const { byId: authorityById, specs, ingredients } = authorityMaps(authority);
+  const visibleIds = Array.isArray(authority.websitePublicProductIds) ? authority.websitePublicProductIds : (authority.knowledgeProductIds || []);
+  const requiredCurrentIds = ["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
 
-  if (authority.authority !== "user-confirmed-current" || authorityById.size !== 6) throw new Error("LINE目前產品權威不是最新六項user-confirmed-current");
+  if (authority.authority !== "user-confirmed-current" || !visibleIds.length) throw new Error("LINE目前產品權威不是有效的user-confirmed-current");
+  for (const id of requiredCurrentIds) if (!visibleIds.includes(id)) throw new Error(`目前核心公開產品缺失：${id}`);
   assertMasterVersion(master, merged);
-  const { version: currentPhotoVersion, cacheVersion: currentPhotoCacheVersion } = assertPhotoAuthority(photoAuthority);
+  const { version: currentPhotoVersion, cacheVersion: currentPhotoCacheVersion } = assertPhotoAuthority(photoAuthority, visibleIds);
   if (currentPhotoVersion !== PHOTO_VERSION || currentPhotoCacheVersion !== PHOTO_CACHE_VERSION) throw new Error("正式產品照片權威在啟動檢查期間發生版本漂移");
   if ((merged.offers?.comboOffers || []).length !== 3 || (merged.combos || []).length !== 3) throw new Error("正式組合必須是3組");
-  if ((merged.products || []).length !== 6) throw new Error(`正式產品必須剛好6項，目前${merged.products?.length || 0}項`);
+  if ((merged.products || []).length !== visibleIds.length) throw new Error(`LINE產品數量未跟目前公開產品清單同步：${merged.products?.length || 0} vs ${visibleIds.length}`);
 
   const expectedPrices = {
     "guilu-gao": { price: 1800, originalPrice: 2100 },
@@ -161,10 +166,10 @@ function main() {
 
   if (mode === "write") {
     fs.writeFileSync(DATA_PATH, stable(merged), "utf8");
-    console.log(`SYNCED LINE OA ${authority.version}: current six specs, usage, pricing, trial, fulfillment, products-v3 ${currentPhotoVersion}/${currentPhotoCacheVersion}`);
+    console.log(`SYNCED LINE OA ${authority.version}: ${visibleIds.length} current public products, usage, pricing, trial, fulfillment, products-v3 ${currentPhotoVersion}/${currentPhotoCacheVersion}`);
     return;
   }
-  console.log(`PASS LINE OA ${authority.version}: current authority, pricing, trial, fulfillment, products-v3 ${currentPhotoVersion}/${currentPhotoCacheVersion}`);
+  console.log(`PASS LINE OA ${authority.version}: ${visibleIds.length} current public products, authority, pricing, trial, fulfillment, products-v3 ${currentPhotoVersion}/${currentPhotoCacheVersion}`);
 }
 
 if (require.main === module) {
