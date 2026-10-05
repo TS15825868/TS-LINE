@@ -118,7 +118,7 @@ jobs:
           const actual=h.publicProductAuthority?.products||[];
           if(actual.length!==master.products.length||!master.products.every(p=>actual.some(a=>a.id===p.id&&a.name===p.name&&a.specification===p.specification)))throw new Error('LINE actual runtime product facts differ from public master');
           const drink30=actual.find(p=>p.id==='guilu-drink-30');
-          if(!drink30?.usage.includes('每日 1–2 罐')||!drink30.usage.includes('可依個人需求調整'))throw new Error('LINE live 30cc usage adjustment missing');
+          if(!drink30?.usage.includes('每日 1–2 罐')||!drink30.usage.includes('可依個人需求調整')||drink30.usageAdjustment!=='可依個人需求調整')throw new Error('LINE live 30cc usage adjustment missing');
           if(actual.some(p=>p.id==='qixuan-guilu-drink-powder'))throw new Error('Deferred Qixuan exposed in live runtime');
           console.log('PASS LINE actual deployed commit and runtime facts',h.deploymentCommit,JSON.stringify(drink30),JSON.stringify(actual.find(p=>p.id==='guilu-tangkuai')));
           if(h.mascotAssetsReady!==true) throw new Error('LINE mascotAssetsReady=false');
@@ -146,4 +146,5 @@ jobs:
             live-health.json
           if-no-files-found: error
           retention-days: 7
+
 

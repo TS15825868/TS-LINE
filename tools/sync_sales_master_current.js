@@ -118,7 +118,7 @@ function mergeData(localData,master,authority){
     const old=localBy.get(id),src=byMaster.get(id),rule=byAuth.get(id);
     if(!old)throw new Error(`${id} 尚未建立LINE銷售資料；新增公開產品前必須先完成價格、出貨與正式媒體設定`);
     if(!src||!rule)throw new Error(`${id} 缺少公開母資料或LINE權威`);
-    return {...old,name:src.name,displayName:src.name,specification:src.specification,size:src.specification,spec:src.specification,form:src.form||old.form,...(src.package?{package:src.package}:{}),ingredients:[...src.ingredients],...(src.usage?.length?{usage:[...src.usage]}:{}),...(rule.usagePrimary?{usagePrimary:rule.usagePrimary}:{}),...(rule.usageTiming?{usageTiming:rule.usageTiming}:{}),...(rule.detailUnitApprox?{detailUnitApprox:rule.detailUnitApprox}:{}),detailPage:src.page||old.detailPage,image:rule.approvedProductImage,imageUrl:rule.approvedProductImage,image_url:rule.approvedProductImage,dmImage:rule.approvedDm,productMasterVersion:master.version};
+    return {...old,name:src.name,displayName:src.name,specification:src.specification,size:src.specification,spec:src.specification,form:src.form||old.form,...(src.package?{package:src.package}:{}),ingredients:[...src.ingredients],...(src.usage?.length?{usage:[...src.usage]}:{}),...(rule.usagePrimary?{usagePrimary:rule.usagePrimary}:{}),...(rule.usageAdjustment?{usageAdjustment:rule.usageAdjustment}:{}),...(rule.usageTiming?{usageTiming:rule.usageTiming}:{}),...(rule.detailUnitApprox?{detailUnitApprox:rule.detailUnitApprox}:{}),detailPage:src.page||old.detailPage,image:rule.approvedProductImage,imageUrl:rule.approvedProductImage,image_url:rule.approvedProductImage,dmImage:rule.approvedDm,productMasterVersion:master.version};
   });
   return {...localData,products,officialProductIds:[...publicIds],officialProductCount:products.length,knowledgeProductIds:[...publicIds],knowledgeProductCount:products.length,websitePublicProductIds:[...publicIds],websitePublicProductCount:products.length,temporarilyHiddenProductIds:publicIds.includes(QIXUAN_ID)?[]:[QIXUAN_ID],productMasterVersion:master.version,productMasterAuthority:master.authority,productMasterSource:MASTER_URL};
 }
@@ -143,7 +143,7 @@ function assertCurrent(merged,authority,photoAuthority,master){
     if(expectedDm?!dm.includes(expectedDm):!dm.includes("/images/dm-final/"))throw new Error(`${id}正式DM來源不同步`);
   }
   const d30=auth.get("guilu-drink-30"),raw30=(merged.products||[]).find(x=>x.id==="guilu-drink-30");
-  if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE||d30?.usageAdjustment!=="可依個人需求調整"||!raw30?.usage?.includes("可依個人需求調整"))throw new Error("30cc目前新版用法／時間原則不同步");
+  if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE||d30?.usageAdjustment!=="可依個人需求調整"||!raw30?.usage?.includes("可依個人需求調整")||raw30?.usageAdjustment!=="可依個人需求調整")throw new Error("30cc目前新版用法／時間原則不同步");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(raw30)))throw new Error("30cc不得出現瓶型舊稱");
   const tang=auth.get("guilu-tangkuai"),jiao=auth.get("guilu-jiao");
   if(tang?.specification!=="75g／盒｜8塊裝"||tang?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊規格不同步");
@@ -174,3 +174,4 @@ async function main(){
   console.log(`PASS: website/LINE public product authority synchronized (${publicCount} visible); deferred products remain internal; 30cc ${CURRENT_30_USAGE}.`);
 }
 main().catch(e=>{console.error(e.message||e);process.exit(1);});
+

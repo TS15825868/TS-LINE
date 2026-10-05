@@ -148,6 +148,7 @@ function currentAuthorityOverride(id, merged = {}) {
     ingredients: official.ingredients || merged.ingredients,
     ...(String(official.detailUnitApprox || "").trim() ? {detailUnitApprox: String(official.detailUnitApprox).trim()} : {}),
     ...(official.usagePrimary ? {usage} : {}),
+    ...(official.usageAdjustment ? {usageAdjustment:official.usageAdjustment} : {}),
     aliases,
     ...Object.fromEntries(Object.entries(cleaned).filter(([, v]) => v !== undefined)),
   };
@@ -284,4 +285,5 @@ module.exports = {
   FORMAL_PRODUCT_COPY,
   SALES_OVERRIDE_FIELDS,
 };
+
 
