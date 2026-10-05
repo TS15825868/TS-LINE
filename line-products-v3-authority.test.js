@@ -76,7 +76,7 @@ assert.equal(byId["guilu-jiao"].specification, "600g （1斤）／盒｜32塊裝
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
 assert.equal(data.runtime.knowledgeProductCount, visibleIds.length);
 assert.equal(data.runtime.approvedMediaProductCount, visibleIds.length);
-assert.equal(data.runtime.productMainImageSource, "six-user-confirmed-product-images");
+assert.equal(data.runtime.productMainImageSource, "current-user-confirmed-product-images");
 assert.equal(data.runtime.detailedDmSource, "separate-corrected-dm");
 assert.equal(data.runtime.productIdentityReference, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
