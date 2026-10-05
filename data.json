@@ -49,7 +49,7 @@
       "usage": [
         "食用時間可依個人使用習慣與作息時間安排",
         "初次可先從半匙開始",
-        "可直接食用或加入約100～300mL熱水化開"
+        "可直接取用或以溫熱水化開"
       ],
       "storage": [
         "未開封置於陰涼乾燥處",
@@ -85,7 +85,11 @@
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-gao.avif?v=20260814-product-modal-media-v3",
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/01_guilu-gao-100g-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-gao.jpg?v=20260810-products-v3-latest-originals-v3",
-      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
+      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
+      "form": "膏狀",
+      "productMasterVersion": "2026-10-05-six-public-product-master-v7",
+      "usagePrimary": "食用時間可依個人使用習慣與作息時間安排",
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-gao.html"
     },
     {
       "id": "guilu-drink-30",
@@ -108,12 +112,9 @@
         "黃耆"
       ],
       "usage": [
-        "每日 1-2罐",
-        "飲用時間可依個人使用習慣與作息時間安排",
-        "開罐即可飲用",
-        "可隔水加熱或溫熱後飲用",
-        "避免冰飲",
-        "開罐後請儘速飲用完畢"
+        "每日 1 罐",
+        "可隔水加熱或溫熱飲用",
+        "避免冰飲"
       ],
       "storage": [
         "未開封置於陰涼乾燥處",
@@ -159,7 +160,12 @@
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-30cc.avif?v=20260814-product-modal-media-v3",
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260810-products-v3-latest-originals-v3",
-      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
+      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
+      "form": "液態即飲",
+      "productMasterVersion": "2026-10-05-six-public-product-master-v7",
+      "usagePrimary": "每日 1 罐",
+      "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-drink-30cc.html"
     },
     {
       "id": "guilu-drink-180",
@@ -183,11 +189,8 @@
       ],
       "usage": [
         "每日一包",
-        "飲用時間可依個人使用習慣與作息時間安排",
-        "撕開包裝即可飲用",
-        "可隔水加熱或溫熱後飲用",
-        "避免冰飲",
-        "開封後請儘速飲用完畢"
+        "可隔水加熱或溫熱飲用",
+        "避免冰飲"
       ],
       "storage": [
         "未開封置於陰涼乾燥處",
@@ -231,19 +234,24 @@
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-drink-180cc-product.jpg?v=20260814-product-modal-media-v3",
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/03_guilu-drink-180cc-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-180.jpg?v=20260810-products-v3-latest-originals-v3",
-      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
+      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
+      "form": "液態即飲",
+      "productMasterVersion": "2026-10-05-six-public-product-master-v7",
+      "usagePrimary": "每日一包",
+      "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-drink-180cc.html"
     },
     {
       "id": "guilu-tangkuai",
       "name": "龜鹿湯塊",
       "displayName": "龜鹿湯塊",
-      "specification": "75g （2兩）／盒｜8塊裝",
-      "size": "75g （2兩）／盒｜8塊裝",
-      "spec": "75g （2兩）／盒｜8塊裝",
+      "specification": "75g／盒｜8塊裝",
+      "size": "75g／盒｜8塊裝",
+      "spec": "75g／盒｜8塊裝",
       "unit": "盒",
       "price": 1600,
       "originalPrice": null,
-      "description": "75g （2兩）／盒｜8塊裝，每塊約9.375g；深藍正式盒裝，目前只有此一正式規格。",
+      "description": "75g／盒｜8塊裝，每塊約9.375g；深藍正式盒裝，目前只有此一正式規格。",
       "ingredients": [
         "龜板萃取物",
         "鹿角萃取物"
@@ -286,7 +294,10 @@
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-tangkuai.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
-      "detailUnitApprox": "每塊約9.375g"
+      "detailUnitApprox": "每塊約9.375g",
+      "form": "塊狀",
+      "productMasterVersion": "2026-10-05-six-public-product-master-v7",
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-tangkuai.html"
     },
     {
       "id": "guilu-jiao",
@@ -342,7 +353,10 @@
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-jiao.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
-      "detailUnitApprox": "每塊約18.75 g"
+      "detailUnitApprox": "每塊約18.75g",
+      "form": "塊狀",
+      "productMasterVersion": "2026-10-05-six-public-product-master-v7",
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-jiao.html"
     },
     {
       "id": "luerong-fen",
@@ -393,7 +407,10 @@
       "image_url": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/luerong-fen.avif?v=20260814-product-modal-media-v3",
       "dmImage": "https://ts15825868.github.io/xianjiawei/images/dm-final/04_luerong-fen-75g-dm.jpg?v=20260814-product-modal-media-v3",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/luerong-fen.jpg?v=20260810-products-v3-latest-originals-v3",
-      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity"
+      "imagePolicy": "six-official-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
+      "form": "粉末",
+      "productMasterVersion": "2026-10-05-six-public-product-master-v7",
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-luerong-fen.html"
     }
   ],
   "offers": {
@@ -730,5 +747,38 @@
     ],
     "doNotRegenerate": true
   },
-  "currentProductAuthorityVersion": "20260815-current-product-media-v4"
+  "currentProductAuthorityVersion": "20260815-current-product-media-v4",
+  "officialProductIds": [
+    "guilu-gao",
+    "guilu-drink-30",
+    "guilu-drink-180",
+    "guilu-tangkuai",
+    "guilu-jiao",
+    "luerong-fen"
+  ],
+  "officialProductCount": 6,
+  "knowledgeProductIds": [
+    "guilu-gao",
+    "guilu-drink-30",
+    "guilu-drink-180",
+    "guilu-tangkuai",
+    "guilu-jiao",
+    "luerong-fen"
+  ],
+  "knowledgeProductCount": 6,
+  "websitePublicProductIds": [
+    "guilu-gao",
+    "guilu-drink-30",
+    "guilu-drink-180",
+    "guilu-tangkuai",
+    "guilu-jiao",
+    "luerong-fen"
+  ],
+  "websitePublicProductCount": 6,
+  "temporarilyHiddenProductIds": [
+    "qixuan-guilu-drink-powder"
+  ],
+  "productMasterVersion": "2026-10-05-six-public-product-master-v7",
+  "productMasterAuthority": "user-confirmed-current",
+  "productMasterSource": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json"
 }
