@@ -90,12 +90,16 @@ jobs:
           must(pkg.scripts['guard:full'].includes('line-source-attribution.test.js'),'guard:full 必須包含官網→LINE來源歸因驗收');
 
           must(current.authority==='user-confirmed-current','目前產品權威錯誤');
-          must(Array.isArray(current.knowledgeProductIds)&&current.knowledgeProductIds.length===6,'LINE目前可見產品知識必須六項');
-          must(!current.knowledgeProductIds.includes(qixuanId),'柒玄茶目前不得出現在LINE可見知識');
-          must(Array.isArray(current.temporarilyHiddenProductIds)&&current.temporarilyHiddenProductIds.includes(qixuanId),'柒玄茶必須保留為暫時隱藏資料');
-          const qixuan=(current.products||[]).find(p=>p.id===qixuanId);
-          must(qixuan&&qixuan.temporarilyHidden===true&&qixuan.lineKnowledgeVisible===false,'柒玄茶隱藏旗標不同步');
-          must(Array.isArray(data.products)&&data.products.length===6,'LINE顧客產品卡必須六項');
+          const publicIds=Array.isArray(current.websitePublicProductIds)?current.websitePublicProductIds:[];
+          must(publicIds.length>0,'LINE目前公開產品清單不得為空');
+          must(JSON.stringify(current.knowledgeProductIds||[])===JSON.stringify(publicIds),'LINE可見產品知識必須與最新公開產品清單一致');
+          must(Array.isArray(data.products)&&JSON.stringify(data.products.map(p=>p.id))===JSON.stringify(publicIds),'LINE顧客產品卡必須與最新公開產品清單一致');
+          if(!publicIds.includes(qixuanId)){
+            must(!current.knowledgeProductIds.includes(qixuanId),'柒玄茶目前不得出現在LINE可見知識');
+            must(Array.isArray(current.temporarilyHiddenProductIds)&&current.temporarilyHiddenProductIds.includes(qixuanId),'柒玄茶必須保留為暫時隱藏資料');
+            const qixuan=(current.products||[]).find(p=>p.id===qixuanId);
+            must(qixuan&&qixuan.temporarilyHidden===true&&qixuan.lineKnowledgeVisible===false,'柒玄茶隱藏旗標不同步');
+          }
 
           for(const forbidden of ['internal-entry.js','social-review-center','social-publish-guard','instagram-content-publishing','facebook-page-token','internal-app-pro']){
             must(!pkg.scripts.start.includes(forbidden),`LINE正式 start 仍載入非必要模組：${forbidden}`);
@@ -103,7 +107,7 @@ jobs:
 
           const workflows=fs.readdirSync('.github/workflows');
           must(!workflows.includes('sync-social-content-v20260817.yml'),'退役社群同步 workflow 不得回流 TS-LINE');
-          console.log('PASS: LINE OA six visible products, Qixuan hidden, source attribution enabled, runtime cold start stays lean.');
+          console.log(`PASS: LINE OA ${publicIds.length} visible products match current public authority; deferred products stay hidden until reactivated; source attribution enabled.`);
           NODE
 
       - name: Ensure audit is read-only
