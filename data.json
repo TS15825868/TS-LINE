@@ -547,11 +547,11 @@
       "productsV2Use": "legacy-reference-only",
       "productScalePolicy": "uniform-only-no-stretch-preserve-real-product-proportion",
       "dmFallback": "approved-product-image-only-if-detailed-dm-missing",
-      "customerMainImageSource": "six-user-confirmed-product-images",
+      "customerMainImageSource": "current-user-confirmed-product-images",
       "detailedDmSource": "separate-corrected-dm",
       "productIdentityReference": "products-v3-user-approved-originals"
     },
-    "productMainImageSource": "six-user-confirmed-product-images",
+    "productMainImageSource": "current-user-confirmed-product-images",
     "productsV2Use": "legacy-reference-only",
     "productScalePolicy": "uniform-only-no-stretch-preserve-real-product-proportion",
     "formalCopyVersion": "20260815-current-product-media-v4",
