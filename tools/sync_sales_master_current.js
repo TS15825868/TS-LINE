@@ -74,13 +74,16 @@ function mergeAuthority(local,master){
     delete qixuan.approvedDm;
     delete qixuan.ingredients;
   }
-  const guardRules=[...new Set([
+  const deferredRules=qixuanIsPublic?[]:[
     `目前對外與LINE OA依官網公開母資料顯示${publicIds.length}項正式產品；柒玄茶目前維持暫時隱藏，直到使用者明確重新啟用`,
     "柒玄茶資料保留但不得出現在產品卡、推薦、公開文字知識或主動回覆",
-    "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分",
+    "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分"
+  ];
+  const guardRules=[...new Set([
+    ...deferredRules,
     "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1–2 罐，可依個人需求調整，舊守門員不得覆蓋新版正確資料。",
     "龜鹿湯塊目前正式規格為75g／盒｜8塊裝，不得回退舊2兩標示",
-    ...((local.guardRules||[]).filter(x=>{const v=String(x);return !v.includes("LINE可保留柒玄茶文字知識")&&!v.includes("七項產品文字知識完整")&&!v.includes("LINE文字知識必須保留7項")&&!v.includes("30cc目前正式使用方式")&&!v.includes("30cc正式使用方式")&&!v.includes("75g （2兩）");}))
+    ...((local.guardRules||[]).filter(x=>{const v=String(x);return !v.includes("LINE可保留柒玄茶文字知識")&&!v.includes("七項產品文字知識完整")&&!v.includes("LINE文字知識必須保留7項")&&!v.includes("30cc目前正式使用方式")&&!v.includes("30cc正式使用方式")&&!v.includes("75g （2兩）")&&!v.includes("柒玄茶目前維持暫時隱藏")&&!v.includes("柒玄茶資料保留但不得出現在產品卡")&&!v.includes("柒玄茶目前沒有核准正式產品實物原圖");}))
   ])];
   return {
     ...local,
