@@ -56,7 +56,7 @@ assert.ok(!photoAuthority.products?.[qixuanId], "隱藏且尚未核准正式實�
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
 assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
 assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|早晚各一小匙|每日早上及下午各一小匙/.test(String(line))));
-assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1 罐");
+assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
 assert.ok(!(byId["guilu-drink-30"].usage || []).some((line) => /每日\s*1\s*[–-]\s*2\s*罐/.test(String(line).trim())));
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
@@ -78,4 +78,4 @@ assert.equal(data.runtime.detailedDmSource, "separate-corrected-dm");
 assert.equal(data.runtime.productIdentityReference, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 
-console.log("PASS：LINE OA六項可見產品知識＋六項核准正式實物圖；30cc每日 1 罐、龜鹿湯塊75g／盒｜8塊裝，柒玄茶暫時隱藏且不建立假媒體。");
+console.log("PASS：LINE OA六項可見產品知識＋六項核准正式實物圖；30cc每日 1–2 罐、龜鹿湯塊75g／盒｜8塊裝，柒玄茶暫時隱藏且不建立假媒體。");
