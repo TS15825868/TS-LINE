@@ -1414,6 +1414,11 @@ app.get("/healthz", (_req, res) => {
     catalogVersion: DATA.catalogVersion || "",
     mascotVersion: MASCOT_VERSION,
     productCount: DATA.products.length,
+    deploymentCommit: process.env.RENDER_GIT_COMMIT || null,
+    publicProductAuthority: {
+      version: require("./assets/data/official-products.json").publicProductMasterVersion || require("./assets/data/official-products.json").version,
+      products: DATA.products.map(product => ({ id: product.id, name: product.name, specification: product.specification || product.spec || product.size, usage: product.usage || [], usageAdjustment: product.usageAdjustment || "" })),
+    },
     mascotAssetsReady: Object.values(MASCOT_PATHS).every((asset) => Boolean(asset)),
     storeHours: String(DATA.store?.hours || ""),
     storeHolidayNote: String(DATA.store?.holidayNote || ""),
@@ -1499,3 +1504,4 @@ module.exports = {
   beginWebhookEvent,
   finishWebhookEvent,
 };
+

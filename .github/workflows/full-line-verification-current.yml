@@ -96,6 +96,15 @@ jobs:
           base='https://ts-line.onrender.com'
           curl -LsS --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 150 "$base/" -o live-root.json
           curl -LsS --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 150 "$base/healthz" -o live-health.json
+          # A successful health response must identify this deployed commit and actual runtime facts.
+          ready=0
+          for attempt in $(seq 1 36); do
+            curl -fsS --retry 1 --connect-timeout 15 --max-time 45 "$base/healthz" -o live-health.json || true
+            if node -e "const h=require('./live-health.json');if(h.deploymentCommit!==process.env.GITHUB_SHA)process.exit(1)"; then ready=1; break; fi
+            echo "Waiting for Render current commit: $attempt/36"
+            sleep 10
+          done
+          test "$ready" = 1
           node - <<'NODE'
           const fs=require('fs');
           const master=JSON.parse(fs.readFileSync('website-public-product-master.json','utf8'));
@@ -106,6 +115,12 @@ jobs:
           if(h.credentialsConfigured!==true) throw new Error('LINE credentialsConfigured=false');
           if(h.orderOpen!==true) throw new Error('LINE orderOpen=false');
           if(Number(h.productCount)!==Number(master.productCount)) throw new Error(`LINE live productCount ${h.productCount} != master ${master.productCount}`);
+          const actual=h.publicProductAuthority?.products||[];
+          if(actual.length!==master.products.length||!master.products.every(p=>actual.some(a=>a.id===p.id&&a.name===p.name&&a.specification===p.specification)))throw new Error('LINE actual runtime product facts differ from public master');
+          const drink30=actual.find(p=>p.id==='guilu-drink-30');
+          if(!drink30?.usage.includes('每日 1–2 罐')||!drink30.usage.includes('可依個人需求調整'))throw new Error('LINE live 30cc usage adjustment missing');
+          if(actual.some(p=>p.id==='qixuan-guilu-drink-powder'))throw new Error('Deferred Qixuan exposed in live runtime');
+          console.log('PASS LINE actual deployed commit and runtime facts',h.deploymentCommit,JSON.stringify(drink30),JSON.stringify(actual.find(p=>p.id==='guilu-tangkuai')));
           if(h.mascotAssetsReady!==true) throw new Error('LINE mascotAssetsReady=false');
           if(String(h.storeHours||'')!=='週一至週五 10:30－20:00；週六、週日休息') throw new Error('LINE live storeHours 未套用目前正式版本：'+String(h.storeHours||''));
           const note=String(h.storeHolidayNote||'');
@@ -131,3 +146,4 @@ jobs:
             live-health.json
           if-no-files-found: error
           retention-days: 7
+

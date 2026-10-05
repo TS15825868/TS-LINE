@@ -78,13 +78,15 @@ function patchMessages(messages, core) {
 }
 
 function healthPayload(core) {
+  const authority=require("./assets/data/official-products.json");
+  const publicIds=authority.websitePublicProductIds||[];
   return {
     ok: true,
     service: "仙加味 LINE OA fulfillment and image safety",
     policyVersion: POLICY_VERSION,
     serviceMode: "standalone-line-oa",
-    productCount: 6,
-    sellableSpecificationCount: 6,
+    productCount: publicIds.length,
+    sellableSpecificationCount: publicIds.length,
     drinkProductIds: DRINK_PRODUCT_IDS,
     readyStockProductIds: READY_STOCK_PRODUCT_IDS,
     drinkNotice: core.DRINK_FULFILLMENT_NOTICE,
@@ -154,3 +156,4 @@ function install(core) {
 }
 
 module.exports = {POLICY_VERSION,HEALTH_PATH,DRINK_PRODUCT_IDS,READY_STOCK_PRODUCT_IDS,normalizePublicCopy,kindFromText,collectContextText,replaceKnownNotices,replacePlainTextNotice,patchTextNodes,patchMessages,healthPayload,installHealthRoute,install};
+
