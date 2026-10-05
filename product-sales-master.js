@@ -21,7 +21,7 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
 ]);
 
 const FORMAL_PRODUCT_COPY = Object.freeze({});
-const CURRENT_30_USAGE = "每日 1–2 罐";
+const CURRENT_30_USAGE = "每日 1 罐";
 
 const RETIRED_COPY_REPLACEMENTS = Object.freeze([
   [/每日早上及下午各一小匙/g, "食用時間可依個人使用習慣與作息時間安排"],
@@ -30,6 +30,7 @@ const RETIRED_COPY_REPLACEMENTS = Object.freeze([
   [/一天一次一小匙/g, "可依個人使用習慣與作息時間安排"],
   [/早晚各一小匙/g, "可依個人使用習慣與作息時間安排"],
   [/75g深藍盒、8塊裝、每塊約9\.375g/g, "75g深藍盒、8塊裝"],
+  [/75g\s*（?2兩）?／盒｜8塊裝/g, "75g／盒｜8塊裝"],
   [/600g （1斤）／盒｜32塊裝｜每塊約18\.75g/g, "600g （1斤）／盒｜32塊裝"],
   [/600g一斤淡紫盒/g, "600g （1斤）淡紫盒"],
   [/一斤大規格/g, "600g （1斤）大規格"],
