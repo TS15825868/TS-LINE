@@ -43,17 +43,56 @@
     "lineReply": "傳統工法重視前處理、火候、時間與濃縮節奏。仙加味以家族多年實務經驗為基礎，再配合今天的食品製程、規格與標示，把每個步驟說得更清楚。"
   },
   "menu": [
-    {"label":"品牌故事","url":"https://ts15825868.github.io/xianjiawei/brand.html"},
-    {"label":"龜鹿入門","url":"https://ts15825868.github.io/xianjiawei/why-guilu.html"},
-    {"label":"品牌由來","url":"https://ts15825868.github.io/xianjiawei/brand-origin.html"},
-    {"label":"選料理念","url":"https://ts15825868.github.io/xianjiawei/ingredients.html"},
-    {"label":"品質把關","url":"https://ts15825868.github.io/xianjiawei/quality.html"},
-    {"label":"傳統工法","url":"https://ts15825868.github.io/xianjiawei/craft.html"}
+    {
+      "label": "品牌故事",
+      "url": "https://ts15825868.github.io/xianjiawei/brand.html"
+    },
+    {
+      "label": "龜鹿入門",
+      "url": "https://ts15825868.github.io/xianjiawei/why-guilu.html"
+    },
+    {
+      "label": "品牌由來",
+      "url": "https://ts15825868.github.io/xianjiawei/brand-origin.html"
+    },
+    {
+      "label": "選料理念",
+      "url": "https://ts15825868.github.io/xianjiawei/ingredients.html"
+    },
+    {
+      "label": "品質把關",
+      "url": "https://ts15825868.github.io/xianjiawei/quality.html"
+    },
+    {
+      "label": "傳統工法",
+      "url": "https://ts15825868.github.io/xianjiawei/craft.html"
+    }
   ],
   "compliance": {
     "allowedTone": "日常飲食、產品型態、使用方式、原料、工序、料理與文化傳承",
-    "blockedClaims": ["治療","治癒","療效","改善疾病","預防疾病","保證功效","保證改善","關節","卡卡","疲勞","精神不濟","補氣","生津","膠原蛋白","鈣質"],
-    "blockedCopy": ["不是每個人都一定需要"],
+    "blockedClaims": [
+      "治療",
+      "治癒",
+      "療效",
+      "改善疾病",
+      "預防疾病",
+      "保證功效",
+      "保證改善",
+      "關節",
+      "卡卡",
+      "疲勞",
+      "精神不濟",
+      "補氣",
+      "生津",
+      "膠原蛋白",
+      "鈣質"
+    ],
+    "blockedCopy": [
+      "不是每個人都一定需要"
+    ],
     "publicBrand": "仙加味"
-  }
+  },
+  "positioning": "現代漢方生活品牌",
+  "productScopeLine": "龜鹿｜漢方生活選品",
+  "profileCore": "仙加味｜現代漢方生活品牌\n萬華起家・四代家族傳承\n龜鹿｜漢方生活選品\n補養，是一種節奏。"
 }
