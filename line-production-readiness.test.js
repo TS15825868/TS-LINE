@@ -88,6 +88,7 @@ for (const id of visibleIds) {
 }
 
 assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
+assert.ok(byId["guilu-drink-30"].usage?.includes("可依個人需求調整"), "30cc須保留可依個人需求調整");
 must(!/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(byId["guilu-drink-30"])), "30cc不得回退瓶型舊稱");
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 assert.equal(byId["guilu-drink-30"].productionLeadTime, "5～7個工作天");
