@@ -177,7 +177,7 @@ function applyMaster(data) {
   const productOverrides = policy.products || {};
   const comboOffers = Array.isArray(policy.comboOffers) ? sanitizeCurrentCopy(policy.comboOffers) : [];
 
-  // LINE 對外與可見文字知識目前只顯示六項正式產品；柒玄茶資料僅保留在 authority 作內部隱藏資料，
+  // LINE 對外與可見文字知識依目前公開產品權威清單顯示；暫緩產品僅保留在 authority 作內部資料，
   // 在使用者明確重新啟用前，不得進產品卡、推薦、公開文字知識或主動回覆。
   data.products = (data.products || []).filter((product) => productOverrides[product.id]).map((product) => {
     const rawOverride = formalCopy(product.id, productOverrides[product.id] || {});
@@ -219,14 +219,14 @@ function applyMaster(data) {
       ...((data.runtime || {}).imagePolicy || {}),
       ...(policy.imagePolicy || {}),
       actualProductPhotoAuthority: getPhotoAuthority().version,
-      customerMainImageSource: "six-user-confirmed-product-images",
+      customerMainImageSource: "current-user-confirmed-product-images",
       detailedDmSource: "separate-corrected-dm",
       productIdentityReference: "products-v3-user-approved-originals",
       productsV2Use: "legacy-reference-only",
       productScalePolicy: "uniform-only-no-stretch-preserve-real-product-proportion",
       dmFallback: "approved-product-image-only-if-detailed-dm-missing",
     },
-    productMainImageSource: "six-user-confirmed-product-images",
+    productMainImageSource: "current-user-confirmed-product-images",
     detailedDmSource: "separate-corrected-dm",
     productIdentityReference: "products-v3-user-approved-originals",
     productsV2Use: "legacy-reference-only",
