@@ -122,6 +122,7 @@ function currentAuthorityOverride(id, merged = {}) {
   if (!official) throw new Error(`${id} 缺少目前正式產品權威`);
   const spec = String(official.specification || "").trim();
   const usage = (Array.isArray(merged.usage) ? [...merged.usage] : []).map(sanitizeCurrentCopy);
+  if(official.usageAdjustment&&!usage.includes(official.usageAdjustment))usage.splice(1,0,official.usageAdjustment);
   if (official.usagePrimary) {
     if (usage.length) usage[0] = official.usagePrimary;
     else usage.push(official.usagePrimary);
@@ -167,7 +168,7 @@ function photoOverride(id) {
     image_url: customerProductImage,
     dmImage: customerDm,
     officialOriginalImage: original,
-    imagePolicy: "six-approved-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
+    imagePolicy: "current-approved-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
   };
 }
 
@@ -283,3 +284,4 @@ module.exports = {
   FORMAL_PRODUCT_COPY,
   SALES_OVERRIDE_FIELDS,
 };
+

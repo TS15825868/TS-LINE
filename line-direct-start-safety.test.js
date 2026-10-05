@@ -29,7 +29,7 @@ assert.ok(safetySource.includes('withoutEnlargement: true'));
 assert.ok(!safetySource.includes('require("./social-schedule-policy-fix")'));
 assert.ok(!safetySource.includes('require("./product-fulfillment-message-fix")'));
 
-assert.equal(rawData.products.length, 6);
+assert.equal(rawData.products.length, safety.currentAuthority.websitePublicProductIds.length);
 const currentById = Object.fromEntries((safety.currentAuthority.products || []).map((item) => [item.id,item]));
 for (const product of rawData.products) {
   const official = currentById[product.id];
@@ -41,7 +41,7 @@ for (const product of rawData.products) {
 }
 
 const customerData = safety.normalizeProductPhotos(JSON.parse(rawText));
-assert.equal(customerData.products.length, 6);
+assert.equal(customerData.products.length, safety.currentAuthority.websitePublicProductIds.length);
 for (const product of customerData.products) {
   assert.match(String(product.image || ""), new RegExp(`/assets/formal-product/${product.id}\\.jpg\\?v=`), `${product.id}顧客hero不是formal-product`);
   assert.match(String(product.dmImage || ""), new RegExp(`/assets/formal-dm/${product.id}\\.jpg\\?v=`), `${product.id}DM不是formal-dm`);
@@ -73,3 +73,4 @@ assert.equal(menu.areas.length,6);
 assert.equal(menu.areas.at(-1).action.text,"直接下單");
 
 console.log("PASS：LINE直接啟動以能力與目前權威驗收，不鎖歷史日期版號；產品JPEG、獨立DM、試喝JPEG、products-v3身份原圖與六格Rich Menu維持正常。");
+

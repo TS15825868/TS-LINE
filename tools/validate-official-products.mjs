@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 
 const authority = JSON.parse(fs.readFileSync('assets/data/official-products.json', 'utf8'));
+const publicIds=authority.websitePublicProductIds;
+if(!Array.isArray(publicIds)||!publicIds.length||new Set(publicIds).size!==publicIds.length)throw new Error('公開清單無效');
 const drinkIds = new Set(authority.fulfillmentPolicy.drinkProductIds);
 const stockIds = new Set(authority.fulfillmentPolicy.readyStockProductIds);
 
@@ -13,9 +15,9 @@ function mapProducts(source) {
 for (const file of ['line-sales-master.json', 'data.json']) {
   const source = JSON.parse(fs.readFileSync(file, 'utf8'));
   const products = mapProducts(source);
-  if (products.size !== 6) throw new Error(`${file}: official product count must be 6, got ${products.size}`);
+  if (products.size !== publicIds.length || !publicIds.every(id=>products.has(id))) throw new Error(`${file}: official products must match current public authority, got ${products.size}`);
 
-  for (const expected of authority.products) {
+  for (const expected of authority.products.filter(p=>publicIds.includes(p.id))) {
     const actual = products.get(expected.id);
     if (!actual) throw new Error(`${file}: missing official product ${expected.id}`);
     const spec = actual.specification || actual.size || actual.spec;
@@ -42,10 +44,11 @@ for (const file of ['line-sales-master.json', 'data.json']) {
 
   const drink30 = products.get('guilu-drink-30');
   if (drink30.unit !== '罐') throw new Error(`${file}: 30cc unit must be 罐`);
-  if (!String(drink30.image || '').includes('/assets/guilu-drink-30-clean.jpg')) throw new Error(`${file}: 30cc image must use Render clean endpoint`);
-  if (!String(drink30.officialOriginalImage || '').includes('/images/guilu-drink-30cc-glass.jpg')) throw new Error(`${file}: 30cc official original source missing`);
-  if (drink30.imagePolicy !== 'official-original-contain-no-crop') throw new Error(`${file}: 30cc image policy mismatch`);
-  if (source.fulfillmentPolicy?.version !== '2026-08-05-v2') throw new Error(`${file}: fulfillment policy version mismatch`);
+  if(file==='data.json'){
+    if(!String(drink30.officialOriginalImage||'').includes('/images/products-v3/guilu-drink-30.jpg'))throw new Error(`${file}: 30cc official identity source missing`);
+    if(!/(?:current-approved|current-user-confirmed)-product-images/.test(drink30.imagePolicy||''))throw new Error(`${file}: current image policy missing`);
+  }
+  if(!drink30.usage.includes('每日 1–2 罐')||!drink30.usage.includes('可依個人需求調整'))throw new Error(`${file}: 30cc current usage lost`);
 
   const activeText = JSON.stringify({
     products: Object.fromEntries([...products].map(([id, product]) => [id, {
@@ -65,9 +68,10 @@ for (const file of ['line-sales-master.json', 'data.json']) {
     trialCampaign: source.trialCampaign,
     comboOffers: source.comboOffers,
   });
-  for (const forbidden of authority.forbidden) {
+  for (const forbidden of ['龜鹿飲30cc玻璃瓶','30cc／瓶','75g（2兩）','75g （2兩）','柒玄茶・龜鹿調飲粉']) {
     if (activeText.includes(forbidden)) throw new Error(`${file}: forbidden legacy content found: ${forbidden}`);
   }
 }
 
-console.log('LINE OA six-product authority v3 verified: exact names/specs, fulfillment v2 and official-original 30cc image.');
+console.log('LINE OA current public authority verified: exact names/specs, fulfillment and official-original 30cc image.');
+

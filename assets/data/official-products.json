@@ -1,11 +1,11 @@
 {
-  "version": "2026-10-05-six-public-product-master-v7-six-line-visible-qixuan-hidden-v9",
+  "version": "2026-10-05-six-public-product-master-v8-line-visible-6-qixuan-hidden-v10",
   "authority": "user-confirmed-current",
   "publicAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json",
   "aiAnswerAuthority": "https://ts15825868.github.io/xianjiawei/ai-answers.json",
   "legacyDisplayCatalog": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "formalMediaAuthority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
-  "displayPolicy": "目前對外與 LINE OA 依最新公開產品母資料顯示 6 項正式產品；未在公開母資料中的暫緩產品只保留內部資料，不進產品卡、推薦、公開文字知識或主動回覆。",
+  "displayPolicy": "目前對外與 LINE OA 依官網公開母資料顯示 6 項正式產品；未在公開母資料中的暫緩產品只保留內部資料，不進產品卡、推薦、公開文字知識或主動回覆。",
   "products": [
     {
       "id": "guilu-gao",
@@ -28,7 +28,7 @@
       "dmBinaryPolicy": "current valid approved JPEG",
       "displayName": "龜鹿膏",
       "form": "膏狀",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v7"
+      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
     },
     {
       "id": "guilu-drink-30",
@@ -54,7 +54,8 @@
       "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
       "displayName": "龜鹿飲30cc玻璃罐",
       "form": "液態即飲",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v7"
+      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8",
+      "usageAdjustment": "可依個人需求調整"
     },
     {
       "id": "guilu-drink-180",
@@ -79,7 +80,7 @@
       "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
       "displayName": "龜鹿飲180cc鋁袋",
       "form": "液態即飲",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v7"
+      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
     },
     {
       "id": "guilu-tangkuai",
@@ -99,7 +100,7 @@
       "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=20260814-product-modal-media-v3",
       "displayName": "龜鹿湯塊",
       "form": "塊狀",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v7"
+      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
     },
     {
       "id": "guilu-jiao",
@@ -120,7 +121,7 @@
       "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=20260814-product-modal-media-v3",
       "displayName": "龜鹿膠",
       "form": "塊狀",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v7"
+      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
     },
     {
       "id": "luerong-fen",
@@ -136,7 +137,7 @@
       "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/04_luerong-fen-75g-dm.jpg?v=20260814-product-modal-media-v3",
       "displayName": "鹿茸粉",
       "form": "粉末",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v7"
+      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
     },
     {
       "id": "qixuan-guilu-drink-powder",
@@ -221,11 +222,12 @@
     "doNotRegenerate": true
   },
   "guardRules": [
-    "目前對外與LINE OA依最新公開產品母資料顯示 6 項正式產品；暫緩產品不得由舊資料自動公開",
+    "目前對外與LINE OA依官網公開母資料顯示6項正式產品；柒玄茶目前維持暫時隱藏，直到使用者明確重新啟用",
     "柒玄茶資料保留但不得出現在產品卡、推薦、公開文字知識或主動回覆",
     "柒玄茶目前沒有核准正式產品實物原圖與正式公開成分表；不得自創包裝、替代產品圖或自行補成分",
     "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1–2 罐，可依個人需求調整，舊守門員不得覆蓋新版正確資料。",
     "龜鹿湯塊目前正式規格為75g／盒｜8塊裝，不得回退舊2兩標示",
+    "目前對外與LINE OA依最新公開產品母資料顯示 6 項正式產品；暫緩產品不得由舊資料自動公開",
     "新版正確資料優先於舊守門員與舊固定產品數",
     "目前公開產品必須使用各自核准正式媒體；暫緩產品不得自創包裝或替代產品圖",
     "產品圖、詳細DM、試喝圖三個媒體角色必須分開",
@@ -236,5 +238,5 @@
     "價格、促銷與庫存屬易變資料，不得由舊固定公開資料覆蓋目前LINE銷售資料"
   ],
   "productMasterAuthority": "user-confirmed-current",
-  "productMasterVersion": "2026-10-05-six-public-product-master-v7"
+  "productMasterVersion": "2026-10-05-six-public-product-master-v8"
 }

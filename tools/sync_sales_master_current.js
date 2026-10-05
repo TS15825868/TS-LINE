@@ -49,9 +49,15 @@ function validateMaster(master){
   }
   const d30=master.products.find(x=>x.id==="guilu-drink-30");
   if(d30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error(`30cc公開母資料未同步目前正式用法：${CURRENT_30_USAGE}`);
+  if(!d30.usage.includes("可依個人需求調整"))throw new Error("30cc公開母資料缺少正式用量調整說明");
+  if(ids.includes(QIXUAN_ID))throw new Error("柒玄茶維持暫緩公開，未明確重新上架不得自動公開");
 }
 
 async function fetchMaster(){
+  if(process.env.PRODUCT_MASTER_FILE){
+    const master=JSON.parse(fs.readFileSync(process.env.PRODUCT_MASTER_FILE,"utf8"));
+    validateMaster(master);return master;
+  }
   const response=await fetch(MASTER_URL,{headers:{"user-agent":"xianjiawei-lineoa-public-product-ssot"}});
   if(!response.ok)throw new Error(`無法下載官網公開產品母資料：HTTP ${response.status}`);
   const master=await response.json();validateMaster(master);return master;
@@ -64,8 +70,9 @@ function mergeAuthority(local,master){
   const publicProducts=master.products.map(src=>{
     const old=localBy.get(src.id)||{};
     const primary=String(src?.usage?.[0]||old.usagePrimary||"").trim();
+    const adjustment=String(src.usageAdjustment||src.usage?.find(x=>x==="可依個人需求調整")||"").trim();
     const timing=String(src?.usageTiming||old.usageTiming||((src.id==="guilu-drink-30"||src.id==="guilu-drink-180")?"飲用時間可依個人使用習慣與作息時間安排":"")).trim();
-    return {...old,id:src.id,name:src.name,displayName:src.name,specification:src.specification,...(src.package?{package:src.package}:{}),...(src.form?{form:src.form}:{}),ingredients:[...src.ingredients],...(primary?{usagePrimary:primary}:{}),...(timing?{usageTiming:timing}:{}),...(src.detail?{detailUnitApprox:src.detail}:{}),publicProductMasterVersion:master.version};
+    return {...old,id:src.id,name:src.name,displayName:src.name,specification:src.specification,...(src.package?{package:src.package}:{}),...(src.form?{form:src.form}:{}),ingredients:[...src.ingredients],...(primary?{usagePrimary:primary}:{}),...(adjustment?{usageAdjustment:adjustment}:{}),...(timing?{usageTiming:timing}:{}),...(src.detail?{detailUnitApprox:src.detail}:{}),publicProductMasterVersion:master.version};
   });
   const previousQixuan=localBy.get(QIXUAN_ID)||{};
   const qixuan={...previousQixuan,...QIXUAN_HIDDEN};
@@ -136,7 +143,7 @@ function assertCurrent(merged,authority,photoAuthority,master){
     if(expectedDm?!dm.includes(expectedDm):!dm.includes("/images/dm-final/"))throw new Error(`${id}正式DM來源不同步`);
   }
   const d30=auth.get("guilu-drink-30"),raw30=(merged.products||[]).find(x=>x.id==="guilu-drink-30");
-  if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error("30cc目前新版用法／時間原則不同步");
+  if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE||d30?.usageAdjustment!=="可依個人需求調整"||!raw30?.usage?.includes("可依個人需求調整"))throw new Error("30cc目前新版用法／時間原則不同步");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(raw30)))throw new Error("30cc不得出現瓶型舊稱");
   const tang=auth.get("guilu-tangkuai"),jiao=auth.get("guilu-jiao");
   if(tang?.specification!=="75g／盒｜8塊裝"||tang?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊規格不同步");

@@ -25,19 +25,13 @@ for (const [query, expectedId] of queryCases) {
 }
 
 const products = server.DATA.products;
-assert.equal(products.length, 6);
-assert.deepEqual(products.map((item) => item.id).sort(), [
-  "guilu-drink-180",
-  "guilu-drink-30",
-  "guilu-gao",
-  "guilu-jiao",
-  "guilu-tangkuai",
-  "luerong-fen",
-].sort());
+const publicIds=require('./assets/data/official-products.json').websitePublicProductIds;
+assert.equal(products.length,publicIds.length);
+assert.deepEqual(products.map(item=>item.id).sort(),[...publicIds].sort());
 
 const gao = server.getProduct("guilu-gao");
 assert.equal(gao.spec, "100g／罐");
-assert.equal(gao.usage[0], "可依個人使用習慣與作息時間安排");
+assert.equal(gao.usage[0], "食用時間可依個人使用習慣與作息時間安排");
 assert.deepEqual(gao.ingredients, ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"]);
 
 const drink30 = server.getProduct("guilu-drink-30");
@@ -83,7 +77,7 @@ assert.ok(!priceCarousel.includes("龜鹿湯塊300g"));
 assert.ok(!priceCarousel.includes("龜鹿湯塊600g"));
 
 const gaoUsage = text(server.usageReply(gao));
-assert.ok(gaoUsage.includes("可依個人使用習慣與作息時間安排"));
+assert.ok(gaoUsage.includes("食用時間可依個人使用習慣與作息時間安排"));
 assert.ok(gaoUsage.includes("鹿角萃取物"));
 assert.ok(gaoUsage.includes("粉光蔘"));
 assert.ok(gaoUsage.includes(READY_STOCK_NOTICE));
@@ -94,3 +88,4 @@ assert.ok(drinkUsage.includes("水"));
 assert.ok(drinkUsage.includes(DRINK_NOTICE));
 
 console.log("PASS：LINE OA 常用客人問法、正式產品回覆、價格輪播與使用方式全部符合六項正式母本。");
+
