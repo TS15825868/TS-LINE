@@ -153,11 +153,11 @@
     "guilu-tangkuai": {
       "name": "龜鹿湯塊",
       "displayName": "龜鹿湯塊",
-      "specification": "75g （2兩）／盒｜8塊裝",
-      "size": "75g （2兩）／盒｜8塊裝",
-      "spec": "75g （2兩）／盒｜8塊裝",
+      "specification": "75g／盒｜8塊裝",
+      "size": "75g／盒｜8塊裝",
+      "spec": "75g／盒｜8塊裝",
       "unit": "盒",
-      "description": "75g （2兩）／盒｜8塊裝，每塊約9.375g；深藍正式盒裝，目前只有此一正式規格。",
+      "description": "75g／盒｜8塊裝，每塊約9.375g；深藍正式盒裝，目前只有此一正式規格。",
       "ingredients": [
         "龜板萃取物",
         "鹿角萃取物"
