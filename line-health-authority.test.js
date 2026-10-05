@@ -3,12 +3,16 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const core = require("./line-image-safety-core");
 const plain = require("./line-plain-text-safety");
+const { getCurrentAuthority } = require("./product-sales-master");
 
 const payload = plain.healthPayload(core);
+const current = getCurrentAuthority();
+const publicIds = Array.isArray(current.websitePublicProductIds) ? current.websitePublicProductIds : [];
+assert.ok(publicIds.length > 0, "目前公開產品清單不得為空");
 assert.equal(payload.ok, true);
 assert.equal(payload.serviceMode, "standalone-line-oa");
-assert.equal(payload.productCount, 6);
-assert.equal(payload.sellableSpecificationCount, 6);
+assert.equal(payload.productCount, publicIds.length);
+assert.equal(payload.sellableSpecificationCount, publicIds.length);
 assert.equal(payload.productMainImageSource, "current-approved-product-image-line-compatible-jpeg");
 assert.equal(payload.detailedDmImageSource, "current-approved-dm-line-compatible-jpeg");
 assert.equal(payload.trialImageSource, "20260814-user-approved-trial-line-compatible-jpeg");
@@ -42,4 +46,4 @@ assert.ok(safetySource.includes('app.get("/assets/formal-dm/:id.jpg"'), "缺少D
 assert.ok(safetySource.includes('app.get("/assets/formal-trial/trial.jpg"'), "缺少試喝JPEG路由");
 assert.ok(safetySource.includes('serviceMode: "standalone-line-oa"'));
 
-console.log("PASS：LINE健康診斷只描述目前獨立LINE OA；產品、DM、試喝、products-v3身份四種媒體角色分離，六項正式規格與目前龜鹿膏用法一致。");
+console.log(`PASS：LINE健康診斷只描述目前獨立LINE OA；${publicIds.length} 項公開產品與產品、DM、試喝、products-v3身份媒體角色一致。`);
