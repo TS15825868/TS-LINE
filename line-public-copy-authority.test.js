@@ -30,6 +30,8 @@ const STALE_PUBLIC_LITERALS = [
   '早晚各一小匙',
   '每日早上及下午各一小匙',
   '一天一次一小匙',
+  '每日 1–2 罐',
+  '75g （2兩）／盒｜8塊裝',
 ];
 
 const PUBLIC_CLAIM_LITERALS = [
@@ -68,6 +70,7 @@ const byId = Object.fromEntries((current.products || []).map(p => [p.id, p]));
 const drink30 = byId['guilu-drink-30'];
 const drink180 = byId['guilu-drink-180'];
 const gao = byId['guilu-gao'];
+const tang = byId['guilu-tangkuai'];
 
 must(drink30 && drink30.name === '龜鹿飲30cc玻璃罐', '30cc 正式名稱不是龜鹿飲30cc玻璃罐');
 must(drink30.specification === '30cc／罐（小玻璃罐）', '30cc 正式規格回退');
@@ -75,12 +78,13 @@ const drink30Package = String(drink30.package || '');
 must(drink30Package.includes('小玻璃罐'), '30cc 正式包裝未鎖定小玻璃罐');
 must(drink30Package.includes('裸罐'), '30cc 正式包裝未鎖定裸罐');
 must(drink30Package.includes('無貼紙'), '30cc 正式包裝未鎖定無貼紙');
-must(drink30.usagePrimary === '每日 1–2 罐', '30cc 正式使用方式被舊資料回退');
+must(drink30.usagePrimary === '每日 1 罐', '30cc 正式使用方式不是目前每日 1 罐');
 must(drink30.usageTiming === '飲用時間可依個人使用習慣與作息時間安排', '30cc 飲用時段不是目前彈性規則');
 must(drink180 && drink180.name === '龜鹿飲180cc鋁袋', '180cc 正式名稱回退');
 must(String(drink180.package || '').includes('狹長直立鋁袋'), '180cc 包裝不是目前狹長直立鋁袋');
 must(drink180.usageTiming === '飲用時間可依個人使用習慣與作息時間安排', '180cc 飲用時段不是目前彈性規則');
 must(gao && gao.usagePrimary === '食用時間可依個人使用習慣與作息時間安排', '龜鹿膏又被鎖回固定時段');
+must(tang && tang.specification === '75g／盒｜8塊裝', '龜鹿湯塊正式規格不是目前75g／盒｜8塊裝');
 
 const qixuan = byId[DEFERRED_ID];
 must(qixuan && qixuan.temporarilyHidden === true && qixuan.lineKnowledgeVisible === false && qixuan.publicVisible === false, '柒玄茶公開隱藏旗標回退');
