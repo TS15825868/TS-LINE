@@ -111,7 +111,7 @@ function healthPayload(core) {
     guiluGaoUsagePrimary: "可依個人使用習慣與作息時間安排",
     guiluGaoIngredients: ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
     guiluDrinkIngredients: ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
-    guiluTangkuaiSpecification: "75g （2兩）／盒｜8塊裝",
+    guiluTangkuaiSpecification: "75g／盒｜8塊裝",
     guiluTangkuaiDetailUnitApprox: "每塊約9.375g（顧客文字可顯示）",
     guiluTangkuaiPackage: "深藍正式盒裝",
     guiluTangkuaiIngredients: ["龜板萃取物", "鹿角萃取物"],
