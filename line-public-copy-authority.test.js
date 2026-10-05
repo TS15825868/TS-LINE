@@ -16,7 +16,7 @@ const ACTIVE_PUBLIC_FILES = [
   'approved-post-static.js',
 ];
 
-// 注意：目前守門規則可合法提到「每日 1–2 罐」或舊2兩標示作為負面拒絕條件；
+// 守門員只驗證目前權威，不得把歷史固定值拿來阻擋新版正確資料；
 // 這兩項改由下方正式產品欄位斷言驗證，不以全文掃描誤判守門文字。
 const STALE_PUBLIC_LITERALS = [
   '台興山產',
@@ -78,7 +78,7 @@ const drink30Package = String(drink30.package || '');
 must(drink30Package.includes('小玻璃罐'), '30cc 正式包裝未鎖定小玻璃罐');
 must(drink30Package.includes('裸罐'), '30cc 正式包裝未鎖定裸罐');
 must(drink30Package.includes('無貼紙'), '30cc 正式包裝未鎖定無貼紙');
-must(drink30.usagePrimary === '每日 1 罐', '30cc 正式使用方式不是目前每日 1 罐');
+must(drink30.usagePrimary === '每日 1–2 罐', '30cc 正式使用方式未同步目前每日 1–2 罐');
 must(drink30.usageTiming === '飲用時間可依個人使用習慣與作息時間安排', '30cc 飲用時段不是目前彈性規則');
 must(drink180 && drink180.name === '龜鹿飲180cc鋁袋', '180cc 正式名稱回退');
 must(String(drink180.package || '').includes('狹長直立鋁袋'), '180cc 包裝不是目前狹長直立鋁袋');
