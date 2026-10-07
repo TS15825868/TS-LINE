@@ -4,7 +4,7 @@
  * LINE OA 產品卡片動作守門
  * - 移除「看實際產品照片」等額外圖片跳轉：卡片本身已顯示正式產品圖。
  * - 「完整介紹」改為「官網完整介紹」，讓顧客清楚知道會開啟官網完整頁。
- * - 「看產品」六張產品卡維持相同高度；試喝不插入產品 carousel，避免30cc單卡把整組拉長。
+ * - 「看產品」所有目前公開產品卡維持相同高度；試喝不插入產品 carousel，避免30cc單卡把整組拉長。
  * - 試喝入口由 LINE 歡迎第一層、官網／FB／IG 試喝入口承接。
  * - 不修改產品圖、價格、規格、用法或購物車計價。
  */
@@ -90,7 +90,7 @@ function normalizeActions(bubble) {
   const items = Array.isArray(bubble.footer.contents) ? bubble.footer.contents : [];
 
   // 卡片 hero 已是正式產品圖，不再提供額外圖片跳轉。
-  // 試喝也不插入產品 carousel；即使舊層曾加過，這裡一律清掉以維持六張等高。
+  // 試喝也不插入產品 carousel；即使舊層曾加過，這裡一律清掉以維持所有公開產品卡等高。
   let next = items.filter((item) => {
     const label = String(item?.action?.label || "");
     return !PHOTO_LABEL.test(label) && !TRIAL_LABEL.test(label);
