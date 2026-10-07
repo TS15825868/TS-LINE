@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": "2026-08-22-ai-commerce-answer-authority-v3-qixuan-hidden",
-  "updatedAt": "2026-08-22",
+  "version": "2026-10-08-ai-commerce-answer-authority-v4-future-ready",
+  "updatedAt": "2026-10-08",
   "source": "https://ts15825868.github.io/xianjiawei/ai-answers.json",
   "productAuthority": "https://ts15825868.github.io/xianjiawei/public-product-master.json",
   "role": "LINE OA自然語言問答的共用答案權威。固定產品事實可直接使用；價格、促銷、庫存與活動仍以LINE目前銷售資料與人工客服最新狀態為準。",
@@ -54,7 +54,7 @@
   ],
   "rules": [
     "LINE公開主品牌只使用仙加味",
-    "目前LINE OA對外產品與自然語言回答只顯示六項正式產品",
+    "LINE OA對外產品與自然語言回答依最新核准公開產品清單動態顯示；目前產品數量不是永久上限，未來新品不得因舊六項規則而被阻擋",
     "柒玄茶・龜鹿調飲粉目前暫時隱藏；不得出現在產品介紹、推薦、產品總覽或公開自然語言回答，資料保留至使用者明確重新啟用",
     "30cc最新正式使用方式為每日 1–2 罐，禁止回退成每日一罐；180cc為每日一包",
     "龜鹿飲5～7個工作天交期只適用30cc與180cc",
