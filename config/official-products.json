@@ -1,10 +1,10 @@
 {
-  "version": "20261007-six-public-products-qixuan-deferred-v6",
+  "version": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
   "authority": "user-confirmed-current",
   "publicAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json",
   "aiAnswerAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/ai-answers.json",
   "legacyDisplayCatalog": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/catalog-public.json",
-  "rule": "LINE OA 對外公開產品固定依官網目前正式六項公開母資料；柒玄茶・龜鹿調飲粉保留內部資料，但暫不進入 LINE OA 公開文字知識、推薦、回覆、產品清單或媒體。新版正式資料更新時以最新權威為準。",
+  "rule": "目前僅公開龜鹿膏、龜鹿飲30cc玻璃罐、龜鹿飲180cc鋁袋與鹿茸粉。龜鹿膠與龜鹿湯塊停止對外展示／推薦／報價，歷史ERP紀錄保留。",
   "products": [
     {
       "id": "guilu-gao",
@@ -58,32 +58,6 @@
       "fulfillmentType": "made-to-order-drink"
     },
     {
-      "id": "guilu-tangkuai",
-      "name": "龜鹿湯塊",
-      "spec": "75g／盒｜8塊裝",
-      "detailUnitApprox": "每塊約9.375g",
-      "detailUnitRule": "顧客文字可顯示完整規格與約重；產品圖與DM不自行加字",
-      "package": "深藍正式盒裝",
-      "ingredients": [
-        "龜板萃取物",
-        "鹿角萃取物"
-      ],
-      "fulfillmentType": "ready-stock"
-    },
-    {
-      "id": "guilu-jiao",
-      "name": "龜鹿膠",
-      "spec": "600g （1斤）／盒｜32塊裝",
-      "detailUnitApprox": "每塊約18.75g",
-      "detailUnitRule": "顧客文字可顯示完整規格與約重；產品圖與DM不自行加字",
-      "package": "淡紫色正式盒裝",
-      "ingredients": [
-        "龜板萃取物",
-        "鹿角萃取物"
-      ],
-      "fulfillmentType": "ready-stock"
-    },
-    {
       "id": "luerong-fen",
       "name": "鹿茸粉",
       "spec": "75g／罐",
@@ -108,16 +82,12 @@
     "guilu-gao",
     "guilu-drink-30",
     "guilu-drink-180",
-    "guilu-tangkuai",
-    "guilu-jiao",
     "luerong-fen"
   ],
   "approvedMediaProductIds": [
     "guilu-gao",
     "guilu-drink-30",
     "guilu-drink-180",
-    "guilu-tangkuai",
-    "guilu-jiao",
     "luerong-fen"
   ],
   "fulfillmentPolicy": {
@@ -159,8 +129,6 @@
     "guilu-gao",
     "guilu-drink-30",
     "guilu-drink-180",
-    "guilu-tangkuai",
-    "guilu-jiao",
     "luerong-fen"
   ],
   "deferredInternalProductIds": [
