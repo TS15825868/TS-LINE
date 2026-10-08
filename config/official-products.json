@@ -1,10 +1,10 @@
 {
-  "version": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
+  "version": "20261008-four-active-public-products",
   "authority": "user-confirmed-current",
   "publicAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json",
   "aiAnswerAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/ai-answers.json",
   "legacyDisplayCatalog": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/catalog-public.json",
-  "rule": "目前僅公開龜鹿膏、龜鹿飲30cc玻璃罐、龜鹿飲180cc鋁袋與鹿茸粉。龜鹿膠與龜鹿湯塊停止對外展示／推薦／報價，歷史ERP紀錄保留。",
+  "rule": "對外現行產品以官網公開母資料為準，僅四項；已下架產品不得自動回流。",
   "products": [
     {
       "id": "guilu-gao",
@@ -98,8 +98,6 @@
     ],
     "readyStockProductIds": [
       "guilu-gao",
-      "guilu-tangkuai",
-      "guilu-jiao",
       "luerong-fen"
     ],
     "drinkLeadTime": "訂單資料與付款方式確認後安排製作，約5～7個工作天，完成後安排出貨",
@@ -109,9 +107,6 @@
     "LINE OA 對外公開與文字知識只允許目前六項正式公開產品；柒玄茶保留內部資料但不得自動公開、推薦或回覆。",
     "30cc正式名稱必須是龜鹿飲30cc玻璃罐，不得稱瓶；主規格30cc／罐（小玻璃罐）；每日 1–2 罐，可依個人需求調整",
     "180cc主規格180cc／包（鋁袋）；每日一包",
-    "龜鹿湯塊主規格75g／盒｜8塊裝；每塊約9.375g可作詳細文字資料",
-    "龜鹿膠主規格600g （1斤）／盒｜32塊裝；每塊約18.75g可作詳細文字資料",
-    "龜鹿膠與龜鹿湯塊不得互換規格或包裝",
     "正式成分與順序不得回退舊版本",
     "產品圖、詳細DM、試喝圖不可混用",
     "六項公開產品必須使用正式原圖等比例呈現；柒玄茶目前為內部延後公開資料，不得生成、替代或拼湊產品包裝，也不得出現在公開 LINE OA 回覆。"
