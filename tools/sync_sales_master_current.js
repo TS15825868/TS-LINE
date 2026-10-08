@@ -8,7 +8,7 @@ const DATA_PATH=path.join(ROOT,"data.json");
 const AUTHORITY_PATH=path.join(ROOT,"assets/data/official-products.json");
 const MASTER_URL=process.env.PRODUCT_MASTER_URL||"https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json";
 const stable=v=>JSON.stringify(v,null,2)+"\n";
-const REQUIRED_CURRENT_IDS=["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
+const REQUIRED_CURRENT_IDS=["guilu-gao","guilu-drink-30","guilu-drink-180","luerong-fen"];
 const QIXUAN_ID="qixuan-guilu-drink-powder";
 const publicIdsFromMaster=(master)=>[...new Set((master?.products||[]).map(x=>String(x?.id||"").trim()).filter(Boolean))];
 const CURRENT_30_USAGE="每日 1–2 罐";
@@ -31,8 +31,6 @@ const CURRENT_DM={
   "guilu-gao":"/images/dm-final/01_guilu-gao-100g-dm.jpg",
   "guilu-drink-30":"/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg",
   "guilu-drink-180":"/images/dm-final/03_guilu-drink-180cc-dm.jpg",
-  "guilu-tangkuai":"/images/dm-final/05_guilu-tangkuai-75g-dm.jpg",
-  "guilu-jiao":"/images/dm-final/06_guilu-jiao-600g-dm.jpg",
   "luerong-fen":"/images/dm-final/04_luerong-fen-75g-dm.jpg"
 };
 
@@ -89,8 +87,7 @@ function mergeAuthority(local,master){
   const guardRules=[...new Set([
     ...deferredRules,
     "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1–2 罐，可依個人需求調整，舊守門員不得覆蓋新版正確資料。",
-    "龜鹿湯塊目前正式規格為75g／盒｜8塊裝，不得回退舊2兩標示",
-    ...((local.guardRules||[]).filter(x=>{const v=String(x);return !v.includes("LINE可保留柒玄茶文字知識")&&!v.includes("七項產品文字知識完整")&&!v.includes("LINE文字知識必須保留7項")&&!v.includes("30cc目前正式使用方式")&&!v.includes("30cc正式使用方式")&&!v.includes("75g （2兩）")&&!v.includes("柒玄茶目前維持暫時隱藏")&&!v.includes("柒玄茶資料保留但不得出現在產品卡")&&!v.includes("柒玄茶目前沒有核准正式產品實物原圖");}))
+    ...((local.guardRules||[]).filter(x=>{const v=String(x);return !/龜鹿湯塊|龜鹿膠/.test(v)&& !v.includes("LINE可保留柒玄茶文字知識")&&!v.includes("七項產品文字知識完整")&&!v.includes("LINE文字知識必須保留7項")&&!v.includes("30cc目前正式使用方式")&&!v.includes("30cc正式使用方式")&&!v.includes("75g （2兩）")&&!v.includes("柒玄茶目前維持暫時隱藏")&&!v.includes("柒玄茶資料保留但不得出現在產品卡")&&!v.includes("柒玄茶目前沒有核准正式產品實物原圖");}))
   ])];
   return {
     ...local,
