@@ -218,78 +218,6 @@
         3,
         5
       ]
-    },
-    {
-      "id": "table-pairing",
-      "name": "料理搭配組",
-      "aliases": [
-        "料理搭配組",
-        "料理組"
-      ],
-      "items": [
-        "龜鹿湯塊75g 1盒",
-        "鹿茸粉75g 1罐"
-      ],
-      "gift": "",
-      "desc": "適合想從料理與溫熱飲品一起安排的人。",
-      "products": [
-        {
-          "productId": "guilu-tangkuai",
-          "qty": 1
-        },
-        {
-          "productId": "luerong-fen",
-          "qty": 1
-        }
-      ],
-      "unit": "組",
-      "quantityOptions": [
-        1,
-        2,
-        3,
-        5
-      ]
-    },
-    {
-      "id": "full-experience",
-      "name": "完整體驗組",
-      "aliases": [
-        "完整體驗組",
-        "體驗組"
-      ],
-      "items": [
-        "龜鹿膏 1罐",
-        "龜鹿飲180cc 5包",
-        "龜鹿湯塊75g 1盒",
-        "鹿茸粉75g 1罐"
-      ],
-      "gift": "",
-      "desc": "適合想一次了解不同型態，再依生活情境安排的人。",
-      "products": [
-        {
-          "productId": "guilu-gao",
-          "qty": 1
-        },
-        {
-          "productId": "guilu-drink-180",
-          "qty": 5
-        },
-        {
-          "productId": "guilu-tangkuai",
-          "qty": 1
-        },
-        {
-          "productId": "luerong-fen",
-          "qty": 1
-        }
-      ],
-      "unit": "組",
-      "quantityOptions": [
-        1,
-        2,
-        3,
-        5
-      ]
     }
   ],
   "trialCampaign": {
@@ -328,8 +256,6 @@
     ],
     "readyStockProductIds": [
       "guilu-gao",
-      "guilu-tangkuai",
-      "guilu-jiao",
       "luerong-fen"
     ],
     "drinkNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
