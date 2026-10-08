@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-line-sales-master-v5-future-ready",
+  "version": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
   "source": "仙加味目前核准公開產品、正式規格、成分與使用資料、LINE目前銷售資訊、試喝與產品別出貨政策；公開產品清單依最新正式權威動態擴充，不以目前產品數量或龜鹿系列作永久限制；產品圖片由正式核准產品圖權威提供，不得自行重畫或以舊圖阻擋新品。",
   "products": {
     "guilu-gao": {
@@ -149,90 +149,6 @@
       "productionLeadTime": "5～7個工作天",
       "readyStock": false,
       "physicalScalePolicy": "狹長直立鋁袋，寬高比目標約0.64（0.60～0.68）；禁止拉胖或誇張放大。"
-    },
-    "guilu-tangkuai": {
-      "name": "龜鹿湯塊",
-      "displayName": "龜鹿湯塊",
-      "specification": "75g／盒｜8塊裝",
-      "size": "75g／盒｜8塊裝",
-      "spec": "75g／盒｜8塊裝",
-      "unit": "盒",
-      "description": "75g／盒｜8塊裝，每塊約9.375g；深藍正式盒裝，目前只有此一正式規格。",
-      "ingredients": [
-        "龜板萃取物",
-        "鹿角萃取物"
-      ],
-      "usage": [
-        "使用時間可依個人使用習慣與作息時間安排",
-        "取1塊加入約300～500mL熱水沖泡",
-        "可放入保溫壺悶泡",
-        "也可加入雞湯或排骨湯燉煮"
-      ],
-      "storage": [
-        "依實際包裝標示保存"
-      ],
-      "fit": "想小盒裝、方便沖泡、使用保溫壺或搭配燉湯料理的人",
-      "aliases": [
-        "龜鹿湯塊",
-        "湯塊",
-        "75g"
-      ],
-      "price": 1600,
-      "originalPrice": null,
-      "offers": [],
-      "priceText": "$1,600 / 盒",
-      "priceLabel": "售價1,600元",
-      "quoteOnly": false,
-      "fulfillmentType": "ready-stock",
-      "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
-      "productionLeadTime": null,
-      "readyStock": true,
-      "physicalScalePolicy": "深藍正式盒；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現；不得建立其他龜鹿湯塊容量。",
-      "detailUnitApprox": "每塊約9.375g",
-      "detailUnitRule": "顧客文字頁／FAQ／LINE文字回覆可顯示完整規格與每塊約重；產品圖、DM與貼文主圖仍依正式原圖，不自行加字"
-    },
-    "guilu-jiao": {
-      "name": "龜鹿膠",
-      "displayName": "龜鹿膠",
-      "specification": "600g （1斤）／盒｜32塊裝",
-      "size": "600g （1斤）／盒｜32塊裝",
-      "spec": "600g （1斤）／盒｜32塊裝",
-      "unit": "盒",
-      "description": "600g （1斤）／盒｜32塊裝，每塊約18.75 g；淡紫色正式盒裝，適合家庭大規格、熱水化開或燉湯。",
-      "ingredients": [
-        "龜板萃取物",
-        "鹿角萃取物"
-      ],
-      "usage": [
-        "使用時間可依個人使用習慣與作息時間安排",
-        "取適量加入約300～500mL熱水化開",
-        "也可加入雞湯或排骨湯燉煮"
-      ],
-      "storage": [
-        "依實際包裝標示保存"
-      ],
-      "fit": "熟悉龜鹿產品、偏好600g （1斤）大規格或家庭安排的人",
-      "aliases": [
-        "龜鹿膠",
-        "膠",
-        "一斤"
-      ],
-      "price": 9600,
-      "originalPrice": 12000,
-      "offers": [
-        "優惠價9,600元"
-      ],
-      "priceText": "$9,600 / 盒",
-      "originalPriceText": "$12,000",
-      "priceLabel": "售價12,000元，優惠價9,600元",
-      "quoteOnly": false,
-      "fulfillmentType": "ready-stock",
-      "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
-      "productionLeadTime": null,
-      "readyStock": true,
-      "physicalScalePolicy": "淡紫正式盒；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現，不可橫向拉長。",
-      "detailUnitApprox": "每塊約18.75 g",
-      "detailUnitRule": "顧客文字頁／FAQ／LINE文字回覆可顯示完整規格與每塊約重；產品圖、DM與貼文主圖仍依正式原圖，不自行加字"
     },
     "luerong-fen": {
       "name": "鹿茸粉",
