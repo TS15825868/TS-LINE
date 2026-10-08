@@ -1,11 +1,11 @@
 {
-  "version": "2026-10-05-six-public-product-master-v8-line-visible-6-qixuan-hidden-v10",
+  "version": "2026-10-08-four-active-products",
   "authority": "user-confirmed-current",
   "publicAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json",
   "aiAnswerAuthority": "https://ts15825868.github.io/xianjiawei/ai-answers.json",
   "legacyDisplayCatalog": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "formalMediaAuthority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
-  "displayPolicy": "目前對外與 LINE OA 依官網公開母資料顯示 6 項正式產品；未在公開母資料中的暫緩產品只保留內部資料，不進產品卡、推薦、公開文字知識或主動回覆。",
+  "displayPolicy": "只向顧客顯示目前四項公開產品；龜鹿膠、龜鹿湯塊停止展示與推薦；舊紀錄保留。",
   "products": [
     {
       "id": "guilu-gao",
@@ -83,47 +83,6 @@
       "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
     },
     {
-      "id": "guilu-tangkuai",
-      "name": "龜鹿湯塊",
-      "specification": "75g／盒｜8塊裝",
-      "detailUnitApprox": "每塊約9.375g",
-      "detailUnitRule": "顧客文字頁／FAQ／LINE文字回覆可顯示完整規格與每塊約重；產品圖、DM與貼文主圖仍依正式原圖，不自行加字",
-      "package": "深藍正式盒裝",
-      "ingredients": [
-        "龜板萃取物",
-        "鹿角萃取物"
-      ],
-      "retailPrice": 1600,
-      "fulfillmentType": "ready-stock",
-      "singleSpecificationOnly": true,
-      "approvedProductImage": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-tangkuai.avif?v=20260814-product-modal-media-v3",
-      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/05_guilu-tangkuai-75g-dm.jpg?v=20260814-product-modal-media-v3",
-      "displayName": "龜鹿湯塊",
-      "form": "塊狀",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
-    },
-    {
-      "id": "guilu-jiao",
-      "name": "龜鹿膠",
-      "specification": "600g （1斤）／盒｜32塊裝",
-      "detailUnitApprox": "每塊約18.75g",
-      "detailUnitRule": "顧客文字頁／FAQ／LINE文字回覆可顯示完整規格與每塊約重；產品圖、DM與貼文主圖仍依正式原圖，不自行加字",
-      "package": "淡紫色正式盒裝",
-      "ingredients": [
-        "龜板萃取物",
-        "鹿角萃取物"
-      ],
-      "retailPrice": 9600,
-      "originalPrice": 12000,
-      "fulfillmentType": "ready-stock",
-      "singleSpecificationOnly": true,
-      "approvedProductImage": "https://ts15825868.github.io/xianjiawei/images/customer-display-v20260812/guilu-jiao.avif?v=20260814-product-modal-media-v3",
-      "approvedDm": "https://ts15825868.github.io/xianjiawei/images/dm-final/06_guilu-jiao-600g-dm.jpg?v=20260814-product-modal-media-v3",
-      "displayName": "龜鹿膠",
-      "form": "塊狀",
-      "publicProductMasterVersion": "2026-10-05-six-public-product-master-v8"
-    },
-    {
       "id": "luerong-fen",
       "name": "鹿茸粉",
       "specification": "75g／罐",
@@ -159,24 +118,18 @@
     "guilu-gao",
     "guilu-drink-30",
     "guilu-drink-180",
-    "guilu-tangkuai",
-    "guilu-jiao",
     "luerong-fen"
   ],
   "websitePublicProductIds": [
     "guilu-gao",
     "guilu-drink-30",
     "guilu-drink-180",
-    "guilu-tangkuai",
-    "guilu-jiao",
     "luerong-fen"
   ],
   "approvedMediaProductIds": [
     "guilu-gao",
     "guilu-drink-30",
     "guilu-drink-180",
-    "guilu-tangkuai",
-    "guilu-jiao",
     "luerong-fen"
   ],
   "temporarilyHiddenProductIds": [
