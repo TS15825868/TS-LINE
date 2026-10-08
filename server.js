@@ -18,7 +18,7 @@ const VERSION = "v401.9";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const DRINK_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
 const READY_STOCK_ORDER_NOTICE = "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。";
-const MIXED_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作，約需5～7個工作天；龜鹿膏、龜鹿湯塊、龜鹿膠與鹿茸粉依現貨狀況安排。物流配送時間另計。";
+const MIXED_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作，約需5～7個工作天；龜鹿膏與鹿茸粉依現貨狀況安排。物流配送時間另計。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
 const STATE_TTL_MS = Number(process.env.STATE_TTL_MS || 24 * 60 * 60 * 1000);
@@ -623,15 +623,6 @@ function recommendReply() {
       ]
     ).contents,
     flexCard(
-      "沖泡、燉湯與家庭使用",
-      "想搭配熱水、料理或家庭較大規格使用，可比較龜鹿湯塊與龜鹿膠。",
-      [
-        { label: "看龜鹿湯塊", text: "產品詳情｜guilu-tangkuai" },
-        { label: "看龜鹿膠", text: "產品詳情｜guilu-jiao" },
-        { label: "看搭配方案", text: "搭配組合" },
-      ]
-    ).contents,
-    flexCard(
       "自行搭配飲品",
       "喜歡依自己的飲食習慣加入溫水、牛奶、豆漿或其他飲品，可查看鹿茸粉。個人體質、疾病與用藥問題會轉介中醫師協助判斷。",
       [
@@ -656,8 +647,6 @@ function comboReply() {
 
 ・固定日常安排：龜鹿膏
 ・方便即飲：龜鹿飲30cc小玻璃罐／180cc鋁袋
-・沖泡與料理：龜鹿湯塊
-・家庭長期使用：龜鹿膠
 ・自行搭配飲品：鹿茸粉
 
 若涉及個人體質、疾病、用藥或適不適合食用，會轉介合作中醫師協助判斷。`,
@@ -894,8 +883,6 @@ function detectProduct(text) {
   if (/龜鹿飲.*180|180cc|鋁袋/.test(raw)) return getProduct("guilu-drink-180");
   if (/龜鹿飲.*30|30cc|玻璃罐|玻璃瓶/.test(raw)) return getProduct("guilu-drink-30");
   if (/龜鹿膏/.test(raw)) return getProduct("guilu-gao");
-  if (/龜鹿湯塊|湯塊/.test(raw)) return getProduct("guilu-tangkuai");
-  if (/龜鹿膠|一斤裝|600g/.test(raw)) return getProduct("guilu-jiao");
   if (/鹿茸粉/.test(raw)) return getProduct("luerong-fen");
   return null;
 }
