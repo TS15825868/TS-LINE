@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
-const REQUIRED_CURRENT_IDS = ['guilu-gao','guilu-drink-30','guilu-drink-180','guilu-tangkuai','guilu-jiao','luerong-fen'];
+const REQUIRED_CURRENT_IDS = ['guilu-gao','guilu-drink-30','guilu-drink-180','luerong-fen'];
 const DEFERRED_ID = 'qixuan-guilu-drink-powder';
 
 // 只掃真正會形成 LINE 顧客資料／公開貼文的 payload。
@@ -67,13 +67,13 @@ const publicIds = Array.isArray(current.websitePublicProductIds) ? current.websi
 must(publicIds.length > 0, 'LINE 最新公開產品清單不得為空');
 must(JSON.stringify(current.knowledgeProductIds || []) === JSON.stringify(publicIds), 'LINE 可見產品知識未跟最新公開產品清單同步');
 for (const id of REQUIRED_CURRENT_IDS) must(publicIds.includes(id), `目前核心公開產品缺失：${id}`);
+for (const id of ['guilu-tangkuai','guilu-jiao']) must(!publicIds.includes(id), `下架產品不得回流：${id}`);
 if (!publicIds.includes(DEFERRED_ID)) must(Array.isArray(current.temporarilyHiddenProductIds) && current.temporarilyHiddenProductIds.includes(DEFERRED_ID), '柒玄茶未維持暫時隱藏');
 
 const byId = Object.fromEntries((current.products || []).map(p => [p.id, p]));
 const drink30 = byId['guilu-drink-30'];
 const drink180 = byId['guilu-drink-180'];
 const gao = byId['guilu-gao'];
-const tang = byId['guilu-tangkuai'];
 
 must(drink30 && drink30.name === '龜鹿飲30cc玻璃罐', '30cc 正式名稱不是龜鹿飲30cc玻璃罐');
 must(drink30.specification === '30cc／罐（小玻璃罐）', '30cc 正式規格回退');
@@ -87,7 +87,6 @@ must(drink180 && drink180.name === '龜鹿飲180cc鋁袋', '180cc 正式名稱�
 must(String(drink180.package || '').includes('狹長直立鋁袋'), '180cc 包裝不是目前狹長直立鋁袋');
 must(drink180.usageTiming === '飲用時間可依個人使用習慣與作息時間安排', '180cc 飲用時段不是目前彈性規則');
 must(gao && gao.usagePrimary === '食用時間可依個人使用習慣與作息時間安排', '龜鹿膏又被鎖回固定時段');
-must(tang && tang.specification === '75g／盒｜8塊裝', '龜鹿湯塊正式規格不是目前75g／盒｜8塊裝');
 
 const qixuan = byId[DEFERRED_ID];
 if (!publicIds.includes(DEFERRED_ID)) must(qixuan && qixuan.temporarilyHidden === true && qixuan.lineKnowledgeVisible === false && qixuan.publicVisible === false, '柒玄茶公開隱藏旗標回退');
