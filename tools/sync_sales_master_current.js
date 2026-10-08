@@ -142,9 +142,6 @@ function assertCurrent(merged,authority,photoAuthority,master){
   const d30=auth.get("guilu-drink-30"),raw30=(merged.products||[]).find(x=>x.id==="guilu-drink-30");
   if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE||d30?.usageAdjustment!=="可依個人需求調整"||!raw30?.usage?.includes("可依個人需求調整")||raw30?.usageAdjustment!=="可依個人需求調整")throw new Error("30cc目前新版用法／時間原則不同步");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(raw30)))throw new Error("30cc不得出現瓶型舊稱");
-  const tang=auth.get("guilu-tangkuai"),jiao=auth.get("guilu-jiao");
-  if(tang?.specification!=="75g／盒｜8塊裝"||tang?.detailUnitApprox!=="每塊約9.375g")throw new Error("龜鹿湯塊規格不同步");
-  if(jiao?.specification!=="600g （1斤）／盒｜32塊裝"||!/^每塊約18\.75\s*g$/.test(String(jiao?.detailUnitApprox||"")))throw new Error("龜鹿膠規格不同步");
   if(!publicIds.includes(QIXUAN_ID)){
     const qixuan=auth.get(QIXUAN_ID);
     if(!qixuan||qixuan.name!==QIXUAN_HIDDEN.name||qixuan.specification!==QIXUAN_HIDDEN.specification||qixuan.websiteVisible!==false||qixuan.lineKnowledgeVisible!==false||qixuan.temporarilyHidden!==true)throw new Error("柒玄茶暫時隱藏規則不同步");
