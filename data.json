@@ -25,7 +25,7 @@
       "sourceUrl": "https://ts15825868.github.io/xianjiawei/sources.html"
     }
   },
-  "productPhotoAuthorityVersion": "2026-08-10-products-v3-latest-originals-v3",
+  "productPhotoAuthorityVersion": "20261008-four-active-public-products",
   "products": [
     {
       "id": "guilu-gao",
@@ -87,7 +87,7 @@
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-gao.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "current-approved-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
       "form": "膏狀",
-      "productMasterVersion": "2026-10-05-six-public-product-master-v8",
+      "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
       "usagePrimary": "食用時間可依個人使用習慣與作息時間安排",
       "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-gao.html"
     },
@@ -166,11 +166,12 @@
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "current-approved-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
       "form": "液態即飲",
-      "productMasterVersion": "2026-10-05-six-public-product-master-v8",
+      "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
       "usagePrimary": "每日 1–2 罐",
       "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
       "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-drink-30cc.html",
-      "package": "小玻璃罐、裸罐、無貼紙；不可更換瓶型、不可任意加標籤、不可放大成一般飲料瓶"
+      "package": "小玻璃罐、裸罐、無貼紙；不可更換瓶型、不可任意加標籤、不可放大成一般飲料瓶",
+      "usageAdjustment": "可依個人需求調整"
     },
     {
       "id": "guilu-drink-180",
@@ -244,7 +245,7 @@
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-180.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "current-approved-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
       "form": "液態即飲",
-      "productMasterVersion": "2026-10-05-six-public-product-master-v8",
+      "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
       "usagePrimary": "每日一包",
       "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
       "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-drink-180cc.html",
@@ -301,7 +302,7 @@
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/luerong-fen.jpg?v=20260810-products-v3-latest-originals-v3",
       "imagePolicy": "current-approved-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
       "form": "粉末",
-      "productMasterVersion": "2026-10-05-six-public-product-master-v8",
+      "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
       "detailPage": "https://ts15825868.github.io/xianjiawei/product-luerong-fen.html"
     }
   ],
@@ -362,7 +363,7 @@
       "traditionalChineseOnly": true,
       "approvalRequiredBeforePublish": true,
       "soupBlockOnly": "75g深藍盒",
-      "actualProductPhotoAuthority": "2026-08-10-products-v3-latest-originals-v3",
+      "actualProductPhotoAuthority": "20261008-four-active-public-products",
       "productMainImageSource": "products-v3-user-approved-originals",
       "productsV2Use": "legacy-reference-only",
       "productScalePolicy": "uniform-only-no-stretch-preserve-real-product-proportion",
@@ -374,13 +375,13 @@
     "productMainImageSource": "current-user-confirmed-product-images",
     "productsV2Use": "legacy-reference-only",
     "productScalePolicy": "uniform-only-no-stretch-preserve-real-product-proportion",
-    "formalCopyVersion": "2026-10-05-six-public-product-master-v8-line-visible-6-qixuan-hidden-v10",
+    "formalCopyVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai-line-visible-4-qixuan-hidden-v10",
     "formalCopyAuthority": "user-confirmed-current",
     "trialAuthority": "assets/data/official-products.json",
     "detailedDmSource": "separate-corrected-dm",
     "productIdentityReference": "products-v3-user-approved-originals",
-    "knowledgeProductCount": 6,
-    "approvedMediaProductCount": 6
+    "knowledgeProductCount": 4,
+    "approvedMediaProductCount": 4
   },
   "trialCampaign": {
     "id": "guilu-drink-30-evergreen-trial",
@@ -469,14 +470,12 @@
   ],
   "retentionOffers": {
     "combos": {
-      "日常節奏組": "可依組合內容、數量與需求協助整理較適合的方案。",
-      "料理搭配組": "可依組合內容、數量與需求協助整理較適合的方案。",
-      "完整體驗組": "可依組合內容、數量與需求協助整理較適合的方案。"
+      "日常節奏組": "可依組合內容、數量與需求協助整理較適合的方案。"
     }
   },
   "store": {},
-  "salesMasterVersion": "2026-08-15-block-spec-2li-1jin-v4-authority-driven-current",
-  "salesMasterSource": "仙加味六個正式產品、六個正式規格、正式成分與使用資料、目前LINE售價、買10送1、試喝與產品別出貨政策；產品圖片唯一由 line-product-photo-authority.json 的 products-v3 使用者核准正式原圖提供，銷售主檔不再保存舊 products-v2 圖片。; product image / detailed DM / trial roles separated by current official authority",
+  "salesMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai-authority-driven-current",
+  "salesMasterSource": "仙加味目前核准公開產品、正式規格、成分與使用資料、LINE目前銷售資訊、試喝與產品別出貨政策；公開產品清單依最新正式權威動態擴充，不以目前產品數量或龜鹿系列作永久限制；產品圖片由正式核准產品圖權威提供，不得自行重畫或以舊圖阻擋新品。; product image / detailed DM / trial roles separated by current official authority",
   "trialPosterAuthority": {
     "assetId": "20260814-user-small-boss-trial-poster",
     "version": "20260814-product-modal-media-v3",
@@ -488,7 +487,7 @@
     "role": "separate fixed trial visual only; not product image or DM",
     "doNotRegenerate": true
   },
-  "currentProductAuthorityVersion": "2026-10-08-four-active-products-retired-jiao-tangkuai",
+  "currentProductAuthorityVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai-line-visible-4-qixuan-hidden-v10",
   "officialProductIds": [
     "guilu-gao",
     "guilu-drink-30",
@@ -513,7 +512,7 @@
   "temporarilyHiddenProductIds": [
     "qixuan-guilu-drink-powder"
   ],
-  "productMasterVersion": "2026-10-05-six-public-product-master-v8",
+  "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
   "productMasterAuthority": "user-confirmed-current",
   "productMasterSource": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json"
 }

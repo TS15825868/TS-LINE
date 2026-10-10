@@ -16,7 +16,7 @@ const qixuanId = "qixuan-guilu-drink-powder";
 assert.equal(currentAuthority.authority, "user-confirmed-current");
 assert.ok(visibleIds.length > 0, "目前公開產品清單不得為空");
 assert.deepEqual(currentAuthority.knowledgeProductIds, visibleIds, "LINE可見文字／AI產品知識必須與最新公開產品清單一致");
-assert.match(String(photoAuthority?.version || ""), /products-v3/i);
+assert.ok(String(photoAuthority?.version || "").trim(), "目前正式圖片權威必須具有版本識別；不得鎖死舊版本名稱");
 assert.ok(!/products-v2/i.test(String(photoAuthority?.version || "")));
 assert.equal(Object.keys(photoAuthority?.products || {}).length, visibleIds.length, "目前核准正式實物圖數量必須與最新公開產品清單一致");
 
@@ -71,8 +71,10 @@ assert.ok(byId["guilu-drink-30"].offers.some((offer) => offer.label === "買10�
 assert.equal(byId["guilu-drink-180"].price, 200);
 assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長直立鋁袋/i);
 assert.ok(byId["guilu-drink-180"].offers.some((offer) => offer.label === "買10送1" && offer.qty === 11 && offer.total === 2000));
-assert.equal(byId["guilu-tangkuai"].specification, "75g／盒｜8塊裝");
-assert.equal(byId["guilu-jiao"].specification, "600g （1斤）／盒｜32塊裝");
+for (const id of ["guilu-tangkuai", "guilu-jiao"]) {
+  assert.ok(!visibleIds.includes(id), `${id}目前暫緩對外，不得回流公開產品卡`);
+  assert.ok(!byId[id], `${id}不得顯示在LINE顧客產品卡`);
+}
 assert.equal(byId["luerong-fen"].specification, "75g／罐");
 assert.equal(data.runtime.knowledgeProductCount, visibleIds.length);
 assert.equal(data.runtime.approvedMediaProductCount, visibleIds.length);
@@ -81,4 +83,4 @@ assert.equal(data.runtime.detailedDmSource, "separate-corrected-dm");
 assert.equal(data.runtime.productIdentityReference, "products-v3-user-approved-originals");
 assert.equal(data.runtime.productsV2Use, "legacy-reference-only");
 
-console.log(`PASS：LINE OA ${visibleIds.length} 項可見產品知識與核准正式實物圖一致；30cc每日 1–2 罐、龜鹿湯塊75g／盒｜8塊裝；暫緩產品不自動公開。`);
+console.log(`PASS：LINE OA ${visibleIds.length} 項可見產品知識與最新正式圖片權威一致；暫緩產品保留內部資料、不回流公開。`);

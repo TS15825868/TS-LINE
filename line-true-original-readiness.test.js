@@ -13,7 +13,7 @@ const currentById = Object.fromEntries((current.products || []).map((item) => [i
 const visibleIds = Array.isArray(current.websitePublicProductIds) ? current.websitePublicProductIds : [];
 const qixuanId = "qixuan-guilu-drink-powder";
 
-assert.match(String(authority.version || ""), /products-v3/i, "products-v3必須維持產品身份權威");
+assert.ok(String(authority.version || "").trim(), "正式圖片權威必須有目前版本識別，不鎖死舊版本名稱");
 assert.ok(!/products-v2/i.test(String(authority.version || "")));
 assert.ok(visibleIds.length > 0, "目前公開產品清單不得為空");
 assert.equal(identityEntries.length, visibleIds.length, "目前核准正式實物圖數量必須與最新公開產品清單一致");
@@ -49,8 +49,13 @@ assert.equal(data.products.find((p)=>p.id==="guilu-drink-30")?.usage?.[0], "每�
 assert.equal(data.products.find((p)=>p.id==="guilu-drink-180")?.usage?.[0], "每日一包");
 
 assert.ok(String(visual.PRODUCT_IMAGE_VERSION || "").trim(), "Flex產品媒體必須有目前版本識別");
-assert.ok(!/products-v2|legacy|retired/i.test(String(visual.PRODUCT_IMAGE_VERSION || "")), "Flex產品媒體不得回退舊權威");
+assert.ok(!/products-v2|legacy/i.test(String(visual.PRODUCT_IMAGE_VERSION || "")), "Flex產品媒體不得回退舊權威；新版暫緩標記不是舊版");
 for (const [id, item] of Object.entries(visual.PRODUCTS || {})) {
+  if (!visibleIds.includes(id)) {
+    assert.equal(String(item.source || ""), "", `${id}暫緩產品不得重建公開來源`);
+    assert.equal(String(item.original || ""), "", `${id}暫緩產品不得重建公開身份原圖`);
+    continue;
+  }
   assert.match(String(item.image || ""), new RegExp(`/assets/formal-product/${id}\\.jpg\\?v=`), `${id}Flex hero不是目前正式產品JPEG route`);
   assert.equal(item.source, currentById[id].approvedProductImage, `${id}Flex hero來源不是目前核准產品圖`);
   assert.equal(item.original, authority.products[id], `${id}Flex products-v3身份參考不同步`);

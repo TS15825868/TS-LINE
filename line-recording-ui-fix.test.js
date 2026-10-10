@@ -1,6 +1,8 @@
 "use strict";
 const assert = require("node:assert/strict");
 const fix = require("./line-recording-ui-fix");
+const { getCurrentAuthority } = require("./product-sales-master");
+const visibleIds = getCurrentAuthority().websitePublicProductIds;
 
 function productBubble(name, oldImage) {
   return {
@@ -17,7 +19,7 @@ function productBubble(name, oldImage) {
 assert.match(fix.VERSION, /recording-ui/i);
 assert.equal(fix.HERO_ASPECT_RATIO, "16:9");
 assert.ok(String(fix.PRODUCT_IMAGE_VERSION || "").trim(), "產品媒體版本識別不得為空");
-assert.ok(!/products-v2|legacy|retired/i.test(String(fix.PRODUCT_IMAGE_VERSION || "")), "產品媒體版本不得回退舊權威");
+assert.ok(!/products-v2|legacy/i.test(String(fix.PRODUCT_IMAGE_VERSION || "")), "產品媒體版本不得回退舊權威；新版暫緩標記不是舊版");
 
 const cases = [
   ["龜鹿膏｜100g／罐", "guilu-gao"],
@@ -27,7 +29,7 @@ const cases = [
   ["龜鹿膠｜600g （1斤）／盒｜32塊裝", "guilu-jiao"],
   ["鹿茸粉｜75g／罐", "luerong-fen"],
 ];
-for (const [name, key] of cases) {
+for (const [name, key] of cases.filter(([, key]) => visibleIds.includes(key))) {
   const bubble = productBubble(name, "https://example.com/legacy.jpg");
   fix.applyVisualFix(bubble);
   assert.equal(bubble.xjwProductPhoto, key);

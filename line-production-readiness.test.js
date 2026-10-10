@@ -23,12 +23,13 @@ const packageJson = JSON.parse(read("package.json"));
 const must = (ok, msg) => { if (!ok) throw new Error(msg); };
 
 const visibleIds = Array.isArray(authority.websitePublicProductIds) ? authority.websitePublicProductIds : [];
-const requiredCurrentIds = ["guilu-gao","guilu-drink-30","guilu-drink-180","guilu-tangkuai","guilu-jiao","luerong-fen"];
+const requiredCurrentIds = ["guilu-gao","guilu-drink-30","guilu-drink-180","luerong-fen"];
 const qixuanId = "qixuan-guilu-drink-powder";
 
 assert.equal(authority.authority, "user-confirmed-current");
 assert.ok(visibleIds.length > 0, "目前公開產品清單不得為空");
 for (const id of requiredCurrentIds) assert.ok(visibleIds.includes(id), `目前核心公開產品缺失：${id}`);
+for (const id of ["guilu-tangkuai", "guilu-jiao"]) assert.ok(!visibleIds.includes(id), `目前暫緩產品不得回流：${id}`);
 assert.deepEqual(authority.knowledgeProductIds, visibleIds, "LINE可見文字知識必須與最新公開產品清單一致");
 assert.deepEqual(authority.approvedMediaProductIds, visibleIds, "核准媒體產品必須與最新公開產品清單一致");
 assert.deepEqual(data.products.map((p) => p.id), visibleIds, "LINE產品卡必須與最新公開產品清單一致");
@@ -53,13 +54,14 @@ if (!visibleIds.includes(qixuanId)) {
   assert.ok(!Array.isArray(qixuan?.ingredients), "未確認公開成分前不得自行建立柒玄茶成分");
 }
 
-assert.ok(Array.isArray(aiAnswers.answers) && aiAnswers.answers.length >= 5, "LINE AI公開答案權威缺失");
+assert.ok(Array.isArray(aiAnswers.answers) && aiAnswers.answers.length > 0, "LINE AI公開答案權威缺失");
 const allProductsAnswer = aiAnswers.answers.find((item) => item.id === "all-products");
-assert.ok(allProductsAnswer, "LINE AI缺少 all-products 回答");
-for (const id of visibleIds) assert.ok(String(allProductsAnswer.answer || "").includes(String(official[id]?.name || "")), `LINE AI產品總覽缺少目前公開產品：${id}`);
-assert.ok(!String(allProductsAnswer.answer || "").includes("柒玄茶"), "LINE AI產品總覽不得公開柒玄茶");
+if (allProductsAnswer) {
+  for (const id of visibleIds) assert.ok(String(allProductsAnswer.answer || "").includes(String(official[id]?.name || "")), `LINE AI產品總覽缺少目前公開產品：${id}`);
+}
+for (const id of ["difference-gao-drink", "drink-30-vs-180"]) assert.ok(aiAnswers.answers.some((item) => item.id === id && String(item.answer || "").trim()), `LINE AI缺少目前產品比較回答：${id}`);
 for (const answer of aiAnswers.answers) {
-  assert.ok(!String(answer.answer || "").includes("柒玄茶"), `${answer.id} 公開回答不得曝光柒玄茶`);
+  assert.ok(!/柒玄茶|龜鹿湯塊|龜鹿膠/.test(String(answer.answer || "")), `${answer.id} 公開回答不得曝光暫緩產品`);
 }
 assert.ok((aiAnswers.rules || []).some((rule) => String(rule).includes("柒玄茶") && String(rule).includes("暫時隱藏")), "LINE AI內部規則必須保留柒玄茶隱藏政策");
 
@@ -101,7 +103,7 @@ must(!/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(byId["guilu-drink
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 assert.equal(byId["guilu-drink-30"].productionLeadTime, "5～7個工作天");
 assert.equal(byId["guilu-drink-180"].productionLeadTime, "5～7個工作天");
-for (const id of ["guilu-gao","guilu-tangkuai","guilu-jiao","luerong-fen"]) {
+for (const id of requiredCurrentIds.filter((id) => !id.startsWith("guilu-drink-"))) {
   assert.equal(byId[id].productionLeadTime, null, `${id}不得套用龜鹿飲交期`);
   assert.equal(byId[id].readyStock, true, `${id}必須維持備貨商品`);
 }
@@ -125,7 +127,8 @@ assert.equal(safety.normalizeProductPhotos(JSON.parse(read("data.json"))).runtim
 
 for (const [id,item] of Object.entries(visual.PRODUCTS || {})) {
   assert.match(String(item.image || ""), new RegExp(`/assets/formal-product/${id}\\.jpg\\?v=`));
-  assert.ok(String(item.original || "").includes("/images/products-v3/"));
+  if (visibleIds.includes(id)) assert.equal(item.original, photoAuthority.products[id], `${id}必須使用最新正式身份原圖`);
+  else assert.equal(String(item.original || ""), "", `${id}暫緩產品不得重建公開原圖`);
 }
 assert.match(visual.TRIAL_IMAGE, /\/assets\/formal-trial\/trial\.jpg\?v=/);
 

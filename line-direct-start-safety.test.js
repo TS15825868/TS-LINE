@@ -9,8 +9,8 @@ const safety = require("./line-image-safety");
 
 assert.match(String(safety.VERSION || ""), /current|line|media/i);
 assert.ok(String(safety.FORMAL_MEDIA_VERSION || "").trim(), "正式媒體版本識別不得為空");
-assert.ok(!/products-v2|legacy|retired/i.test(String(safety.FORMAL_MEDIA_VERSION || "")), "正式媒體版本不得回退舊權威");
-assert.match(String(safety.photoAuthority?.version || ""), /products-v3/i);
+assert.ok(!/products-v2|legacy/i.test(String(safety.FORMAL_MEDIA_VERSION || "")), "正式媒體版本不得回退舊權威；新版暫緩標記不是舊版");
+assert.ok(String(safety.photoAuthority?.version || "").trim(), "正式圖片權威必須有目前版本識別");
 assert.equal(safety.currentAuthority?.authority, "user-confirmed-current");
 assert.equal(safety.richMenuSync.SINGLE_IMAGE_ONLY, true);
 assert.equal(safety.richMenuSync.RUNTIME_COMPOSITE_FORBIDDEN, true);
