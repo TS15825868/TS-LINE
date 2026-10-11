@@ -48,9 +48,10 @@ jobs:
           node - <<'NODE'
           const fs=require('fs');
           const d=JSON.parse(fs.readFileSync('data.json','utf8'));
-          if(!Array.isArray(d.products)||d.products.length!==6) throw new Error('LINE 對外產品數不是6');
+          if(!Array.isArray(d.products)||d.products.length!==4) throw new Error('LINE 對外產品數不是4');
+          if(d.products.some(p=>['guilu-jiao','guilu-tangkuai'].includes(p.id))) throw new Error('暫緩產品回流公開');
           const t=JSON.stringify(d);
-          const must=['龜鹿膏','100g','龜鹿飲30cc玻璃罐','30cc','龜鹿飲180cc鋁袋','180cc','龜鹿湯塊','75g','龜鹿膠','600g','鹿茸粉','75g'];
+          const must=['龜鹿膏','100g','龜鹿飲30cc玻璃罐','30cc','龜鹿飲180cc鋁袋','180cc','鹿茸粉','75g'];
           for(const x of must) if(!t.includes(x)) throw new Error('data.json 缺少 '+x);
           if(t.includes('台興山產')) throw new Error('LINE 公開資料含舊品牌名');
           console.log('PASS LINE data.json formal authority');
@@ -71,7 +72,7 @@ jobs:
           if(h.ok!==true) throw new Error('LINE healthz live 異常');
           if(h.credentialsConfigured!==true) throw new Error('LINE credentialsConfigured=false');
           if(h.orderOpen!==true) throw new Error('LINE orderOpen=false');
-          if(Number(h.productCount)!==6) throw new Error('LINE live productCount != 6');
+          if(Number(h.productCount)!==4) throw new Error('LINE live productCount != 4');
           if(h.mascotAssetsReady!==true) throw new Error('LINE mascotAssetsReady=false');
           console.log('PASS LINE live',h.version,h.catalogVersion,h.productCount);
           NODE
