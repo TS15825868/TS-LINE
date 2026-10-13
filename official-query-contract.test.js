@@ -38,7 +38,7 @@ const drink30 = server.getProduct("guilu-drink-30");
 assert.equal(drink30.displayName, "龜鹿飲30cc玻璃罐");
 assert.equal(drink30.spec, "30cc／罐（小玻璃罐）");
 assert.ok(!drink30.displayName.includes("瓶"));
-assert.deepEqual(drink30.ingredients, ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"]);
+assert.deepEqual(drink30.ingredients, ["水","鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"]);
 
 const drink180 = server.getProduct("guilu-drink-180");
 assert.equal(drink180.displayName, "龜鹿飲180cc鋁袋");
