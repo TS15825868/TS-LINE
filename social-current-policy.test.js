@@ -48,8 +48,8 @@ assert.strictEqual(reset.automaticRetryEnabled, false);
 
 const ingredientAuthority = {
   "guilu-gao": ["鹿角萃取物", "龜板萃取物", "枸杞", "紅棗", "黃耆", "粉光蔘"],
-  "guilu-drink-30": ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
-  "guilu-drink-180": ["水", "龜板萃取物", "鹿角萃取物", "粉光蔘", "枸杞", "紅棗", "黃耆"],
+  "guilu-drink-30": ["水","鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"],
+  "guilu-drink-180": ["水","鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"],
   "guilu-tangkuai": ["龜板萃取物", "鹿角萃取物"],
   "guilu-jiao": ["龜板萃取物", "鹿角萃取物"],
   "luerong-fen": ["鹿茸"],
