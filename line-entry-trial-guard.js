@@ -15,7 +15,7 @@ const WELCOME_PATTERN = /歡迎來到仙加味/;
 const FORMAL_WELCOME_HERO_URL =
   "https://ts-line.onrender.com/mascot/welcome-hd.jpg?v=20260824-final-welcome-v3";
 const FORMAL_WELCOME_DESCRIPTION =
-  "您好，歡迎來到仙加味。\n想了解產品、怎麼選、日常搭配或申請試喝，都可以從下方開始。";
+  "您好，歡迎來到仙加味。\n仙加味提供自有品牌與其他廠牌商品。先到官網瀏覽圖片、規格及介紹，再透過這裡詢價、確認供貨與下單。\n輸入「商品分類」查看商品，也可從下方了解自有品牌與試喝。";
 
 function collectText(node, out = []) {
   if (!node || typeof node !== "object") return out;

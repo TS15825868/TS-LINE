@@ -239,6 +239,7 @@ function mainQuick() {
   return [
     { label: "申請試喝", text: "申請試喝" },
     { label: "看產品", text: "看產品" },
+    { label: "商品分類", text: "商品分類" },
     { label: "價格方案", text: "價格方案" },
     { label: "幫我推薦", text: "幫我推薦" },
     { label: "搭配組合", text: "搭配組合" },
@@ -572,7 +573,7 @@ function mascotWelcomeReply() {
     altText: "歡迎來到仙加味",
     contents: mascotBubble(
       "歡迎來到仙加味",
-      `您好，歡迎來到仙加味。\n\n我可以帶您查看目前正式產品、比較怎麼選、了解價格、搭配組合、使用方式與下單流程。\n\n${MIXED_ORDER_NOTICE}`,
+      `您好，歡迎來到仙加味。\n\n仙加味提供自有品牌與其他廠牌商品。可先到官網查看圖片、規格與介紹，再由官方 LINE 協助詢價、確認供貨與下單。\n\n${MIXED_ORDER_NOTICE}`,
       [
         { label: "看產品", text: "看產品" },
         { label: "幫我推薦", text: "幫我推薦" },
@@ -1200,6 +1201,14 @@ async function handleMessage(event) {
   }
 
   if (state.checkout) return continueCheckout(event, state, text);
+
+  if (/^(商品分類|其他廠牌|其他品牌|全部商品|商品總覽)$/.test(text)) {
+    return reply(event.replyToken, flexCard('仙加味｜商品分類', '仙加味自有品牌與其他廠牌商品分開標示。先到官網查看正式圖片、規格與介紹；價格、供貨及下單由官方 LINE 協助確認。', [
+      { label: '全部商品', uri: absoluteUrl('products.html') },
+      { label: '其他廠牌商品', uri: absoluteUrl('products.html#partner-brand-catalog') },
+      { label: '人工客服', text: '我要人工客服' }
+    ]));
+  }
 
   const qtyMatch = text.match(/^選擇數量｜([^｜]+)$/);
   if (qtyMatch) {
