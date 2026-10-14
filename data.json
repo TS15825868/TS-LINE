@@ -35,8 +35,6 @@
       "size": "100g／罐",
       "spec": "100g／罐",
       "unit": "罐",
-      "price": 1800,
-      "originalPrice": 2100,
       "description": "100g小罐膏狀型態，適合固定日常安排，可直接取用或以熱水化開。",
       "ingredients": [
         "鹿角萃取物",
@@ -65,13 +63,9 @@
       "productionLeadTime": null,
       "readyStock": true,
       "offers": [],
-      "priceText": "$1,800 / 罐",
-      "originalPriceText": "$2,100",
-      "priceLabel": "售價2,100元，優惠價1,800元",
-      "quoteOnly": false,
-      "promotionTexts": [
-        "優惠價1,800元"
-      ],
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
+      "promotionTexts": [],
       "quantityOptions": [
         1,
         2,
@@ -99,8 +93,6 @@
       "size": "30cc／罐（小玻璃罐）",
       "spec": "30cc／罐（小玻璃罐）",
       "unit": "罐",
-      "price": 60,
-      "originalPrice": null,
       "description": "30cc小玻璃罐，維持實際小罐尺寸、裸罐、無貼紙、無外盒、無外袋、金色蓋，適合第一次接觸、外出攜帶與工作空檔安排。",
       "ingredients": [
         "水",
@@ -137,19 +129,10 @@
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
       "readyStock": false,
-      "offers": [
-        {
-          "qty": 11,
-          "total": 600,
-          "label": "買10送1"
-        }
-      ],
-      "priceText": "$60 / 罐",
-      "priceLabel": "正式售價60元／罐，買10送1（共11罐600元）",
-      "quoteOnly": false,
-      "promotionTexts": [
-        "買10送1"
-      ],
+      "offers": [],
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
+      "promotionTexts": [],
       "quantityOptions": [
         1,
         2,
@@ -181,8 +164,6 @@
       "size": "180cc／包（鋁袋）",
       "spec": "180cc／包（鋁袋）",
       "unit": "包",
-      "price": 200,
-      "originalPrice": null,
       "description": "180cc狹長直立鋁袋即飲型態，維持正式原圖比例。",
       "ingredients": [
         "水",
@@ -216,19 +197,10 @@
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
       "readyStock": false,
-      "offers": [
-        {
-          "qty": 11,
-          "total": 2000,
-          "label": "買10送1"
-        }
-      ],
-      "priceText": "$200 / 包",
-      "priceLabel": "售價200元，買10送1（共11包2,000元）",
-      "quoteOnly": false,
-      "promotionTexts": [
-        "買10送1"
-      ],
+      "offers": [],
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
+      "promotionTexts": [],
       "quantityOptions": [
         1,
         2,
@@ -259,8 +231,6 @@
       "size": "75g／罐",
       "spec": "75g／罐",
       "unit": "罐",
-      "price": 2000,
-      "originalPrice": null,
       "description": "75g單方鹿茸粉，可依日常習慣自行搭配。",
       "ingredients": [
         "鹿茸"
@@ -283,9 +253,8 @@
       "productionLeadTime": null,
       "readyStock": true,
       "offers": [],
-      "priceText": "$2,000 / 罐",
-      "priceLabel": "售價2,000元",
-      "quoteOnly": false,
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
       "promotionTexts": [],
       "quantityOptions": [
         1,
@@ -307,39 +276,7 @@
     }
   ],
   "offers": {
-    "comboOffers": [
-      {
-        "id": "daily-rhythm",
-        "name": "日常節奏組",
-        "aliases": [
-          "日常節奏組",
-          "節奏組"
-        ],
-        "items": [
-          "龜鹿膏 1 罐",
-          "龜鹿飲180cc 5 包"
-        ],
-        "gift": "",
-        "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
-        "products": [
-          {
-            "productId": "guilu-gao",
-            "qty": 1
-          },
-          {
-            "productId": "guilu-drink-180",
-            "qty": 5
-          }
-        ],
-        "unit": "組",
-        "quantityOptions": [
-          1,
-          2,
-          3,
-          5
-        ]
-      }
-    ]
+    "comboOffers": []
   },
   "runtime": {
     "contentApproval": {
@@ -434,44 +371,9 @@
     "drinkNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
     "scopeRule": "5～7個工作天交期只適用龜鹿飲，不得套用其他產品。"
   },
-  "combos": [
-    {
-      "id": "daily-rhythm",
-      "name": "日常節奏組",
-      "aliases": [
-        "日常節奏組",
-        "節奏組"
-      ],
-      "items": [
-        "龜鹿膏 1 罐",
-        "龜鹿飲180cc 5 包"
-      ],
-      "gift": "",
-      "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
-      "unit": "組",
-      "products": [
-        {
-          "productId": "guilu-gao",
-          "qty": 1
-        },
-        {
-          "productId": "guilu-drink-180",
-          "qty": 5
-        }
-      ],
-      "quantityOptions": [
-        1,
-        2,
-        3,
-        5
-      ],
-      "priceNote": "實際組合金額由正式產品售價計算；活動與通路條件請洽客服確認。"
-    }
-  ],
+  "combos": [],
   "retentionOffers": {
-    "combos": {
-      "日常節奏組": "可依組合內容、數量與需求協助整理較適合的方案。"
-    }
+    "combos": {}
   },
   "store": {},
   "salesMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai-authority-driven-current",

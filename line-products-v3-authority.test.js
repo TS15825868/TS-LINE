@@ -66,11 +66,13 @@ assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.equal(byId["guilu-drink-30"].specification, "30cc／罐（小玻璃罐）");
 assert.ok(!byId["guilu-drink-30"].aliases.some((alias) => /瓶/.test(String(alias))));
 assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|小玻璃裸罐/i);
-assert.equal(byId["guilu-drink-30"].price, 60);
-assert.ok(byId["guilu-drink-30"].offers.some((offer) => offer.label === "買10送1" && offer.qty === 11 && offer.total === 600));
-assert.equal(byId["guilu-drink-180"].price, 200);
+assert.equal(byId["guilu-drink-30"].price, undefined);
+assert.equal(byId["guilu-drink-30"].quoteOnly, true);
+assert.deepEqual(byId["guilu-drink-30"].offers, []);
+assert.equal(byId["guilu-drink-180"].price, undefined);
+assert.equal(byId["guilu-drink-180"].quoteOnly, true);
 assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長直立鋁袋/i);
-assert.ok(byId["guilu-drink-180"].offers.some((offer) => offer.label === "買10送1" && offer.qty === 11 && offer.total === 2000));
+assert.deepEqual(byId["guilu-drink-180"].offers, []);
 for (const id of ["guilu-tangkuai", "guilu-jiao"]) {
   assert.ok(!visibleIds.includes(id), `${id}目前暫緩對外，不得回流公開產品卡`);
   assert.ok(!byId[id], `${id}不得顯示在LINE顧客產品卡`);

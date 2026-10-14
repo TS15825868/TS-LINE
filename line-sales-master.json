@@ -32,15 +32,9 @@
         "龜鹿膏",
         "膏"
       ],
-      "price": 1800,
-      "originalPrice": 2100,
-      "offers": [
-        "優惠價1,800元"
-      ],
-      "priceText": "$1,800 / 罐",
-      "originalPriceText": "$2,100",
-      "priceLabel": "售價2,100元，優惠價1,800元",
-      "quoteOnly": false,
+      "offers": [],
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
       "fulfillmentType": "ready-stock",
       "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
       "productionLeadTime": null,
@@ -56,7 +50,13 @@
       "unit": "罐",
       "description": "30cc小玻璃罐，維持實際小罐尺寸、裸罐、無貼紙、無外盒、無外袋、金色蓋，適合第一次接觸、外出攜帶與工作空檔安排。",
       "ingredients": [
-        "水","鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"
+        "水",
+        "鹿角萃取物",
+        "龜板萃取物",
+        "枸杞",
+        "紅棗",
+        "黃耆",
+        "粉光蔘"
       ],
       "usage": [
         "每日 1–2 罐",
@@ -80,14 +80,9 @@
         "小玻璃罐",
         "玻璃罐"
       ],
-      "price": 60,
-      "originalPrice": null,
-      "offers": [
-        "買10送1"
-      ],
-      "priceText": "$60 / 罐",
-      "priceLabel": "正式售價60元／罐，買10送1（共11罐600元）",
-      "quoteOnly": false,
+      "offers": [],
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
       "fulfillmentType": "made-to-order-drink",
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
@@ -103,7 +98,13 @@
       "unit": "包",
       "description": "180cc狹長直立鋁袋即飲型態，維持正式原圖比例。",
       "ingredients": [
-        "水","鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"
+        "水",
+        "鹿角萃取物",
+        "龜板萃取物",
+        "枸杞",
+        "紅棗",
+        "黃耆",
+        "粉光蔘"
       ],
       "usage": [
         "每日一包",
@@ -124,14 +125,9 @@
         "180cc",
         "鋁袋"
       ],
-      "price": 200,
-      "originalPrice": null,
-      "offers": [
-        "買10送1"
-      ],
-      "priceText": "$200 / 包",
-      "priceLabel": "售價200元，買10送1（共11包2,000元）",
-      "quoteOnly": false,
+      "offers": [],
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
       "fulfillmentType": "made-to-order-drink",
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
@@ -162,12 +158,9 @@
         "鹿茸粉",
         "粉"
       ],
-      "price": 2000,
-      "originalPrice": null,
       "offers": [],
-      "priceText": "$2,000 / 罐",
-      "priceLabel": "售價2,000元",
-      "quoteOnly": false,
+      "priceLabel": "最新價格請由 LINE 客服文字回覆",
+      "quoteOnly": true,
       "fulfillmentType": "ready-stock",
       "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
       "productionLeadTime": null,
@@ -175,39 +168,7 @@
       "physicalScalePolicy": "白色塑膠罐；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現。"
     }
   },
-  "comboOffers": [
-    {
-      "id": "daily-rhythm",
-      "name": "日常節奏組",
-      "aliases": [
-        "日常節奏組",
-        "節奏組"
-      ],
-      "items": [
-        "龜鹿膏 1 罐",
-        "龜鹿飲180cc 5 包"
-      ],
-      "gift": "",
-      "desc": "適合想固定日常節奏，也想保留方便快速選擇的人。",
-      "products": [
-        {
-          "productId": "guilu-gao",
-          "qty": 1
-        },
-        {
-          "productId": "guilu-drink-180",
-          "qty": 5
-        }
-      ],
-      "unit": "組",
-      "quantityOptions": [
-        1,
-        2,
-        3,
-        5
-      ]
-    }
-  ],
+  "comboOffers": [],
   "trialCampaign": {
     "id": "guilu-drink-30-evergreen-trial",
     "active": true,
@@ -276,5 +237,7 @@
     "productCountIsNotPermanentLimit": true,
     "brandNotLimitedToGuilu": true,
     "activationRule": "新品須經使用者核准正式名稱、規格、公開資料與正式產品圖後加入；未核准或暫緩產品不得公開。"
-  }
+  },
+  "publicPriceDisplay": false,
+  "pricingPolicy": "公開圖卡不列價；依具體商品由LINE人工文字回覆最新售價"
 }

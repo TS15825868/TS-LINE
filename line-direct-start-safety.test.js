@@ -58,8 +58,8 @@ assert.equal(customerData.runtime?.productIdentitySource, "products-v3-user-appr
 assert.equal(customerData.runtime?.productsV2Use, "legacy-reference-only");
 assert.equal(customerData.runtime?.productScalePolicy, "uniform-only-no-equal-height-equal-width");
 assert.equal(customerData.runtime?.promotionQuantityPolicy, "promotion-qty-must-appear-within-first-four-options");
-assert.ok(customerData.products.find(p=>p.id==='guilu-drink-30').quantityOptions.slice(0,4).includes(11));
-assert.ok(customerData.products.find(p=>p.id==='guilu-drink-180').quantityOptions.slice(0,4).includes(11));
+assert.equal(customerData.products.find(p=>p.id==='guilu-drink-30').quoteOnly,true);
+assert.equal(customerData.products.find(p=>p.id==='guilu-drink-180').quoteOnly,true);
 
 assert.ok(String(safety.formalSourceUrl("trial")).includes("trial-poster-small-boss-official-v20260814.jpg"));
 assert.match(safety.formalLineTrialImageUrl(), /\/assets\/formal-trial\/trial\.jpg\?v=/);

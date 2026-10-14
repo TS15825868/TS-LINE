@@ -94,7 +94,8 @@ for (const id of visibleIds) {
 for (const id of requiredCurrentIds) {
   assert.equal(official[id]?.specification, specs[id], `${id} authority規格`);
   assert.equal(byId[id]?.specification, specs[id], `${id} runtime規格`);
-  assert.equal(Number(byId[id]?.price), prices[id], `${id}售價`);
+  assert.equal(byId[id]?.price, undefined, `${id}公開資料不含售價`);
+  assert.equal(byId[id]?.quoteOnly, true);
 }
 
 assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
@@ -107,8 +108,8 @@ for (const id of requiredCurrentIds.filter((id) => !id.startsWith("guilu-drink-"
   assert.equal(byId[id].productionLeadTime, null, `${id}不得套用龜鹿飲交期`);
   assert.equal(byId[id].readyStock, true, `${id}必須維持備貨商品`);
 }
-assert.equal((byId["guilu-drink-30"].offers || []).find((o)=>o.label==="買10送1")?.total, 600);
-assert.equal((byId["guilu-drink-180"].offers || []).find((o)=>o.label==="買10送1")?.total, 2000);
+assert.deepEqual(byId["guilu-drink-30"].offers, []);
+assert.deepEqual(byId["guilu-drink-180"].offers, []);
 
 const trial = data.trialCampaign || {};
 assert.equal(trial.contents, "30cc小玻璃罐×3罐");

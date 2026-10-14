@@ -199,6 +199,12 @@ function applyMaster(data) {
     };
     merged = {...merged, ...currentAuthorityOverride(product.id, merged)};
     if (!merged.physicalScalePolicy) merged.physicalScalePolicy = "uniform-only-preserve-realistic-product-scale";
+    // Public catalog never carries operational prices, even from older data.json.
+    for (const key of ["price", "originalPrice", "priceText", "originalPriceText"]) delete merged[key];
+    merged.quoteOnly = true;
+    merged.priceLabel = "最新價格請由 LINE 客服文字回覆";
+    merged.offers = [];
+    merged.promotionTexts = [];
     delete merged.variants;
     delete merged.variantSelectionMode;
     return merged;

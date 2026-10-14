@@ -350,12 +350,8 @@ async function reply(token, messages) {
 }
 
 function productBubble(product) {
-  const priceLine = product.originalPrice && product.originalPrice > product.price
-    ? `售價 ${money(product.originalPrice)}\n優惠價 ${money(product.price)}`
-    : `售價 ${money(product.price)}`;
-  const offers = product.offers.length
-    ? `\n${product.offers.map((offer) => `${offer.label}：${money(offer.total)}`).join("\n")}`
-    : "";
+  const priceLine = "最新價格請由 LINE 客服文字回覆";
+  const offers = "";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
   const productPhotoUrl = absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png");
@@ -435,29 +431,11 @@ function productMenuReply() {
 }
 
 function priceCarousel() {
-  return {
-    type: "flex",
-    altText: "仙加味價格方案",
-    contents: {
-      type: "carousel",
-      contents: DATA.products.map((product) => {
-        const original = product.originalPrice && product.originalPrice > product.price
-          ? `售價：${money(product.originalPrice)}\n優惠價：${money(product.price)}`
-          : `售價：${money(product.price)}`;
-        const offers = product.offers.length
-          ? `\n\n活動：\n${product.offers.map((offer) => `・${offer.label} ${money(offer.total)}`).join("\n")}`
-          : "";
-        return flexCard(product.displayName, `規格：${productSpecText(product)}\n${original}${offers}\n\n${orderNoticeForProduct(product)}`, [
-          { label: "選擇數量", text: `選擇數量｜${product.id}` },
-          { label: "看實際產品照片", uri: absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png") },
-          { label: "看產品", text: "看產品" },
-        ]).contents;
-      }),
-    },
-  };
+  return textMsg("請告訴我們想詢問的商品名稱與規格，客服會以文字回覆最新售價。", mainQuick());
 }
 
 function qtyMenu(product) {
+  if (product.quoteOnly) return textMsg(`${product.displayName}｜${productSpecText(product)}\n請告訴我們需要的數量，客服會以文字確認最新售價與下單方式。`, mainQuick());
   const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
     ? product.quantityOptions.slice(0, 4)
     : [1, 2, 3, 5];
@@ -514,6 +492,7 @@ function calcItem(product, qty) {
 }
 
 function addCart(state, product, qty) {
+  if (product.quoteOnly) return false;
   const existing = state.cart.find((item) => item.id === product.id);
   if (existing) existing.qty += qty;
   else state.cart.push({ id: product.id, name: product.displayName, qty, unit: product.unit || "件" });
@@ -1168,6 +1147,7 @@ async function handleLegacyPostback(event) {
   if (data.action === "qty" && product) return reply(event.replyToken, qtyMenu(product));
   if (data.action === "usage" && product) return reply(event.replyToken, usageReply(product));
   if (data.action === "add" && product && data.qty > 0) {
+    if (product.quoteOnly) return reply(event.replyToken, qtyMenu(product));
     addCart(state, product, data.qty);
     return reply(event.replyToken, cartFlex(state));
   }
@@ -1241,6 +1221,7 @@ async function handleMessage(event) {
     const product = getProduct(addMatch[1]);
     const qty = Number(addMatch[2]);
     if (!product || qty <= 0) return reply(event.replyToken, textMsg("加入購物車失敗，請重新選擇。", mainQuick()));
+    if (product.quoteOnly) return reply(event.replyToken, qtyMenu(product));
     addCart(state, product, qty);
     return reply(event.replyToken, cartFlex(state));
   }
