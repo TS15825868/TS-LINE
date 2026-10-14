@@ -80,7 +80,7 @@ function validateData(data) {
   if (!data || typeof data !== "object") throw new Error("data.json 必須是 JSON 物件");
   if (!Array.isArray(data.products) || !data.products.length) throw new Error("data.json 缺少 products");
   for (const product of data.products) {
-    for (const field of ["id", "name", "price", "unit", "image", "usage", "ingredients"]) {
+    for (const field of ["id", "name", "unit", "image", "usage", "ingredients"]) {
       if (product[field] === undefined || product[field] === null || product[field] === "") {
         throw new Error((product.id || "unknown") + " 缺少 " + field);
       }
