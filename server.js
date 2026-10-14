@@ -428,7 +428,20 @@ function productCarousel() {
 }
 
 function productMenuReply() {
-  return productCarousel();
+  // 自有品牌仍使用已確認的正式產品卡；完整多廠牌型錄以官網單一資料源為準，
+  // 不將尚未核准的其他廠牌商品塞入 LINE 自有品牌購物車。
+  return [
+    productCarousel(),
+    flexCard(
+      "仙加味｜完整商品平台",
+      "除了仙加味自有品牌，也可在官網瀏覽其他廠牌的商品圖片、規格與介紹。公開頁不顯示價格；商品供貨、門市服務及適用的交易方式由 LINE 人工確認。",
+      [
+        { label: "全部商品總覽", uri: absoluteUrl("products.html") },
+        { label: "其他廠牌商品", uri: absoluteUrl("products.html#partner-brand-catalog") },
+        { label: "人工商品諮詢", text: "我要人工客服" },
+      ]
+    ),
+  ];
 }
 
 function priceCarousel() {
@@ -573,7 +586,7 @@ function mascotWelcomeReply() {
     altText: "歡迎來到仙加味",
     contents: mascotBubble(
       "歡迎來到仙加味",
-      `您好，歡迎來到仙加味。\n\n仙加味提供自有品牌與其他廠牌商品。可先到官網查看圖片、規格與介紹，再由官方 LINE 協助詢價、確認供貨與下單。\n\n${MIXED_ORDER_NOTICE}`,
+      `您好，歡迎來到仙加味。\n\n仙加味提供自有品牌與其他廠牌商品。可先到官網查看圖片、規格與介紹，再由官方 LINE 協助詢問、確認供貨及適用的交易方式。\n\n${MIXED_ORDER_NOTICE}`,
       [
         { label: "看產品", text: "看產品" },
         { label: "幫我推薦", text: "幫我推薦" },
@@ -1203,7 +1216,7 @@ async function handleMessage(event) {
   if (state.checkout) return continueCheckout(event, state, text);
 
   if (/^(商品分類|其他廠牌|其他品牌|全部商品|商品總覽)$/.test(text)) {
-    return reply(event.replyToken, flexCard('仙加味｜商品分類', '仙加味自有品牌與其他廠牌商品分開標示。先到官網查看正式圖片、規格與介紹；價格、供貨及下單由官方 LINE 協助確認。', [
+    return reply(event.replyToken, flexCard('仙加味｜商品分類', '仙加味自有品牌與其他廠牌商品分開標示。先到官網查看正式圖片、規格與介紹；價格、供貨及適用的服務方式由 LINE 人工確認，部分商品僅提供門市諮詢。', [
       { label: '全部商品', uri: absoluteUrl('products.html') },
       { label: '其他廠牌商品', uri: absoluteUrl('products.html#partner-brand-catalog') },
       { label: '人工客服', text: '我要人工客服' }
