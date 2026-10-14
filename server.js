@@ -1232,6 +1232,17 @@ async function handleMessage(event) {
       ]));
   }
 
+  const partnerInquiry = require('./partner-inquiry.js').findPartnerInquiry(text);
+  if (partnerInquiry) {
+    return reply(event.replyToken, flexCard(partnerInquiry.name,
+      partnerInquiry.publicPage
+        ? '可先查看正式商品介紹；價格與供貨由人工客服確認。'
+        : '已收到您的商品詢問，請由人工客服確認商品標示、門市服務及適用的服務方式。', [
+        ...(partnerInquiry.publicPage ? [{ label: '查看商品介紹', uri: absoluteUrl(partnerInquiry.publicPage) }] : []),
+        { label: '人工商品諮詢', text: '我要人工客服' }
+      ]));
+  }
+
   if (/^(商品分類|其他廠牌|其他品牌|全部商品|商品總覽)$/.test(text)) {
     return reply(event.replyToken, flexCard('仙加味｜商品分類', '仙加味自有品牌與其他廠牌商品分開標示。先到官網查看正式圖片、規格與介紹；價格、供貨及適用的服務方式由 LINE 人工確認，部分商品僅提供門市諮詢。', [
       { label: '全部商品', uri: absoluteUrl('products.html') },

@@ -1,0 +1,219 @@
+{
+  "source": "TS15825868/xianjiawei/partner-catalog.json",
+  "products": [
+    {
+      "id": "jinan-sisheng-siwuyin",
+      "name": "參仲四物飲",
+      "aliases": [
+        "參仲四物飲",
+        "晉安參仲四物飲"
+      ],
+      "publicPage": "product-jinan-siwuyin.html"
+    },
+    {
+      "id": "danshen-tea-collection",
+      "name": "丹參茶包系列",
+      "aliases": [
+        "丹參茶包系列",
+        "健逢丹參茶包系列"
+      ],
+      "publicPage": "product-danshen-tea.html"
+    },
+    {
+      "id": "jianfeng-rose-fruit-tea",
+      "name": "臺灣丹參玫瑰果茶",
+      "aliases": [
+        "臺灣丹參玫瑰果茶",
+        "健逢臺灣丹參玫瑰果茶"
+      ],
+      "publicPage": "product-danshen-tea.html#jianfeng-rose-fruit-tea"
+    },
+    {
+      "id": "jianfeng-leisure-tea",
+      "name": "臺灣丹參懈悠活養生茶",
+      "aliases": [
+        "臺灣丹參懈悠活養生茶",
+        "健逢臺灣丹參懈悠活養生茶"
+      ],
+      "publicPage": "product-danshen-tea.html#jianfeng-leisure-tea"
+    },
+    {
+      "id": "jianfeng-wudahan-tea",
+      "name": "武大漢丹參茶",
+      "aliases": [
+        "武大漢丹參茶",
+        "健逢武大漢丹參茶"
+      ],
+      "publicPage": "product-danshen-tea.html#jianfeng-wudahan-tea"
+    },
+    {
+      "id": "jianfeng-fiber-tea",
+      "name": "臺灣丹參纖體茶",
+      "aliases": [
+        "臺灣丹參纖體茶",
+        "健逢臺灣丹參纖體茶"
+      ],
+      "publicPage": "product-danshen-tea.html#jianfeng-fiber-tea"
+    },
+    {
+      "id": "jianfeng-white-tea",
+      "name": "臺灣白茶丹參飲",
+      "aliases": [
+        "臺灣白茶丹參飲",
+        "健逢臺灣白茶丹參飲"
+      ],
+      "publicPage": "product-danshen-tea.html#jianfeng-white-tea"
+    },
+    {
+      "id": "jianfeng-refresh-tea",
+      "name": "臺灣丹參舒活茶",
+      "aliases": [
+        "臺灣丹參舒活茶",
+        "健逢臺灣丹參舒活茶"
+      ],
+      "publicPage": "product-danshen-tea.html#jianfeng-refresh-tea"
+    },
+    {
+      "id": "lian-guilu",
+      "name": "龜鹿二仙膠",
+      "aliases": [
+        "龜鹿二仙膠",
+        "立安龜鹿二仙膠",
+        "立安龜鹿二仙膠"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "guilu-vitality",
+      "name": "龜鹿活力飲",
+      "aliases": [
+        "龜鹿活力飲"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-huanshaodan",
+      "name": "還少丹",
+      "aliases": [
+        "還少丹",
+        "晉安還少丹"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-bushenwan",
+      "name": "補腎丸",
+      "aliases": [
+        "補腎丸",
+        "晉安補腎丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-ningshenwan",
+      "name": "寧神丸",
+      "aliases": [
+        "寧神丸",
+        "晉安寧神丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinsuo-gujingwan",
+      "name": "金鎖固精丸",
+      "aliases": [
+        "金鎖固精丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-jisheng-shenqi",
+      "name": "濟生腎氣丸",
+      "aliases": [
+        "濟生腎氣丸",
+        "晉安濟生腎氣丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-liuwei-dihuang",
+      "name": "六味地黃丸",
+      "aliases": [
+        "六味地黃丸",
+        "晉安六味地黃丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-fengshiwan",
+      "name": "風濕丸",
+      "aliases": [
+        "風濕丸",
+        "晉安風濕丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-guilu-erxianwan",
+      "name": "龜鹿二仙丸",
+      "aliases": [
+        "龜鹿二仙丸",
+        "晉安龜鹿二仙丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-zuoguiwan",
+      "name": "左歸丸",
+      "aliases": [
+        "左歸丸",
+        "晉安左歸丸"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "aikang-zhisouhuatan",
+      "name": "治嗽化痰散",
+      "aliases": [
+        "治嗽化痰散",
+        "愛康治嗽化痰散"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jingyong-combat",
+      "name": "強龍大力寶戰鬥膠囊",
+      "aliases": [
+        "強龍大力寶戰鬥膠囊",
+        "精勇生技強龍大力寶戰鬥膠囊"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-shengxue-tiaojing",
+      "name": "生血調經丸糖衣錠",
+      "aliases": [
+        "生血調經丸糖衣錠",
+        "晉安生血調經丸糖衣錠"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "jinan-qibao-meiran",
+      "name": "七寶美髯丹",
+      "aliases": [
+        "七寶美髯丹",
+        "晉安七寶美髯丹"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "brown-sugar-ume-tea",
+      "name": "黑糖仙楂烏梅茶",
+      "aliases": [
+        "黑糖仙楂烏梅茶"
+      ],
+      "publicPage": null
+    }
+  ]
+}
