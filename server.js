@@ -1215,6 +1215,23 @@ async function handleMessage(event) {
 
   if (state.checkout) return continueCheckout(event, state, text);
 
+  const teaVariants = {
+    '臺灣丹參玫瑰果茶': 'jianfeng-rose-fruit-tea',
+    '臺灣丹參懈悠活養生茶': 'jianfeng-leisure-tea',
+    '武大漢丹參茶': 'jianfeng-wudahan-tea',
+    '臺灣丹參纖體茶': 'jianfeng-fiber-tea',
+    '臺灣白茶丹參飲': 'jianfeng-white-tea',
+    '臺灣丹參舒活茶': 'jianfeng-refresh-tea',
+  };
+  if (/^(丹參茶|丹參茶包|丹參茶包系列)$/.test(text) || teaVariants[text]) {
+    const section = teaVariants[text] ? '#' + teaVariants[text] : '';
+    return reply(event.replyToken, flexCard(text in teaVariants ? text : '丹參茶包系列',
+      '六款茶包集中在同一頁，可查看各款實物照片、規格、原料、沖泡與保存方式。價格與供貨請由人工客服確認。', [
+        { label: '查看茶包介紹', uri: absoluteUrl('product-danshen-tea.html' + section) },
+        { label: '人工商品諮詢', text: '我要人工客服' }
+      ]));
+  }
+
   if (/^(商品分類|其他廠牌|其他品牌|全部商品|商品總覽)$/.test(text)) {
     return reply(event.replyToken, flexCard('仙加味｜商品分類', '仙加味自有品牌與其他廠牌商品分開標示。先到官網查看正式圖片、規格與介紹；價格、供貨及適用的服務方式由 LINE 人工確認，部分商品僅提供門市諮詢。', [
       { label: '全部商品', uri: absoluteUrl('products.html') },
