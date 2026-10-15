@@ -99,7 +99,23 @@
         "龜鹿活力飲（葡萄糖胺）",
         "晉安製藥龜鹿活力飲"
       ],
-      "publicPage": null
+      "publicPage": null,
+      "food": {
+        "classification": "merchant-confirmed-food",
+        "size": "60mL×12罐／盒（依本次實拍外盒）",
+        "ingredients": [
+          "純水",
+          "大棗",
+          "黨參",
+          "龜甲",
+          "鹿角萃取液",
+          "葡萄糖胺"
+        ],
+        "service": "仙加味LINE商品、價格與供貨詢問",
+        "websitePublic": false,
+        "autoCheckout": false,
+        "photoState": "user-uploaded-original-package-photos-awaiting-approved-site-media"
+      }
     },
     {
       "id": "jinan-huanshaodan",
@@ -223,7 +239,22 @@
       "aliases": [
         "黑糖仙楂烏梅茶"
       ],
-      "publicPage": null
+      "publicPage": null,
+      "food": {
+        "classification": "merchant-confirmed-food",
+        "size": "20公克±4.5%／包，10份／袋（依樣品標示）",
+        "ingredients": [
+          "黑糖",
+          "仙楂",
+          "烏梅",
+          "香料",
+          "己二烯酸（防腐劑）"
+        ],
+        "service": "仙加味LINE商品、價格與供貨詢問",
+        "websitePublic": false,
+        "autoCheckout": false,
+        "photoState": "actual-original-photo-matched"
+      }
     },
     {
       "id": "uboss-sizhenbao",
@@ -235,7 +266,24 @@
         "御聖堂四珍寶精華膏湯塊",
         "御聖堂生技商品有限公司四珍寶精華膏湯塊"
       ],
-      "publicPage": null
+      "publicPage": null,
+      "food": {
+        "classification": "merchant-confirmed-food",
+        "size": "600g±15g／盒｜64塊（每盤8塊非整盒規格）",
+        "ingredients": [
+          "鹿角萃取物",
+          "全龜萃取物",
+          "黨參萃取物",
+          "枸杞",
+          "紅棗",
+          "葡萄糖胺",
+          "鯊魚軟骨素"
+        ],
+        "service": "仙加味LINE商品、價格與供貨詢問",
+        "websitePublic": false,
+        "autoCheckout": false,
+        "photoState": "user-uploaded-original-package-photos-awaiting-approved-site-media"
+      }
     }
   ]
 }
