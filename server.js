@@ -1298,7 +1298,11 @@ async function handleMessage(event) {
         (food.size ? '\n包裝規格：' + food.size + '。' : '') +
         ingredients +
         '\n售價、現貨批次、購買及配送請由仙加味人工客服確認。此處不提供療效或個人醫療判斷。',
-        [{ label: '仙加味商品及購買諮詢', text: '我要人工客服' }]
+        [
+          ...(partnerInquiry.publicPage && food.websitePublic
+            ? [{ label: '查看商品介紹', uri: absoluteUrl(partnerInquiry.publicPage) }] : []),
+          { label: '仙加味商品及購買諮詢', text: '我要人工客服' }
+        ]
       ));
     }
     return reply(event.replyToken, flexCard(partnerInquiry.name,
