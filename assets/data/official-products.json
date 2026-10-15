@@ -26,7 +26,16 @@
       "dmBinaryPolicy": "current valid approved JPEG",
       "displayName": "龜鹿膏",
       "form": "膏狀",
-      "publicProductMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai"
+      "publicProductMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
+      "packagingSupplement": {
+        "scene": "https://ts15825868.github.io/xianjiawei/images/product-main/gao-packaging-v20261016/box-jar-scene.webp",
+        "original": "https://ts15825868.github.io/xianjiawei/images/product-main/gao-packaging-v20261016/box-jar-original.jpg",
+        "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-gao.html",
+        "sourceFilename": "IMG_6137.heic",
+        "sameShotRelativeProportions": true,
+        "productRedrawn": false,
+        "role": "supplemental packaging gallery; approved primary image unchanged"
+      }
     },
     {
       "id": "guilu-drink-30",

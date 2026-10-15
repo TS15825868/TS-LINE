@@ -19,7 +19,16 @@
         "粉光蔘"
       ],
       "usagePrimary": "可依個人使用習慣與作息時間安排",
-      "fulfillmentType": "ready-stock"
+      "fulfillmentType": "ready-stock",
+      "packagingSupplement": {
+        "scene": "https://ts15825868.github.io/xianjiawei/images/product-main/gao-packaging-v20261016/box-jar-scene.webp",
+        "original": "https://ts15825868.github.io/xianjiawei/images/product-main/gao-packaging-v20261016/box-jar-original.jpg",
+        "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-gao.html",
+        "sourceFilename": "IMG_6137.heic",
+        "sameShotRelativeProportions": true,
+        "productRedrawn": false,
+        "role": "supplemental packaging gallery; approved primary image unchanged"
+      }
     },
     {
       "id": "guilu-drink-30",
