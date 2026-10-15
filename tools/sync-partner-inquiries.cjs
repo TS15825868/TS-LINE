@@ -35,7 +35,7 @@ const target=path.join(__dirname,'../partner-inquiry-catalog.json');
     onlineSaleEligible:false
    }:undefined;
    const food=(p.businessClassification==='一般食品' && p.foodStatusSource)?{
-    classification:'supplier-confirmed-food',
+    classification:'merchant-confirmed-food',
     size:typeof p.size==='string'?p.size:'',
     ingredients:Array.isArray(p.packagingEvidence?.ingredientsFromLabel)?
       p.packagingEvidence.ingredientsFromLabel.filter(x=>typeof x==='string').slice(0,18):
