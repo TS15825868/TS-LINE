@@ -93,16 +93,17 @@
     },
     {
       "id": "guilu-vitality",
-      "name": "龜鹿活力飲",
+      "name": "龜鹿活力飲（葡萄糖胺）",
       "aliases": [
         "龜鹿活力飲",
         "龜鹿活力飲（葡萄糖胺）",
-        "晉安製藥龜鹿活力飲"
+        "晉安製藥龜鹿活力飲",
+        "晉安製藥龜鹿活力飲（葡萄糖胺）"
       ],
-      "publicPage": null,
+      "publicPage": "product-guilu-vitality.html",
       "food": {
         "classification": "merchant-confirmed-food",
-        "size": "60mL×12罐／盒（依本次實拍外盒）",
+        "size": "60毫升×12罐／盒",
         "ingredients": [
           "純水",
           "大棗",
@@ -112,9 +113,20 @@
           "葡萄糖胺"
         ],
         "service": "仙加味LINE商品、價格與供貨詢問",
-        "websitePublic": false,
+        "websitePublic": true,
         "autoCheckout": false,
-        "photoState": "user-uploaded-original-package-photos-awaiting-approved-site-media"
+        "photoState": "three-exact-original-photos-on-website",
+        "manufacturer": "晉安製藥股份有限公司",
+        "nutritionLabelPerServing": {
+          "servingMilliliters": 60,
+          "servingsPerPackage": 12,
+          "caloriesKcal": 61.2,
+          "proteinGrams": 7.2,
+          "fatGrams": 1.2,
+          "carbohydrateGrams": 5.4,
+          "sugarGrams": 0.2,
+          "sodiumMilligrams": 49
+        }
       }
     },
     {
