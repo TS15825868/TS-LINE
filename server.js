@@ -13,6 +13,7 @@ const line = require("@line/bot-sdk");
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const { isSensitiveHealthQuestion, isEmergencyHealthQuestion } = require("./medical-referral-policy");
 
 const VERSION = "v401.9";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
@@ -810,14 +811,19 @@ function doctorReferralReply() {
   const url = referral.url || "https://lin.ee/1MK4NR9";
   return flexCard(
     "個人狀況｜轉介中醫師諮詢",
-    `這部分會因每個人的身體狀況不同，為了讓您得到更準確的說明與建議，建議先由合作的中醫師了解您的情況🙂
+    `這部分會因每個人的身體狀況不同，
+為了讓您得到更準確的說明與建議，
+建議先由合作的中醫師了解您的情況🙂
 
 ✔ 專人一對一說明
 ✔ 可詢問適不適合食用
 ✔ 可詢問個人狀況與疑問
 
-LINE ID：${lineId}
-${doctor}`,
+➤ LINE ID：${lineId}
+➤ ${doctor}諮詢連結：
+${url}
+
+商品規格、價格、試喝與訂單仍由仙加味官方 LINE 協助。`,
     [
       { label: "前往中醫師諮詢", uri: url },
       { label: "查看產品資訊", text: "看產品" },
@@ -1169,10 +1175,6 @@ async function handleLegacyPostback(event) {
   return reply(event.replyToken, textMsg("請重新選擇。", mainQuick()));
 }
 
-function isSensitiveHealthQuestion(text) {
-  return /功效|效果|有效|有沒有用|多久有效|改善|治療|預防|疾病|症狀|不舒服|疼痛|腰痠|腰酸|膝蓋|關節|睡眠|失眠|血糖|血壓|膽固醇|免疫|明目|補血|補氣|壯陽|腎虛|肝腎|眼睛|服藥|用藥|藥物|孕婦|懷孕|哺乳|兒童|小孩|慢性病|過敏|手術|化療|洗腎|適不適合吃|適不適合食用|能不能吃|可以吃嗎|我能吃嗎|體質|燥熱|上火|副作用|禁忌/.test(text);
-}
-
 function detectWebsiteIntent(text) {
   const value = String(text || "").trim();
   if (!value) return "";
@@ -1211,6 +1213,18 @@ async function handleMessage(event) {
 
   if (/^(申請試喝|我要試喝|試喝|試喝組|龜鹿飲試喝)$/.test(text)) {
     return reply(event.replyToken, trialCampaignReply());
+  }
+
+  // 優先分流個人健康／藥物問題；不覆蓋一般商品詢價、試喝及配送。
+  // 危急症狀不能等待 LINE 醫師諮詢或一般客服訊息。
+  if (isEmergencyHealthQuestion(text)) {
+    return reply(event.replyToken, textMsg(
+      "若您現在出現胸痛、呼吸困難、意識不清、大量出血或其他急迫危險狀況，請立即撥打 119 或前往急診，不要等待 LINE 訊息回覆。",
+      [{ label: "中醫師諮詢", text: "醫師諮詢" }, { label: "人工客服", text: "我要人工客服" }]
+    ));
+  }
+  if (isSensitiveHealthQuestion(text)) {
+    return reply(event.replyToken, doctorReferralReply());
   }
 
   if (state.checkout) return continueCheckout(event, state, text);
@@ -1353,10 +1367,6 @@ async function handleMessage(event) {
 
   if (/品牌故事|四代|鹿角伯|家族傳承|曾祖父|祖父|第三代|第四代/.test(text)) {
     return reply(event.replyToken, brandStoryReply());
-  }
-
-  if (isSensitiveHealthQuestion(text)) {
-    return reply(event.replyToken, doctorReferralReply());
   }
 
   if (/營業時間|門市時間|幾點營業|幾點關門|假日預約|預約門市/.test(text)) {
