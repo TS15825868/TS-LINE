@@ -17,13 +17,29 @@ const target=path.join(__dirname,'../partner-inquiry-catalog.json');
    // 使用正式商品名稱與原廠包裝名稱建立不重複別名；不引入醫療宣稱或價格。
    const aliases=[p.name];
    if(p.packagingName&&p.packagingName!==p.name)aliases.push(p.packagingName);
+   if(p.officialLicensedName&&p.officialLicensedName!==p.name)aliases.push(p.officialLicensedName);
    if(p.brand&&p.brand!=='原廠待核對'&&!p.name.includes(p.brand))aliases.push(p.brand+p.name);
    if(Array.isArray(p.inquiryAliases))aliases.push(...p.inquiryAliases.filter(a=>typeof a==='string'&&a.trim()));
-   return {id:p.id,name:p.name,aliases:[...new Set(aliases)],publicPage:publicPage||null};
+   const verified=Boolean(p.licenseVerification
+      && p.licenseVerification.authority==='衛生福利部中醫藥司中藥許可證查詢'
+      && /^衛[署部]成製\\d+$/.test(p.licenseVerification.licenseNo||'')
+      && /^20\\d{2}-\\d{2}-\\d{2}$/.test(p.licenseVerification.validUntil||'')
+      && new Date(p.licenseVerification.validUntil+'T23:59:59+08:00')>new Date()
+      && p.licensedProductType==='成藥');
+   const medicine=verified?{
+    classification:'licensed-traditional-medicine',
+    licensedName:p.officialLicensedName,
+    licenseNo:p.licenseVerification.licenseNo,
+    licensedCategory:'成藥',
+    storeService:'in-person-subject-to-dealer-license-scope',
+    onlineSaleEligible:false
+   }:undefined;
+   return {id:p.id,name:p.name,aliases:[...new Set(aliases)],publicPage:publicPage||null,
+    ...(medicine?{medicine}:{})};
   });
   fs.writeFileSync(target+'.tmp',JSON.stringify({source:'TS15825868/xianjiawei/partner-catalog.json',products},null,2)+'\n');
   fs.renameSync(target+'.tmp',target);
-  console.log('Partner inquiry catalog synced: '+products.length+' records; public page links only');
+  console.log('Partner inquiry catalog synced: '+products.length+' records; public page links and verified medicine status only');
  }catch(error){
   if(!fs.existsSync(target))throw error;
   console.warn('Using existing partner inquiry catalog: '+error.message);
