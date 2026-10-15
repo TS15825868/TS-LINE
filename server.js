@@ -1287,6 +1287,20 @@ async function handleMessage(event) {
         [{ label: '詢問仙加味人工客服', text: '我要人工客服' }]
       ));
     }
+    if (partnerInquiry.food?.classification === 'merchant-confirmed-food') {
+      const food = partnerInquiry.food;
+      const name = partnerInquiry.name === '龜鹿活力飲'
+        ? '龜鹿活力飲（葡萄糖胺）' : partnerInquiry.name;
+      const ingredients = Array.isArray(food.ingredients) && food.ingredients.length
+        ? '\n原廠包裝所列原料：' + food.ingredients.join('、') + '。' : '';
+      return reply(event.replyToken, flexCard(name,
+        '這款由仙加味作為其他廠牌食品提供商品諮詢。' +
+        (food.size ? '\n包裝規格：' + food.size + '。' : '') +
+        ingredients +
+        '\n售價、現貨批次、購買及配送請由仙加味人工客服確認。此處不提供療效或個人醫療判斷。',
+        [{ label: '仙加味商品及購買諮詢', text: '我要人工客服' }]
+      ));
+    }
     return reply(event.replyToken, flexCard(partnerInquiry.name,
       partnerInquiry.publicPage
         ? '可先查看正式商品介紹；價格與供貨由人工客服確認。'
