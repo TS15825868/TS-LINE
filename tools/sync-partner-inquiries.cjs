@@ -22,8 +22,8 @@ const target=path.join(__dirname,'../partner-inquiry-catalog.json');
    if(Array.isArray(p.inquiryAliases))aliases.push(...p.inquiryAliases.filter(a=>typeof a==='string'&&a.trim()));
    const verified=Boolean(p.licenseVerification
       && p.licenseVerification.authority==='衛生福利部中醫藥司中藥許可證查詢'
-      && /^衛[署部]成製\\d+$/.test(p.licenseVerification.licenseNo||'')
-      && /^20\\d{2}-\\d{2}-\\d{2}$/.test(p.licenseVerification.validUntil||'')
+      && /^衛[署部]成製\d+$/.test(p.licenseVerification.licenseNo||'')
+      && /^20\d{2}-\d{2}-\d{2}$/.test(p.licenseVerification.validUntil||'')
       && new Date(p.licenseVerification.validUntil+'T23:59:59+08:00')>new Date()
       && p.licensedProductType==='成藥');
    const medicine=verified?{
