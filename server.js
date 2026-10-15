@@ -13,7 +13,7 @@ const line = require("@line/bot-sdk");
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const { isSensitiveHealthQuestion, isEmergencyHealthQuestion } = require("./medical-referral-policy");
+const { isSensitiveHealthQuestion, isExplicitDoctorReferralRequest, isEmergencyHealthQuestion } = require("./medical-referral-policy");
 
 const VERSION = "v401.9";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
@@ -804,30 +804,46 @@ function usageReply(product) {
   );
 }
 
+function healthQuestionIntakeReply() {
+  return flexCard(
+    "仙加味｜先由人工客服協助",
+    `您詢問的商品，我們可以先協助確認名稱、原料、包裝規格、價格及供貨方式。
+
+至於個人體質、疾病、正在服用的藥物、禁忌或是否適合食用，因每個人的情況不同，仙加味不會自行做醫療判斷。
+
+請先由仙加味人工客服接續。若需要醫療專業評估，我們可提供合作中醫師的諮詢資訊，由您自行決定是否聯絡。
+
+若您已決定需要聯絡中醫師，也可回覆「轉介中醫師」。`,
+    [
+      { label: "仙加味人工客服", text: "我要人工客服" },
+      { label: "查看商品資訊", text: "看產品" },
+    ]
+  );
+}
+
 function doctorReferralReply() {
   const referral = DATA.medicalReferral || {};
   const doctor = referral.doctor || "章無忌中醫師";
   const lineId = referral.lineId || "@changwuchi";
   const url = referral.url || "https://lin.ee/1MK4NR9";
   return flexCard(
-    "個人狀況｜轉介中醫師諮詢",
-    `這部分會因每個人的身體狀況不同，
-為了讓您得到更準確的說明與建議，
-建議先由合作的中醫師了解您的情況🙂
+    "仙加味轉介｜中醫師專業諮詢",
+    `這部分會因每個人的身體狀況不同，建議由中醫師了解您的個人情況後再提供專業說明。
 
-✔ 專人一對一說明
-✔ 可詢問適不適合食用
-✔ 可詢問個人狀況與疑問
+若您決定聯絡合作中醫師，可主動告知：
+「您好，我是由仙加味介紹，想詢問【商品名稱】是否適合我的個人情況。」
 
+➤ 中醫師：${doctor}
 ➤ LINE ID：${lineId}
-➤ ${doctor}諮詢連結：
-${url}
+➤ 中醫師 LINE：${url}
 
-商品規格、價格、試喝與訂單仍由仙加味官方 LINE 協助。`,
+醫療及用藥資訊請直接向醫師說明，不需先提供給仙加味。是否適合使用由醫師獨立判斷。
+
+後續一般食品及依法可由仙加味販售商品的價格、供貨和售後，仍可返回仙加味官方 LINE 詢問；須由醫療機構處理的藥品，依合法程序取得。`,
     [
       { label: "前往中醫師諮詢", uri: url },
-      { label: "查看產品資訊", text: "看產品" },
-      { label: "人工客服", text: "我要人工客服" },
+      { label: "回仙加味詢問", text: "我要人工客服" },
+      { label: "查看商品資訊", text: "看產品" },
     ]
   );
 }
@@ -1223,8 +1239,12 @@ async function handleMessage(event) {
       [{ label: "中醫師諮詢", text: "醫師諮詢" }, { label: "人工客服", text: "我要人工客服" }]
     ));
   }
-  if (isSensitiveHealthQuestion(text)) {
+  // 顧客明確要求中醫師資訊時才開啟外部轉介；一般個人健康疑問先留在仙加味人工客服。
+  if (isExplicitDoctorReferralRequest(text)) {
     return reply(event.replyToken, doctorReferralReply());
+  }
+  if (isSensitiveHealthQuestion(text)) {
+    return reply(event.replyToken, healthQuestionIntakeReply());
   }
 
   if (state.checkout) return continueCheckout(event, state, text);
