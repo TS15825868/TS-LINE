@@ -78,7 +78,6 @@
       "name": "龜鹿二仙膠",
       "aliases": [
         "龜鹿二仙膠",
-        "立安龜鹿二仙膠",
         "立安龜鹿二仙膠"
       ],
       "publicPage": null
@@ -87,7 +86,9 @@
       "id": "guilu-vitality",
       "name": "龜鹿活力飲",
       "aliases": [
-        "龜鹿活力飲"
+        "龜鹿活力飲",
+        "龜鹿活力飲（葡萄糖胺）",
+        "晉安製藥龜鹿活力飲"
       ],
       "publicPage": null
     },
@@ -212,6 +213,17 @@
       "name": "黑糖仙楂烏梅茶",
       "aliases": [
         "黑糖仙楂烏梅茶"
+      ],
+      "publicPage": null
+    },
+    {
+      "id": "uboss-sizhenbao",
+      "name": "四珍寶精華膏湯塊",
+      "aliases": [
+        "四珍寶精華膏湯塊",
+        "御博生技四珍寶精華膏湯塊",
+        "四珍寶",
+        "四珍寶湯塊"
       ],
       "publicPage": null
     }
