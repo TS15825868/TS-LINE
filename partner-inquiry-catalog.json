@@ -263,10 +263,10 @@
         "四珍寶精華膏湯塊",
         "四珍寶",
         "四珍寶湯塊",
-        "御聖堂四珍寶精華膏湯塊",
-        "御聖堂生技商品有限公司四珍寶精華膏湯塊"
+        "御采堂四珍寶精華膏湯塊",
+        "御采堂生技食品有限公司四珍寶精華膏湯塊"
       ],
-      "publicPage": null,
+      "publicPage": "product-four-treasures.html",
       "food": {
         "classification": "merchant-confirmed-food",
         "size": "600g±15g／盒｜64塊（每盤8塊非整盒規格）",
@@ -280,9 +280,10 @@
           "鯊魚軟骨素"
         ],
         "service": "仙加味LINE商品、價格與供貨詢問",
-        "websitePublic": false,
+        "websitePublic": true,
         "autoCheckout": false,
-        "photoState": "user-uploaded-original-package-photos-awaiting-approved-site-media"
+        "photoState": "verified-sealed-original-package-matching-new-photo",
+        "producerFromPackage": "御采堂生技食品有限公司"
       }
     }
   ]
