@@ -48,4 +48,7 @@ assert.ok(!intake.includes("https://lin.ee/1MK4NR9") && !intake.includes("uri: u
 assert.ok(server.includes("我是由仙加味介紹"), "轉介時應保留來源標註");
 assert.ok(server.includes("後續一般食品及依法可由仙加味販售商品"), "轉介後須說明合法商品回流仙加味");
 assert.ok(server.includes('https://lin.ee/1MK4NR9'), "中醫師連結不可遺失");
+assert.ok(server.includes('ownerAlert.pushOwnerAlert(event, "個人適用性詢問，請至仙加味 LINE OA 收件匣查看")'), "個人健康疑問須產生不含病史文字的管理員提醒");
+assert.ok(server.includes("ownerAlertConfigured: Boolean(process.env.OWNER_LINE_USER_ID)"), "healthz 須揭露通知能否生效的布林狀態");
+assert.ok(!server.includes("pushOwnerAlert(event, text)"), "禁止把敏感健康訊息全文推播到私人 LINE");
 console.log("PASS：先由仙加味接待、明確請求才轉醫師、來源標註與一般商品回流");
