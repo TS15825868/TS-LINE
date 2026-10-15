@@ -322,7 +322,7 @@
         "二珍龜鹿膠塊64片",
         "御漢堂二珍寶精華膏湯塊"
       ],
-      "publicPage": null,
+      "publicPage": "product-er-zhen-bao.html",
       "food": {
         "classification": "merchant-confirmed-food",
         "size": "600g±15g／盒｜64塊裝",
@@ -334,9 +334,9 @@
           "鯊魚軟骨素"
         ],
         "service": "仙加味LINE商品、價格與供貨詢問",
-        "websitePublic": false,
+        "websitePublic": true,
         "autoCheckout": false,
-        "photoState": "authentic-photo-pending-repository-import"
+        "photoState": "original-manufacturer-webp-hosted-approved-in-github"
       }
     }
   ]
