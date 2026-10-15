@@ -929,7 +929,7 @@ function trialCampaignReply() {
     label: `${option.label}${money(option.fee)}`.slice(0, 20),
     text: `試喝配送｜${option.id}`,
   }));
-  buttons.push({ label: "看正式售價", text: "價格方案" });
+  buttons.push({ label: "詢問商品價格", text: "價格方案" });
   return {
     type: "flex",
     altText: trial.title || "龜鹿飲30cc試喝組",
@@ -944,7 +944,7 @@ function trialCampaignReply() {
         trial.paymentRule || "試喝運費需先確認並完成付款，試喝組不使用貨到付款",
         trial.fulfillmentRule || DRINK_ORDER_NOTICE,
         "",
-        trial.publicPrice || "正式售價與活動請查看價格方案或由客服確認。",
+        "正式商品售價與活動資訊由 LINE 人工客服確認並回覆。",
       ].join("\n"),
       buttons,
       "service"
