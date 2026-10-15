@@ -15,6 +15,18 @@ for(const term of ["龜鹿二仙膠", "立安龜鹿二仙膠", "「立安」龜�
   assert.equal(findPartnerInquiry(term)?.id, "lian-guilu", "成藥詢問應留在仙加味：" + term);
 }
 
+for(const input of [
+  "請問立安龜鹿二仙膠有賣嗎",
+  "龜鹿二仙膠多少錢",
+  "龜鹿二仙膠門市有貨嗎",
+  "「立安」龜鹿二仙膠怎麼買"
+]) {
+  assert.equal(findPartnerInquiry(input)?.id,"lian-guilu","門市供貨問法應由仙加味接待："+input);
+}
+for(const input of ["我的藥物過敏", "怎麼改善失眠", "我有龜鹿膏及其他問題"]) {
+  assert.equal(findPartnerInquiry(input),null,"不相干談話不能誤成商品詢問："+input);
+}
+
 const src = fs.readFileSync("tools/sync-partner-inquiries.cjs","utf8");
 assert.ok(src.includes("p.officialLicensedName"),"同步器需承接原廠核准品名");
 assert.ok(src.includes("p.licensedProductType==='成藥'"),"僅官方已核實成藥資料可納入此流程");
