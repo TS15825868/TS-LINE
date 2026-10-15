@@ -310,6 +310,34 @@
         "usageFromPackage": "開封後加熱開水食用，或放入電鍋加熱溶解；燉食亦可酌量增加，每日適量",
         "sourceLabelPhoto": "IMG_9833(3).jpeg"
       }
+    },
+    {
+      "id": "royalherb-erzhenbao-64",
+      "name": "二珍寶精華膏湯塊",
+      "aliases": [
+        "二珍寶精華膏湯塊",
+        "二珍寶",
+        "御漢堂二珍寶",
+        "二珍寶64片",
+        "二珍龜鹿膠塊64片",
+        "御漢堂二珍寶精華膏湯塊"
+      ],
+      "publicPage": null,
+      "food": {
+        "classification": "merchant-confirmed-food",
+        "size": "600g±15g／盒｜64塊裝",
+        "ingredients": [
+          "全龜萃取物",
+          "馴鹿角萃取物",
+          "水",
+          "葡萄糖胺",
+          "鯊魚軟骨素"
+        ],
+        "service": "仙加味LINE商品、價格與供貨詢問",
+        "websitePublic": false,
+        "autoCheckout": false,
+        "photoState": "authentic-photo-pending-repository-import"
+      }
     }
   ]
 }
