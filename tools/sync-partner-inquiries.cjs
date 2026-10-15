@@ -34,8 +34,19 @@ const target=path.join(__dirname,'../partner-inquiry-catalog.json');
     storeService:'in-person-subject-to-dealer-license-scope',
     onlineSaleEligible:false
    }:undefined;
+   const food=(p.businessClassification==='一般食品' && p.foodStatusSource)?{
+    classification:'supplier-confirmed-food',
+    size:typeof p.size==='string'?p.size:'',
+    ingredients:Array.isArray(p.packagingEvidence?.ingredientsFromLabel)?
+      p.packagingEvidence.ingredientsFromLabel.filter(x=>typeof x==='string').slice(0,18):
+      (Array.isArray(p.ingredients)?p.ingredients.filter(x=>typeof x==='string').slice(0,18):[]),
+    service:'仙加味LINE商品、價格與供貨詢問',
+    websitePublic:!!p.public,
+    autoCheckout:false,
+    photoState:p.imageSourceStatus||'pending'
+   }:undefined;
    return {id:p.id,name:p.name,aliases:[...new Set(aliases)],publicPage:publicPage||null,
-    ...(medicine?{medicine}:{})};
+    ...(medicine?{medicine}:{}),...(food?{food}:{})};
   });
   fs.writeFileSync(target+'.tmp',JSON.stringify({source:'TS15825868/xianjiawei/partner-catalog.json',products},null,2)+'\n');
   fs.renameSync(target+'.tmp',target);
