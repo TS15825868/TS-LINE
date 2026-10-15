@@ -14,6 +14,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { isSensitiveHealthQuestion, isExplicitDoctorReferralRequest, isEmergencyHealthQuestion } = require("./medical-referral-policy");
+const ownerAlert = require("./line-owner-alert-runtime");
 
 const VERSION = "v401.9";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
@@ -1244,6 +1245,14 @@ async function handleMessage(event) {
     return reply(event.replyToken, doctorReferralReply());
   }
   if (isSensitiveHealthQuestion(text)) {
+    // 僅送內部「待人工查看」提醒，不推送顧客病史、用藥或健康問題內文。
+    // 限制同一顧客 30 分鐘內重複通知；未設定 OWNER_LINE_USER_ID 時不影響顧客回覆。
+    const now = Date.now();
+    if (now - Number(state.lastHealthIntakeAlertAt || 0) >= 30 * 60 * 1000) {
+      state.lastHealthIntakeAlertAt = now;
+      void ownerAlert.pushOwnerAlert(event, "個人適用性詢問，請至仙加味 LINE OA 收件匣查看")
+        .catch(error => console.error("[XJW_OWNER_ALERT] sensitive-intake failed", error?.message || error));
+    }
     return reply(event.replyToken, healthQuestionIntakeReply());
   }
 
@@ -1458,6 +1467,7 @@ app.get("/healthz", (_req, res) => {
     version: VERSION,
     orderOpen: true,
     credentialsConfigured: Boolean(config.channelAccessToken && config.channelSecret),
+    ownerAlertConfigured: Boolean(process.env.OWNER_LINE_USER_ID),
     crmConfigured: Boolean(CRM_URL),
     catalogVersion: DATA.catalogVersion || "",
     mascotVersion: MASCOT_VERSION,
