@@ -14,9 +14,12 @@ const target=path.join(__dirname,'../partner-inquiry-catalog.json');
    const group=catalog.products.find(g=>g.public===true&&g.id===p.groupedIn);
    const publicPage=group?group.page+'#'+p.id:p.public===true?p.page:null;
    if(publicPage&&!/^product-[a-z0-9-]+\.html(?:#[a-z0-9-]+)?$/.test(publicPage))throw Error('unsafe public page');
+   // 使用正式商品名稱與原廠包裝名稱建立不重複別名；不引入醫療宣稱或價格。
    const aliases=[p.name];
+   if(p.packagingName&&p.packagingName!==p.name)aliases.push(p.packagingName);
    if(p.brand&&p.brand!=='原廠待核對'&&!p.name.includes(p.brand))aliases.push(p.brand+p.name);
-   return {id:p.id,name:p.name,aliases,publicPage:publicPage||null};
+   if(Array.isArray(p.inquiryAliases))aliases.push(...p.inquiryAliases.filter(a=>typeof a==='string'&&a.trim()));
+   return {id:p.id,name:p.name,aliases:[...new Set(aliases)],publicPage:publicPage||null};
   });
   fs.writeFileSync(target+'.tmp',JSON.stringify({source:'TS15825868/xianjiawei/partner-catalog.json',products},null,2)+'\n');
   fs.renameSync(target+'.tmp',target);
