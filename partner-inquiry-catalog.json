@@ -78,9 +78,18 @@
       "name": "龜鹿二仙膠",
       "aliases": [
         "龜鹿二仙膠",
-        "立安龜鹿二仙膠"
+        "立安龜鹿二仙膠",
+        "「立安」龜鹿二仙膠"
       ],
-      "publicPage": null
+      "publicPage": null,
+      "medicine": {
+        "classification": "licensed-traditional-medicine",
+        "licensedName": "「立安」龜鹿二仙膠",
+        "licenseNo": "衛署成製013857",
+        "licensedCategory": "成藥",
+        "storeService": "in-person-subject-to-dealer-license-scope",
+        "onlineSaleEligible": false
+      }
     },
     {
       "id": "guilu-vitality",
