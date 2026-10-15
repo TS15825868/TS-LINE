@@ -4,7 +4,7 @@
   "publicAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/public-product-master.json",
   "aiAnswerAuthority": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/ai-answers.json",
   "legacyDisplayCatalog": "https://raw.githubusercontent.com/TS15825868/xianjiawei/main/catalog-public.json",
-  "rule": "對外現行產品以官網公開母資料為準，僅四項；已下架產品不得自動回流。",
+  "rule": "本檔保存仙加味品牌產品基礎資料；全部公開商品須另合併最新 partner-catalog.json 中 public=true 的原廠商品，不固定商品總數；暫緩產品保留內部且不得回流。",
   "products": [
     {
       "id": "guilu-gao",
@@ -27,7 +27,13 @@
       "spec": "30cc／罐（小玻璃罐）",
       "package": "小玻璃裸罐、無貼紙、無外盒、無外袋、金色蓋",
       "ingredients": [
-        "水","鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"
+        "水",
+        "鹿角萃取物",
+        "龜板萃取物",
+        "枸杞",
+        "紅棗",
+        "黃耆",
+        "粉光蔘"
       ],
       "usagePrimary": "每日 1–2 罐",
       "fulfillmentType": "made-to-order-drink",
@@ -40,7 +46,13 @@
       "spec": "180cc／包（鋁袋）",
       "package": "狹長鋁袋",
       "ingredients": [
-        "水","鹿角萃取物","龜板萃取物","枸杞","紅棗","黃耆","粉光蔘"
+        "水",
+        "鹿角萃取物",
+        "龜板萃取物",
+        "枸杞",
+        "紅棗",
+        "黃耆",
+        "粉光蔘"
       ],
       "usagePrimary": "每日一包",
       "fulfillmentType": "made-to-order-drink"
@@ -92,12 +104,12 @@
     "scopeRule": "5～7個工作天交期只適用龜鹿飲"
   },
   "guardRules": [
-    "LINE OA 對外公開與文字知識只允許目前六項正式公開產品；柒玄茶保留內部資料但不得自動公開、推薦或回覆。",
+    "LINE OA依目前正式公開母資料與核准原廠商品目錄提供資訊；不得以舊數量限制新核准商品；暫緩商品不自動公開。",
     "30cc正式名稱必須是龜鹿飲30cc玻璃罐，不得稱瓶；主規格30cc／罐（小玻璃罐）；每日 1–2 罐，可依個人需求調整",
     "180cc主規格180cc／包（鋁袋）；每日一包",
     "正式成分與順序不得回退舊版本",
     "產品圖、詳細DM、試喝圖不可混用",
-    "六項公開產品必須使用正式原圖等比例呈現；柒玄茶目前為內部延後公開資料，不得生成、替代或拼湊產品包裝，也不得出現在公開 LINE OA 回覆。"
+    "核准公開商品必須使用正式實拍等比例呈現；柒玄茶與其他暫緩品項只保留內部，不自創包裝、不自動公開。"
   ],
   "imageLocks": {
     "guiluDrink30": "小玻璃裸罐無貼紙、無外盒、無外袋、金色蓋；高矮胖瘦照原圖",
@@ -116,5 +128,6 @@
   ],
   "deferredInternalProductIds": [
     "qixuan-guilu-drink-powder"
-  ]
+  ],
+  "partnerCatalogAuthority": "https://ts15825868.github.io/xianjiawei/partner-catalog.json"
 }

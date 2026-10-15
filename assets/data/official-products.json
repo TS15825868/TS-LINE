@@ -5,7 +5,7 @@
   "aiAnswerAuthority": "https://ts15825868.github.io/xianjiawei/ai-answers.json",
   "legacyDisplayCatalog": "https://ts15825868.github.io/xianjiawei/catalog-public.json",
   "formalMediaAuthority": "https://ts15825868.github.io/xianjiawei/data/formal-media-authority-v20260810.json",
-  "displayPolicy": "目前對外與 LINE OA 依官網公開母資料顯示 4 項正式產品；未在公開母資料中的暫緩產品只保留內部資料，不進產品卡、推薦、公開文字知識或主動回覆。",
+  "displayPolicy": "本檔為仙加味品牌基礎資料鏡像；核准原廠商品另依 partner-catalog.json 與 partner-inquiry-catalog.json 提供資訊，不以本檔筆數限制全部公開商品；暫緩品項維持內部。",
   "products": [
     {
       "id": "guilu-gao",
@@ -178,5 +178,6 @@
     "價格、促銷與庫存屬易變資料，不得由舊固定公開資料覆蓋目前LINE銷售資料"
   ],
   "productMasterAuthority": "user-confirmed-current",
-  "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai"
+  "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
+  "partnerCatalogAuthority": "https://ts15825868.github.io/xianjiawei/partner-catalog.json"
 }
