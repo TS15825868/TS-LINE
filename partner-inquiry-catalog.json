@@ -273,7 +273,7 @@
         "ingredients": [
           "鹿角萃取物",
           "全龜萃取物",
-          "黨參萃取物",
+          "黨蔘萃取物",
           "枸杞",
           "紅棗",
           "葡萄糖胺",
@@ -283,7 +283,20 @@
         "websitePublic": true,
         "autoCheckout": false,
         "photoState": "verified-sealed-original-package-matching-new-photo",
-        "producerFromPackage": "御采堂生技食品有限公司"
+        "producerFromPackage": "御采堂生技食品有限公司",
+        "nutritionLabelPerServing": {
+          "servingGrams": 9.3,
+          "servingsPerPackage": 64,
+          "caloriesKcal": 29,
+          "proteinGrams": 6.8,
+          "fatGrams": 0.1,
+          "carbohydrateGrams": 0.2,
+          "sugarGrams": 0.2,
+          "sodiumMilligrams": 35
+        },
+        "insuranceFromPackage": "外盒標示投保國泰產物產品責任險五千萬元，投保額度不等同實際理賠",
+        "usageFromPackage": "開封後加熱開水食用，或放入電鍋加熱溶解；燉食亦可酌量增加，每日適量",
+        "sourceLabelPhoto": "IMG_9833(3).jpeg"
       }
     }
   ]
