@@ -24,7 +24,11 @@ assert.match(safety.formalLineTrialImageUrl(), /\/assets\/formal-trial\/trial\.j
 assert.notEqual(safety.formalLineProductImageUrl("guilu-drink-30"), safety.formalLineDmImageUrl("guilu-drink-30"));
 const current = JSON.parse(fs.readFileSync("assets/data/official-products.json","utf8"));
 const approved30 = current.products.find(p=>p.id==="guilu-drink-30")?.approvedProductImage;
-assert.ok(String(approved30).includes("/images/product-main/guilu-drink-30.png"),"30cc正式透明實物主圖路徑錯誤");
+const approved30Url = new URL(String(approved30 || ""));
+assert.equal(approved30Url.origin,"https://ts15825868.github.io","LINE商品圖應來自仙加味正式官網");
+assert.match(approved30Url.pathname,/^\/xianjiawei\/images\/[^?#]+\.(?:png|jpe?g|webp)$/i,"30cc正式主圖必須是真實商品圖片");
+assert.match(approved30Url.pathname,/guilu-drink-30(?:-main)?\.(?:png|jpe?g|webp)$/i,"30cc正式商品圖不可與其他規格混用");
+assert.doesNotMatch(approved30Url.pathname,/\/(?:dm-final|products-v3|trial)\//i,"正式商品主圖不可退回DM、試喝或身份參考照片");
 assert.equal(String(safety.formalSourceUrl("product","guilu-drink-30")),String(approved30),"LINE圖片來源沒有跟目前正式產品權威同步");
 assert.ok(String(safety.formalSourceUrl("dm","guilu-drink-30")).includes("/images/dm-final/02_guilu-drink-30cc-dm-official-v20260814.jpg"));
 assert.ok(String(safety.formalSourceUrl("trial")).includes("/images/trial/trial-poster-small-boss-official-v20260814.jpg"));
