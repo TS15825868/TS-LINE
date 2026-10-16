@@ -1,12 +1,12 @@
 {
-  "version": "20261008-four-active-public-products",
-  "source": "TS15825868/xianjiawei images/products-v3 latest user-provided original product photos; 2026-08-10 replaced prior approved photo bytes at the same authoritative paths",
-  "policy": "LINE產品主圖、實際產品照片按鈕與Flex產品hero一律使用最新真正產品實拍原圖；所有產品只允許等比例顯示，不改包裝、不裁切、不拉寬拉高，不把不同產品強制等高或等寬。",
+  "version": "20261016-original-pixel-clean-studio-main-v5",
+  "source": "TS15825868/xianjiawei/catalog-public.json latest main; user-approved original physical photos, clean ivory backdrop",
+  "policy": "LINE 商品主圖與官網一致：外盒為主，詳細頁保留真實內容物／標示；龜鹿膏盒與罐近似等高，鹿茸粉不展示粉末，30cc裸罐與180cc鋁袋不可改外觀。",
   "scaleAuthority": "data/product-physical-scale-authority-v20260809.json",
   "products": {
-    "guilu-gao": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-gao.jpg?v=20260810-products-v3-latest-originals-v3",
-    "guilu-drink-30": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260810-products-v3-latest-originals-v3",
-    "guilu-drink-180": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-180.jpg?v=20260810-products-v3-latest-originals-v3",
-    "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/products-v3/luerong-fen.jpg?v=20260810-products-v3-latest-originals-v3"
+    "guilu-gao": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-gao-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
+    "guilu-drink-30": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-drink-30-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
+    "guilu-drink-180": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-drink-180-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
+    "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/luerong-fen-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5"
   }
 }
