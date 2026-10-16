@@ -1,12 +1,12 @@
 {
-  "version": "20261016-original-pixel-clean-studio-main-v5",
-  "source": "TS15825868/xianjiawei/catalog-public.json latest main; user-approved original physical photos, clean ivory backdrop",
-  "policy": "LINE 商品主圖與官網一致：外盒為主，詳細頁保留真實內容物／標示；龜鹿膏盒與罐近似等高，鹿茸粉不展示粉末，30cc裸罐與180cc鋁袋不可改外觀。",
+  "version": "20261016-v5-product-identity-source-separated-from-studio-main",
+  "source": "TS15825868/xianjiawei/images/products-v3 — original product identity reference only, NOT customer hero; v5 studio hero is a different field in latest approved product data",
+  "policy": "本檔僅保存原廠實拍身份參考，和正式新版產品主圖分離。正式主圖以商品資料中的approvedProductImage與官網v5真實合成圖為準；不得將情境主圖冒充未裁切身份原照。",
   "scaleAuthority": "data/product-physical-scale-authority-v20260809.json",
   "products": {
-    "guilu-gao": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-gao-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
-    "guilu-drink-30": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-drink-30-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
-    "guilu-drink-180": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-drink-180-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
-    "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/luerong-fen-main.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5"
+    "guilu-gao": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-gao.jpg?v=20260810-products-v3-latest-originals-v3",
+    "guilu-drink-30": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260810-products-v3-latest-originals-v3",
+    "guilu-drink-180": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-180.jpg?v=20260810-products-v3-latest-originals-v3",
+    "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/products-v3/luerong-fen.jpg?v=20260810-products-v3-latest-originals-v3"
   }
 }
