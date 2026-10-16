@@ -28,7 +28,11 @@
         "sameShotRelativeProportions": true,
         "productRedrawn": false,
         "role": "supplemental packaging gallery; approved primary image unchanged"
-      }
+      },
+      "detailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-gao-box-jar-detail.webp",
+        "https://ts15825868.github.io/xianjiawei/images/product-main/gao-packaging-v20261016/box-jar-original.jpg"
+      ]
     },
     {
       "id": "guilu-drink-30",
@@ -47,7 +51,10 @@
       "usagePrimary": "每日 1–2 罐",
       "fulfillmentType": "made-to-order-drink",
       "officialOriginalImage": "https://ts15825868.github.io/xianjiawei/images/products-v3/guilu-drink-30.jpg?v=20260812-formal-image-fix-v3",
-      "imagePolicy": "official-original-contain-no-crop"
+      "imagePolicy": "official-original-contain-no-crop",
+      "detailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-drink-30-closed-detail.webp"
+      ]
     },
     {
       "id": "guilu-drink-180",
@@ -64,7 +71,10 @@
         "粉光蔘"
       ],
       "usagePrimary": "每日一包",
-      "fulfillmentType": "made-to-order-drink"
+      "fulfillmentType": "made-to-order-drink",
+      "detailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/guilu-drink-180-closed-detail.webp"
+      ]
     },
     {
       "id": "luerong-fen",
@@ -74,7 +84,10 @@
       "ingredients": [
         "鹿茸"
       ],
-      "fulfillmentType": "ready-stock"
+      "fulfillmentType": "ready-stock",
+      "detailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/luerong-fen-closed-detail.webp"
+      ]
     },
     {
       "id": "qixuan-guilu-drink-powder",
@@ -84,7 +97,8 @@
       "ingredientsStatus": "目前公開權威資料尚未提供正式成分表，不自行推測或補寫",
       "fulfillmentType": "not-publicly-specified",
       "displayMode": "internal-deferred-not-public",
-      "publicVisibility": false
+      "publicVisibility": false,
+      "detailImages": []
     }
   ],
   "knowledgeProductIds": [
