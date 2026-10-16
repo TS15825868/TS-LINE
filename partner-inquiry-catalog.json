@@ -8,7 +8,12 @@
         "參仲四物飲",
         "晉安參仲四物飲"
       ],
-      "publicPage": "product-jinan-siwuyin.html"
+      "publicPage": "product-jinan-siwuyin.html",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/cutouts-v20261016/jinan-siwuyin-front-cutout.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/siwu-label-scene.webp"
+      ]
     },
     {
       "id": "danshen-tea-collection",
@@ -17,7 +22,9 @@
         "丹參茶包系列",
         "健逢丹參茶包系列"
       ],
-      "publicPage": "product-danshen-tea.html"
+      "publicPage": "product-danshen-tea.html",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/tea-rose-fruit-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
     },
     {
       "id": "jianfeng-rose-fruit-tea",
@@ -26,7 +33,9 @@
         "臺灣丹參玫瑰果茶",
         "健逢臺灣丹參玫瑰果茶"
       ],
-      "publicPage": "product-danshen-tea.html#jianfeng-rose-fruit-tea"
+      "publicPage": "product-danshen-tea.html#jianfeng-rose-fruit-tea",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/tea-rose-fruit-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
     },
     {
       "id": "jianfeng-leisure-tea",
@@ -35,7 +44,9 @@
         "臺灣丹參懈悠活養生茶",
         "健逢臺灣丹參懈悠活養生茶"
       ],
-      "publicPage": "product-danshen-tea.html#jianfeng-leisure-tea"
+      "publicPage": "product-danshen-tea.html#jianfeng-leisure-tea",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/tea-danshen-leisure-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
     },
     {
       "id": "jianfeng-wudahan-tea",
@@ -44,7 +55,9 @@
         "武大漢丹參茶",
         "健逢武大漢丹參茶"
       ],
-      "publicPage": "product-danshen-tea.html#jianfeng-wudahan-tea"
+      "publicPage": "product-danshen-tea.html#jianfeng-wudahan-tea",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/tea-wudahan-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
     },
     {
       "id": "jianfeng-fiber-tea",
@@ -53,7 +66,9 @@
         "臺灣丹參纖體茶",
         "健逢臺灣丹參纖體茶"
       ],
-      "publicPage": "product-danshen-tea.html#jianfeng-fiber-tea"
+      "publicPage": "product-danshen-tea.html#jianfeng-fiber-tea",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/tea-danshen-lotus-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
     },
     {
       "id": "jianfeng-white-tea",
@@ -62,7 +77,9 @@
         "臺灣白茶丹參飲",
         "健逢臺灣白茶丹參飲"
       ],
-      "publicPage": "product-danshen-tea.html#jianfeng-white-tea"
+      "publicPage": "product-danshen-tea.html#jianfeng-white-tea",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/tea-white-danshen-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
     },
     {
       "id": "jianfeng-refresh-tea",
@@ -71,7 +88,9 @@
         "臺灣丹參舒活茶",
         "健逢臺灣丹參舒活茶"
       ],
-      "publicPage": "product-danshen-tea.html#jianfeng-refresh-tea"
+      "publicPage": "product-danshen-tea.html#jianfeng-refresh-tea",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/tea-danshen-refresh-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
     },
     {
       "id": "lian-guilu",
@@ -127,7 +146,13 @@
           "sugarGrams": 0.2,
           "sodiumMilligrams": 49
         }
-      }
+      },
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/vitality-jar-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/vitality-jar-scene.webp",
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/vitality-label-scene.webp"
+      ]
     },
     {
       "id": "jinan-huanshaodan",
@@ -309,7 +334,12 @@
         "insuranceFromPackage": "外盒標示投保國泰產物產品責任險五千萬元，投保額度不等同實際理賠",
         "usageFromPackage": "開封後加熱開水食用，或放入電鍋加熱溶解；燉食亦可酌量增加，每日適量",
         "sourceLabelPhoto": "IMG_9833(3).jpeg"
-      }
+      },
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/four-treasures-front-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/four-treasures-front.jpg"
+      ]
     },
     {
       "id": "royalherb-erzhenbao-64",
@@ -337,7 +367,12 @@
         "websitePublic": true,
         "autoCheckout": false,
         "photoState": "original-manufacturer-webp-hosted-approved-in-github"
-      }
+      },
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/scenes-v20261016/er-zhen-bao-royalherb-original-scene.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/er-zhen-bao-royalherb-original.webp"
+      ]
     }
   ]
 }
