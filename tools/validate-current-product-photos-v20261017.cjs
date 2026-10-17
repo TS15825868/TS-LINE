@@ -17,6 +17,13 @@ for(const id of ids){
  assert.ok(b.image.includes("/catalog-pure-v20261017/"),"no stale image "+id);
 }
 for(const p of partner.products.filter(x=>x.approvedImage)){
- assert.ok(p.approvedImage.includes("/catalog-pure-v20261017/"),"partner stale image "+p.id);
+ const main=new URL(p.approvedImage);
+ assert.equal(main.origin,"https://ts15825868.github.io","Unexpected photo host "+p.id);
+ assert.ok(main.pathname.startsWith("/xianjiawei/images/"),"Partner media must remain a verified website image "+p.id);
+ assert.ok(main.pathname.includes("/catalog-pure-v20261017/")||main.pathname.includes("/catalog-user-original-v20261017/"),"Unverified original carton source "+p.id);
+ assert.ok((p.approvedDetailImages||[]).every(url=>{
+   const detail=new URL(url);
+   return detail.origin===main.origin && detail.pathname.startsWith("/xianjiawei/images/");
+ }),"Unverified partner detail photo host "+p.id);
 }
-console.log("PASS LINE own 4 and public partner 11 current genuine-product image references; identity and pricing remain separate");
+console.log("PASS LINE own products and "+partner.products.filter(p=>p.approvedImage).length+" public partner/variant photos; authenticity, host and detail media checked");
