@@ -36,7 +36,8 @@
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-wudahan-label-detail.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-fiber-label-detail.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-white-label-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-refresh-label-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-refresh-label-detail.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-real-contents-v20261017/rose-fruit-real-teabag-mesh.webp"
       ]
     },
     {
@@ -352,7 +353,8 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/sizhenbao-sealed-tray-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/sizhenbao-tray-back-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/sizhenbao-tray-back-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-real-contents-v20261017/four-treasures-sealed-eight-real.webp"
       ]
     },
     {
@@ -390,5 +392,6 @@
     }
   ],
   "photoAuthorityVersion": "20261017-pure-real-pack-sync-v3",
-  "visualPolicy": "完整實物包裝原圖、單品呈現，不做AI重畫或風景背景"
+  "visualPolicy": "完整實物包裝原圖、單品呈現，不做AI重畫或風景背景",
+  "updatedAt": "2026-10-17"
 }
