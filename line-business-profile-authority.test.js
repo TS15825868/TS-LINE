@@ -14,9 +14,9 @@ assert.equal(profile.statusMessage, "現代漢方生活品牌｜補養，是一�
 assert.ok(Array.from(profile.statusMessage || "").length <= 20, "LINE OA 狀態消息超過20字");
 assert.equal(profile.address, "台北市萬華區西昌街52號");
 for (const day of ["monday","tuesday","wednesday","thursday","friday"]) {
-  assert.equal(profile.hours?.[day], "10:30－20:00", day + " 商業簡介營業時間回退");
+  assert.equal(profile.hours?.[day], "10:00－20:00", day + " 商業簡介營業時間回退");
 }
-assert.equal(profile.hours?.saturday, "公休日");
+assert.match(profile.hours?.saturday || "", /預約取貨／配送/);
 assert.equal(profile.hours?.sunday, "公休日");
 assert.equal(profile.website?.label, "仙加味｜連結入口");
 assert.equal(profile.website?.url, "https://ts15825868.github.io/xianjiawei/links.html");
@@ -52,6 +52,6 @@ for (const retired of ["歡迎諮詢","09:30－18:30","09:30 - 18:30"]) {
 }
 
 const storePolicy = fs.readFileSync(path.join(ROOT, "line-store-location-policy.js"), "utf8");
-assert.match(storePolicy, /週一至週五 10:30－20:00；週六、週日休息/);
+assert.match(storePolicy, /週一至週五 10:00－20:00；週六彈性預約取貨／配送/);
 
-console.log("PASS：LINE OA 商業簡介權威已鎖定新版狀態消息、週一至週五10:30－20:00、週末公休與正式連結入口；舊時段封面標記為必須更換。");
+console.log("PASS：LINE OA 商業簡介權威已鎖定新版狀態消息、週一至週五10:00－20:00、週六彈性預約及週日公休與正式連結入口；舊時段封面標記為必須更換。");

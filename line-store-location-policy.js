@@ -16,7 +16,7 @@ const path = require("path");
 const VERSION = "2026-10-01-store-hours-v3";
 const DATA_PATH = path.join(__dirname, "data.json");
 const DEFAULT_ADDRESS_MESSAGE = "最新門市／自取資訊請先透過官方 LINE 確認";
-const DEFAULT_HOURS = "週一至週五 10:30－20:00；週六、週日休息";
+const DEFAULT_HOURS = "週一至週五 10:00－20:00；週六彈性預約取貨／配送（請先洽 LINE）；週日休息";
 const DEFAULT_NOTE = "官方 LINE 可隨時留言；店休及非營業時間的訊息，將依實際情況回覆。週末如有配送、自取需求，也可先透過 LINE 詢問安排。";
 
 if (!global.__XJW_STORE_LOCATION_POLICY__) {
