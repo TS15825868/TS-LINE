@@ -1,5 +1,5 @@
 {
-  "version": "20261017-pure-real-pack-sync-v3",
+  "version": "20261017-owner-approved-photo-main-v4",
   "source": "products-v3 original identity remains unchanged; website approved package-only customer main paths tracked separately",
   "policy": "產品身份原照保留 products-v3，不得改動；LINE OA 顧客主圖同步仙加味官網當前真實完整盒罐袋主圖，禁止用舊山水／AI重畫包裝回流。",
   "scaleAuthority": "data/product-physical-scale-authority-v20260809.json",
@@ -10,9 +10,9 @@
     "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/products-v3/luerong-fen.jpg?v=20260810-products-v3-latest-originals-v3"
   },
   "approvedCustomerMainImages": {
-    "guilu-gao": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/guilu-gao-main-framed.webp?v=20261017-pure-real-pack-sync-v3",
-    "guilu-drink-30": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/guilu-drink-30-main.png?v=20261017-pure-real-pack-sync-v3",
-    "guilu-drink-180": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/guilu-drink-180-main.png?v=20261017-pure-real-pack-sync-v3",
-    "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/luerong-fen-main.png?v=20261017-pure-real-pack-sync-v3"
+    "guilu-gao": "https://ts15825868.github.io/xianjiawei/images/catalog-owner-final-v20261017/guilu-gao-main.webp?v=20261017-owner-approved-photo-main-v4",
+    "guilu-drink-30": "https://ts15825868.github.io/xianjiawei/images/catalog-owner-final-v20261017/guilu-drink-30-main.webp?v=20261017-owner-approved-photo-main-v4",
+    "guilu-drink-180": "https://ts15825868.github.io/xianjiawei/images/catalog-owner-final-v20261017/guilu-drink-180-main.webp?v=20261017-owner-approved-photo-main-v4",
+    "luerong-fen": "https://ts15825868.github.io/xianjiawei/images/catalog-owner-final-v20261017/luerong-fen-main.webp?v=20261017-owner-approved-photo-main-v4"
   }
 }
