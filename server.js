@@ -447,11 +447,11 @@ function productMenuReply() {
 }
 
 function priceCarousel() {
-  return textMsg("請告訴我們想詢問的商品名稱與規格，客服會以文字回覆最新售價。", mainQuick());
+  return textMsg("請點選商品，再選擇數量；最新售價及有效優惠由人工客服確認。", [{ label: "看產品", text: "看產品" }, { label: "人工詢價", text: "我要人工客服" }]);
 }
 
 function qtyMenu(product) {
-  if (product.quoteOnly) return textMsg(`${product.displayName}｜${productSpecText(product)}\n請告訴我們需要的數量，客服會以文字確認最新售價與下單方式。`, mainQuick());
+  if (product.quoteOnly) return flexCard(`${product.displayName}｜選擇數量`, `${productSpecText(product)}\n請點選數量，不需自行輸入商品代碼。售價、有效優惠及配送方式由人工客服確認。`, [1, 2, 3, 5].map(qty => ({ label: `${qty}${product.unit || "件"}`, text: `詢價數量｜${product.id}｜${qty}` })).concat([{ label: "人工客服", text: "我要人工客服" }]));
   const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
     ? product.quantityOptions.slice(0, 4)
     : [1, 2, 3, 5];
@@ -1322,7 +1322,7 @@ async function handleMessage(event) {
     ]));
   }
 
-  const qtyMatch = text.match(/^選擇數量｜([^｜]+)$/);
+  const quoteQtyMatch = text.match(/^詢價數量｜([^｜]+)｜(\\d+)$/);\n  if (quoteQtyMatch) {\n    const product = getProduct(quoteQtyMatch[1]);\n    const qty = Number(quoteQtyMatch[2]);\n    if (!product || !Number.isInteger(qty) || qty < 1 || qty > 99) return reply(event.replyToken, textMsg("請重新選擇商品及數量。", mainQuick()));\n    return reply(event.replyToken, textMsg(`已選擇：${product.displayName}｜${productSpecText(product)}\\n數量：${qty}${product.unit || "件"}\\n請點選「人工客服」確認最新售價、優惠及訂購方式。`, [{ label: "人工客服", text: "我要人工客服" }, { label: "重新選擇", text: `選擇數量｜${product.id}` }, { label: "看產品", text: "看產品" }]));\n  }\n\n  const qtyMatch = text.match(/^選擇數量｜([^｜]+)$/);
   if (qtyMatch) {
     const product = getProduct(qtyMatch[1]);
     return reply(event.replyToken, product ? qtyMenu(product) : textMsg("找不到這項產品，請重新選擇。", mainQuick()));
