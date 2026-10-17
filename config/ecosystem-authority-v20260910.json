@@ -68,8 +68,8 @@
   },
   "dataRule": "新版正確資料取代舊版；價格、促銷與銷售細節仍以本repo最新正式產品與銷售權威檔案為準。",
   "serviceHours": {
-    "storefront": "週一至週五 10:30－20:00",
-    "closed": "週六、週日店休",
+    "storefront": "週一至週五 10:00－20:00",
+    "closed": "週日店休；週六依預約彈性安排取貨及配送，非固定營業時段",
     "website": "24 小時可瀏覽",
     "lineOA": "24 小時可留言；店休及非營業時間的訊息，將依實際情況回覆",
     "weekendFulfillment": "週末如有配送、自取需求，可先透過 LINE 詢問，依當天實際情況協調安排",
@@ -105,12 +105,12 @@
     "statusMessageMaxChars": 20,
     "address": "台北市萬華區西昌街52號",
     "hours": {
-      "monday": "10:30－20:00",
-      "tuesday": "10:30－20:00",
-      "wednesday": "10:30－20:00",
-      "thursday": "10:30－20:00",
-      "friday": "10:30－20:00",
-      "saturday": "公休日",
+      "monday": "10:00－20:00",
+      "tuesday": "10:00－20:00",
+      "wednesday": "10:00－20:00",
+      "thursday": "10:00－20:00",
+      "friday": "10:00－20:00",
+      "saturday": "非固定營業；預約取貨／配送請先洽 LINE",
       "sunday": "公休日"
     },
     "website": {
