@@ -246,6 +246,12 @@
     "sourceOfTruth": "LINE目前有效銷售資料及人工確認",
     "unconfirmedOffers": "不得自行建立、顯示或承諾",
     "cart": "購物車可以彙整商品與數量，結帳價格須經LINE人工確認",
-    "trial": "保留已核准試喝活動規則，其他優惠不得混用"
+    "trial": "保留已核准試喝活動規則，其他優惠不得混用",
+    "priceBasis": "末端售價（最終消費者零售價）",
+    "retailPricePriority": true,
+    "wholesaleAndCostInternalOnly": true,
+    "discountBasis": "以有效末端售價及已核准優惠計算",
+    "missingRetailPrice": "沒有最新核准末端售價時不可猜測，保留人工詢價",
+    "lineOneToOnePriceDisplay": "核准末端售價可在LINE一對一商品卡、數量選單及購物車顯示"
   }
 }
