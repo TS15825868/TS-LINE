@@ -238,7 +238,7 @@
     "activationRule": "新品須經使用者核准正式名稱、規格、公開資料與正式產品圖後加入；未核准或暫緩產品不得公開。"
   },
   "publicPriceDisplay": false,
-  "pricingPolicy": "LINE OA一般顧客以最新核准末端售價（零售價）為主；有效優惠以末端售價計算，成本與批發價僅限內部；缺少核准零售價時由人工回覆",
+  "pricingPolicy": "一般商品卡與購物車以核准末端售價為準；客人詢問或下單後由人工客服另報專屬優惠；僅已核准有效的買幾送幾等公開活動直接顯示條件及價格",
   "pricingControl": {
     "publicPriceDisplay": false,
     "quoteChannel": "LINE人工客服",
@@ -257,6 +257,11 @@
     "retailCustomerPricing": "LINE OA一般顧客以最新核准末端售價為單價及購物車計算基準",
     "internalPriceTiers": "成本、批發及通路價格僅供ERP內部管理，不得當成一般顧客售價",
     "promotionBasis": "以最新核准末端售價計算；優惠須有有效且核准的活動資料",
-    "trialPricing": "試喝活動獨立計價，不與一般商品折扣混用"
+    "trialPricing": "試喝活動獨立計價，不與一般商品折扣混用",
+    "customerFacingBase": "最新核准末端售價",
+    "privateDiscount": "顧客詢問或下單後由人工客服個別報價；不在一般商品卡或自動購物車預先顯示",
+    "publicPromotions": "僅已核准且有效的買幾送幾等公開活動可在LINE直接顯示活動條件與價格",
+    "cartCalculation": "末端售價為基準；只自動套用正式核准的公開活動",
+    "noInventedPromotions": true
   }
 }
