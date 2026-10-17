@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
+  "version": "2026-10-18-line-commerce-policy-v2",
   "source": "仙加味目前核准公開產品、正式規格、成分與使用資料、LINE目前銷售資訊、試喝與產品別出貨政策；公開產品清單依最新正式權威動態擴充，不以目前產品數量或龜鹿系列作永久限制；產品圖片由正式核准產品圖權威提供，不得自行重畫或以舊圖阻擋新品。",
   "products": {
     "guilu-gao": {
@@ -238,5 +238,14 @@
     "activationRule": "新品須經使用者核准正式名稱、規格、公開資料與正式產品圖後加入；未核准或暫緩產品不得公開。"
   },
   "publicPriceDisplay": false,
-  "pricingPolicy": "公開圖卡不列價；依具體商品由LINE人工文字回覆最新售價"
+  "pricingPolicy": "公開圖卡不列價；依具體商品由LINE人工文字回覆最新售價",
+  "pricingControl": {
+    "publicPriceDisplay": false,
+    "quoteChannel": "LINE人工客服",
+    "noUnverifiedDiscounts": true,
+    "sourceOfTruth": "LINE目前有效銷售資料及人工確認",
+    "unconfirmedOffers": "不得自行建立、顯示或承諾",
+    "cart": "購物車可以彙整商品與數量，結帳價格須經LINE人工確認",
+    "trial": "保留已核准試喝活動規則，其他優惠不得混用"
+  }
 }
