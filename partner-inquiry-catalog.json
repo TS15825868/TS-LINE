@@ -12,7 +12,7 @@
       "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/jinan-sisheng-siwuyin-main.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/siwuyin-real-label-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/siwuyin-original-back.webp"
       ]
     },
     {
@@ -31,12 +31,12 @@
         "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-fiber-main.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-white-main.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-refresh-main.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-rose-fruit-label-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-leisure-label-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-wudahan-label-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-fiber-label-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-white-label-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-refresh-label-detail.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-rose-fruit-original-back.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-leisure-original-back.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-wudahan-original-back.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-fiber-original-back.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-white-original-back.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-refresh-original-back.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/rose-fruit-real-teabag.webp"
       ]
     },
@@ -52,7 +52,7 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-rose-fruit-front.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-rose-fruit-label-detail.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-rose-fruit-original-back.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/rose-fruit-real-teabag.webp"
       ]
     },
@@ -68,7 +68,7 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-leisure-front.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-leisure-label-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-leisure-original-back.webp"
       ]
     },
     {
@@ -83,7 +83,7 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-wudahan-front.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-wudahan-label-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-wudahan-original-back.webp"
       ]
     },
     {
@@ -98,7 +98,7 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-lotus-front.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-fiber-label-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-fiber-original-back.webp"
       ]
     },
     {
@@ -113,7 +113,7 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-white-danshen-front.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-white-label-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-white-original-back.webp"
       ]
     },
     {
@@ -128,7 +128,7 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-refresh-front.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-refresh-label-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-refresh-original-back.webp"
       ]
     },
     {
@@ -190,7 +190,7 @@
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/vitality-real-jar-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/vitality-real-back-detail.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/vitality-original-label-closeup.webp"
       ]
     },
     {
@@ -377,11 +377,7 @@
       "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/uboss-sizhenbao-main-framed.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/sizhenbao-actual-8-blocks.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-1.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-2.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-3.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-4.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/sizhenbao-actual-8-blocks.webp"
       ]
     },
     {
@@ -414,15 +410,11 @@
       "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/erzhenbao-actual-complete-box.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/erzhenbao-actual-open-trays.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-1.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-2.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-3.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-4.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/erzhenbao-actual-open-trays.webp"
       ]
     }
   ],
-  "photoAuthorityVersion": "20261017-pure-real-pack-sync-v3",
+  "photoAuthorityVersion": "20261017-live-genuine-packaging-and-label-photo-v2",
   "visualPolicy": "完整實物包裝原圖、單品呈現，不做AI重畫或風景背景",
   "updatedAt": "2026-10-17"
 }
