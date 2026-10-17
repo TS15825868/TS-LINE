@@ -21,7 +21,7 @@ assert.match(String(store.holidayNote || ""), /隨時留言/);
 assert.match(String(store.holidayNote || ""), /週末/);
 assert.match(String(store.holidayNote || ""), /配送/);
 assert.match(String(store.holidayNote || ""), /自取/);
-assert.equal(store.hours, "週一至週五 10:30－20:00；週六、週日休息", "門市營業時間應使用 2026-10-01 正式新版");
+assert.equal(store.hours, "週一至週五 10:00－20:00；週六彈性預約取貨／配送（請先洽 LINE）；週日休息", "門市營業時間應使用 目前核准的正式營業時間");
 assert.match(serverSource, /官網：24 小時可瀏覽產品、品牌、使用方式與常見問題。/, "LINE 門市資訊應同步說明官網 24 小時可瀏覽");
 assert.ok(!serverSource.includes("週一至週六 09:30–18:30"), "server.js 不得保留舊營業時間備援");
 assert.ok(!serverSource.includes("下一個營業時段"), "server.js 不得回退成固定下一營業時段才回覆");
