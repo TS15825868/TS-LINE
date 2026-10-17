@@ -1,0 +1,19 @@
+name: Current LINE customer product photos
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/data/official-products.json'
+      - 'data.json'
+      - 'partner-inquiry-catalog.json'
+      - 'line-product-photo-authority.json'
+      - 'tools/validate-current-product-photos-v20261017.cjs'
+      - '.github/workflows/current-product-photos-v20261017.yml'
+  workflow_dispatch:
+jobs:
+  current-photos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node tools/validate-current-product-photos-v20261017.cjs
+      - run: node line-products-v3-authority.test.js
