@@ -14,13 +14,13 @@ for(const id of ids){
  assert.equal(b.image,b.image_url);
  assert.equal(a.approvedProductImage,photo.approvedCustomerMainImages[id]);
  assert.ok(photo.products[id]?.includes("/images/products-v3/"),"identity originals must not change");
- assert.ok(b.image.includes("/catalog-pure-v20261017/"),"no stale image "+id);
+ assert.ok(b.image.includes("/catalog-owner-final-v20261017/"),"no stale image "+id);
 }
 for(const p of partner.products.filter(x=>x.approvedImage)){
  const main=new URL(p.approvedImage);
  assert.equal(main.origin,"https://ts15825868.github.io","Unexpected photo host "+p.id);
  assert.ok(main.pathname.startsWith("/xianjiawei/images/"),"Partner media must remain a verified website image "+p.id);
- assert.ok(main.pathname.includes("/catalog-pure-v20261017/")||main.pathname.includes("/catalog-user-original-v20261017/"),"Unverified original carton source "+p.id);
+ assert.ok(main.pathname.includes("/catalog-owner-final-v20261017/"),"Unverified original carton source "+p.id);
  assert.ok((p.approvedDetailImages||[]).every(url=>{
    const detail=new URL(url);
    return detail.origin===main.origin && detail.pathname.startsWith("/xianjiawei/images/");
