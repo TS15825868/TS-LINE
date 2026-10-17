@@ -9,10 +9,10 @@
         "晉安參仲四物飲"
       ],
       "publicPage": "product-jinan-siwuyin.html",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/jinan-sisheng-siwuyin-main.webp?v=20261017-pure-real-pack-sync-v3",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/jinan-sisheng-siwuyin-main.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/siwuyin-real-label-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/siwuyin-real-label-detail.webp"
       ]
     },
     {
@@ -23,7 +23,7 @@
         "健逢丹參茶包系列"
       ],
       "publicPage": "product-danshen-tea.html",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/danshen-tea-collection-main.webp?v=20261017-pure-real-pack-sync-v3",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/danshen-tea-collection-main.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-leisure-main.webp",
@@ -37,7 +37,7 @@
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-fiber-label-detail.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-white-label-detail.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-refresh-label-detail.webp",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-real-contents-v20261017/rose-fruit-real-teabag-mesh.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/rose-fruit-real-teabag.webp"
       ]
     },
     {
@@ -48,8 +48,13 @@
         "健逢臺灣丹參玫瑰果茶"
       ],
       "publicPage": "product-danshen-tea.html#jianfeng-rose-fruit-tea",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-rose-fruit-main.webp?v=20261017-pure-real-pack-sync-v3",
-      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/danshen-tea-collection-main.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-rose-fruit-front.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-rose-fruit-label-detail.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/rose-fruit-real-teabag.webp"
+      ]
     },
     {
       "id": "jianfeng-leisure-tea",
@@ -59,8 +64,12 @@
         "健逢臺灣丹參懈悠活養生茶"
       ],
       "publicPage": "product-danshen-tea.html#jianfeng-leisure-tea",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-leisure-main.webp?v=20261017-pure-real-pack-sync-v3",
-      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-leisure-main.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-leisure-front.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-leisure-label-detail.webp"
+      ]
     },
     {
       "id": "jianfeng-wudahan-tea",
@@ -70,8 +79,12 @@
         "健逢武大漢丹參茶"
       ],
       "publicPage": "product-danshen-tea.html#jianfeng-wudahan-tea",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-wudahan-main.webp?v=20261017-pure-real-pack-sync-v3",
-      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-wudahan-main.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-wudahan-front.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-wudahan-label-detail.webp"
+      ]
     },
     {
       "id": "jianfeng-fiber-tea",
@@ -81,8 +94,12 @@
         "健逢臺灣丹參纖體茶"
       ],
       "publicPage": "product-danshen-tea.html#jianfeng-fiber-tea",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-fiber-main.webp?v=20261017-pure-real-pack-sync-v3",
-      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-fiber-main.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-lotus-front.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-fiber-label-detail.webp"
+      ]
     },
     {
       "id": "jianfeng-white-tea",
@@ -92,8 +109,12 @@
         "健逢臺灣白茶丹參飲"
       ],
       "publicPage": "product-danshen-tea.html#jianfeng-white-tea",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-white-main.webp?v=20261017-pure-real-pack-sync-v3",
-      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-white-main.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-white-danshen-front.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-white-label-detail.webp"
+      ]
     },
     {
       "id": "jianfeng-refresh-tea",
@@ -103,8 +124,12 @@
         "健逢臺灣丹參舒活茶"
       ],
       "publicPage": "product-danshen-tea.html#jianfeng-refresh-tea",
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-refresh-main.webp?v=20261017-pure-real-pack-sync-v3",
-      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json"
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/tea-refresh-main.webp",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-refresh-front.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/tea-refresh-label-detail.webp"
+      ]
     },
     {
       "id": "lian-guilu",
@@ -161,11 +186,11 @@
           "sodiumMilligrams": 49
         }
       },
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/guilu-vitality-main.webp?v=20261017-pure-real-pack-sync-v3",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/guilu-vitality-main.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/vitality-real-jar-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/vitality-real-back-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/vitality-real-jar-detail.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/vitality-real-back-detail.webp"
       ]
     },
     {
@@ -349,12 +374,14 @@
         "usageFromPackage": "開封後加熱開水食用，或放入電鍋加熱溶解；燉食亦可酌量增加，每日適量",
         "sourceLabelPhoto": "IMG_9833(3).jpeg"
       },
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/uboss-sizhenbao-main-framed.webp?v=20261017-pure-real-pack-sync-v3",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/uboss-sizhenbao-main-framed.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/sizhenbao-sealed-tray-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/sizhenbao-tray-back-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5",
-        "https://ts15825868.github.io/xianjiawei/images/catalog-real-contents-v20261017/four-treasures-sealed-eight-real.webp"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/sizhenbao-actual-8-blocks.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-1.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-2.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-3.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/uboss-sizhenbao-label-4.webp"
       ]
     },
     {
@@ -384,10 +411,14 @@
         "autoCheckout": false,
         "photoState": "original-manufacturer-webp-hosted-approved-in-github"
       },
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-pure-v20261017/royalherb-erzhenbao-64-main-framed.webp?v=20261017-pure-real-pack-sync-v3",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/erzhenbao-actual-complete-box.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/catalog-clean-studio-v20261016-v5/erzhenbao-sealed-tray-detail.webp?v=20261016-real-pixel-clean-studio-main-and-detail-v5"
+        "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/erzhenbao-actual-open-trays.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-1.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-2.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-3.webp",
+        "https://ts15825868.github.io/xianjiawei/images/catalog-labels-v20261016-v7/royalherb-erzhenbao-64-label-4.webp"
       ]
     }
   ],
