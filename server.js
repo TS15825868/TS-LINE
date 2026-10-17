@@ -353,8 +353,11 @@ async function reply(token, messages) {
 }
 
 function productBubble(product) {
-  const priceLine = "最新價格請由 LINE 客服文字回覆";
-  const offers = "";
+  const retailPrice = Number(product.price);
+  const hasApprovedRetailPrice = Number.isFinite(retailPrice) && retailPrice > 0 && product.quoteOnly !== true;
+  const priceLine = hasApprovedRetailPrice ? `末端售價：${money(retailPrice)}` : "末端售價：請洽 LINE 客服確認";
+  const approvedOffers = hasApprovedRetailPrice && Array.isArray(product.offers) ? product.offers.filter(offer => Number(offer.qty) > 0 && Number.isFinite(Number(offer.total)) && Number(offer.total) >= 0 && String(offer.label || "").trim()) : [];
+  const offers = approvedOffers.length ? `\n公開活動：${approvedOffers.map(offer => `${offer.label} ${money(offer.total)}`).join("；")}` : "";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
   const productPhotoUrl = absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png");
@@ -447,7 +450,7 @@ function productMenuReply() {
 }
 
 function priceCarousel() {
-  return textMsg("請點選商品，再選擇數量；最新售價及有效優惠由人工客服確認。", [{ label: "看產品", text: "看產品" }, { label: "人工詢價", text: "我要人工客服" }]);
+  return textMsg("請先點選商品查看末端售價與已核准的公開活動；實際詢問或下單時，客服可另外確認專屬優惠。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
 }
 
 function qtyMenu(product) {
