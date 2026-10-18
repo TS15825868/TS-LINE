@@ -32,7 +32,7 @@ for(let i=0;i<6;i++){
     assert.ok(btn.action.label.includes("NT$"+(n*480).toLocaleString("en-US")),"售價小計計算錯誤");
     const final=menu.inquiry(flavor.id,String(n));
     assert.ok(final.includes("選購盒數："+n+" 盒"));
-    assert.ok(final.includes("NT$"+(n*480).toLocaleString("en-US"));
+    assert.ok(final.includes("NT$"+(n*480).toLocaleString("en-US")));
     assert.ok(final.includes("未含運費"));
     assert.ok(final.includes("不是已成立的訂單"));
   }
