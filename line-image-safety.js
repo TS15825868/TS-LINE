@@ -122,18 +122,22 @@ function installImageRoutes(app) {
     if (!partner || !/^images\/[a-z0-9_/.?=&-]+\.webp(?:\?.*)?$/i.test(partner.image) || partner.image.includes(".."))
       return res.status(404).end();
     try {
-      if (!partnerImageCache.has(id)) {
-        const source = new URL(partner.image, "https://ts15825868.github.io/xianjiawei/").toString();
+      const source = new URL(partner.image, "https://ts15825868.github.io/xianjiawei/").toString();
+      const cached = partnerImageCache.get(id);
+      // 新品換圖時不得沿用相同 ID 的舊照片；即使路徑未變，15 分鐘後也會重新取得。
+      if (!cached || cached.source !== source || Date.now() - cached.createdAt >= 15 * 60 * 1000) {
         const task = (async () => {
           const response = await fetch(source, { headers: { "user-agent": "xianjiawei-line-partner-photo/1.0" }, signal: AbortSignal.timeout(15000) });
           if (!response.ok) throw new Error(`partner product photo HTTP ${response.status}: ${id}`);
           const input = Buffer.from(await response.arrayBuffer());
           return sharp(input).rotate().resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
             .flatten({ background: "#FFFFFF" }).jpeg({ quality: 91, progressive: true }).toBuffer();
-        })().catch(error => { partnerImageCache.delete(id); throw error; });
-        partnerImageCache.set(id, task);
+        })().catch(error => { if (partnerImageCache.get(id)?.task === task) partnerImageCache.delete(id); throw error; });
+        partnerImageCache.set(id, { source, createdAt: Date.now(), task });
       }
-      return sendJpeg(res, await partnerImageCache.get(id), "partner-product");
+      const imageBytes = await partnerImageCache.get(id).task;
+      res.set("Cache-Control", "public, max-age=900, must-revalidate");
+      return sendJpeg(res, imageBytes, "partner-product");
     } catch (error) {
       console.error("LINE 其他商品正式圖片 JPEG 轉換失敗", id, error?.message || error);
       return res.status(502).end();
