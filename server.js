@@ -1380,7 +1380,7 @@ async function handleMessage(event) {
         [
           ...(partnerInquiry.publicPage && food.websitePublic
             ? [{ label: '查看商品介紹', uri: absoluteUrl(partnerInquiry.publicPage) }] : []),
-          { label: '商品及購買諮詢', text: '我要人工客服' }
+          { label: '仙加味商品及購買諮詢', text: '我要人工客服' }
         ]
       ));
     }
