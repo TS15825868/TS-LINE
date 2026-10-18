@@ -59,7 +59,7 @@ if (!visibleIds.includes(qixuanId)) {
 const byId = Object.fromEntries(data.products.map((product) => [product.id, product]));
 assert.equal(byId["guilu-gao"].usage?.[0], "食用時間可依個人使用習慣與作息時間安排");
 assert.ok(!(byId["guilu-gao"].usage || []).some((line) => /一天一次一小匙|早晚各一小匙|每日早上及下午各一小匙/.test(String(line))));
-assert.ok(String(byId["guilu-drink-30"].usage?.[0] || "").includes("每日 1～2 罐"), "30cc 用量應符合新版正式資料");
+assert.match(String(byId["guilu-drink-30"].usage?.[0] || ""), /每日\s*1[～–-]2\s*罐/, "30cc 用量應符合新版正式資料，不因等價連字號格式而誤判");
 assert.ok(byId["guilu-drink-30"].usage?.includes("可依個人需求調整"));
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
 assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
