@@ -28,6 +28,16 @@ assert.ok(source.includes("await publicCatalog.refresh()"), "LINE 查詢商品�
 assert.ok(source.includes("return productCarousel();"), "產品入口應直接顯示同一組左右滑動卡片");
 assert.equal(retail.products["danshen-tea-collection"].price, 480, "六款丹參茶末端售價應為每盒480元");
 assert.equal(retail.products["guilu-vitality"].price, 1800, "龜鹿活力飲核准末端售價應為1800元");
+assert.equal(retail.products["jinan-sisheng-siwuyin"].price, 1000, "參仲四物飲核准售價");
+assert.equal(retail.products["royalherb-erzhenbao-64"].price, 13800, "二珍寶核准定價");
+assert.equal(retail.products["royalherb-erzhenbao-64"].promotionPrice, 12000, "二珍寶優惠價");
+assert.equal(retail.products["uboss-sizhenbao"].price, 14800, "四珍寶包裝建議售價");
+assert.equal(retail.products["uboss-sizhenbao"].promotionPrice, 12000, "四珍寶線上優惠價");
+assert.match(retail.products["uboss-sizhenbao"].label, /^建議售價 /, "包裝印建議售價時應明確標示");
+for (const id of ["jinan-sisheng-siwuyin","royalherb-erzhenbao-64","guilu-vitality","danshen-tea-collection"]) {
+  assert.match(retail.products[id].label, /^售價 /, `${id} 未核實印刷建議售價，應標售價`);
+}
+
 for (const [id, price] of Object.entries(retail.products)) {
   assert.equal(price.confirmed, true, `${id} 末端價必須經確認`);
   assert.ok(Number(price.price)>0 && typeof price.label==="string", `${id} 價格與文字異常`);
