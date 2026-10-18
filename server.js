@@ -1601,8 +1601,8 @@ app.get("/healthz", (_req, res) => {
     catalogVersion: DATA.catalogVersion || "",
     mascotVersion: MASCOT_VERSION,
     productCount: DATA.products.length,
-    swipeProductCount: DATA.products.length + publicCatalog.current().length,
-    swipeProductIds: [...DATA.products.map(p => p.id), ...publicCatalog.current().map(p => p.id)],
+    swipeProductCount: new Set([...DATA.products.map(p => p.id), ...publicCatalog.current().map(p => p.id)]).size,
+    swipeProductIds: [...new Set([...DATA.products.map(p => p.id), ...publicCatalog.current().map(p => p.id)])],
     deploymentCommit: process.env.RENDER_GIT_COMMIT || null,
     publicProductAuthority: {
       version: require("./assets/data/official-products.json").publicProductMasterVersion || require("./assets/data/official-products.json").version,
