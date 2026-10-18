@@ -38,7 +38,9 @@
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-white-original-back.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-refresh-original-back.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/rose-fruit-real-teabag.webp"
-      ]
+      ],
+      "pricePolicy": "六款各 NT$480／盒；系列總覽不是獨立第七款商品",
+      "variantCount": 6
     },
     {
       "id": "jianfeng-rose-fruit-tea",
@@ -54,7 +56,13 @@
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-rose-fruit-front.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-rose-fruit-original-back.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-original-v20261017/rose-fruit-real-teabag.webp"
-      ]
+      ],
+      "specification": "3g／包，10包／盒",
+      "price": 480,
+      "priceLabel": "NT$480／盒",
+      "priceConfirmed": true,
+      "priceAuthority": "2026-10-18使用者確認丹參系列茶包同價",
+      "quoteOnly": false
     },
     {
       "id": "jianfeng-leisure-tea",
@@ -69,7 +77,13 @@
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-leisure-front.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-leisure-original-back.webp"
-      ]
+      ],
+      "specification": "3g／包，10包／盒",
+      "price": 480,
+      "priceLabel": "NT$480／盒",
+      "priceConfirmed": true,
+      "priceAuthority": "2026-10-18使用者確認丹參系列茶包同價",
+      "quoteOnly": false
     },
     {
       "id": "jianfeng-wudahan-tea",
@@ -84,7 +98,13 @@
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-wudahan-front.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-wudahan-original-back.webp"
-      ]
+      ],
+      "specification": "3g／包，10包／盒",
+      "price": 480,
+      "priceLabel": "NT$480／盒",
+      "priceConfirmed": true,
+      "priceAuthority": "2026-10-18使用者確認丹參系列茶包同價",
+      "quoteOnly": false
     },
     {
       "id": "jianfeng-fiber-tea",
@@ -99,7 +119,13 @@
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-lotus-front.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-fiber-original-back.webp"
-      ]
+      ],
+      "specification": "3g／包，10包／盒",
+      "price": 480,
+      "priceLabel": "NT$480／盒",
+      "priceConfirmed": true,
+      "priceAuthority": "2026-10-18使用者確認丹參系列茶包同價",
+      "quoteOnly": false
     },
     {
       "id": "jianfeng-white-tea",
@@ -114,7 +140,13 @@
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-white-danshen-front.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-white-original-back.webp"
-      ]
+      ],
+      "specification": "3g／包，10包／盒",
+      "price": 480,
+      "priceLabel": "NT$480／盒",
+      "priceConfirmed": true,
+      "priceAuthority": "2026-10-18使用者確認丹參系列茶包同價",
+      "quoteOnly": false
     },
     {
       "id": "jianfeng-refresh-tea",
@@ -129,7 +161,13 @@
       "approvedDetailImages": [
         "https://ts15825868.github.io/xianjiawei/images/partner-products/tea-danshen-refresh-front.webp",
         "https://ts15825868.github.io/xianjiawei/images/catalog-user-detail-cutouts-v20261017/tea-refresh-original-back.webp"
-      ]
+      ],
+      "specification": "3g／包，10包／盒",
+      "price": 480,
+      "priceLabel": "NT$480／盒",
+      "priceConfirmed": true,
+      "priceAuthority": "2026-10-18使用者確認丹參系列茶包同價",
+      "quoteOnly": false
     },
     {
       "id": "lian-guilu",
@@ -417,5 +455,5 @@
   ],
   "photoAuthorityVersion": "20261017-owner-approved-real-erzhenbao-trays-current-web",
   "visualPolicy": "完整實物包裝原圖、單品呈現，不做AI重畫或風景背景",
-  "updatedAt": "2026-10-17"
+  "updatedAt": "2026-10-18"
 }
