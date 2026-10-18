@@ -1334,7 +1334,7 @@ async function handleMessage(event) {
       `${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n點選盒數即可繼續。`, buttons));
   }
 
-  const partnerCartMatch = text.match(/^加入其他商品購物車｜([^｜]+)｜(\\d+)$/);
+  const partnerCartMatch = text.match(/^加入其他商品購物車｜([^｜]+)｜(\d+)$/);
   if (partnerCartMatch) {
     const product = publicCatalog.current().find(item => item.id === partnerCartMatch[1]);
     const qty = Number(partnerCartMatch[2]);
