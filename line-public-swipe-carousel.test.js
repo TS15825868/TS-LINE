@@ -34,7 +34,11 @@ assert.equal(retail.products["royalherb-erzhenbao-64"].promotionPrice, 12000, "�
 assert.equal(retail.products["uboss-sizhenbao"].price, 14800, "四珍寶包裝建議售價");
 assert.equal(retail.products["uboss-sizhenbao"].promotionPrice, 12000, "四珍寶線上優惠價");
 assert.match(retail.products["uboss-sizhenbao"].label, /^建議售價 /, "包裝印建議售價時應明確標示");
-for (const id of ["jinan-sisheng-siwuyin","royalherb-erzhenbao-64","guilu-vitality","danshen-tea-collection"]) {
+assert.equal(retail.products["royalherb-erzhenbao-64"].priceType, "suggested", "二珍寶須依使用者最新確認標示建議售價");
+assert.equal(retail.products["uboss-sizhenbao"].priceType, "suggested", "四珍寶須標示建議售價");
+assert.equal(retail.products["royalherb-erzhenbao-64"].label, "建議售價 NT$13,800／盒\n優惠價 NT$12,000／盒", "二珍寶價格顯示不得被舊規則回退");
+assert.equal(retail.products["uboss-sizhenbao"].label, "建議售價 NT$14,800／盒\n優惠價 NT$12,000／盒", "四珍寶價格顯示需與最新確認一致");
+for (const id of ["jinan-sisheng-siwuyin","guilu-vitality","danshen-tea-collection"]) {
   assert.match(retail.products[id].label, /^售價 /, `${id} 未核實印刷建議售價，應標售價`);
 }
 
