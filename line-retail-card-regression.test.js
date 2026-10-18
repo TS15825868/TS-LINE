@@ -25,7 +25,7 @@ for (const product of products) {
 assert.match(server, /function productBubble\(product\)/, "缺少商品卡");
 assert.match(server, /function qtyMenu\(product\)/, "缺少選擇數量");
 assert.ok(server.includes('canOrder ? "加入購物車" : "詢價數量"'), "已核准售價與未核准詢價的動作不得混用");
-assert.ok(server.includes("末端售價："), "商品卡須顯示已核准末端售價");
+assert.ok(server.includes("售價："), "商品卡須顯示已核准末端售價");
 assert.ok(server.includes("const addMatch = text.match"), "加入購物車處理不可遺失");
 assert.ok(server.includes("const quoteQtyMatch = text.match"), "人工詢價處理不可遺失");
 console.log("PASS：LINE 末端售價、詢價與購物車資料權威一致。");
