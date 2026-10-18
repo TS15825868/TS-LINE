@@ -1271,7 +1271,7 @@ async function handleMessage(event) {
   if (/^(丹參茶|丹參茶包|丹參茶包系列)$/.test(text) || teaVariants[text]) {
     const section = teaVariants[text] ? '#' + teaVariants[text] : '';
     return reply(event.replyToken, flexCard(text in teaVariants ? text : '丹參茶包系列',
-      '六款茶包集中在同一頁，可查看各款實物照片、規格、原料、沖泡與保存方式。價格與供貨請由人工客服確認。', [
+      '丹參系列六款茶包，每款 3g×10包／盒，標準售價均為 NT$480／盒。可查看各款實物照片、規格與原料；如需確認優惠活動及現貨，請洽人工客服。', [
         { label: '查看茶包介紹', uri: absoluteUrl('product-danshen-tea.html' + section) },
         { label: '人工商品諮詢', text: '我要人工客服' }
       ]));
@@ -1285,8 +1285,8 @@ async function handleMessage(event) {
       // 成藥許可證 ≠ 乙類成藥網售資格；有相應藥商營業項目時仍可提供實體店面服務。
       // 不宣傳療效、不顯示網路結帳，不把一般詢價直接轉給中醫師。
       return reply(event.replyToken, flexCard(license.licensedName || partnerInquiry.name,
-        '本品經衛福部登記為中藥成藥（許可證：' + license.licenseNo + '）。仙加味可先協助確認藥商營業範圍內的門市供貨及合法取得方式；此處不提供本品網路結帳。如涉及個人體質、疾病、正在服藥或是否適合使用，才另外由專業中醫師評估。',
-        [{ label: '詢問仙加味人工客服', text: '我要人工客服' }]
+        '本品經衛福部登記為中藥成藥（許可證：' + license.licenseNo + '）。可先由人工客服確認門市供貨及合法取得方式；此處不提供本品網路結帳。如涉及個人體質、疾病、正在服藥或是否適合使用，才另外由專業中醫師評估。',
+        [{ label: '詢問人工客服', text: '我要人工客服' }]
       ));
     }
     if (partnerInquiry.food?.classification === 'merchant-confirmed-food') {
@@ -1296,14 +1296,14 @@ async function handleMessage(event) {
       const ingredients = Array.isArray(food.ingredients) && food.ingredients.length
         ? '\n原廠包裝所列原料：' + food.ingredients.join('、') + '。' : '';
       return reply(event.replyToken, flexCard(name,
-        '這款由仙加味作為其他廠牌食品提供商品諮詢。' +
+        '這款為其他廠牌食品，可先查看原廠商品資訊。' +
         (food.size ? '\n包裝規格：' + food.size + '。' : '') +
         ingredients +
         '\n售價、現貨批次、購買及配送請由仙加味人工客服確認。此處不提供療效或個人醫療判斷。',
         [
           ...(partnerInquiry.publicPage && food.websitePublic
             ? [{ label: '查看商品介紹', uri: absoluteUrl(partnerInquiry.publicPage) }] : []),
-          { label: '仙加味商品及購買諮詢', text: '我要人工客服' }
+          { label: '商品及購買諮詢', text: '我要人工客服' }
         ]
       ));
     }
