@@ -462,7 +462,9 @@ function partnerProductBubble(product) {
 }
 
 function productCarousel(start = 0) {
-  const allPublicProducts = [...DATA.products.map(productBubble), ...publicCatalog.current().map(partnerProductBubble)];
+  const coreIds = new Set(DATA.products.map(product => product.id));
+  const otherCards = publicCatalog.current().filter(product => !coreIds.has(product.id));
+  const allPublicProducts = [...DATA.products.map(productBubble), ...otherCards.map(partnerProductBubble)];
   const startIndex = Math.max(0, Number.isInteger(start) ? start : 0);
   const remaining = allPublicProducts.slice(startIndex);
   if (!remaining.length) return textMsg("目前沒有更多公開商品，請重新查看全部商品。", [{ label: "全部商品", text: "看產品" }]);
