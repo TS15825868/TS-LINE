@@ -1069,7 +1069,7 @@ function orderSummary(state) {
   const checkout = state.checkout;
   return flexCard(
     "確認訂單",
-    `姓名：${checkout.name}\n電話：${checkout.phone}\n付款：${checkout.payment}\n配送：${checkout.shipping}\n地址／門市：${checkout.address}\n訂單金額：${money(cartTotal(state.cart))}\n\n${orderNoticeForCart(state.cart)}`,
+    `購買商品：\n${state.cart.map(item => `${item.name} × ${item.qty}${item.unit}｜${money(item.total)}`).join("\n")}\n\n合計：${money(cartTotal(state.cart))}\n姓名：${checkout.name}\n電話：${checkout.phone}\n付款：${checkout.payment}\n配送：${checkout.shipping}\n地址／門市：${checkout.address}\n\n${orderNoticeForCart(state.cart)}`,
     [
       { label: "確認送出", text: "確認送出" },
       { label: "取消", text: "取消" },
