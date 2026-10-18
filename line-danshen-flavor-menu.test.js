@@ -6,6 +6,30 @@ const catalog = require("./partner-inquiry-catalog.json");
 const authority = require("./line-partner-retail-authority.json");
 const source = fs.readFileSync("server.js","utf8");
 assert.equal(menu.PRICE,480,"丹參茶包每盒售價必須為480元");
+// 模擬正式 Render prestart：sync-partner-inquiries.cjs 重建檔案後價格欄位不會存在。
+const vm = require("node:vm");
+const startupCatalog = {
+  products: catalog.products.map(p => {
+    const clone = {...p};
+    delete clone.price;
+    delete clone.priceLabel;
+    delete clone.priceConfirmed;
+    return clone;
+  }),
+};
+const simulated = {exports:{}};
+vm.runInNewContext(fs.readFileSync("line-danshen-flavor-menu.js","utf8"), {
+  module:simulated,
+  require: name => name === "./partner-inquiry-catalog.json" ? startupCatalog
+    : name === "./line-partner-retail-authority.json" ? authority
+    : (()=>{throw new Error("未知模組："+name)})(),
+});
+const startupMenu = simulated.exports;
+assert.equal(startupMenu.variants().length,6,"Render 啟動同步清除詢價價欄後不可讓看產品整組報錯");
+assert.equal(startupMenu.variants().every(p=>p.price===480),true,"同步詢價檔無價格欄時須仍採正式核准480元");
+assert.equal(startupMenu.menu().contents.footer.contents.length,6,"正式啟動後六口味選單必須可以顯示");
+assert.equal(startupMenu.chosen(startupMenu.IDS[0],v=>"https://example.com/"+v).type,"flex");
+assert.ok(startupMenu.inquiry(startupMenu.IDS[0],"2").includes("NT$960"),"正式啟動後兩盒小計必須仍正確");
 const variants=menu.variants();
 assert.equal(variants.length,6,"六款口味均須可選");
 assert.equal(new Set(variants.map(p=>p.id)).size,6,"口味不得重複");
