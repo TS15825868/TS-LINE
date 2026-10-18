@@ -38,8 +38,8 @@ function menu() {
         {type:"text",text:`丹參茶包｜六款可選（${index+1}/2）`,weight:"bold",size:"lg",color:"#7B1E1E",wrap:true},
         {type:"text",text:priceText(),size:"sm",color:"#333333",wrap:true},
         {type:"text",text:index===0
-          ?"一盒 NT$480，請選擇想要的款式；下一張還有三款。"
-          :"另外三款可選，點選後可查看商品及選擇盒數。",size:"sm",color:"#555555",wrap:true},
+          ?"請選擇喜歡的口味；下一張還有三款。"
+          :"點選口味後，即可選擇購買盒數。",size:"sm",color:"#555555",wrap:true},
       ]},
       footer:{type:"box",layout:"vertical",spacing:"sm",contents:items.slice(start,start+3).map((p,i)=>({
         type:"button",style:i===0?"primary":"secondary",
