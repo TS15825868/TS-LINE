@@ -36,7 +36,7 @@ async function refresh({ force = false } = {}) {
         id: p.id, name: p.name, specification: p.size || p.specification,
         image: p.image, page: p.page,
       }));
-      if (!candidates.length) throw new Error("未取得任何已公開其他商品，暫保留已核准展示");
+      // 官方目錄合法將所有其他商品下架時，須同步移除 LINE 卡片，不得讓舊快照繼續公開。
       if (candidates.length !== new Set(candidates.map(p => p.id)).size) throw new Error("已公開商品 ID 重複");
       approved = candidates;
     } catch (error) {
