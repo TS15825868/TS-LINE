@@ -429,7 +429,7 @@ function partnerProductBubble(product) {
     size: "kilo",
     hero: {
       type: "image",
-      url: `${require("./line-image-safety-core").PUBLIC_BASE_URL}/assets/partner-product/${encodeURIComponent(product.id)}.jpg?v=${encodeURIComponent(PARTNER_CAROUSEL_VERSION)}`,
+      url: `${require("./line-image-safety-core").PUBLIC_BASE_URL}/assets/partner-product/${encodeURIComponent(product.id)}.jpg?v=${encodeURIComponent(PARTNER_CAROUSEL_VERSION + ":" + product.image)}`,
       size: "full",
       aspectRatio: "4:3",
       aspectMode: "fit",
