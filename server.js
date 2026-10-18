@@ -513,7 +513,7 @@ function qtyMenu(product) {
   buttons.push({ label: "人工客服", text: "我要人工客服" });
   return flexCard(
     `${product.displayName}｜${canOrder ? "選擇數量" : "詢問數量"}`,
-    `${productSpecText(product)}\n${canOrder ? "請選擇購買數量，確認後加入購物車。" : "請選擇數量，再由客服確認售價與供貨。"}`,
+    `${productSpecText(product)}\n${canOrder ? "點選數量即可加入購物車。" : "點選數量即可詢價。"}`,
     buttons
   );
 }
