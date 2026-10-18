@@ -1,22 +1,50 @@
 {
-  "version": "2026-10-18-approved-line-partner-retail-v1",
+  "version": "2026-10-18-all-approved-partner-retail-and-package-label-v2",
   "currency": "TWD",
-  "scope": "LINE OA 商品卡之已核准末端零售價（不含成本、批發價、專屬優惠）",
-  "policy": "只展示由使用者確認的末端零售價格；未知價格一律人工詢價，不得推算。丹參系列為六款每盒同價，不是第七款可獨立結帳商品。",
+  "scope": "LINE OA 商品卡：包裝印有建議售價才標建議售價，其餘用售價；使用者已確認的優惠價獨立標示",
+  "policy": "優先包裝標示與最新使用者確認價格；有明確建議售價包裝證據才用建議售價，無則用售價。不得公開成本批發價、推算未知金額；丹參系列六款各一盒480元，不新增第七款。",
   "products": {
     "danshen-tea-collection": {
       "price": 480,
       "unit": "盒",
-      "label": "六款各 NT$480／盒",
+      "label": "售價 NT$480／盒（六款各一盒）",
       "confirmed": true,
-      "source": "2026-10-18 使用者確認，ERP data/danshen-tea-price-authority-20261018.json；LINE partner-inquiry-catalog.json 系列政策"
+      "source": "2026-10-18 使用者確認，ERP data/danshen-tea-price-authority-20261018.json；LINE partner-inquiry-catalog.json 系列政策",
+      "priceType": "sale"
     },
     "guilu-vitality": {
       "price": 1800,
       "unit": "盒",
-      "label": "末端售價 NT$1,800／盒",
+      "label": "售價 NT$1,800／盒",
       "confirmed": true,
-      "source": "使用者先前確認：龜鹿活力飲成本900、批發1200、零售1800；僅採末端零售價"
+      "source": "使用者先前確認：龜鹿活力飲成本900、批發1200、零售1800；僅採末端零售價",
+      "priceType": "sale"
+    },
+    "jinan-sisheng-siwuyin": {
+      "price": 1000,
+      "unit": "盒",
+      "priceType": "sale",
+      "label": "售價 NT$1,000／盒",
+      "confirmed": true,
+      "source": "2026-10-18 使用者確認：參仲四物飲12瓶／盒、售價1000元；未核實包裝有建議售價字樣"
+    },
+    "royalherb-erzhenbao-64": {
+      "price": 13800,
+      "unit": "盒",
+      "priceType": "sale",
+      "label": "售價 NT$13,800／盒\n優惠價 NT$12,000／盒",
+      "promotionPrice": 12000,
+      "confirmed": true,
+      "source": "2026-10-18 使用者確認：二珍寶紫盒定價13800元、優惠價12000元；包裝建議售價字樣未核實"
+    },
+    "uboss-sizhenbao": {
+      "price": 14800,
+      "unit": "盒",
+      "priceType": "suggested",
+      "label": "建議售價 NT$14,800／盒\n線上優惠價 NT$12,000／盒",
+      "promotionPrice": 12000,
+      "confirmed": true,
+      "source": "2026-10-18 使用者確認四珍寶定價14800元、線上優惠價12000元；此前包裝貼紙核對紀錄標示建議售價14800元"
     }
   }
 }
