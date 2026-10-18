@@ -50,15 +50,39 @@ function chosen(id,absoluteUrl) {
         {type:"text",text:"目前選的是這一種口味、單盒計價。可查看原廠包裝及原料，再向客服確認數量與供貨。",size:"sm",wrap:true,color:"#555555"},
       ]},
       footer:{type:"box",layout:"vertical",spacing:"sm",contents:[
-        {type:"button",style:"primary",color:"#7B1E1E",action:{type:"message",label:"詢問訂購這款",text:`丹參訂購｜${p.id}`}},
+        {type:"button",style:"primary",color:"#7B1E1E",action:{type:"message",label:"選擇訂購盒數",text:`丹參數量｜${p.id}`}},
         {type:"button",style:"secondary",action:{type:"uri",label:"查看這款介紹",uri:absoluteUrl(p.publicPage)}},
         {type:"button",style:"secondary",action:{type:"message",label:"重新選擇口味",text:"丹參茶包系列"}},
       ]},
     },
   };
 }
-function inquiry(id) {
-  const p=byId(id);
-  return p ? `丹參茶包訂購詢問\n已選口味：${p.name}\n${priceText()}\n請告訴客服需要幾盒，由人工確認庫存、運費及訂購方式。` : null;
+function quantityMenu(id) {
+  const p=byId(id); if(!p)return null;
+  return {
+    type:"flex",altText:`${p.name}｜選擇盒數，每盒 NT$480`,
+    contents:{type:"bubble",size:"kilo",
+      body:{type:"box",layout:"vertical",spacing:"sm",contents:[
+        {type:"text",text:p.name,weight:"bold",size:"xl",color:"#7B1E1E",wrap:true},
+        {type:"text",text:priceText(),size:"md",wrap:true},
+        {type:"text",text:"請選擇需要的盒數，單一口味每盒 NT$480。運費、現貨與實際付款由人工確認。",size:"sm",wrap:true,color:"#555555"},
+      ]},
+      footer:{type:"box",layout:"vertical",spacing:"sm",contents:[
+        ...[1,2,3,5].map(n=>({type:"button",style:n===1?"primary":"secondary",
+          ...(n===1?{color:"#7B1E1E"}:{}),
+          action:{type:"message",label:`${n} 盒｜NT${(480*n).toLocaleString("en-US")}`,text:`丹參訂購｜${p.id}｜${n}`}})),
+        {type:"button",style:"secondary",action:{type:"message",label:"其他數量洽客服",text:`丹參訂購｜${p.id}｜其他`}},
+        {type:"button",style:"secondary",action:{type:"message",label:"重新選擇口味",text:"丹參茶包系列"}},
+      ]},
+    },
+  };
 }
-module.exports={IDS,PRICE,variants,byId,priceText,menu,chosen,inquiry};
+function inquiry(id, amount) {
+  const p=byId(id); if(!p)return null;
+  const n=Number(amount);
+  const valid=Number.isInteger(n)&&n>=1&&n<=99&&String(n)===String(amount);
+  const quantity=valid ? `選購盒數：${n} 盒\n商品小計：NT${(n*480).toLocaleString("en-US")}（未含運費）`
+    : `選購盒數：${amount==="其他"?"其他數量，待客服確認":"尚未指定，請向客服確認"}`;
+  return `丹參茶包訂購詢問\n已選口味：${p.name}\n${priceText()}\n${quantity}\n請由人工確認庫存、運費及訂購方式；這不是已成立的訂單。`;
+}
+module.exports={IDS,PRICE,variants,byId,priceText,menu,chosen,quantityMenu,inquiry};
