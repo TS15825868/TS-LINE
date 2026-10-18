@@ -516,7 +516,7 @@ function qtyMenu(product) {
   buttons.push({ label: "人工客服", text: "我要人工客服" });
   return flexCard(
     `${product.displayName}｜${canOrder ? "選擇數量" : "詢問數量"}`,
-    `${productSpecText(product)}\n${orderNoticeForProduct(product)}\n${canOrder ? "以下為目前核准末端售價；活動優惠請向客服確認。" : "售價、供貨及優惠由人工客服確認。"}`,
+    `${productSpecText(product)}\n${canOrder ? "請選擇購買數量，確認後加入購物車。" : "請選擇數量，再由客服確認售價與供貨。"}`,
     buttons
   );
 }
