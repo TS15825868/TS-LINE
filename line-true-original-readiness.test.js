@@ -45,7 +45,7 @@ for (const product of data.products) {
   assert.notEqual(product.image, product.dmImage, `${product.id}產品主圖不得拿DM代替`);
 }
 
-assert.equal(data.products.find((p)=>p.id==="guilu-drink-30")?.usage?.[0], "每日 1–2 罐");
+assert.match(String(data.products.find((p)=>p.id==="guilu-drink-30")?.usage?.[0] || ""), /^每日\s*1[～–-]2\s*罐(?:，可依個人需求調整)?$/, "30cc 應符合新版正式用量與彈性說明");
 assert.equal(data.products.find((p)=>p.id==="guilu-drink-180")?.usage?.[0], "每日一包");
 
 assert.ok(String(visual.PRODUCT_IMAGE_VERSION || "").trim(), "Flex產品媒體必須有目前版本識別");
