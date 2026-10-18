@@ -21,7 +21,8 @@ for (const product of publicPartner.products) {
   assert.ok(product.name && product.specification, `${product.id} 資料不完整`);
   assert.equal(product.price, undefined, `${product.id} 不得自創末端售價`);
 }
-assert.ok(source.includes("...publicCatalog.current().map(partnerProductBubble)"), "全部核准商品未進左右滑動 Flex carousel");
+assert.ok(source.includes("...otherCards.map(partnerProductBubble)"), "全部核准商品未進左右滑動 Flex carousel");
+assert.ok(source.includes("!coreIds.has(product.id)"), "官網新增商品不得與核心商品卡重複");
 assert.ok(source.includes("const hasNextPage = remaining.length > 60"), "商品超過單次 LINE 回覆上限時不得截斷或報錯");
 assert.ok(source.includes("const nextProductsMatch"), "大量新品必須有下一頁導覽");
 assert.ok(source.includes("await publicCatalog.refresh()"), "LINE 查詢商品時必須同步官網最新已核准商品");
@@ -85,6 +86,7 @@ for (const product of publicPartner.products) {
 }
 assert.match(mediaSource, /Date\.now\(\) - cached\.createdAt >= 15 \* 60 \* 1000/, "新品更換原圖需要快取失效機制");
 assert.ok(mediaSource.includes('role === "partner-product" ? "public, max-age=900'), "原廠商品照片 HTTP 快取不應鎖定一天");
+assert.ok(source.includes('PARTNER_CAROUSEL_VERSION + ":" + product.image'), "正式原圖換路徑後 LINE 圖片網址必須改變");
 
 // 用實際 productCarousel 函式模擬商品增加，避免未來超過 12 張直接失敗。
 const vm = require("node:vm");
@@ -101,6 +103,9 @@ const ctx = {
 const render = vm.runInNewContext("(" + source.slice(start,end).replace("function productCarousel", "function") + ")", ctx);
 const currentRender = render();
 assert.equal(currentRender.contents?.contents?.length, ids.length, "目前 LINE 公開商品應同組滑動");
+ctx.publicCatalog.current = () => [{id:lineProducts[0].id}, ...publicPartner.products];
+const deduped = render();
+assert.equal(deduped.contents.contents.length, ids.length, "LINE 重複核心商品不得出現第二張卡");
 ctx.publicCatalog.current = () => Array.from({length:15},(_,i)=>({id:"new-"+i}));
 const moreThanTwelve = render();
 assert.equal(moreThanTwelve.length,2,"超過 12 張應自動拆成多個左右滑動 carousel");
