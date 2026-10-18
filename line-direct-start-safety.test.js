@@ -58,8 +58,16 @@ assert.equal(customerData.runtime?.productIdentitySource, "products-v3-user-appr
 assert.equal(customerData.runtime?.productsV2Use, "legacy-reference-only");
 assert.equal(customerData.runtime?.productScalePolicy, "uniform-only-no-equal-height-equal-width");
 assert.equal(customerData.runtime?.promotionQuantityPolicy, "promotion-qty-must-appear-within-first-four-options");
-assert.equal(customerData.products.find(p=>p.id==='guilu-drink-30').quoteOnly,true);
-assert.equal(customerData.products.find(p=>p.id==='guilu-drink-180').quoteOnly,true);
+// LINE 商品卡可顯示銷售母資料核准末端售價；非核准品項一律人工詢價。
+const lineSales = require("./line-sales-master.json");
+const { applyMaster } = require("./product-sales-master");
+const approvedCustomerData = safety.normalizeProductPhotos(applyMaster(JSON.parse(rawText)));
+for (const product of approvedCustomerData.products) {
+  const rule = lineSales.products?.[product.id] || {};
+  const approved = rule.quoteOnly === false && Number(rule.price) > 0;
+  assert.equal(product.quoteOnly, !approved, `${product.id} LINE 售價核准狀態`);
+  assert.equal(product.price, approved ? Number(rule.price) : undefined, `${product.id} LINE 末端售價`);
+}
 
 assert.ok(String(safety.formalSourceUrl("trial")).includes("trial-poster-small-boss-official-v20260814.jpg"));
 assert.match(safety.formalLineTrialImageUrl(), /\/assets\/formal-trial\/trial\.jpg\?v=/);
