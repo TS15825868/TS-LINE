@@ -80,6 +80,7 @@ const DATA = loadData();
 const PARTNER_CAROUSEL_DATA = require("./line-partner-public-carousel.json");
 const PARTNER_CAROUSEL_VERSION = PARTNER_CAROUSEL_DATA.version;
 const publicCatalog = require("./line-public-catalog-runtime");
+const danshenMenu = require("./line-danshen-flavor-menu");
 const partnerRetailAuthority = require("./line-partner-retail-authority.json");
 function partnerRetail(product) {
   const approved = partnerRetailAuthority.products?.[product.id];
@@ -422,6 +423,7 @@ function productBubble(product) {
 }
 
 function partnerProductBubble(product) {
+  const isDanshen = product.id === "danshen-tea-collection";
   const productUrl = absoluteUrl(product.page);
   const retail = partnerRetail(product);
   return {
@@ -451,7 +453,7 @@ function partnerProductBubble(product) {
       spacing: "sm",
       contents: [
         { type: "button", style: "primary", color: "#7B1E1E",
-          action: { type: "message", label: "詢問這項商品", text: `詢問商品｜${product.id}` } },
+          action: { type: "message", label: isDanshen ? "選擇六種口味" : "詢問這項商品", text: isDanshen ? "丹參茶包系列" : `詢問商品｜${product.id}` } },
         { type: "button", style: "secondary",
           action: { type: "uri", label: "商品詳細介紹", uri: productUrl } },
         { type: "button", style: "secondary",
@@ -1286,6 +1288,27 @@ async function handleMessage(event) {
   const nextProductsMatch = text.match(/^商品下一頁｜(\d+)$/);
   if (nextProductsMatch) return reply(event.replyToken, productCarousel(Number(nextProductsMatch[1])));
 
+  // 丹參茶包商品總覽、六款口味、單一口味確認與詢問訂購，均維持每盒480元。
+  if (/^(丹參茶|丹參茶包|丹參茶包系列)$/.test(text) || text === "詢問商品｜danshen-tea-collection") {
+    return reply(event.replyToken, danshenMenu.menu());
+  }
+  const flavorMatch = text.match(/^選擇丹參口味｜([a-z0-9-]+)$/);
+  if (flavorMatch) {
+    const selected = danshenMenu.chosen(flavorMatch[1], absoluteUrl);
+    return reply(event.replyToken, selected || danshenMenu.menu());
+  }
+  const teaInquiryMatch = text.match(/^丹參訂購｜([a-z0-9-]+)$/);
+  if (teaInquiryMatch) {
+    const summary = danshenMenu.inquiry(teaInquiryMatch[1]);
+    return reply(event.replyToken, summary
+      ? textMsg(summary, [
+          {label:"人工客服",text:"我要人工客服"},
+          {label:"重新選口味",text:"丹參茶包系列"},
+          {label:"查看商品",uri:absoluteUrl("product-danshen-tea.html#"+teaInquiryMatch[1])},
+        ])
+      : danshenMenu.menu());
+  }
+
   const partnerInquiryMatch = text.match(/^詢問商品｜([^｜]+)$/);
   if (partnerInquiryMatch) {
     const product = publicCatalog.current().find(item => item.id === partnerInquiryMatch[1]);
@@ -1339,21 +1362,9 @@ async function handleMessage(event) {
 
   if (state.checkout) return continueCheckout(event, state, text);
 
-  const teaVariants = {
-    '臺灣丹參玫瑰果茶': 'jianfeng-rose-fruit-tea',
-    '臺灣丹參懈悠活養生茶': 'jianfeng-leisure-tea',
-    '武大漢丹參茶': 'jianfeng-wudahan-tea',
-    '臺灣丹參纖體茶': 'jianfeng-fiber-tea',
-    '臺灣白茶丹參飲': 'jianfeng-white-tea',
-    '臺灣丹參舒活茶': 'jianfeng-refresh-tea',
-  };
-  if (/^(丹參茶|丹參茶包|丹參茶包系列)$/.test(text) || teaVariants[text]) {
-    const section = teaVariants[text] ? '#' + teaVariants[text] : '';
-    return reply(event.replyToken, flexCard(text in teaVariants ? text : '丹參茶包系列',
-      '丹參茶包每盒 NT$480，每盒為單一款口味、內含 3g×10包。系列共六款口味可選，並非一盒含六款，也不是 NT$480 買六盒。可查看各款實物照片、規格與原料；如需確認現貨，請洽人工客服。', [
-        { label: '查看茶包介紹', uri: absoluteUrl('product-danshen-tea.html' + section) },
-        { label: '人工商品諮詢', text: '我要人工客服' }
-      ]));
+  if (danshenMenu.variants().some(p => p.name === text)) {
+    const chosen = danshenMenu.variants().find(p => p.name === text);
+    return reply(event.replyToken, danshenMenu.chosen(chosen.id, absoluteUrl));
   }
 
   // 優惠價不在自動回覆中揭露，交由客服核對活動資格及購買數量。
