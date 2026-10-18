@@ -80,6 +80,11 @@ const DATA = loadData();
 const PARTNER_CAROUSEL_DATA = require("./line-partner-public-carousel.json");
 const PARTNER_CAROUSEL_VERSION = PARTNER_CAROUSEL_DATA.version;
 const publicCatalog = require("./line-public-catalog-runtime");
+const partnerRetailAuthority = require("./line-partner-retail-authority.json");
+function partnerRetail(product) {
+  const approved = partnerRetailAuthority.products?.[product.id];
+  return approved?.confirmed === true && Number.isFinite(Number(approved.price)) && Number(approved.price) > 0 ? approved : null;
+}
 
 function validateData(data) {
   if (!data || typeof data !== "object") throw new Error("data.json 必須是 JSON 物件");
@@ -418,6 +423,7 @@ function productBubble(product) {
 
 function partnerProductBubble(product) {
   const productUrl = absoluteUrl(product.page);
+  const retail = partnerRetail(product);
   return {
     type: "bubble",
     size: "kilo",
@@ -436,7 +442,7 @@ function partnerProductBubble(product) {
       spacing: "md",
       contents: [
         { type: "text", text: product.name, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
-        { type: "text", text: `規格：${product.specification}\n售價與供貨請洽 LINE 客服確認`, size: "sm", color: "#555555", wrap: true },
+        { type: "text", text: `規格：${product.specification}\n${retail ? retail.label : "末端售價請向 LINE 客服確認"}\n供貨與個別優惠請洽 LINE 客服`, size: "sm", color: "#555555", wrap: true },
       ],
     },
     footer: {
@@ -1282,8 +1288,9 @@ async function handleMessage(event) {
   if (partnerInquiryMatch) {
     const product = publicCatalog.current().find(item => item.id === partnerInquiryMatch[1]);
     if (!product) return reply(event.replyToken, textMsg("找不到這項商品，請重新查看產品。", mainQuick()));
+    const retail = partnerRetail(product);
     return reply(event.replyToken, textMsg(
-      `已選擇：${product.name}\n規格：${product.specification}\n請由仙加味人工客服確認末端售價、供貨與訂購方式。`,
+      `已選擇：${product.name}\n規格：${product.specification}\n${retail ? retail.label : "末端售價請向 LINE 客服確認"}\n供貨、優惠及訂購方式請由仙加味人工客服確認。`,
       [{ label: "人工客服", text: "我要人工客服" }, { label: "商品詳細介紹", uri: absoluteUrl(product.page) }, { label: "全部商品", text: "看產品" }]
     ));
   }
