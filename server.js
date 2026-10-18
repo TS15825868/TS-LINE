@@ -145,7 +145,7 @@ function orderNoticeForProduct(product) {
 
 function orderNoticeForCombo(combo) {
   const products = (combo?.products || []).map((item) => getProduct(item.productId)).filter(Boolean);
-  if (!products.length) return MIXED_ORDER_NOTICE;
+  if (!products.length) return cart.some(item => item.partner) ? "其他商品依實際庫存安排，出貨與配送由客服確認。" : MIXED_ORDER_NOTICE;
   const hasDrink = products.some((product) => product.fulfillmentType === "made-to-order-drink" || product.readyStock === false);
   const hasReady = products.some((product) => product.fulfillmentType !== "made-to-order-drink" && product.readyStock !== false);
   if (hasDrink && hasReady) return MIXED_ORDER_NOTICE;
