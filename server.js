@@ -568,7 +568,7 @@ function cartFlex(state) {
   if (!state.cart.length) {
     return buildCartCard("目前還沒有選購商品，請點「看產品」開始選購。", [
       { label: "看產品", text: "看產品" },
-      { label: "價格方案", text: "價格方案" },
+      { label: "人工客服", text: "我要人工客服" },
     ]);
   }
 
