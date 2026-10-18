@@ -42,8 +42,12 @@ function seedInventory(readStore, writeStore) {
         spec: String(product.size || product.spec || ""),
         unit: String(product.unit || current.unit || "件"),
         // Public catalogue is quote-only; never overwrite private ERP prices here.
-        offers: promotions.offers,
-        promotionTexts: promotions.promotionTexts,
+        // Quote-only public data does not carry private promotion authority.
+        // Preserve any confirmed internal promotions instead of wiping them.
+        ...(promotions.quoteOnly ? {} : {
+          offers: promotions.offers,
+          promotionTexts: promotions.promotionTexts,
+        }),
         quoteOnly: promotions.quoteOnly,
       };
       let changed = false;
