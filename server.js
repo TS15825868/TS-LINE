@@ -355,7 +355,7 @@ async function reply(token, messages) {
 function productBubble(product) {
   const retailPrice = Number(product.price);
   const hasApprovedRetailPrice = Number.isFinite(retailPrice) && retailPrice > 0 && product.quoteOnly !== true;
-  const priceLine = hasApprovedRetailPrice ? `末端售價：${money(retailPrice)}` : "末端售價：請洽 LINE 客服確認";
+  const priceLine = hasApprovedRetailPrice ? `零售價：${money(retailPrice)}` : "售價：請洽 LINE 客服確認";
   const approvedOffers = hasApprovedRetailPrice && Array.isArray(product.offers) ? product.offers.filter(offer => Number(offer.qty) > 0 && Number.isFinite(Number(offer.total)) && Number(offer.total) >= 0 && String(offer.label || "").trim()) : [];
   const offers = approvedOffers.length ? `\n公開活動：${approvedOffers.map(offer => `${offer.label} ${money(offer.total)}`).join("；")}` : "";
   const productUrl = absoluteUrl(product.page || "products.html");
@@ -387,7 +387,7 @@ function productBubble(product) {
           color: "#555555",
           wrap: true,
         },
-        { type: "text", text: orderNoticeForProduct(product), size: "sm", color: "#7B1E1E", weight: "bold", wrap: true },
+        { type: "text", text: product.fulfillmentType === "made-to-order-drink" ? "接單製作，約 5～7 個工作天出貨；配送時間另計。" : "依現貨安排出貨，配送時間另計。", size: "xs", color: "#666666", wrap: true },
       ],
     },
     footer: {
@@ -439,10 +439,9 @@ function productMenuReply() {
     productCarousel(),
     flexCard(
       "仙加味｜完整商品平台",
-      "除了仙加味自有品牌，也可在官網瀏覽其他廠牌的商品圖片、規格與介紹。公開頁不顯示價格；商品供貨、門市服務及適用的交易方式由 LINE 人工確認。",
+      "所有已正式上架商品可在官網統一瀏覽圖片、規格與介紹。商品價格、供貨及訂購問題，歡迎透過 LINE 洽詢。",
       [
         { label: "全部商品總覽", uri: absoluteUrl("products.html") },
-        { label: "其他廠牌商品", uri: absoluteUrl("products.html#partner-brand-catalog") },
         { label: "人工商品諮詢", text: "我要人工客服" },
       ]
     ),
