@@ -928,7 +928,7 @@ function faqTopicReply(topic) {
     ? [{label:"配送付款",text:"配送付款"},{label:"人工客服",text:"我要人工客服"}]
     : [{label:"其他商品",text:"其他廠牌"},{label:"人工客服",text:"我要人工客服"}];
   const examples = topic === "商品與規格" ? "可輸入：龜鹿膏、龜鹿飲30cc、鹿茸粉、丹參茶包系列。"
-    : topic === "價格與優惠" ? "丹參系列六款均為 NT$480／盒；其餘商品請用「價格方案」查看。"
+    : topic === "價格與優惠" ? "丹參茶包單盒售價 NT$480，六款口味可選、每盒獨立計價；其餘商品請用「價格方案」查看。"
     : topic === "配送與付款" ? "實際付款、運費、到貨時間由客服依訂單確認。"
     : "可輸入原廠正式商品名稱，例如參仲四物飲、二珍寶、四珍寶。";
   return {type:"flex",altText:row[1],contents:mascotBubble(row[1],row[2]+"\\n"+examples,buttons,"faq")};
@@ -1350,7 +1350,7 @@ async function handleMessage(event) {
   if (/^(丹參茶|丹參茶包|丹參茶包系列)$/.test(text) || teaVariants[text]) {
     const section = teaVariants[text] ? '#' + teaVariants[text] : '';
     return reply(event.replyToken, flexCard(text in teaVariants ? text : '丹參茶包系列',
-      '丹參系列六款茶包，每款 3g×10包／盒，標準售價均為 NT$480／盒。可查看各款實物照片、規格與原料；如需確認優惠活動及現貨，請洽人工客服。', [
+      '丹參茶包每盒 NT$480，每盒為單一款口味、內含 3g×10包。系列共六款口味可選，並非一盒含六款，也不是 NT$480 買六盒。可查看各款實物照片、規格與原料；如需確認現貨，請洽人工客服。', [
         { label: '查看茶包介紹', uri: absoluteUrl('product-danshen-tea.html' + section) },
         { label: '人工商品諮詢', text: '我要人工客服' }
       ]));
