@@ -1330,7 +1330,7 @@ async function handleMessage(event) {
     }));
     buttons.push({ label: "人工客服", text: "我要人工客服" });
     return reply(event.replyToken, flexCard(`${product.name}｜選擇數量`,
-      `${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n請選擇數量，由客服確認訂購與配送。`, buttons));
+      `${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n點選盒數即可繼續。`, buttons));
   }
 
   const partnerQtyInquiryMatch = text.match(/^詢問其他商品數量｜([^｜]+)｜(\d+)$/);
