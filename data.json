@@ -155,7 +155,11 @@
       "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
       "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-drink-30cc.html",
       "package": "小玻璃罐、裸罐、無貼紙；不可更換瓶型、不可任意加標籤、不可放大成一般飲料瓶",
-      "usageAdjustment": "可依個人需求調整"
+      "usageAdjustment": "可依個人需求調整",
+      "price": 60,
+      "priceConfirmed": true,
+      "internalStandardRetailPriceTWD": 60,
+      "priceSource": "2026-10-18使用者確認"
     },
     {
       "id": "guilu-drink-180",
@@ -222,7 +226,11 @@
       "usagePrimary": "每日一包",
       "usageTiming": "飲用時間可依個人使用習慣與作息時間安排",
       "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-drink-180cc.html",
-      "package": "狹長直立鋁袋；維持正式比例，不可生成巨大包裝"
+      "package": "狹長直立鋁袋；維持正式比例，不可生成巨大包裝",
+      "price": 200,
+      "priceConfirmed": true,
+      "internalStandardRetailPriceTWD": 200,
+      "priceSource": "2026-10-18使用者確認"
     },
     {
       "id": "luerong-fen",
