@@ -2,14 +2,14 @@
   "version": "2026-10-18-owner-confirmed-er-zhenbao-si-zhenbao-suggested-retail-v3",
   "currency": "TWD",
   "scope": "LINE OA 商品卡：使用者最新確認二珍寶與四珍寶均為建議售價、優惠價；其餘產品依最新核准標示",
-  "policy": "以使用者當前最新明確確認為優先；二珍寶與四珍寶均標示建議售價與優惠價，不可因舊包裝核對狀態或舊測試退回售價；其他品項有確認建議售價者使用建議售價，否則售價。",
+  "policy": "丹參茶包每盒售價 NT$480、單盒選一款口味；六款是六種選擇，不代表一盒內含六款或 NT$480 可買六盒。新品價格須經使用者確認，不得推算；所有商品保留獲核准的標示類型。",
   "products": {
     "danshen-tea-collection": {
       "price": 480,
       "unit": "盒",
-      "label": "售價 NT$480／盒（六款各一盒）",
+      "label": "售價 NT$480／盒（單盒任選一款口味）",
       "confirmed": true,
-      "source": "2026-10-18 使用者確認，ERP data/danshen-tea-price-authority-20261018.json；LINE partner-inquiry-catalog.json 系列政策",
+      "source": "2026-10-18 使用者最新明確確認：丹參茶包一盒 NT$480，六款是不同口味選擇；每盒單獨計價，不是六款共 NT$480",
       "priceType": "sale"
     },
     "guilu-vitality": {
