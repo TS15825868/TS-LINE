@@ -357,7 +357,7 @@ function productBubble(product) {
   const hasApprovedRetailPrice = Number.isFinite(retailPrice) && retailPrice > 0 && product.quoteOnly !== true;
   const priceLine = hasApprovedRetailPrice ? `零售價：${money(retailPrice)}` : "售價：請洽 LINE 客服確認";
   const approvedOffers = hasApprovedRetailPrice && Array.isArray(product.offers) ? product.offers.filter(offer => Number(offer.qty) > 0 && Number.isFinite(Number(offer.total)) && Number(offer.total) >= 0 && String(offer.label || "").trim()) : [];
-  const offers = approvedOffers.length ? `\n公開活動：${approvedOffers.map(offer => `${offer.label} ${money(offer.total)}`).join("；")}` : "";
+  const offers = approvedOffers.length ? "\n有活動方案可詢問客服確認適用條件與優惠價。" : "";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
   const productPhotoUrl = absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png");
@@ -1277,6 +1277,14 @@ async function handleMessage(event) {
       ]));
   }
 
+  // 優惠價不在自動回覆中揭露，交由客服核對活動資格及購買數量。
+  if (/^(有優惠嗎|有沒有優惠|優惠|活動優惠|優惠活動|折扣|優惠價|有特價嗎)$/.test(text)) {
+    return reply(event.replyToken, flexCard('優惠與活動諮詢',
+      '商品標準售價可在 LINE 商品介紹查看。活動內容及適用優惠價依商品、購買數量與當期條件確認，請告訴我們商品名稱及預計購買數量，由客服協助確認。',
+      [{ label: '詢問人工客服', text: '我要人工客服' }, { label: '查看商品', text: '看產品' }]
+    ));
+  }
+
   const partnerInquiry = require('./partner-inquiry.js').findPartnerInquiry(text);
   if (partnerInquiry) {
     const license = partnerInquiry.medicine?.classification === 'licensed-traditional-medicine'
@@ -1299,7 +1307,7 @@ async function handleMessage(event) {
         '這款為其他廠牌食品，可先查看原廠商品資訊。' +
         (food.size ? '\n包裝規格：' + food.size + '。' : '') +
         ingredients +
-        '\n售價、現貨批次、購買及配送請由仙加味人工客服確認。此處不提供療效或個人醫療判斷。',
+        '\n售價、現貨批次、購買及配送請由人工客服確認。此處不提供療效或個人醫療判斷。',
         [
           ...(partnerInquiry.publicPage && food.websitePublic
             ? [{ label: '查看商品介紹', uri: absoluteUrl(partnerInquiry.publicPage) }] : []),
