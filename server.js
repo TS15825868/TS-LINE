@@ -1326,7 +1326,7 @@ async function handleMessage(event) {
     const price = Number(retail?.promotionPrice || retail?.price || 0);
     const buttons = [1, 2, 3].map(qty => ({
       label: price > 0 ? `${qty}${unit}｜${money(price * qty)}` : `${qty}${unit}`,
-      text: `詢問其他商品數量｜${product.id}｜${qty}`
+      text: `加入其他商品購物車｜${product.id}｜${qty}`
     }));
     buttons.push({ label: "人工客服", text: "我要人工客服" });
     return reply(event.replyToken, flexCard(`${product.name}｜選擇數量`,
