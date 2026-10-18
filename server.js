@@ -79,7 +79,7 @@ function finishWebhookEvent(event, success) {
 const DATA = loadData();
 const PARTNER_CAROUSEL_DATA = require("./line-partner-public-carousel.json");
 const PARTNER_CAROUSEL_VERSION = PARTNER_CAROUSEL_DATA.version;
-const PARTNER_CAROUSEL = PARTNER_CAROUSEL_DATA.products.filter(p => p && p.id && p.name && p.image && p.page);
+const publicCatalog = require("./line-public-catalog-runtime");
 
 function validateData(data) {
   if (!data || typeof data !== "object") throw new Error("data.json 必須是 JSON 物件");
@@ -456,7 +456,7 @@ function partnerProductBubble(product) {
 }
 
 function productCarousel(start = 0) {
-  const allPublicProducts = [...DATA.products.map(productBubble), ...PARTNER_CAROUSEL.map(partnerProductBubble)];
+  const allPublicProducts = [...DATA.products.map(productBubble), ...publicCatalog.current().map(partnerProductBubble)];
   const startIndex = Math.max(0, Number.isInteger(start) ? start : 0);
   const remaining = allPublicProducts.slice(startIndex);
   if (!remaining.length) return textMsg("目前沒有更多公開商品，請重新查看全部商品。", [{ label: "全部商品", text: "看產品" }]);
@@ -1232,7 +1232,7 @@ async function handleLegacyPostback(event) {
   const state = getState(event.source.userId || "anonymous");
   const data = parsePB(event.postback?.data || "");
 
-  if (data.action === "products") return reply(event.replyToken, productMenuReply());
+  if (data.action === "products") { await publicCatalog.refresh(); return reply(event.replyToken, productMenuReply()); }
   if (data.action === "prices") return reply(event.replyToken, priceCarousel());
   if (data.action === "recommend") return reply(event.replyToken, recommendReply());
   if (data.action === "cart") return reply(event.replyToken, cartFlex(state));
@@ -1273,13 +1273,14 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+  if (/^(?:看產品|查看產品|看商品|產品|直接下單|直接購買|我要下單|立即下單|開始下單|我要買|商品下一頁｜|詢問商品｜)/.test(text)) await publicCatalog.refresh();
 
   const nextProductsMatch = text.match(/^商品下一頁｜(\d+)$/);
   if (nextProductsMatch) return reply(event.replyToken, productCarousel(Number(nextProductsMatch[1])));
 
   const partnerInquiryMatch = text.match(/^詢問商品｜([^｜]+)$/);
   if (partnerInquiryMatch) {
-    const product = PARTNER_CAROUSEL.find(item => item.id === partnerInquiryMatch[1]);
+    const product = publicCatalog.current().find(item => item.id === partnerInquiryMatch[1]);
     if (!product) return reply(event.replyToken, textMsg("找不到這項商品，請重新查看產品。", mainQuick()));
     return reply(event.replyToken, textMsg(
       `已選擇：${product.name}\n規格：${product.specification}\n請由仙加味人工客服確認末端售價、供貨與訂購方式。`,
