@@ -41,8 +41,7 @@ function seedInventory(readStore, writeStore) {
         name: String(product.displayName || product.name || productId),
         spec: String(product.size || product.spec || ""),
         unit: String(product.unit || current.unit || "件"),
-        price: Number(product.price || 0),
-        originalPrice: Number(product.originalPrice || 0),
+        // Public catalogue is quote-only; never overwrite private ERP prices here.
         offers: promotions.offers,
         promotionTexts: promotions.promotionTexts,
         quoteOnly: promotions.quoteOnly,
@@ -66,8 +65,9 @@ function seedInventory(readStore, writeStore) {
       name: String(product.displayName || product.name || productId),
       spec: String(product.size || product.spec || ""),
       unit: String(product.unit || "件"),
-      price: Number(product.price || 0),
-      originalPrice: Number(product.originalPrice || 0),
+      // No verified retail price in public data; new internal items start as unpriced.
+      price: 0,
+      originalPrice: 0,
       offers: promotions.offers,
       promotionTexts: promotions.promotionTexts,
       quoteOnly: promotions.quoteOnly,
@@ -90,7 +90,7 @@ function seedInventory(readStore, writeStore) {
       id: `act-inventory-${Date.now().toString(36)}`,
       actor: "系統",
       action: "同步產品庫存目錄",
-      detail: `新增 ${added} 項，更新價格、優惠與規格 ${updated} 項`,
+      detail: `新增 ${added} 項，更新商品資料與展示規則 ${updated} 項；內部售價未被公開目錄覆寫`,
       createdAt: new Date().toISOString(),
     });
     writeStore(store);
