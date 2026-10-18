@@ -353,14 +353,8 @@ async function reply(token, messages) {
 }
 
 function productBubble(product) {
-  const retailPrice = Number(product.price);
-  const hasApprovedRetailPrice = Number.isFinite(retailPrice) && retailPrice > 0 && product.quoteOnly !== true;
-  const priceLine = hasApprovedRetailPrice ? `零售價：${money(retailPrice)}` : "售價：請洽 LINE 客服確認";
-  const approvedOffers = hasApprovedRetailPrice && Array.isArray(product.offers) ? product.offers.filter(offer => Number(offer.qty) > 0 && Number.isFinite(Number(offer.total)) && Number(offer.total) >= 0 && String(offer.label || "").trim()) : [];
-  const offers = approvedOffers.length ? "\n有活動方案可詢問客服確認適用條件與優惠價。" : "";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
-  const productPhotoUrl = absoluteUrl(product.officialOriginalImage || product.image || "images/logo.png");
 
   return {
     type: "bubble",
@@ -382,7 +376,7 @@ function productBubble(product) {
         { type: "text", text: product.displayName, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
         {
           type: "text",
-          text: `規格：${productSpecText(product)}\n${product.purpose ? `用途方向：${product.purpose}\n` : ""}${priceLine}${offers}`,
+          text: `規格：${productSpecText(product)}\n${product.purpose ? `用途方向：${product.purpose}\n` : ""}售價與供貨請洽人工客服`,
           size: "sm",
           color: "#555555",
           wrap: true,
@@ -442,41 +436,16 @@ function productMenuReply() {
 }
 
 function priceCarousel() {
-  return textMsg("請先點選商品查看末端售價與已核准的公開活動；實際詢問或下單時，客服可另外確認專屬優惠。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
+  return textMsg("商品售價、供貨與優惠方案請由仙加味 LINE 人工客服確認。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
 }
 
 function qtyMenu(product) {
-  if (product.quoteOnly) return flexCard(`${product.displayName}｜選擇數量`, `${productSpecText(product)}\n請點選數量，不需自行輸入商品代碼。售價、有效優惠及配送方式由人工客服確認。`, [1, 2, 3, 5].map(qty => ({ label: `${qty}${product.unit || "件"}`, text: `詢價數量｜${product.id}｜${qty}` })).concat([{ label: "人工客服", text: "我要人工客服" }]));
   const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
-    ? product.quantityOptions.slice(0, 4)
-    : [1, 2, 3, 5];
-
-  const buttons = options.map((qty) => {
-    const exactOffer = product.offers.find((offer) => Number(offer.qty) === Number(qty));
-    const result = calcItem(product, Number(qty));
-    return {
-      label: exactOffer
-        ? `${exactOffer.label.replace(/（.*?）/g, "")}｜${money(result.total)}`.slice(0, 20)
-        : `${qty}${product.unit || "件"}｜${money(result.total)}`.slice(0, 20),
-      text: `加入購物車｜${product.id}｜${qty}`,
-    };
-  });
-
-  const promotionLines = [];
-  if (product.originalPrice && product.originalPrice > product.price) {
-    promotionLines.push(`單${product.unit || "件"}原價 ${money(product.originalPrice)}，目前優惠價 ${money(product.price)}`);
-  }
-  for (const offer of product.offers) {
-    promotionLines.push(`${offer.label}：${money(offer.total)}`);
-  }
-  if (!promotionLines.length) promotionLines.push("目前無額外數量折扣，依所選數量計算。");
-
-  buttons.push({ label: "返回產品", text: "看產品" });
-  return flexCard(
-    `${product.displayName}｜選擇數量`,
-    `${orderNoticeForProduct(product)}\n\n活動與優惠：\n${promotionLines.map((line) => `・${line}`).join("\n")}\n\n請選擇要加入購物車的數量。`,
-    buttons
-  );
+    ? product.quantityOptions.slice(0, 4) : [1, 2, 3, 5];
+  return flexCard(`${product.displayName}｜詢問數量`,
+    `${productSpecText(product)}\\n${orderNoticeForProduct(product)}\\n售價、供貨及優惠由人工客服確認，請選擇詢問數量。`,
+    options.map(qty => ({label: `${qty}${product.unit || "件"}`, text: `詢價數量｜${product.id}｜${qty}`}))
+      .concat([{label:"人工客服",text:"我要人工客服"}]));
 }
 
 function calcItem(product, qty) {
