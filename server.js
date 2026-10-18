@@ -384,6 +384,7 @@ function productBubble(product) {
       type: "box",
       layout: "vertical",
       spacing: "md",
+      flex: 0,
       contents: [
         { type: "text", text: product.displayName, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
         {
