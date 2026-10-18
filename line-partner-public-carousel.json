@@ -1,0 +1,44 @@
+{
+  "version": "2026-10-18-website-approved-public-products",
+  "sourceRepository": "TS15825868/xianjiawei",
+  "sourceFile": "products.html",
+  "sourceCommit": "f4ba1a73e462602270c25074c040894a06da1370",
+  "displayPolicy": "LINE OA 僅呈現官網已核准公開的實物商品，無核准末端售價時不自動顯示價格或加入購物車；丹參六款合併一張卡。",
+  "products": [
+    {
+      "id": "jinan-sisheng-siwuyin",
+      "image": "images/catalog-owner-final-v20261017/jinan-sisheng-siwuyin-main.webp",
+      "name": "參仲四物飲",
+      "specification": "60毫升 × 12入／盒",
+      "page": "product-jinan-siwuyin.html"
+    },
+    {
+      "id": "danshen-tea-collection",
+      "image": "images/catalog-owner-final-v20261017/danshen-tea-collection-main.webp",
+      "name": "丹參茶包系列",
+      "specification": "3公克／包・10包／盒",
+      "page": "product-danshen-tea.html"
+    },
+    {
+      "id": "guilu-vitality",
+      "image": "images/catalog-owner-final-v20261017/guilu-vitality-main.webp",
+      "name": "龜鹿活力飲（葡萄糖胺）",
+      "specification": "60毫升×12罐／盒",
+      "page": "product-guilu-vitality.html"
+    },
+    {
+      "id": "uboss-sizhenbao",
+      "image": "images/catalog-owner-final-v20261017/uboss-sizhenbao-main.webp",
+      "name": "四珍寶精華膏湯塊",
+      "specification": "600g±15g／盒｜64塊",
+      "page": "product-four-treasures.html"
+    },
+    {
+      "id": "royalherb-erzhenbao-64",
+      "image": "images/catalog-owner-final-v20261017/royalherb-erzhenbao-64-main.webp",
+      "name": "二珍寶精華膏湯塊",
+      "specification": "每盒 64 塊｜總重 600g±15g",
+      "page": "product-er-zhen-bao.html"
+    }
+  ]
+}
