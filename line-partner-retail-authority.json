@@ -1,0 +1,22 @@
+{
+  "version": "2026-10-18-approved-line-partner-retail-v1",
+  "currency": "TWD",
+  "scope": "LINE OA 商品卡之已核准末端零售價（不含成本、批發價、專屬優惠）",
+  "policy": "只展示由使用者確認的末端零售價格；未知價格一律人工詢價，不得推算。丹參系列為六款每盒同價，不是第七款可獨立結帳商品。",
+  "products": {
+    "danshen-tea-collection": {
+      "price": 480,
+      "unit": "盒",
+      "label": "六款各 NT$480／盒",
+      "confirmed": true,
+      "source": "2026-10-18 使用者確認，ERP data/danshen-tea-price-authority-20261018.json；LINE partner-inquiry-catalog.json 系列政策"
+    },
+    "guilu-vitality": {
+      "price": 1800,
+      "unit": "盒",
+      "label": "末端售價 NT$1,800／盒",
+      "confirmed": true,
+      "source": "使用者先前確認：龜鹿活力飲成本900、批發1200、零售1800；僅採末端零售價"
+    }
+  }
+}
