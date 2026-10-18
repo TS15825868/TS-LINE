@@ -250,10 +250,7 @@ function mainQuick() {
   return [
     { label: "申請試喝", text: "申請試喝" },
     { label: "看產品", text: "看產品" },
-    { label: "商品分類", text: "商品分類" },
-    { label: "價格方案", text: "價格方案" },
-    { label: "幫我推薦", text: "幫我推薦" },
-    { label: "搭配組合", text: "搭配組合" },
+    { label: "幫我選產品", text: "幫我推薦" },
     { label: "怎麼使用", text: "怎麼使用" },
     { label: "常見問題", text: "常見問題" },
     { label: "購物車", text: "查看購買清單" },
