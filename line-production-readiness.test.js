@@ -94,8 +94,11 @@ for (const id of visibleIds) {
 for (const id of requiredCurrentIds) {
   assert.equal(official[id]?.specification, specs[id], `${id} authority規格`);
   assert.equal(byId[id]?.specification, specs[id], `${id} runtime規格`);
-  assert.equal(byId[id]?.price, undefined, `${id}公開資料不含售價`);
-  assert.equal(byId[id]?.quoteOnly, true);
+  // 官網公開資料不含售價，但 LINE 商品卡可顯示銷售母資料核准的末端售價。
+  const sales = require("./line-sales-master.json").products?.[id];
+  const approved = sales?.quoteOnly === false && Number(sales?.price) > 0;
+  assert.equal(byId[id]?.quoteOnly, !approved, `${id} LINE 詢價政策`);
+  assert.equal(byId[id]?.price, approved ? Number(sales.price) : undefined, `${id} LINE 末端售價`);
 }
 
 assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
