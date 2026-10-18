@@ -22,6 +22,8 @@ let store = {
     name: "舊名稱",
     price: confidentialPrice,
     originalPrice: confidentialOriginalPrice,
+    offers: [{ qty: 3, total: 270, label: "既有內部活動" }],
+    promotionTexts: ["由 ERP 人工核准"],
     stock: 24,
     reserved: 3,
     lowStock: 5,
@@ -46,6 +48,8 @@ assert.strictEqual(updatedPaste.originalPrice, confidentialOriginalPrice);
 assert.strictEqual(updatedPaste.stock, 24);
 assert.strictEqual(updatedPaste.reserved, 3);
 assert.strictEqual(updatedPaste.quoteOnly, true);
+assert.deepStrictEqual(updatedPaste.offers, [{ qty: 3, total: 270, label: "既有內部活動" }], "Keep authorized ERP promotions");
+assert.deepStrictEqual(updatedPaste.promotionTexts, ["由 ERP 人工核准"]);
 
 const newlyAdded = store.inventory.find(item => item.productId === "guilu-drink-30");
 assert.strictEqual(newlyAdded.price, 0, "Unknown retail price must not be inferred");
@@ -59,4 +63,4 @@ assert.strictEqual(second.added, 0);
 assert.strictEqual(second.updated, 0);
 assert.strictEqual(writes, 1, "Repeated syncing must be idempotent");
 
-console.log("PASS public catalogue sync preserves ERP retail prices and quote-only policy");
+console.log("PASS public catalogue sync preserves internal prices and approved promotions");
