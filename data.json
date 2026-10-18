@@ -131,8 +131,8 @@
       "productionLeadTime": "5～7個工作天",
       "readyStock": false,
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$60／罐",
+      "quoteOnly": false,
       "promotionTexts": [],
       "quantityOptions": [
         1,
@@ -203,8 +203,8 @@
       "productionLeadTime": "5～7個工作天",
       "readyStock": false,
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$200／包",
+      "quoteOnly": false,
       "promotionTexts": [],
       "quantityOptions": [
         1,
