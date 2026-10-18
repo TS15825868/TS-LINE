@@ -1333,6 +1333,25 @@ async function handleMessage(event) {
       `${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n點選盒數即可繼續。`, buttons));
   }
 
+  const partnerCartMatch = text.match(/^加入其他商品購物車｜([^｜]+)｜(\\d+)$/);
+  if (partnerCartMatch) {
+    const product = publicCatalog.current().find(item => item.id === partnerCartMatch[1]);
+    const qty = Number(partnerCartMatch[2]);
+    const retail = product && partnerRetail(product);
+    const price = Number(retail?.promotionPrice || retail?.price || 0);
+    if (!product || !Number.isInteger(qty) || qty < 1 || qty > 99 || !retail || price <= 0)
+      return reply(event.replyToken, textMsg("目前無法加入這項商品，請洽人工客服。", [{ label: "人工客服", text: "我要人工客服" }]));
+    const id = product.id;
+    const item = state.cart.find(entry => entry.id === id);
+    if (item) {
+      item.qty += qty;
+      item.total = item.qty * price;
+    } else {
+      state.cart.push({ id, name: product.name, qty, unit: retail.unit || "盒", total: qty * price, label: "核准售價", partner: true });
+    }
+    return reply(event.replyToken, cartFlex(state));
+  }
+
   const partnerQtyInquiryMatch = text.match(/^詢問其他商品數量｜([^｜]+)｜(\d+)$/);
   if (partnerQtyInquiryMatch) {
     const product = publicCatalog.current().find(item => item.id === partnerQtyInquiryMatch[1]);
