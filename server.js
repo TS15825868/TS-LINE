@@ -878,6 +878,38 @@ function brandStoryReply() {
   );
 }
 
+const APPROVED_FAQ = require("./data/approved-sales-faq-20261018.json");
+const FAQ_TOPICS = [
+  ["商品與規格", "FAQ｜商品與規格", "可查詢龜鹿膏、龜鹿飲30cc／180cc、鹿茸粉及其他正式商品規格。"],
+  ["價格與優惠", "FAQ｜價格與優惠", "標準售價可在 LINE 查詢；優惠價請提供品項與數量，由客服確認。"],
+  ["配送與付款", "FAQ｜配送與付款", "龜鹿飲接單後製作約5～7個工作天出貨；其他品項依現貨及配送方式確認。"],
+  ["其他品牌商品", "FAQ｜其他品牌商品", "其他廠牌保留原廠商品名稱，不代表仙加味自製或代理。"],
+];
+function faqTopicReply(topic) {
+  const row = FAQ_TOPICS.find(x => x[0] === topic);
+  if (!row) return faqReply();
+  const entries = Array.isArray(APPROVED_FAQ.entries) ? APPROVED_FAQ.entries : [];
+  const buttons = topic === "商品與規格"
+    ? [{label:"看產品",text:"看產品"},{label:"丹參茶包",text:"丹參茶包系列"},{label:"人工客服",text:"我要人工客服"}]
+    : topic === "價格與優惠"
+    ? [{label:"價格方案",text:"價格方案"},{label:"詢問優惠",text:"優惠"},{label:"人工客服",text:"我要人工客服"}]
+    : topic === "配送與付款"
+    ? [{label:"配送付款",text:"配送付款"},{label:"人工客服",text:"我要人工客服"}]
+    : [{label:"其他商品",text:"其他廠牌"},{label:"人工客服",text:"我要人工客服"}];
+  const examples = topic === "商品與規格" ? "可輸入：龜鹿膏、龜鹿飲30cc、鹿茸粉、丹參茶包系列。"
+    : topic === "價格與優惠" ? "丹參系列六款均為 NT$480／盒；其餘商品請用「價格方案」查看。"
+    : topic === "配送與付款" ? "實際付款、運費、到貨時間由客服依訂單確認。"
+    : "可輸入原廠正式商品名稱，例如參仲四物飲、二珍寶、四珍寶。";
+  return {type:"flex",altText:row[1],contents:mascotBubble(row[1],row[2]+"\\n"+examples,buttons,"faq")};
+}
+function faqAnswerReply(query) {
+  const entries = Array.isArray(APPROVED_FAQ.entries) ? APPROVED_FAQ.entries : [];
+  const normalized = String(query||"").replace(/\\s/g,"").toLowerCase();
+  const found = entries.find(e => (e.keywords||[]).some(k=>String(k).replace(/\\s/g,"").toLowerCase()===normalized));
+  if (!found) return faqReply();
+  return {type:"flex",altText:"常見問題｜"+found.product,contents:mascotBubble(found.product,found.answer,[{label:"其他常見問題",text:"常見問題"},{label:"人工客服",text:"我要人工客服"}],"faq")};
+}
+
 function faqReply() {
   return {
     type: "flex",
@@ -886,9 +918,10 @@ function faqReply() {
       "常見問題｜小老闆幫你整理",
       "可先查看產品規格、價格方案、使用方式、配送付款與門市資訊。若仍有問題，直接留言即可由人工協助。",
       [
-        { label: "產品與價格", text: "價格方案" },
-        { label: "怎麼使用", text: "怎麼使用" },
-        { label: "配送與付款", text: "配送付款" },
+        { label: "商品與規格", text: "FAQ｜商品與規格" },
+        { label: "價格與優惠", text: "FAQ｜價格與優惠" },
+        { label: "配送與付款", text: "FAQ｜配送與付款" },
+        { label: "其他品牌商品", text: "FAQ｜其他品牌商品" },
         { label: "人工客服", text: "我要人工客服" },
       ],
       "faq"
@@ -1404,6 +1437,9 @@ async function handleMessage(event) {
   if (/^(幫我推薦|怎麼選|不知道怎麼選)$/.test(text)) {
     return reply(event.replyToken, recommendReply());
   }
+
+  if (text.startsWith("FAQ｜")) return reply(event.replyToken, faqTopicReply(text.slice(4)));
+  if (text.startsWith("問答｜")) return reply(event.replyToken, faqAnswerReply(text.slice(3)));
 
   if (/^(常見問題|FAQ|問題整理)$/.test(text)) {
     return reply(event.replyToken, faqReply());
