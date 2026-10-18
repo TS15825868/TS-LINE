@@ -30,8 +30,8 @@ assert.ok(source.includes("return productCarousel();"), "產品入口應直接�
 assert.equal(retail.products["danshen-tea-collection"].price, 480, "六款丹參茶末端售價應為每盒480元");
 assert.equal(retail.products["danshen-tea-collection"].label, "售價 NT$480／盒（單盒任選一款口味）", "每盒只選一款口味，不得寫成六款各一盒");
 assert.ok(!/六款各一盒|六盒共\s*NT\$?480|一盒含六款/.test(retail.products["danshen-tea-collection"].label), "丹參商品卡不得誤導 NT$480 含六盒");
-assert.ok(source.includes("每盒為單一款口味"), "LINE 丹參系列客服回覆須說明一盒是一款口味");
-assert.ok(source.includes("每盒獨立計價"), "LINE 價格 FAQ 須清楚說明單盒獨立計價");
+assert.ok(fs.readFileSync("line-danshen-flavor-menu.js","utf8").includes("單盒只選一種口味"), "LINE 丹參選單須說明單盒單一口味");
+assert.ok(source.includes("丹參茶包單盒售價 NT$480") && source.includes("每盒獨立計價"), "LINE 價格 FAQ 須清楚說明單盒獨立計價");
 
 assert.equal(retail.products["guilu-vitality"].price, 1800, "龜鹿活力飲核准末端售價應為1800元");
 assert.equal(retail.products["jinan-sisheng-siwuyin"].price, 1000, "參仲四物飲核准售價");
