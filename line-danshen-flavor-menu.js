@@ -70,7 +70,7 @@ function quantityMenu(id) {
       footer:{type:"box",layout:"vertical",spacing:"sm",contents:[
         ...[1,2,3,5].map(n=>({type:"button",style:n===1?"primary":"secondary",
           ...(n===1?{color:"#7B1E1E"}:{}),
-          action:{type:"message",label:`${n} 盒｜NT${(480*n).toLocaleString("en-US")}`,text:`丹參訂購｜${p.id}｜${n}`}})),
+          action:{type:"message",label:`${n} 盒｜NT\${(480*n).toLocaleString("en-US")}`,text:`丹參訂購｜${p.id}｜${n}`}})),
         {type:"button",style:"secondary",action:{type:"message",label:"其他數量洽客服",text:`丹參訂購｜${p.id}｜其他`}},
         {type:"button",style:"secondary",action:{type:"message",label:"重新選擇口味",text:"丹參茶包系列"}},
       ]},
@@ -81,7 +81,7 @@ function inquiry(id, amount) {
   const p=byId(id); if(!p)return null;
   const n=Number(amount);
   const valid=Number.isInteger(n)&&n>=1&&n<=99&&String(n)===String(amount);
-  const quantity=valid ? `選購盒數：${n} 盒\n商品小計：NT${(n*480).toLocaleString("en-US")}（未含運費）`
+  const quantity=valid ? `選購盒數：${n} 盒\n商品小計：NT\${(n*480).toLocaleString("en-US")}（未含運費）`
     : `選購盒數：${amount==="其他"?"其他數量，待客服確認":"尚未指定，請向客服確認"}`;
   return `丹參茶包訂購詢問\n已選口味：${p.name}\n${priceText()}\n${quantity}\n請由人工確認庫存、運費及訂購方式；這不是已成立的訂單。`;
 }
