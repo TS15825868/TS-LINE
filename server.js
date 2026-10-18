@@ -1195,6 +1195,22 @@ async function continueCheckout(event, state, text) {
     if (!/確認送出|確認|送出/.test(text)) return reply(event.replyToken, orderSummary(state));
 
     const finalNotice = orderNoticeForCart(state.cart);
+    // 訂單送出前依最新已核准售價重新核對其他商品，避免過期購物車價格流入 CRM。
+    for (const item of state.cart) {
+      if (!item.partner) continue;
+      const product = publicCatalog.current().find(entry => entry.id === item.id);
+      const retail = product && partnerRetail(product);
+      const approvedPrice = Number(retail?.promotionPrice || retail?.price || 0);
+      if (!product || !retail || !Number.isFinite(approvedPrice) || approvedPrice <= 0) {
+        checkout.step = "confirm";
+        return reply(event.replyToken, flexCard("請重新確認商品", "有商品售價已更新或暫停訂購，請聯絡客服確認後再送出。", [{ label: "人工客服", text: "我要人工客服" }, { label: "取消", text: "取消" }]));
+      }
+      const updatedTotal = approvedPrice * item.qty;
+      if (item.total !== updatedTotal) {
+        item.total = updatedTotal;
+        return reply(event.replyToken, orderSummary(state));
+      }
+    }
     const payload = {
       userId: event.source.userId || "",
       cart: state.cart,
