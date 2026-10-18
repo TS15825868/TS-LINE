@@ -199,12 +199,24 @@ function applyMaster(data) {
     };
     merged = {...merged, ...currentAuthorityOverride(product.id, merged)};
     if (!merged.physicalScalePolicy) merged.physicalScalePolicy = "uniform-only-preserve-realistic-product-scale";
-    // Public catalog never carries operational prices, even from older data.json.
-    for (const key of ["price", "originalPrice", "priceText", "originalPriceText"]) delete merged[key];
-    merged.quoteOnly = true;
-    merged.priceLabel = "最新價格請由 LINE 客服文字回覆";
-    merged.offers = [];
-    merged.promotionTexts = [];
+    // LINE OA 商品卡與下單流程可呈現經銷售母資料核准的末端售價。
+    // 不從官網公開母資料或舊 data.json 推定價格；未知售價維持人工詢價。
+    const verifiedPrice = Number(rawOverride.price);
+    const retailApproved = rawOverride.quoteOnly === false &&
+      Number.isFinite(verifiedPrice) && verifiedPrice > 0;
+    if (retailApproved) {
+      merged.price = verifiedPrice;
+      merged.quoteOnly = false;
+      merged.priceLabel = String(rawOverride.priceLabel || "末端售價");
+      merged.offers = normalized.offers;
+      merged.promotionTexts = normalized.promotionTexts;
+    } else {
+      for (const key of ["price", "originalPrice", "priceText", "originalPriceText"]) delete merged[key];
+      merged.quoteOnly = true;
+      merged.priceLabel = "最新價格請由 LINE 客服確認";
+      merged.offers = [];
+      merged.promotionTexts = [];
+    }
     delete merged.variants;
     delete merged.variantSelectionMode;
     return merged;
