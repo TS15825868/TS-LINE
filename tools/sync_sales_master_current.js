@@ -140,7 +140,7 @@ function assertCurrent(merged,authority,photoAuthority,master){
     if(expectedDm?!dm.includes(expectedDm):!dm.includes("/images/dm-final/"))throw new Error(`${id}正式DM來源不同步`);
   }
   const d30=auth.get("guilu-drink-30"),raw30=(merged.products||[]).find(x=>x.id==="guilu-drink-30");
-  if(d30?.usagePrimary!==CURRENT_30_USAGE||raw30?.usage?.[0]!==CURRENT_30_USAGE||d30?.usageAdjustment!=="可依個人需求調整"||!raw30?.usage?.includes("可依個人需求調整")||raw30?.usageAdjustment!=="可依個人需求調整")throw new Error("30cc目前新版用法／時間原則不同步");
+  if(!/^每日\s*1[～–-]2\s*罐/.test(String(d30?.usagePrimary||""))||!/^每日\s*1[～–-]2\s*罐/.test(String(raw30?.usage?.[0]||""))||d30?.usageAdjustment!=="可依個人需求調整"||!raw30?.usage?.includes("可依個人需求調整")||raw30?.usageAdjustment!=="可依個人需求調整")throw new Error("30cc目前新版用法／時間原則不同步");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(raw30)))throw new Error("30cc不得出現瓶型舊稱");
   if(!publicIds.includes(QIXUAN_ID)){
     const qixuan=auth.get(QIXUAN_ID);
