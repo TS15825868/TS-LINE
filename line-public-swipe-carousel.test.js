@@ -56,6 +56,36 @@ assert.ok(source.includes("/assets/partner-product/"), "其他商品圖片沒有
 assert.ok(mediaSource.includes('app.get("/assets/partner-product/:id.jpg"'), "未安裝 LINE JPEG 轉換路由");
 assert.ok(mediaSource.includes('fit: "inside", withoutEnlargement: true'), "正式原圖不得裁切放大");
 
+// 以真正 LINE Flex bubble 產生器檢查價格文字與圖片，而不是只搜尋程式碼片段。
+const vmBubble = require("node:vm");
+const bubbleStart = source.indexOf("function partnerProductBubble(product) {");
+const bubbleEnd = source.indexOf("\nfunction productCarousel(", bubbleStart);
+assert.ok(bubbleStart >= 0 && bubbleEnd > bubbleStart, "LINE 其他產品 bubble 函式不存在");
+const renderBubble = vmBubble.runInNewContext(
+  "(" + source.slice(bubbleStart, bubbleEnd).replace("function partnerProductBubble", "function") + ")",
+  {
+    absoluteUrl: asset => "https://ts15825868.github.io/xianjiawei/" + asset,
+    partnerRetail: product => retail.products[product.id],
+    PARTNER_CAROUSEL_VERSION: publicPartner.version,
+    require: name => name === "./line-image-safety-core"
+      ? { PUBLIC_BASE_URL: "https://ts-line.onrender.com" }
+      : (() => { throw new Error("不允許不相關模組：" + name); })(),
+  }
+);
+for (const product of publicPartner.products) {
+  const bubble = renderBubble(product);
+  assert.equal(bubble.type, "bubble", product.id + " 不是 LINE 商品卡");
+  assert.equal(bubble.hero?.aspectMode, "fit", product.id + " 主圖不得裁切");
+  assert.match(bubble.hero?.url || "", /\/assets\/partner-product\/[a-z0-9-]+\.jpg\?v=/, product.id + " 未使用 LINE JPEG 圖片");
+  const price = retail.products[product.id];
+  const bodyText = bubble.body?.contents?.map(x => x.text).join("\n") || "";
+  assert.ok(bodyText.includes(price.label), product.id + " 顧客卡片價格錯誤");
+  assert.equal(bubble.footer?.contents?.length, 3, product.id + " 商品卡需有三個操作入口");
+  assert.ok(!/成本|批發價/.test(bodyText), product.id + " 顧客端不得出現成本或批發價");
+}
+assert.match(mediaSource, /Date\.now\(\) - cached\.createdAt >= 15 \* 60 \* 1000/, "新品更換原圖需要快取失效機制");
+assert.ok(mediaSource.includes('role === "partner-product" ? "public, max-age=900'), "原廠商品照片 HTTP 快取不應鎖定一天");
+
 // 用實際 productCarousel 函式模擬商品增加，避免未來超過 12 張直接失敗。
 const vm = require("node:vm");
 const start = source.indexOf("function productCarousel(start = 0) {");
