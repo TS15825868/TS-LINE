@@ -1283,7 +1283,12 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
-  if (/^(?:看產品|查看產品|看商品|產品|直接下單|直接購買|我要下單|立即下單|開始下單|我要買|商品下一頁｜|詢問商品｜)/.test(text)) await publicCatalog.refresh();
+  // 商品目錄更新不可阻擋 LINE 即時回覆；先使用上次核准的快照，背景同步新品。
+  if (/^(?:看產品|查看產品|看商品|產品|直接下單|直接購買|我要下單|立即下單|開始下單|我要買|商品下一頁｜|詢問商品｜)/.test(text)) {
+    void publicCatalog.refresh().catch(error => {
+      console.error("[XJW_LINE_CATALOG_REFRESH] 更新失敗：", error?.message || String(error));
+    });
+  }
 
   const nextProductsMatch = text.match(/^商品下一頁｜(\d+)$/);
   if (nextProductsMatch) return reply(event.replyToken, productCarousel(Number(nextProductsMatch[1])));
@@ -1597,6 +1602,27 @@ async function handleEvent(event) {
     return result;
   } catch (error) {
     finishWebhookEvent(event, false);
+    console.error("[XJW_LINE_EVENT_ERROR]", {
+      eventType: event?.type || "unknown",
+      messageType: event?.message?.type || "none",
+      error: String(error?.message || error).slice(0, 700),
+      stack: String(error?.stack || "").slice(0, 1400),
+    });
+    // 事件仍持有有效 replyToken 時嘗試回覆，而不是讓顧客只看到已讀前的沉默。
+    if (event?.replyToken && (event?.type === "message" || event?.type === "postback")) {
+      try {
+        const recovered = await reply(event.replyToken, textMsg(
+          "仙加味商品服務暫時發生錯誤，請稍後再輸入「看產品」，或直接留言給人工客服。造成不便敬請見諒。",
+          [{ label: "重新看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]
+        ));
+        if (recovered) {
+          finishWebhookEvent(event, true);
+          return true;
+        }
+      } catch (fallbackError) {
+        console.error("[XJW_LINE_EVENT_FALLBACK]", String(fallbackError?.message || fallbackError).slice(0, 500));
+      }
+    }
     throw error;
   }
 }
