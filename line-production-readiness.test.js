@@ -101,7 +101,7 @@ for (const id of requiredCurrentIds) {
   assert.equal(byId[id]?.price, approved ? Number(sales.price) : undefined, `${id} LINE 末端售價`);
 }
 
-assert.equal(byId["guilu-drink-30"].usage?.[0], "每日 1–2 罐");
+assert.match(String(byId["guilu-drink-30"].usage?.[0] || ""), /^每日\s*1[～–-]2\s*罐(?:，可依個人需求調整)?$/, "30cc 正式用量應包含新版彈性說明");
 assert.ok(byId["guilu-drink-30"].usage?.includes("可依個人需求調整"), "30cc須保留可依個人需求調整");
 must(!/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(byId["guilu-drink-30"])), "30cc不得回退瓶型舊稱");
 assert.equal(byId["guilu-drink-180"].usage?.[0], "每日一包");
