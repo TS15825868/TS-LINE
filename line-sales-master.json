@@ -82,8 +82,8 @@
         "玻璃罐"
       ],
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$60／罐",
+      "quoteOnly": false,
       "fulfillmentType": "made-to-order-drink",
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
@@ -131,8 +131,8 @@
         "鋁袋"
       ],
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$200／包",
+      "quoteOnly": false,
       "fulfillmentType": "made-to-order-drink",
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
