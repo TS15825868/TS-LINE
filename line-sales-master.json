@@ -33,13 +33,14 @@
         "膏"
       ],
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$2,000／罐",
+      "quoteOnly": false,
       "fulfillmentType": "ready-stock",
       "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
       "productionLeadTime": null,
       "readyStock": true,
-      "physicalScalePolicy": "約寬51×高78mm；六角玻璃罐只允許等比例縮放，不改罐型、金色蓋或標籤比例。"
+      "physicalScalePolicy": "約寬51×高78mm；六角玻璃罐只允許等比例縮放，不改罐型、金色蓋或標籤比例。",
+      "price": 2000
     },
     "guilu-drink-30": {
       "name": "龜鹿飲30cc玻璃罐",
