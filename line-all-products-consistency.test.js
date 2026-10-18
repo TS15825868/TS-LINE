@@ -12,9 +12,9 @@ const {applyMaster}=require("./product-sales-master");
 const core=applyMaster(JSON.parse(fs.readFileSync(path.join(__dirname,"data.json"),"utf8"))).products;
 const ids=core.map(p=>p.id).concat(publicPartners.map(p=>p.id));
 assert.equal(ids.length,new Set(ids).size,"重複商品 ID");
-assert.equal(core.length,4,"目前正式核心產品須與母檔一致");
-assert.equal(publicPartners.length,5,"目前五張已核准其他廠牌卡不能缺漏");
-assert.equal(inquiry.length,26,"其他廠牌26筆詢價及內部候選資料不得因公開展示被刪除");
+assert.ok(core.length>=4,"正式核心產品不得遺漏已公開四款；新增核准商品不可被舊數量限制");
+assert.ok(publicPartners.length>=5,"已核准五張其他廠牌卡不得遺漏；允許後續增加新品");
+assert.ok(inquiry.length>=26,"原有26筆詢價及內部候選資料不得因公開展示而流失；允許新增");
 for(const p of core){
  const approved=sales[p.id];
  assert.ok(approved,"核心產品缺正式母資料："+p.id);
@@ -48,7 +48,7 @@ assert.ok(tea.quantityMenu(tea.IDS[0]).every(p=>p.contents.footer.contents.lengt
 const messages=server.productCarousel();
 assert.equal(messages.type,"flex");
 assert.equal(messages.contents.type,"carousel");
-assert.equal(messages.contents.contents.length,ids.length,"LINE 看產品應顯示全部9張");
+assert.equal(messages.contents.contents.length,ids.length,"目前不超過12張時 LINE 看產品應完整展示正式清單");
 const cards=messages.contents.contents;
 for(let index=0;index<cards.length;index++){
   const card=cards[index],id=ids[index];
