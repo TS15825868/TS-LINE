@@ -27,17 +27,20 @@ vm.runInNewContext(fs.readFileSync("line-danshen-flavor-menu.js","utf8"), {
 const startupMenu = simulated.exports;
 assert.equal(startupMenu.variants().length,6,"Render 啟動同步清除詢價價欄後不可讓看產品整組報錯");
 assert.equal(startupMenu.variants().every(p=>p.price===480),true,"同步詢價檔無價格欄時須仍採正式核准480元");
-assert.equal(startupMenu.menu().contents.footer.contents.length,6,"正式啟動後六口味選單必須可以顯示");
+assert.equal(startupMenu.menu().length,2,"正式啟動後六口味選單必須分成兩則訊息");
+assert.equal(startupMenu.menu().reduce((n,m)=>n+m.contents.footer.contents.length,0),6,"正式啟動後六款全部可見");
 assert.equal(startupMenu.chosen(startupMenu.IDS[0],v=>"https://example.com/"+v).type,"flex");
 assert.ok(startupMenu.inquiry(startupMenu.IDS[0],"2").includes("NT$960"),"正式啟動後兩盒小計必須仍正確");
 const variants=menu.variants();
 assert.equal(variants.length,6,"六款口味均須可選");
 assert.equal(new Set(variants.map(p=>p.id)).size,6,"口味不得重複");
 const card=menu.menu();
-assert.equal(card.type,"flex");
-assert.equal(card.contents.footer.contents.length,6,"六個口味需有六個可點擊選項");
+assert.equal(card.length,2,"iPhone 必須分兩則訊息，避免六個按鈕被裁掉");
+assert.ok(card.every(msg=>msg.type==="flex"&&msg.contents.footer.contents.length===3),"每張卡只應顯示三個口味選項");
+assert.ok(card.every(msg=>msg.contents.body.contents.some(x=>x.text.includes("NT$480"))),"兩張卡都要清楚標示單盒價格");
+assert.equal(card.reduce((n,msg)=>n+msg.contents.footer.contents.length,0),6,"六個口味需全部可見且可點選");
 for(let i=0;i<6;i++){
-  const flavor=variants[i], button=card.contents.footer.contents[i];
+  const flavor=variants[i], button=card[Math.floor(i/3)].contents.footer.contents[i%3];
   assert.equal(flavor.price,480,flavor.name+" 未使用單盒480元");
   assert.equal(button.action.type,"message");
   assert.equal(button.action.label,flavor.name,flavor.name+" 選單名稱錯誤");
