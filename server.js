@@ -442,6 +442,7 @@ function partnerProductBubble(product) {
       type: "box",
       layout: "vertical",
       spacing: "md",
+      flex: 0,
       contents: [
         { type: "text", text: product.name, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
         { type: "text", text: `規格：${product.specification}\n${retail ? retail.label : "售價請洽 LINE 客服確認"}`, size: "sm", color: "#555555", wrap: true },
