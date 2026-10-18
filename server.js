@@ -77,6 +77,7 @@ function finishWebhookEvent(event, success) {
   if (success) processedWebhookEvents.set(id, Date.now());
 }
 const DATA = loadData();
+const PARTNER_CAROUSEL = require("./line-partner-public-carousel.json").products.filter(p => p && p.id && p.name && p.image && p.page);
 
 function validateData(data) {
   if (!data || typeof data !== "object") throw new Error("data.json 必須是 JSON 物件");
@@ -413,29 +414,61 @@ function productBubble(product) {
   };
 }
 
-function productCarousel() {
+function partnerProductBubble(product) {
+  const productUrl = absoluteUrl(product.page);
   return {
-    type: "flex",
-    altText: "仙加味產品",
-    contents: {
-      type: "carousel",
-      contents: DATA.products.map(productBubble),
+    type: "bubble",
+    size: "kilo",
+    hero: {
+      type: "image",
+      url: absoluteUrl(product.image),
+      size: "full",
+      aspectRatio: "4:3",
+      aspectMode: "fit",
+      backgroundColor: "#EFE4D2",
+      action: { type: "uri", uri: productUrl },
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "md",
+      contents: [
+        { type: "text", text: product.name, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
+        { type: "text", text: `規格：${product.specification}\n售價與供貨請洽 LINE 客服確認`, size: "sm", color: "#555555", wrap: true },
+      ],
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        { type: "button", style: "primary", color: "#7B1E1E",
+          action: { type: "message", label: "詢問這項商品", text: `詢問商品｜${product.id}` } },
+        { type: "button", style: "secondary",
+          action: { type: "uri", label: "商品詳細介紹", uri: productUrl } },
+        { type: "button", style: "secondary",
+          action: { type: "message", label: "人工客服", text: "我要人工客服" } },
+      ],
     },
   };
 }
 
-function productMenuReply() {
-  // 產品卡維持原本可加入購物車的正式品項；其他廠牌由分類入口進入官網正式目錄。
-  return [
-    productCarousel(),
-    flexCard("其他商品｜原廠品牌",
-      "丹參系列茶包、參仲四物飲、龜鹿活力飲、二珍寶、四珍寶等商品，請查看官網最新正式商品總覽；規格、供貨與購買方式可在 LINE 詢問。",
-      [
-        { label: "查看其他商品", uri: absoluteUrl("products.html") },
-        { label: "詢問商品", text: "我要人工客服" }
-      ]
-    ),
+function productCarousel() {
+  const allPublicProducts = [
+    ...DATA.products.map(productBubble),
+    ...PARTNER_CAROUSEL.map(partnerProductBubble),
   ];
+  // LINE Flex carousel 每次最多 12 張 bubble；超過時由後續版本分組，不可無聲截斷。
+  if (allPublicProducts.length > 12) throw new Error("LINE 全部商品超過 12 張，需依正式分類分組展示");
+  return {
+    type: "flex",
+    altText: "仙加味全部商品｜左右滑動查看",
+    contents: { type: "carousel", contents: allPublicProducts },
+  };
+}
+
+function productMenuReply() {
+  return productCarousel();
 }
 
 function priceCarousel() {
@@ -1229,6 +1262,16 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+
+  const partnerInquiryMatch = text.match(/^詢問商品｜([^｜]+)$/);
+  if (partnerInquiryMatch) {
+    const product = PARTNER_CAROUSEL.find(item => item.id === partnerInquiryMatch[1]);
+    if (!product) return reply(event.replyToken, textMsg("找不到這項商品，請重新查看產品。", mainQuick()));
+    return reply(event.replyToken, textMsg(
+      `已選擇：${product.name}\n規格：${product.specification}\n請由仙加味人工客服確認末端售價、供貨與訂購方式。`,
+      [{ label: "人工客服", text: "我要人工客服" }, { label: "商品詳細介紹", uri: absoluteUrl(product.page) }, { label: "全部商品", text: "看產品" }]
+    ));
+  }
 
   const productDetailMatch = text.match(/^產品詳情｜([^｜]+)$/);
   if (productDetailMatch) {
