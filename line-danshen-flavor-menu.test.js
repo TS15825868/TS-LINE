@@ -66,7 +66,7 @@ for(let i=0;i<6;i++){
   }
   assert.ok(footer[1].action.uri.endsWith("product-danshen-tea.html#"+flavor.id));
   const inquiry=menu.inquiry(flavor.id);
-  assert.ok(inquiry.includes(flavor.name)&&inquiry.includes("NT$480／盒"));
+  assert.ok(inquiry.includes(flavor.name)&&inquiry.includes("一盒 NT$480"));
   assert.ok(!/六款各一盒|六盒480|一盒含六款/.test(inquiry));
 }
 assert.equal(menu.chosen("not-approved",x=>x),null,"非正式口味不可訂購");
