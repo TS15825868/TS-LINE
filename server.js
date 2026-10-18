@@ -930,7 +930,7 @@ function faqTopicReply(topic) {
     ? [{label:"配送付款",text:"配送付款"},{label:"人工客服",text:"我要人工客服"}]
     : [{label:"其他商品",text:"其他廠牌"},{label:"人工客服",text:"我要人工客服"}];
   const examples = topic === "商品與規格" ? "可輸入：龜鹿膏、龜鹿飲30cc、鹿茸粉、丹參茶包系列。"
-    : topic === "價格與優惠" ? "丹參茶包單盒售價 NT$480，六款口味可選、每盒獨立計價；其餘商品請用「價格方案」查看。"
+    : topic === "價格與優惠" ? "丹參茶包一盒 NT$480，共六款可選；其餘商品請用「價格方案」查看。"
     : topic === "配送與付款" ? "實際付款、運費、到貨時間由客服依訂單確認。"
     : "可輸入原廠正式商品名稱，例如參仲四物飲、二珍寶、四珍寶。";
   return {type:"flex",altText:row[1],contents:mascotBubble(row[1],row[2]+"\\n"+examples,buttons,"faq")};
