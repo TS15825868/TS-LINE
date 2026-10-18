@@ -24,25 +24,30 @@ function variants() {
   return items.map(p => ({ ...p, price: PRICE }));
 }
 function byId(id) { return variants().find(p => p.id === id) || null; }
-function priceText() { return "售價 NT$480／盒（單盒只選一種口味，3g×10包）"; }
+function priceText() { return "售價 NT$480／盒｜每盒 10 包、同一口味"; }
 function menu() {
-  return {
+  // LINE 在 iPhone 上六個直排 Flex footer 按鈕會只顯示前三項。
+  // 拆成兩則各三個選項的 Flex 訊息，避免需要猜測隱藏按鈕或左右滑動才能看齊六款。
+  const items=variants();
+  return [0,3].map((start,index)=>({
     type:"flex",
-    altText:"丹參茶包｜六種口味任選一盒 NT$480",
+    altText:`丹參茶包選口味 ${index+1}/2｜每盒 NT$480`,
     contents:{
-      type:"bubble", size:"kilo",
+      type:"bubble",size:"kilo",
       body:{type:"box",layout:"vertical",spacing:"sm",contents:[
-        {type:"text",text:"丹參茶包｜選擇口味",weight:"bold",size:"xl",color:"#7B1E1E",wrap:true},
-        {type:"text",text:priceText(),size:"md",color:"#555555",wrap:true},
-        {type:"text",text:"共有六種口味，每次選擇一款、每盒 NT$480；不是六盒合售。點選口味可看單款資料與詢問訂購。",size:"sm",color:"#555555",wrap:true},
+        {type:"text",text:`丹參茶包｜六款口味（${index+1}/2）`,weight:"bold",size:"lg",color:"#7B1E1E",wrap:true},
+        {type:"text",text:priceText(),size:"sm",color:"#333333",wrap:true},
+        {type:"text",text:index===0
+          ?"下面先選第 1～3 款；下一則訊息還有第 4～6 款。各款分盒販售，不是六盒組。"
+          :"以下是第 4～6 款；六款均可單獨選購，每盒只裝同一口味。",size:"sm",color:"#555555",wrap:true},
       ]},
-      footer:{type:"box",layout:"vertical",spacing:"sm",contents:variants().map((p,index)=>({
-        type:"button",style:index===0?"primary":"secondary",
-        ...(index===0?{color:"#7B1E1E"}:{}),
+      footer:{type:"box",layout:"vertical",spacing:"sm",contents:items.slice(start,start+3).map((p,i)=>({
+        type:"button",style:i===0?"primary":"secondary",
+        ...(i===0?{color:"#7B1E1E"}:{}),
         action:{type:"message",label:p.name,text:`選擇丹參口味｜${p.id}`},
       }))},
     },
-  };
+  }));
 }
 function chosen(id,absoluteUrl) {
   const p=byId(id); if(!p)return null;
