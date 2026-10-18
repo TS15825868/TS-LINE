@@ -353,6 +353,9 @@ async function reply(token, messages) {
 }
 
 function productBubble(product) {
+  const retailPrice = Number(product.price);
+  const priceLine = Number.isFinite(retailPrice) && retailPrice > 0 && product.quoteOnly !== true
+    ? `末端售價：${money(retailPrice)}` : "售價請洽 LINE 客服確認";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
 
@@ -376,7 +379,7 @@ function productBubble(product) {
         { type: "text", text: product.displayName, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
         {
           type: "text",
-          text: `規格：${productSpecText(product)}\n${product.purpose ? `用途方向：${product.purpose}\n` : ""}售價與供貨請洽人工客服`,
+          text: `規格：${productSpecText(product)}\n${product.purpose ? `用途方向：${product.purpose}\n` : ""}${priceLine}`,
           size: "sm",
           color: "#555555",
           wrap: true,
@@ -436,7 +439,7 @@ function productMenuReply() {
 }
 
 function priceCarousel() {
-  return textMsg("商品售價、供貨與優惠方案請由仙加味 LINE 人工客服確認。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
+  return textMsg("已核准商品的末端售價請查看商品卡；優惠、供貨與其他商品價格請由仙加味 LINE 人工客服確認。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
 }
 
 function qtyMenu(product) {
