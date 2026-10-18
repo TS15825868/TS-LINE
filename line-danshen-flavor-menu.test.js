@@ -23,7 +23,19 @@ for(let i=0;i<6;i++){
   assert.ok(chosen.altText.includes(flavor.name));
   assert.ok(chosen.altText.includes("一盒 NT$480"));
   const footer=chosen.contents.footer.contents;
-  assert.equal(footer[0].action.text,"丹參訂購｜"+flavor.id);
+  assert.equal(footer[0].action.text,"丹參數量｜"+flavor.id);
+  const qty=menu.quantityMenu(flavor.id);
+  assert.equal(qty.contents.footer.contents.length,6);
+  for(const n of [1,2,3,5]) {
+    const btn=qty.contents.footer.contents.find(v=>v.action.text==="丹參訂購｜"+flavor.id+"｜"+n);
+    assert.ok(btn,flavor.name+" 的 "+n+" 盒數量選項遺失");
+    assert.ok(btn.action.label.includes("NT$"+(n*480).toLocaleString("en-US")),"售價小計計算錯誤");
+    const final=menu.inquiry(flavor.id,String(n));
+    assert.ok(final.includes("選購盒數："+n+" 盒"));
+    assert.ok(final.includes("NT$"+(n*480).toLocaleString("en-US"));
+    assert.ok(final.includes("未含運費"));
+    assert.ok(final.includes("不是已成立的訂單"));
+  }
   assert.ok(footer[1].action.uri.endsWith("product-danshen-tea.html#"+flavor.id));
   const inquiry=menu.inquiry(flavor.id);
   assert.ok(inquiry.includes(flavor.name)&&inquiry.includes("NT$480／盒"));
@@ -31,6 +43,11 @@ for(let i=0;i<6;i++){
 }
 assert.equal(menu.chosen("not-approved",x=>x),null,"非正式口味不可訂購");
 assert.equal(menu.inquiry("not-approved"),null,"無效口味不能送出詢價");
+assert.equal(menu.quantityMenu("not-approved"),null,"非正式口味不可選擇數量");
+assert.ok(menu.inquiry(variants[0].id,"其他").includes("其他數量，待客服確認"));
+assert.ok(menu.inquiry(variants[0].id,"999").includes("尚未指定"),"不合理盒數不應被當成有效訂單");
+assert.ok(source.includes("danshenMenu.quantityMenu(teaQuantityMatch[1])"),"LINE 數量選單未接上對話流程");
+assert.ok(source.includes("danshenMenu.inquiry(teaInquiryMatch[1], teaInquiryMatch[2])"),"LINE 訂購詢問必須保留實際選擇盒數");
 assert.equal(authority.products["danshen-tea-collection"].price,480);
 assert.equal(catalog.products.filter(p=>p.id.startsWith("jianfeng-")).length,6);
 assert.ok(source.includes('isDanshen ? "選擇六種口味"'),"丹參系列主卡需要口味選擇入口");
