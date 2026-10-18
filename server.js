@@ -455,7 +455,7 @@ function partnerProductBubble(product) {
       spacing: "sm",
       contents: [
         { type: "button", style: "primary", color: "#7B1E1E",
-          action: { type: "message", label: isDanshen ? "選擇六種口味" : "查看價格與訂購", text: isDanshen ? "丹參茶包系列" : `詢問商品｜${product.id}` } },
+          action: { type: "message", label: isDanshen ? "選擇六種口味" : "查看價格／訂購", text: isDanshen ? "丹參茶包系列" : `詢問商品｜${product.id}` } },
         { type: "button", style: "secondary",
           action: { type: "uri", label: "商品詳細介紹", uri: productUrl } },
         { type: "button", style: "secondary",
