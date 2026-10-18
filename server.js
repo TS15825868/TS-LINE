@@ -77,7 +77,9 @@ function finishWebhookEvent(event, success) {
   if (success) processedWebhookEvents.set(id, Date.now());
 }
 const DATA = loadData();
-const PARTNER_CAROUSEL = require("./line-partner-public-carousel.json").products.filter(p => p && p.id && p.name && p.image && p.page);
+const PARTNER_CAROUSEL_DATA = require("./line-partner-public-carousel.json");
+const PARTNER_CAROUSEL_VERSION = PARTNER_CAROUSEL_DATA.version;
+const PARTNER_CAROUSEL = PARTNER_CAROUSEL_DATA.products.filter(p => p && p.id && p.name && p.image && p.page);
 
 function validateData(data) {
   if (!data || typeof data !== "object") throw new Error("data.json 必須是 JSON 物件");
@@ -421,7 +423,7 @@ function partnerProductBubble(product) {
     size: "kilo",
     hero: {
       type: "image",
-      url: absoluteUrl(product.image),
+      url: `${require("./line-image-safety-core").PUBLIC_BASE_URL}/assets/partner-product/${encodeURIComponent(product.id)}.jpg?v=${encodeURIComponent(PARTNER_CAROUSEL_VERSION)}`,
       size: "full",
       aspectRatio: "4:3",
       aspectMode: "fit",
