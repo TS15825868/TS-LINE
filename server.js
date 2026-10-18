@@ -171,6 +171,7 @@ function orderNoticeForCart(cart = []) {
   if (!products.length) return MIXED_ORDER_NOTICE;
   const hasDrink = products.some((product) => product.fulfillmentType === "made-to-order-drink" || product.readyStock === false);
   const hasReady = products.some((product) => product.fulfillmentType !== "made-to-order-drink" && product.readyStock !== false);
+  if (cart.some(item => item.partner)) return hasDrink ? `${DRINK_ORDER_NOTICE}\n其他商品依庫存安排，配送由客服確認。` : "商品依實際庫存安排，出貨與配送由客服確認。";
   if (hasDrink && hasReady) return MIXED_ORDER_NOTICE;
   return hasDrink ? DRINK_ORDER_NOTICE : READY_STOCK_ORDER_NOTICE;
 }
