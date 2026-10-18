@@ -19,6 +19,8 @@ const richMenuSync = require("./line-rich-menu-sync");
 const photoAuthority = require("./line-product-photo-authority.json");
 const currentAuthority = require("./assets/data/official-products.json");
 const formalMedia = require("./formal-media-authority-v20260810.json");
+const partnerCarousel = require("./line-partner-public-carousel.json");
+const partnerImageCache = new Map();
 
 const VERSION = "current-line-media-role-separation-v20260814";
 const FORMAL_MEDIA_VERSION = String(currentAuthority.version || "current-formal-media");
@@ -111,6 +113,31 @@ function installImageRoutes(app) {
     if (!FORMAL_ROUTE_IDS.has(id)) return res.status(404).end();
     try { return sendJpeg(res, await buildFormalJpeg("product", id), "product"); }
     catch (error) { console.error("LINE 正式產品圖 JPEG 轉換失敗", id, error?.message || error); return res.status(502).end(); }
+  });
+
+  // 其他已核准公開商品以官網正式實物 WebP 轉成 LINE 支援的 JPEG；不重畫或更換產品包裝。
+  app.get("/assets/partner-product/:id.jpg", async (req, res) => {
+    const id = String(req.params?.id || "").trim();
+    const partner = (partnerCarousel.products || []).find(item => item.id === id);
+    if (!partner || !/^images\/[a-z0-9_/.?=&-]+\.webp(?:\?.*)?$/i.test(partner.image) || partner.image.includes(".."))
+      return res.status(404).end();
+    try {
+      if (!partnerImageCache.has(id)) {
+        const source = new URL(partner.image, "https://ts15825868.github.io/xianjiawei/").toString();
+        const task = (async () => {
+          const response = await fetch(source, { headers: { "user-agent": "xianjiawei-line-partner-photo/1.0" }, signal: AbortSignal.timeout(15000) });
+          if (!response.ok) throw new Error(`partner product photo HTTP ${response.status}: ${id}`);
+          const input = Buffer.from(await response.arrayBuffer());
+          return sharp(input).rotate().resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
+            .flatten({ background: "#FFFFFF" }).jpeg({ quality: 91, progressive: true }).toBuffer();
+        })().catch(error => { partnerImageCache.delete(id); throw error; });
+        partnerImageCache.set(id, task);
+      }
+      return sendJpeg(res, await partnerImageCache.get(id), "partner-product");
+    } catch (error) {
+      console.error("LINE 其他商品正式圖片 JPEG 轉換失敗", id, error?.message || error);
+      return res.status(502).end();
+    }
   });
 
   app.get("/assets/formal-dm/:id.jpg", async (req, res) => {
