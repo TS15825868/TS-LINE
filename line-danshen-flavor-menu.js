@@ -24,7 +24,7 @@ function variants() {
   return items.map(p => ({ ...p, price: PRICE }));
 }
 function byId(id) { return variants().find(p => p.id === id) || null; }
-function priceText() { return "售價 NT$480／盒｜單盒只選一種口味（3g×10包）"; }
+function priceText() { return "每盒 NT$480｜3g×10包"; }
 function menu() {
   // LINE 在 iPhone 上六個直排 Flex footer 按鈕會只顯示前三項。
   // 拆成兩則各三個選項的 Flex 訊息，避免需要猜測隱藏按鈕或左右滑動才能看齊六款。
@@ -38,8 +38,8 @@ function menu() {
         {type:"text",text:`丹參茶包｜六款口味（${index+1}/2）`,weight:"bold",size:"lg",color:"#7B1E1E",wrap:true},
         {type:"text",text:priceText(),size:"sm",color:"#333333",wrap:true},
         {type:"text",text:index===0
-          ?"下面先選第 1～3 款；下一則訊息還有第 4～6 款。各款分盒販售，不是六盒組。"
-          :"以下是第 4～6 款；六款均可單獨選購，每盒只裝同一口味。",size:"sm",color:"#555555",wrap:true},
+          ?"請選擇喜歡的口味。第一張有 3 款，下一張還有 3 款。"
+          :"另外 3 款口味也在這裡，點選即可查看並選擇盒數。",size:"sm",color:"#555555",wrap:true},
       ]},
       footer:{type:"box",layout:"vertical",spacing:"sm",contents:items.slice(start,start+3).map((p,i)=>({
         type:"button",style:i===0?"primary":"secondary",
@@ -57,7 +57,7 @@ function chosen(id,absoluteUrl) {
       body:{type:"box",layout:"vertical",spacing:"md",contents:[
         {type:"text",text:p.name,weight:"bold",size:"xl",color:"#7B1E1E",wrap:true},
         {type:"text",text:priceText(),size:"md",wrap:true},
-        {type:"text",text:"目前選的是這一種口味、單盒計價。可查看原廠包裝及原料，再向客服確認數量與供貨。",size:"sm",wrap:true,color:"#555555"},
+        {type:"text",text:"已選擇此口味。接著選擇盒數，或查看原廠商品介紹。",size:"sm",wrap:true,color:"#555555"},
       ]},
       footer:{type:"box",layout:"vertical",spacing:"sm",contents:[
         {type:"button",style:"primary",color:"#7B1E1E",action:{type:"message",label:"選擇訂購盒數",text:`丹參數量｜${p.id}`}},
