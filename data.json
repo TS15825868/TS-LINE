@@ -262,8 +262,8 @@
       "productionLeadTime": null,
       "readyStock": true,
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$2,000／罐",
+      "quoteOnly": false,
       "promotionTexts": [],
       "quantityOptions": [
         1,
@@ -281,7 +281,11 @@
       "imagePolicy": "current-approved-product-images-plus-separate-corrected-dm-preserve-products-v3-identity",
       "form": "粉末",
       "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
-      "detailPage": "https://ts15825868.github.io/xianjiawei/product-luerong-fen.html"
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-luerong-fen.html",
+      "price": 2000,
+      "priceConfirmed": true,
+      "internalStandardRetailPriceTWD": 2000,
+      "priceSource": "使用者2026-09-29確認的既有正式售價"
     }
   ],
   "offers": {
