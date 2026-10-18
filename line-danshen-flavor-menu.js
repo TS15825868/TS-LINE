@@ -12,11 +12,16 @@ const IDS = [
 ];
 const PRICE = priceAuthority.products["danshen-tea-collection"]?.price;
 function variants() {
+  // Render prestart 會從官網重建詢價目錄；來源目錄刻意不帶售價。
+  // 價格的唯一權威是使用者核准的零售價母檔，而非同步詢價檔的 price 欄位。
   const items = IDS.map(id => source.products.find(p => p.id === id));
-  if (items.some(p => !p || p.price !== PRICE) || PRICE !== 480) {
-    throw new Error("丹參茶包六種口味的正式單盒價格不一致，停止顯示以避免錯誤報價");
+  if (PRICE !== 480 || items.some(p =>
+    !p || !p.name || !p.publicPage ||
+    (p.price != null && Number(p.price) !== PRICE)
+  )) {
+    throw new Error("丹參茶包六種口味的核准單盒價格或品項資料異常，暫停該款選購");
   }
-  return items;
+  return items.map(p => ({ ...p, price: PRICE }));
 }
 function byId(id) { return variants().find(p => p.id === id) || null; }
 function priceText() { return "售價 NT$480／盒（單盒只選一種口味，3g×10包）"; }
