@@ -28,7 +28,7 @@ assert.ok(source.includes("const nextProductsMatch"), "大量新品必須有下�
 assert.ok(source.includes("await publicCatalog.refresh()"), "LINE 查詢商品時必須同步官網最新已核准商品");
 assert.ok(source.includes("return productCarousel();"), "產品入口應直接顯示同一組左右滑動卡片");
 assert.equal(retail.products["danshen-tea-collection"].price, 480, "六款丹參茶末端售價應為每盒480元");
-assert.equal(retail.products["danshen-tea-collection"].label, "售價 NT$480／盒（單盒任選一款口味）", "每盒只選一款口味，不得寫成六款各一盒");
+assert.equal(retail.products["danshen-tea-collection"].label, "售價 NT$480／盒（10包同一口味）", "每盒只能包含同一款口味共10包，不得誤導為混合六口味");
 assert.ok(!/六款各一盒|六盒共\s*NT\$?480|一盒含六款/.test(retail.products["danshen-tea-collection"].label), "丹參商品卡不得誤導 NT$480 含六盒");
 assert.ok(fs.readFileSync("line-danshen-flavor-menu.js","utf8").includes("單盒只選一種口味"), "LINE 丹參選單須說明單盒單一口味");
 assert.ok(source.includes("丹參茶包單盒售價 NT$480") && source.includes("每盒獨立計價"), "LINE 價格 FAQ 須清楚說明單盒獨立計價");
