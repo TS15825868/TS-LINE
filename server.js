@@ -455,18 +455,27 @@ function partnerProductBubble(product) {
   };
 }
 
-function productCarousel() {
-  const allPublicProducts = [
-    ...DATA.products.map(productBubble),
-    ...PARTNER_CAROUSEL.map(partnerProductBubble),
-  ];
-  // LINE Flex carousel 每次最多 12 張 bubble；超過時由後續版本分組，不可無聲截斷。
-  if (allPublicProducts.length > 12) throw new Error("LINE 全部商品超過 12 張，需依正式分類分組展示");
-  return {
-    type: "flex",
-    altText: "仙加味全部商品｜左右滑動查看",
-    contents: { type: "carousel", contents: allPublicProducts },
-  };
+function productCarousel(start = 0) {
+  const allPublicProducts = [...DATA.products.map(productBubble), ...PARTNER_CAROUSEL.map(partnerProductBubble)];
+  const startIndex = Math.max(0, Number.isInteger(start) ? start : 0);
+  const remaining = allPublicProducts.slice(startIndex);
+  if (!remaining.length) return textMsg("目前沒有更多公開商品，請重新查看全部商品。", [{ label: "全部商品", text: "看產品" }]);
+  // LINE Flex 每組至多 12 張；每次回覆至多 5 則。超過 60 張時保留下一頁入口。
+  const hasNextPage = remaining.length > 60;
+  const display = remaining.slice(0, hasNextPage ? 48 : 60);
+  const pages = [];
+  for (let i = 0; i < display.length; i += 12) {
+    pages.push({
+      type: "flex",
+      altText: "仙加味全部商品｜左右滑動查看",
+      contents: { type: "carousel", contents: display.slice(i, i + 12) },
+    });
+  }
+  if (hasNextPage) pages.push(textMsg("還有更多商品，請點選繼續查看。", [
+    { label: "繼續查看商品", text: `商品下一頁｜${startIndex + display.length}` },
+    { label: "全部商品", text: "看產品" },
+  ]));
+  return pages.length === 1 ? pages[0] : pages;
 }
 
 function productMenuReply() {
@@ -1264,6 +1273,9 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+
+  const nextProductsMatch = text.match(/^商品下一頁｜(\d+)$/);
+  if (nextProductsMatch) return reply(event.replyToken, productCarousel(Number(nextProductsMatch[1])));
 
   const partnerInquiryMatch = text.match(/^詢問商品｜([^｜]+)$/);
   if (partnerInquiryMatch) {
