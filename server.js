@@ -575,7 +575,7 @@ function cartFlex(state) {
   }
 
   const lines = state.cart
-    .map((item, index) => `${index + 1}. ${item.name}\n數量：${item.qty}${item.unit}\n方案：${item.label}\n小計：${money(item.total)}`)
+    .map((item, index) => `${index + 1}. ${item.name} × ${item.qty}${item.unit}\n小計：${money(item.total)}`)
     .join("\n\n");
 
   return buildCartCard(`${lines}\n\n合計：${money(cartTotal(state.cart))}\n${orderNoticeForCart(state.cart)}`, [
