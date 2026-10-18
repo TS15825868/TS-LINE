@@ -1297,12 +1297,16 @@ async function handleMessage(event) {
     const selected = danshenMenu.chosen(flavorMatch[1], absoluteUrl);
     return reply(event.replyToken, selected || danshenMenu.menu());
   }
-  const teaInquiryMatch = text.match(/^丹參訂購｜([a-z0-9-]+)$/);
+  const teaQuantityMatch = text.match(/^丹參數量｜([a-z0-9-]+)$/);
+  if (teaQuantityMatch) {
+    return reply(event.replyToken, danshenMenu.quantityMenu(teaQuantityMatch[1]) || danshenMenu.menu());
+  }
+  const teaInquiryMatch = text.match(/^丹參訂購｜([a-z0-9-]+)(?:｜([1-9][0-9]?|其他))?$/);
   if (teaInquiryMatch) {
-    const summary = danshenMenu.inquiry(teaInquiryMatch[1]);
+    const summary = danshenMenu.inquiry(teaInquiryMatch[1], teaInquiryMatch[2]);
     return reply(event.replyToken, summary
       ? textMsg(summary, [
-          {label:"人工客服",text:"我要人工客服"},
+          {label:"重新選盒數",text:"丹參數量｜"+teaInquiryMatch[1]},
           {label:"重新選口味",text:"丹參茶包系列"},
           {label:"查看商品",uri:absoluteUrl("product-danshen-tea.html#"+teaInquiryMatch[1])},
         ])
