@@ -69,23 +69,28 @@ function chosen(id,absoluteUrl) {
 }
 function quantityMenu(id) {
   const p=byId(id); if(!p)return null;
-  return {
-    type:"flex",altText:`${p.name}｜選擇盒數，每盒 NT$480`,
+  // 六顆直排按鈕在 iPhone 被截斷，分成兩則各三顆，確保四種盒數與客服入口都可見。
+  const actions=[
+    ...[1,2,3,5].map(n=>({type:"message",label:`${n} 盒｜NT$${(480*n).toLocaleString("en-US")}`,text:`丹參訂購｜${p.id}｜${n}`})),
+    {type:"message",label:"其他數量請洽客服",text:`丹參訂購｜${p.id}｜其他`},
+    {type:"message",label:"重新選口味",text:"丹參茶包系列"},
+  ];
+  return [0,3].map((start,index)=>({
+    type:"flex",altText:`${p.name}｜選擇盒數（${index+1}/2）`,
     contents:{type:"bubble",size:"kilo",
       body:{type:"box",layout:"vertical",spacing:"sm",contents:[
-        {type:"text",text:p.name,weight:"bold",size:"xl",color:"#7B1E1E",wrap:true},
-        {type:"text",text:priceText(),size:"md",wrap:true},
-        {type:"text",text:"請選擇需要的盒數，單一口味每盒 NT$480。運費、現貨與實際付款由人工確認。",size:"sm",wrap:true,color:"#555555"},
+        {type:"text",text:p.name,weight:"bold",size:"lg",color:"#7B1E1E",wrap:true},
+        {type:"text",text:priceText(),size:"sm",wrap:true},
+        {type:"text",text:index===0
+          ?"選擇 1、2、3 盒；下一則還有 5 盒及其他數量。"
+          :"選擇 5 盒、其他數量，或重新選擇口味。金額為商品小計，運費及現貨由客服確認。",size:"sm",wrap:true,color:"#555555"},
       ]},
-      footer:{type:"box",layout:"vertical",spacing:"sm",contents:[
-        ...[1,2,3,5].map(n=>({type:"button",style:n===1?"primary":"secondary",
-          ...(n===1?{color:"#7B1E1E"}:{}),
-          action:{type:"message",label:`${n} 盒｜NT${String.fromCharCode(36)+(480*n).toLocaleString("en-US")}`,text:`丹參訂購｜${p.id}｜${n}`}})),
-        {type:"button",style:"secondary",action:{type:"message",label:"其他數量洽客服",text:`丹參訂購｜${p.id}｜其他`}},
-        {type:"button",style:"secondary",action:{type:"message",label:"重新選擇口味",text:"丹參茶包系列"}},
-      ]},
+      footer:{type:"box",layout:"vertical",spacing:"sm",contents:actions.slice(start,start+3).map((action,i)=>({
+        type:"button",style:index===0&&i===0?"primary":"secondary",
+        ...(index===0&&i===0?{color:"#7B1E1E"}:{}),action,
+      }))},
     },
-  };
+  }));
 }
 function inquiry(id, amount) {
   const p=byId(id); if(!p)return null;
