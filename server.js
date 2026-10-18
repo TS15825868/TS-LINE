@@ -363,7 +363,7 @@ async function reply(token, messages) {
 function productBubble(product) {
   const retailPrice = Number(product.price);
   const priceLine = Number.isFinite(retailPrice) && retailPrice > 0 && product.quoteOnly !== true
-    ? `末端售價：${money(retailPrice)}` : "售價請洽 LINE 客服確認";
+    ? `售價：${money(retailPrice)}` : "售價請洽 LINE 客服確認";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
 
