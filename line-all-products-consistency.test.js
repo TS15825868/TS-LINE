@@ -70,6 +70,8 @@ for(let index=0;index<cards.length;index++){
 const serverSource=fs.readFileSync(path.join(__dirname,"server.js"),"utf8");
 assert.ok(serverSource.includes("const partnerCartMatch = text.match(/^加入其他商品購物車｜([^｜]+)｜(\\d+)$/);"),"新增商品加入購物車的數量格式不可被錯誤跳脫");
 assert.ok(serverSource.includes("state.cart.push({ id, name: product.name, qty"),"新增商品必須加入共用購物車");
+assert.ok(serverSource.includes("const approvedPrice = Number(retail?.promotionPrice || retail?.price || 0);"),"送出訂單前必須重核其他商品核准優惠價");
+assert.ok(serverSource.includes("if (item.total !== updatedTotal)"),"購物車金額異動時須重新確認訂單");
 assert.ok(serverSource.includes("購買商品：\\n${state.cart.map("),"確認訂單必須顯示商品明細");
 const imageIds=publicPartners.map(p=>p.id);
 assert.equal(imageIds.length,new Set(imageIds).size);
