@@ -168,13 +168,17 @@
         "粉"
       ],
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$2,000／罐",
+      "quoteOnly": false,
       "fulfillmentType": "ready-stock",
       "fulfillmentNotice": "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。",
       "productionLeadTime": null,
       "readyStock": true,
-      "physicalScalePolicy": "白色塑膠罐；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現。"
+      "physicalScalePolicy": "白色塑膠罐；毫米尺寸未知時不得自行猜測，只依正式原圖等比例呈現。",
+      "price": 2000,
+      "priceConfirmed": true,
+      "internalStandardRetailPriceTWD": 2000,
+      "priceSource": "使用者2026-09-29確認的既有正式售價"
     }
   },
   "comboOffers": [],
