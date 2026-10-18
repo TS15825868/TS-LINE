@@ -1350,7 +1350,7 @@ async function handleMessage(event) {
       // 成藥許可證 ≠ 乙類成藥網售資格；有相應藥商營業項目時仍可提供實體店面服務。
       // 不宣傳療效、不顯示網路結帳，不把一般詢價直接轉給中醫師。
       return reply(event.replyToken, flexCard(license.licensedName || partnerInquiry.name,
-        '本品經衛福部登記為中藥成藥（許可證：' + license.licenseNo + '）。可先由人工客服確認門市供貨及合法取得方式；此處不提供本品網路結帳。如涉及個人體質、疾病、正在服藥或是否適合使用，才另外由專業中醫師評估。',
+        '本品經衛福部登記為中藥成藥（許可證：' + license.licenseNo + '）。可先由人工客服確認藥商營業範圍內的門市供貨及合法取得方式；此處不提供本品網路結帳。如涉及個人體質、疾病、正在服藥或是否適合使用，才另外由專業中醫師評估。',
         [{ label: '詢問人工客服', text: '我要人工客服' }]
       ));
     }
