@@ -96,7 +96,7 @@ async function buildFormalJpeg(role, id = "") {
 function sendJpeg(res, body, role) {
   res.set({
     "Content-Type": "image/jpeg",
-    "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+    "Cache-Control": role === "partner-product" ? "public, max-age=900, must-revalidate" : "public, max-age=86400, stale-while-revalidate=604800",
     "X-Content-Type-Options": "nosniff",
     "X-XJW-Formal-Media": FORMAL_MEDIA_VERSION,
     "X-XJW-Media-Role": role,
@@ -136,7 +136,6 @@ function installImageRoutes(app) {
         partnerImageCache.set(id, { source, createdAt: Date.now(), task });
       }
       const imageBytes = await partnerImageCache.get(id).task;
-      res.set("Cache-Control", "public, max-age=900, must-revalidate");
       return sendJpeg(res, imageBytes, "partner-product");
     } catch (error) {
       console.error("LINE 其他商品正式圖片 JPEG 轉換失敗", id, error?.message || error);
