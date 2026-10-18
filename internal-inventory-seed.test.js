@@ -4,45 +4,59 @@ const assert = require("assert");
 const { readCatalog, seedInventory, promotionFields } = require("./internal-inventory-seed");
 
 const catalog = readCatalog();
-assert.strictEqual(catalog.length, 6);
-const drink30 = catalog.find((product) => product.id === "guilu-drink-30");
-const fields = promotionFields(drink30);
-assert.deepStrictEqual(fields.offers, [{ qty: 11, total: 500, label: "買10送1" }]);
-assert.strictEqual(fields.quoteOnly, false);
+assert.strictEqual(catalog.length, 4);
+const paste = catalog.find(product => product.id === "guilu-gao");
+const drink30 = catalog.find(product => product.id === "guilu-drink-30");
+assert.ok(paste && drink30);
+assert.ok(!Object.hasOwn(paste, "price"), "Public LINE catalogue must not contain private retail prices");
+assert.strictEqual(promotionFields(drink30).quoteOnly, true);
+assert.deepStrictEqual(promotionFields(drink30).offers, []);
 
+// Deliberately impossible sentinel amounts; these are NOT real product prices.
+const confidentialPrice = 987654321;
+const confidentialOriginalPrice = 987654322;
 let writes = 0;
 let store = {
   inventory: [{
-    productId: "guilu-drink-30",
-    name: "舊龜鹿飲",
-    price: 100,
-    originalPrice: 0,
+    productId: "guilu-gao",
+    name: "舊名稱",
+    price: confidentialPrice,
+    originalPrice: confidentialOriginalPrice,
     stock: 24,
     reserved: 3,
     lowStock: 5,
   }],
   activities: [],
 };
+
 const result = seedInventory(
   () => store,
-  (next) => { store = next; writes += 1; }
+  next => { store = next; writes += 1; }
 );
 
-assert.strictEqual(result.total, 6);
+assert.strictEqual(result.total, 4);
+assert.strictEqual(result.added, 3);
+assert.strictEqual(result.updated, 1);
 assert.strictEqual(result.promotionRulesSynchronized, true);
 assert.strictEqual(writes, 1);
-const seededDrink30 = store.inventory.find((item) => item.productId === "guilu-drink-30");
-assert.strictEqual(seededDrink30.price, 50);
-assert.strictEqual(seededDrink30.stock, 24);
-assert.strictEqual(seededDrink30.reserved, 3);
-assert.deepStrictEqual(seededDrink30.offers, [{ qty: 11, total: 500, label: "買10送1" }]);
-const paste = store.inventory.find((item) => item.productId === "guilu-gao");
-assert.strictEqual(paste.price, 1800);
-assert.strictEqual(paste.originalPrice, 2100);
-const jiao = store.inventory.find((item) => item.productId === "guilu-jiao");
-assert.strictEqual(jiao.price, 9600);
-assert.strictEqual(jiao.originalPrice, 12000);
-assert.strictEqual(jiao.quoteOnly, false);
-assert.ok(store.activities.at(-1).detail.includes("價格、優惠與規格"));
+const updatedPaste = store.inventory.find(item => item.productId === "guilu-gao");
+assert.strictEqual(updatedPaste.name, "龜鹿膏");
+assert.strictEqual(updatedPaste.price, confidentialPrice, "Never replace private price with missing public price");
+assert.strictEqual(updatedPaste.originalPrice, confidentialOriginalPrice);
+assert.strictEqual(updatedPaste.stock, 24);
+assert.strictEqual(updatedPaste.reserved, 3);
+assert.strictEqual(updatedPaste.quoteOnly, true);
 
-console.log("PASS ERP inventory keeps stock while synchronizing six official prices and buy-ten-get-one promotions");
+const newlyAdded = store.inventory.find(item => item.productId === "guilu-drink-30");
+assert.strictEqual(newlyAdded.price, 0, "Unknown retail price must not be inferred");
+assert.strictEqual(newlyAdded.originalPrice, 0);
+assert.strictEqual(newlyAdded.quoteOnly, true);
+assert.deepStrictEqual(newlyAdded.offers, []);
+assert.ok(store.activities.at(-1).detail.includes("內部售價未被公開目錄覆寫"));
+
+const second = seedInventory(() => store, next => { store = next; writes += 1; });
+assert.strictEqual(second.added, 0);
+assert.strictEqual(second.updated, 0);
+assert.strictEqual(writes, 1, "Repeated syncing must be idempotent");
+
+console.log("PASS public catalogue sync preserves ERP retail prices and quote-only policy");
