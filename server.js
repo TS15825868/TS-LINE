@@ -446,7 +446,7 @@ function qtyMenu(product) {
   const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
     ? product.quantityOptions.slice(0, 4) : [1, 2, 3, 5];
   return flexCard(`${product.displayName}｜詢問數量`,
-    `${productSpecText(product)}\\n${orderNoticeForProduct(product)}\\n售價、供貨及優惠由人工客服確認，請選擇詢問數量。`,
+    `${productSpecText(product)}\n${orderNoticeForProduct(product)}\n售價、供貨及優惠由人工客服確認，請選擇詢問數量。`,
     options.map(qty => ({label: `${qty}${product.unit || "件"}`, text: `詢價數量｜${product.id}｜${qty}`}))
       .concat([{label:"人工客服",text:"我要人工客服"}]));
 }
