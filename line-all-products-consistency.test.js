@@ -55,6 +55,8 @@ for(let index=0;index<cards.length;index++){
   assert.equal(card.type,"bubble",id);
   assert.ok(card.hero?.url?.startsWith("https://"),id+" 主圖須為有效絕對 URL");
   assert.equal(card.hero?.aspectMode,"fit",id+" 圖片不能裁切");
+  assert.equal(card.body?.flex,0,id+" 商品卡文字區不應被撐出大片留白");
+  assert.equal(card.footer.contents[0].action.label,index<core.length?"選擇數量":id==="danshen-tea-collection"?"選擇六種口味":"選擇數量",id+" 新舊商品主要操作須一致");
   assert.ok(card.footer?.contents?.length>=2&&card.footer.contents.length<=3,id+" 按鈕數量不合格");
   const body=card.body?.contents?.map(x=>x.text).filter(Boolean).join("\n")||"";
   assert.ok(body.includes("規格："),id+" 未顯示規格");
