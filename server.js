@@ -1324,7 +1324,7 @@ async function handleMessage(event) {
     if (!product) return reply(event.replyToken, textMsg("找不到這項商品，請重新查看產品。", mainQuick()));
     const retail = partnerRetail(product);
     return reply(event.replyToken, textMsg(
-      `已選擇：${product.name}\n規格：${product.specification}\n${retail ? retail.label : "末端售價請向 LINE 客服確認"}\n供貨、優惠及訂購方式請由仙加味人工客服確認。`,
+      `商品：${product.name}\n規格：${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n如需訂購，請點選人工客服確認供貨與配送。`,
       [{ label: "人工客服", text: "我要人工客服" }, { label: "商品詳細介紹", uri: absoluteUrl(product.page) }, { label: "全部商品", text: "看產品" }]
     ));
   }
