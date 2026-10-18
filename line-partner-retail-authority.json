@@ -7,9 +7,9 @@
     "danshen-tea-collection": {
       "price": 480,
       "unit": "盒",
-      "label": "售價 NT$480／盒（單盒任選一款口味）",
+      "label": "售價 NT$480／盒（10包同一口味）",
       "confirmed": true,
-      "source": "2026-10-18 使用者最新明確確認：丹參茶包一盒 NT$480，六款是不同口味選擇；每盒單獨計價，不是六款共 NT$480",
+      "source": "2026-10-18 使用者明確確認：丹參六款不同口味各自一盒售價480元，每盒10包同一口味，不是六盒或六種口味合裝。",
       "priceType": "sale"
     },
     "guilu-vitality": {
