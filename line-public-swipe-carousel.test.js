@@ -29,4 +29,32 @@ assert.ok(source.includes("const partnerInquiryMatch"), "其他商品詢價路�
 assert.ok(source.includes("/assets/partner-product/"), "其他商品圖片沒有連到 LINE 相容 JPEG");
 assert.ok(mediaSource.includes('app.get("/assets/partner-product/:id.jpg"'), "未安裝 LINE JPEG 轉換路由");
 assert.ok(mediaSource.includes('fit: "inside", withoutEnlargement: true'), "正式原圖不得裁切放大");
+
+// 用實際 productCarousel 函式模擬商品增加，避免未來超過 12 張直接失敗。
+const vm = require("node:vm");
+const start = source.indexOf("function productCarousel(start = 0) {");
+const end = source.indexOf("\nfunction productMenuReply()", start);
+assert.ok(start >= 0 && end > start, "找不到正式商品滑動函式");
+const ctx = {
+  DATA: { products: lineProducts },
+  publicCatalog: { current: () => publicPartner.products },
+  productBubble: p => ({ type:"bubble", id:p.id }),
+  partnerProductBubble: p => ({ type:"bubble", id:p.id }),
+  textMsg: (text, buttons) => ({ type:"text", text, buttons }),
+};
+const render = vm.runInNewContext("(" + source.slice(start,end).replace("function productCarousel", "function") + ")", ctx);
+const currentRender = render();
+assert.equal(currentRender.contents?.contents?.length, ids.length, "目前 LINE 公開商品應同組滑動");
+ctx.publicCatalog.current = () => Array.from({length:15},(_,i)=>({id:"new-"+i}));
+const moreThanTwelve = render();
+assert.equal(moreThanTwelve.length,2,"超過 12 張應自動拆成多個左右滑動 carousel");
+assert.deepEqual(Array.from(moreThanTwelve,x=>x.contents.contents.length),[12,7]);
+ctx.publicCatalog.current = () => Array.from({length:70},(_,i)=>({id:"future-"+i}));
+const many = render();
+assert.equal(many.length,5,"大量新增商品時回覆最多五則");
+assert.equal(many[4].type,"text","超過 60 張應顯示下一頁按鈕");
+assert.equal(many[4].buttons[0].text,"商品下一頁｜48");
+const next = render(48);
+assert.equal(Array.isArray(next)?next[0].contents.contents.length:next.contents.contents.length,12,"第二頁應接續展示尚未瀏覽的商品");
+
 console.log(`PASS：LINE ${ids.length} 項已核准商品可左右滑動；未來新增商品動態同步，超出 12／60 張時正常分組。`);
