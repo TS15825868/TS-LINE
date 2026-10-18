@@ -63,8 +63,8 @@
       "productionLeadTime": null,
       "readyStock": true,
       "offers": [],
-      "priceLabel": "最新價格請由 LINE 客服文字回覆",
-      "quoteOnly": true,
+      "priceLabel": "NT$2,000／罐",
+      "quoteOnly": false,
       "promotionTexts": [],
       "quantityOptions": [
         1,
@@ -83,7 +83,8 @@
       "form": "膏狀",
       "productMasterVersion": "2026-10-08-four-active-public-products-retired-jiao-tangkuai",
       "usagePrimary": "食用時間可依個人使用習慣與作息時間安排",
-      "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-gao.html"
+      "detailPage": "https://ts15825868.github.io/xianjiawei/product-guilu-gao.html",
+      "price": 2000
     },
     {
       "id": "guilu-drink-30",
