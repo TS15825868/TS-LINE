@@ -45,7 +45,7 @@
         "八珍茶"
       ],
       "product": "茶包系列",
-      "answer": "丹參茶包系列有多款口味，請依實際口味詢問。武大漢 10 包／盒 NT$480 與八珍茶 NT$480／盒為先前提供的報價，尚未核定現行優惠與其他口味售價，請由客服逐項確認。"
+      "answer": "丹參系列茶包共有六款：臺灣丹參玫瑰果茶、臺灣丹參懈悠活養生茶、武大漢丹參茶、臺灣丹參纖體茶、臺灣白茶丹參飲、臺灣丹參舒活茶。每款 3g×10 包／盒，標準售價均為 NT$480／盒。系列總覽不是另一款商品；活動折扣及供貨請向客服確認。"
     },
     {
       "keywords": [
@@ -80,5 +80,12 @@
     "guilu-drink-180": 200,
     "luerong-fen": 2000
   },
-  "autoReplyIntegrationStatus": "data-only-not-runtime-verified"
+  "autoReplyIntegrationStatus": "data-only-not-runtime-verified",
+  "confirmedDanshenTeaPrice": {
+    "variantCount": 6,
+    "priceTWD": 480,
+    "unit": "盒",
+    "piecesPerBox": 10,
+    "gramsPerPiece": 3
+  }
 }
