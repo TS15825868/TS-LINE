@@ -66,11 +66,16 @@ assert.equal(byId["guilu-drink-30"].name, "龜鹿飲30cc玻璃罐");
 assert.equal(byId["guilu-drink-30"].specification, "30cc／罐（小玻璃罐）");
 assert.ok(!byId["guilu-drink-30"].aliases.some((alias) => /瓶/.test(String(alias))));
 assert.match(byId["guilu-drink-30"].physicalScalePolicy, /Ø42.*H51|小玻璃裸罐/i);
-assert.equal(byId["guilu-drink-30"].price, undefined);
-assert.equal(byId["guilu-drink-30"].quoteOnly, true);
+// LINE 已核准末端售價應由銷售母資料提供，不得被舊「一律隱價」守門員清除。
+const salesMaster = require("./line-sales-master.json");
+for (const id of visibleIds) {
+  const sales = salesMaster.products?.[id];
+  const approved = sales?.quoteOnly === false && Number(sales?.price) > 0;
+  assert.equal(byId[id].quoteOnly, !approved, `${id} LINE 末端售價公開狀態`);
+  if (approved) assert.equal(byId[id].price, Number(sales.price), `${id} LINE 末端售價應與銷售母資料一致`);
+  else assert.equal(byId[id].price, undefined, `${id} 未核准售價不得公開`);
+}
 assert.deepEqual(byId["guilu-drink-30"].offers, []);
-assert.equal(byId["guilu-drink-180"].price, undefined);
-assert.equal(byId["guilu-drink-180"].quoteOnly, true);
 assert.match(byId["guilu-drink-180"].physicalScalePolicy, /0\.60.*0\.68|狹長直立鋁袋/i);
 assert.deepEqual(byId["guilu-drink-180"].offers, []);
 for (const id of ["guilu-tangkuai", "guilu-jiao"]) {
