@@ -364,12 +364,12 @@ function productBubble(product) {
 
   return {
     type: "bubble",
-    size: "mega",
+    size: "kilo",
     hero: {
       type: "image",
       url: productImage,
       size: "full",
-      aspectRatio: "1:1",
+      aspectRatio: "4:3",
       aspectMode: "fit",
       backgroundColor: "#EFE4D2",
       action: { type: "uri", uri: productUrl },
@@ -404,12 +404,7 @@ function productBubble(product) {
         {
           type: "button",
           style: "secondary",
-          action: { type: "uri", label: "完整介紹", uri: productUrl },
-        },
-        {
-          type: "button",
-          style: "secondary",
-          action: { type: "uri", label: "看實際產品照片", uri: productPhotoUrl },
+          action: { type: "uri", label: "商品詳細介紹", uri: productUrl },
         },
         {
           type: "button",
@@ -433,16 +428,14 @@ function productCarousel() {
 }
 
 function productMenuReply() {
-  // 自有品牌仍使用已確認的正式產品卡；完整多廠牌型錄以官網單一資料源為準，
-  // 不將尚未核准的其他廠牌商品塞入 LINE 自有品牌購物車。
+  // 產品卡維持原本可加入購物車的正式品項；其他廠牌由分類入口進入官網正式目錄。
   return [
     productCarousel(),
-    flexCard(
-      "仙加味｜完整商品平台",
-      "所有已正式上架商品可在官網統一瀏覽圖片、規格與介紹。商品價格、供貨及訂購問題，歡迎透過 LINE 洽詢。",
+    flexCard("其他商品｜原廠品牌",
+      "丹參系列茶包、參仲四物飲、龜鹿活力飲、二珍寶、四珍寶等商品，請查看官網最新正式商品總覽；規格、供貨與購買方式可在 LINE 詢問。",
       [
-        { label: "全部商品總覽", uri: absoluteUrl("products.html") },
-        { label: "人工商品諮詢", text: "我要人工客服" },
+        { label: "查看其他商品", uri: absoluteUrl("products.html") },
+        { label: "詢問商品", text: "我要人工客服" }
       ]
     ),
   ];
