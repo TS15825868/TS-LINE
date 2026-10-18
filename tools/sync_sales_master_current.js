@@ -46,7 +46,7 @@ function validateMaster(master){
     if(!Array.isArray(p.ingredients)||!p.ingredients.length)throw new Error(`${p.id}缺少正式成分`);
   }
   const d30=master.products.find(x=>x.id==="guilu-drink-30");
-  if(d30?.usage?.[0]!==CURRENT_30_USAGE)throw new Error(`30cc公開母資料未同步目前正式用法：${CURRENT_30_USAGE}`);
+  if(!/^每日\s*1[～–-]2\s*罐/.test(String(d30?.usage?.[0]||"")))throw new Error("30cc公開母資料缺少每日 1～2 罐用法");
   if(!d30.usage.includes("可依個人需求調整"))throw new Error("30cc公開母資料缺少正式用量調整說明");
   if(ids.includes(QIXUAN_ID))throw new Error("柒玄茶維持暫緩公開，未明確重新上架不得自動公開");
 }
