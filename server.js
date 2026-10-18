@@ -445,10 +445,24 @@ function priceCarousel() {
 function qtyMenu(product) {
   const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
     ? product.quantityOptions.slice(0, 4) : [1, 2, 3, 5];
-  return flexCard(`${product.displayName}｜詢問數量`,
-    `${productSpecText(product)}\n${orderNoticeForProduct(product)}\n售價、供貨及優惠由人工客服確認，請選擇詢問數量。`,
-    options.map(qty => ({label: `${qty}${product.unit || "件"}`, text: `詢價數量｜${product.id}｜${qty}`}))
-      .concat([{label:"人工客服",text:"我要人工客服"}]));
+  const retailPrice = Number(product.price);
+  const canOrder = product.quoteOnly !== true && Number.isFinite(retailPrice) && retailPrice > 0;
+  const buttons = options.map(qty => {
+    const quantity = Number(qty);
+    const validQuantity = Number.isInteger(quantity) && quantity > 0 && quantity <= 99;
+    if (!validQuantity) return null;
+    const total = canOrder ? calcItem(product, quantity).total : 0;
+    return {
+      label: canOrder ? `${quantity}${product.unit || "件"}｜${money(total)}`.slice(0, 20) : `${quantity}${product.unit || "件"}`,
+      text: `${canOrder ? "加入購物車" : "詢價數量"}｜${product.id}｜${quantity}`
+    };
+  }).filter(Boolean);
+  buttons.push({ label: "人工客服", text: "我要人工客服" });
+  return flexCard(
+    `${product.displayName}｜${canOrder ? "選擇數量" : "詢問數量"}`,
+    `${productSpecText(product)}\n${orderNoticeForProduct(product)}\n${canOrder ? "以下為目前核准末端售價；活動優惠請向客服確認。" : "售價、供貨及優惠由人工客服確認。"}`,
+    buttons
+  );
 }
 
 function calcItem(product, qty) {
