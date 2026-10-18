@@ -24,7 +24,7 @@ function variants() {
   return items.map(p => ({ ...p, price: PRICE }));
 }
 function byId(id) { return variants().find(p => p.id === id) || null; }
-function priceText() { return "售價 NT$480／盒｜每盒 10 包、同一口味"; }
+function priceText() { return "售價 NT$480／盒｜單盒只選一種口味（3g×10包）"; }
 function menu() {
   // LINE 在 iPhone 上六個直排 Flex footer 按鈕會只顯示前三項。
   // 拆成兩則各三個選項的 Flex 訊息，避免需要猜測隱藏按鈕或左右滑動才能看齊六款。
