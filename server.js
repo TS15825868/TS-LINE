@@ -1320,6 +1320,37 @@ async function handleMessage(event) {
       : danshenMenu.menu());
   }
 
+  const partnerQtyMatch = text.match(/^選擇其他商品數量｜([^｜]+)$/);
+  if (partnerQtyMatch) {
+    const product = publicCatalog.current().find(item => item.id === partnerQtyMatch[1]);
+    if (!product) return reply(event.replyToken, textMsg("找不到這項商品，請重新查看產品。", mainQuick()));
+    const retail = partnerRetail(product);
+    const unit = retail?.unit || "盒";
+    const price = Number(retail?.promotionPrice || retail?.price || 0);
+    const buttons = [1, 2, 3].map(qty => ({
+      label: price > 0 ? `${qty}${unit}｜${money(price * qty)}` : `${qty}${unit}`,
+      text: `詢問其他商品數量｜${product.id}｜${qty}`
+    }));
+    buttons.push({ label: "人工客服", text: "我要人工客服" });
+    return reply(event.replyToken, flexCard(`${product.name}｜選擇數量`,
+      `${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n請選擇數量，由客服確認訂購與配送。`, buttons));
+  }
+
+  const partnerQtyInquiryMatch = text.match(/^詢問其他商品數量｜([^｜]+)｜(\d+)$/);
+  if (partnerQtyInquiryMatch) {
+    const product = publicCatalog.current().find(item => item.id === partnerQtyInquiryMatch[1]);
+    if (!product) return reply(event.replyToken, textMsg("找不到這項商品，請重新查看產品。", mainQuick()));
+    const qty = Number(partnerQtyInquiryMatch[2]);
+    if (!Number.isInteger(qty) || qty < 1 || qty > 99) return reply(event.replyToken, textMsg("數量不正確，請重新選擇。", mainQuick()));
+    const retail = partnerRetail(product);
+    const unit = retail?.unit || "盒";
+    const price = Number(retail?.promotionPrice || retail?.price || 0);
+    return reply(event.replyToken, textMsg(
+      `商品：${product.name}\n數量：${qty}${unit}\n${retail ? retail.label : "售價請洽客服確認"}${price > 0 ? `\n金額：${money(price * qty)}（待客服確認）` : ""}\n請將以上需求傳送給人工客服確認供貨、配送及付款。`,
+      [{ label: "人工客服", text: "我要人工客服" }, { label: "重新選數量", text: `選擇其他商品數量｜${product.id}` }, { label: "看產品", text: "看產品" }]
+    ));
+  }
+
   const partnerInquiryMatch = text.match(/^詢問商品｜([^｜]+)$/);
   if (partnerInquiryMatch) {
     const product = publicCatalog.current().find(item => item.id === partnerInquiryMatch[1]);
