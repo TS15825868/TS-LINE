@@ -1,8 +1,8 @@
 {
-  "version": "2026-10-18-all-approved-partner-retail-and-package-label-v2",
+  "version": "2026-10-18-owner-confirmed-er-zhenbao-si-zhenbao-suggested-retail-v3",
   "currency": "TWD",
-  "scope": "LINE OA 商品卡：包裝印有建議售價才標建議售價，其餘用售價；使用者已確認的優惠價獨立標示",
-  "policy": "優先包裝標示與最新使用者確認價格；有明確建議售價包裝證據才用建議售價，無則用售價。不得公開成本批發價、推算未知金額；丹參系列六款各一盒480元，不新增第七款。",
+  "scope": "LINE OA 商品卡：使用者最新確認二珍寶與四珍寶均為建議售價、優惠價；其餘產品依最新核准標示",
+  "policy": "以使用者當前最新明確確認為優先；二珍寶與四珍寶均標示建議售價與優惠價，不可因舊包裝核對狀態或舊測試退回售價；其他品項有確認建議售價者使用建議售價，否則售價。",
   "products": {
     "danshen-tea-collection": {
       "price": 480,
@@ -31,20 +31,20 @@
     "royalherb-erzhenbao-64": {
       "price": 13800,
       "unit": "盒",
-      "priceType": "sale",
-      "label": "售價 NT$13,800／盒\n優惠價 NT$12,000／盒",
+      "priceType": "suggested",
+      "label": "建議售價 NT$13,800／盒\n優惠價 NT$12,000／盒",
       "promotionPrice": 12000,
       "confirmed": true,
-      "source": "2026-10-18 使用者確認：二珍寶紫盒定價13800元、優惠價12000元；包裝建議售價字樣未核實"
+      "source": "2026-10-18 使用者最新明確確認：二珍寶64塊 建議售價NT$13,800、優惠價NT$12,000"
     },
     "uboss-sizhenbao": {
       "price": 14800,
       "unit": "盒",
       "priceType": "suggested",
-      "label": "建議售價 NT$14,800／盒\n線上優惠價 NT$12,000／盒",
+      "label": "建議售價 NT$14,800／盒\n優惠價 NT$12,000／盒",
       "promotionPrice": 12000,
       "confirmed": true,
-      "source": "2026-10-18 使用者確認四珍寶定價14800元、線上優惠價12000元；此前包裝貼紙核對紀錄標示建議售價14800元"
+      "source": "2026-10-18 使用者最新明確確認：四珍寶64塊 建議售價NT$14,800、優惠價NT$12,000"
     }
   }
 }
