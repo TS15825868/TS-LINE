@@ -19,7 +19,7 @@ const richMenuSync = require("./line-rich-menu-sync");
 const photoAuthority = require("./line-product-photo-authority.json");
 const currentAuthority = require("./assets/data/official-products.json");
 const formalMedia = require("./formal-media-authority-v20260810.json");
-const partnerCarousel = require("./line-partner-public-carousel.json");
+const publicCatalog = require("./line-public-catalog-runtime");
 const partnerImageCache = new Map();
 
 const VERSION = "current-line-media-role-separation-v20260814";
@@ -118,7 +118,7 @@ function installImageRoutes(app) {
   // 其他已核准公開商品以官網正式實物 WebP 轉成 LINE 支援的 JPEG；不重畫或更換產品包裝。
   app.get("/assets/partner-product/:id.jpg", async (req, res) => {
     const id = String(req.params?.id || "").trim();
-    const partner = (partnerCarousel.products || []).find(item => item.id === id);
+    const partner = publicCatalog.current().find(item => item.id === id);
     if (!partner || !/^images\/[a-z0-9_/.?=&-]+\.webp(?:\?.*)?$/i.test(partner.image) || partner.image.includes(".."))
       return res.status(404).end();
     try {
