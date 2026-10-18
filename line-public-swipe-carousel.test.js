@@ -5,6 +5,7 @@ const path = require("node:path");
 const { applyMaster } = require("./product-sales-master");
 const publicPartner = require("./line-partner-public-carousel.json");
 const live = require("./line-public-catalog-runtime");
+const retail = require("./line-partner-retail-authority.json");
 const lineProducts = applyMaster(JSON.parse(fs.readFileSync(path.join(__dirname, "data.json"), "utf8"))).products;
 const source = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
 const mediaSource = fs.readFileSync(path.join(__dirname, "line-image-safety.js"), "utf8");
@@ -25,6 +26,17 @@ assert.ok(source.includes("const hasNextPage = remaining.length > 60"), "商品�
 assert.ok(source.includes("const nextProductsMatch"), "大量新品必須有下一頁導覽");
 assert.ok(source.includes("await publicCatalog.refresh()"), "LINE 查詢商品時必須同步官網最新已核准商品");
 assert.ok(source.includes("return productCarousel();"), "產品入口應直接顯示同一組左右滑動卡片");
+assert.equal(retail.products["danshen-tea-collection"].price, 480, "六款丹參茶末端售價應為每盒480元");
+assert.equal(retail.products["guilu-vitality"].price, 1800, "龜鹿活力飲核准末端售價應為1800元");
+for (const [id, price] of Object.entries(retail.products)) {
+  assert.equal(price.confirmed, true, `${id} 末端價必須經確認`);
+  assert.ok(Number(price.price)>0 && typeof price.label==="string", `${id} 價格與文字異常`);
+}
+for (const item of publicPartner.products) {
+  if (!retail.products[item.id]) assert.equal(item.price, undefined, `${item.id} 未核准零售價格不得推算`);
+}
+assert.ok(source.includes("const retail = partnerRetail(product)"), "LINE 新品卡未讀核准售價");
+assert.ok(source.includes("retail ? retail.label"), "LINE 新品卡未顯示核准售價");
 assert.ok(source.includes("const partnerInquiryMatch"), "其他商品詢價路由遺失");
 assert.ok(source.includes("/assets/partner-product/"), "其他商品圖片沒有連到 LINE 相容 JPEG");
 assert.ok(mediaSource.includes('app.get("/assets/partner-product/:id.jpg"'), "未安裝 LINE JPEG 轉換路由");
