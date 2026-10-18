@@ -52,9 +52,10 @@ for(let i=0;i<6;i++){
   const footer=chosen.contents.footer.contents;
   assert.equal(footer[0].action.text,"丹參數量｜"+flavor.id);
   const qty=menu.quantityMenu(flavor.id);
-  assert.equal(qty.contents.footer.contents.length,6);
+  assert.equal(qty.length,2,"盒數操作分成兩張卡");
+  assert.ok(qty.every(x=>x.contents.footer.contents.length===3));
   for(const n of [1,2,3,5]) {
-    const btn=qty.contents.footer.contents.find(v=>v.action.text==="丹參訂購｜"+flavor.id+"｜"+n);
+    const btn=qty.flatMap(x=>x.contents.footer.contents).find(v=>v.action.text==="丹參訂購｜"+flavor.id+"｜"+n);
     assert.ok(btn,flavor.name+" 的 "+n+" 盒數量選項遺失");
     assert.ok(btn.action.label.includes("NT$"+(n*480).toLocaleString("en-US")),"售價小計計算錯誤");
     const final=menu.inquiry(flavor.id,String(n));
