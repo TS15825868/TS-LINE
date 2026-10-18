@@ -88,7 +88,11 @@
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
       "readyStock": false,
-      "physicalScalePolicy": "約Ø42×H51mm；小玻璃裸罐、金色蓋、無貼紙、無外盒、無外袋；不得稱瓶或放大成接近100g罐。"
+      "physicalScalePolicy": "約Ø42×H51mm；小玻璃裸罐、金色蓋、無貼紙、無外盒、無外袋；不得稱瓶或放大成接近100g罐。",
+      "price": 60,
+      "priceConfirmed": true,
+      "internalStandardRetailPriceTWD": 60,
+      "priceSource": "2026-10-18使用者確認"
     },
     "guilu-drink-180": {
       "name": "龜鹿飲180cc鋁袋",
@@ -133,7 +137,11 @@
       "fulfillmentNotice": "龜鹿飲為接單後安排製作加工；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。",
       "productionLeadTime": "5～7個工作天",
       "readyStock": false,
-      "physicalScalePolicy": "狹長直立鋁袋，寬高比目標約0.64（0.60～0.68）；禁止拉胖或誇張放大。"
+      "physicalScalePolicy": "狹長直立鋁袋，寬高比目標約0.64（0.60～0.68）；禁止拉胖或誇張放大。",
+      "price": 200,
+      "priceConfirmed": true,
+      "internalStandardRetailPriceTWD": 200,
+      "priceSource": "2026-10-18使用者確認"
     },
     "luerong-fen": {
       "name": "鹿茸粉",
