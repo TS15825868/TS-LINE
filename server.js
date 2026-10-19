@@ -492,7 +492,7 @@ function productMenuReply() {
 }
 
 function priceCarousel() {
-  return textMsg("已核准商品的末端售價請查看商品卡；優惠、供貨與其他商品價格請由仙加味 LINE 人工客服確認。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
+  return textMsg("商品金額、優惠、折扣與運費均由仙加味 LINE 專人確認。請先選商品及數量。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
 }
 
 function orderUnit(product) {
@@ -1533,7 +1533,7 @@ async function handleMessage(event) {
     const unit = retail?.unit || "盒";
     const price = Number(retail?.promotionPrice || retail?.price || 0);
     const buttons = [1, 2, 3].map(qty => ({
-      label: price > 0 ? `${qty}${unit}｜${money(price * qty)}` : `${qty}${unit}`,
+      label: `${qty}${unit}`,
       text: `加入其他商品購物車｜${product.id}｜${qty}`
     }));
     buttons.push({ label: "人工客服", text: "我要人工客服" });
@@ -1570,7 +1570,7 @@ async function handleMessage(event) {
     const unit = retail?.unit || "盒";
     const price = Number(retail?.promotionPrice || retail?.price || 0);
     return reply(event.replyToken, textMsg(
-      `商品：${product.name}\n數量：${qty}${unit}\n${retail ? retail.label : "售價請洽客服確認"}${price > 0 ? `\n金額：${money(price * qty)}（待客服確認）` : ""}\n請將以上需求傳送給人工客服確認供貨、配送及付款。`,
+      `商品：${product.name}\n數量：${qty}${unit}\n金額、優惠與運費由專人確認\n請將以上需求傳送給人工客服確認供貨、配送及付款。`,
       [{ label: "人工客服", text: "我要人工客服" }, { label: "重新選數量", text: `選擇其他商品數量｜${product.id}` }, { label: "看產品", text: "看產品" }]
     ));
   }
@@ -1636,7 +1636,7 @@ async function handleMessage(event) {
   // 優惠價不在自動回覆中揭露，交由客服核對活動資格及購買數量。
   if (/^(有優惠嗎|有沒有優惠|優惠|活動優惠|優惠活動|折扣|優惠價|有特價嗎)$/.test(text)) {
     return reply(event.replyToken, flexCard('優惠與活動諮詢',
-      '商品標準售價可在 LINE 商品介紹查看。活動內容及適用優惠價依商品、購買數量與當期條件確認，請告訴我們商品名稱及預計購買數量，由客服協助確認。',
+      '商品金額與優惠依商品、購買數量及當期條件由專人確認，請告訴我們商品名稱及預計購買數量，由客服協助確認。',
       [{ label: '詢問人工客服', text: '我要人工客服' }, { label: '查看商品', text: '看產品' }]
     ));
   }
