@@ -1089,8 +1089,11 @@ async function saveCRM(payload) {
       signal: controller.signal,
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) return { ok: false, error: "CRM HTTP " + response.status, ...result };
-    return typeof result.ok === "boolean" ? result : { ok: true, ...result };
+    if (!response.ok) return { ...result, ok: false, error: "CRM HTTP " + response.status };
+    if (result.ok !== true || !String(result.orderId || "").trim()) {
+      return { ok: false, error: result.error || "CRM did not acknowledge an order ID" };
+    }
+    return result;
   } catch (error) {
     const message = error.name === "AbortError" ? "CRM timeout after " + CRM_TIMEOUT_MS + "ms" : error.message;
     console.error("CRM 寫入失敗：" + message);
@@ -1211,6 +1214,8 @@ async function continueCheckout(event, state, text) {
         return reply(event.replyToken, orderSummary(state));
       }
     }
+    // Keep the same ID on timeout/retry so CRM can reject duplicate writes.
+    checkout.orderId ||= "XJW" + require("node:crypto").randomUUID();
     const payload = {
       userId: event.source.userId || "",
       cart: state.cart,
