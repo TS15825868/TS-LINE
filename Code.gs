@@ -38,7 +38,11 @@ function doPost(e) {
 
     var orderId = sanitize_(data.orderId) || createOrderId_(now);
     var cart = normalizeCart_(data.cart);
-    var total = Number(data.total || calcCartTotal_(cart) || 0);
+    if (cart.length === 0) return jsonOutput({ ok: false, error: "購物車不得為空" });
+    var total = calcCartTotal_(cart);
+    if (!Number.isFinite(total) || total < 0 || !Number.isFinite(Number(data.total)) || Math.abs(Number(data.total) - total) > 0.01) {
+      return jsonOutput({ ok: false, error: "訂單總額與商品小計不一致" });
+    }
 
     var userId = sanitize_(data.userId || data.lineUserId || "");
     var name = sanitize_(data.name || "");
