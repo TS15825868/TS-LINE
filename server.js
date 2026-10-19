@@ -1834,6 +1834,9 @@ async function handleMessage(event) {
     return reply(event.replyToken, { type: "flex", altText: "仙加味門市資訊", contents: mascotBubble("門市資訊｜小老闆為你服務", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }], "service") });
   }
 
+  if (text === "官方客服留言") {
+    return reply(event.replyToken,textMsg("請直接在這個官方 LINE 對話輸入您的商品、訂單或配送需求，客服會協助確認。",mainQuick()));
+  }
   if (/^(聯絡業務|業務聯絡|業務LINE)$/.test(text)) {
     return reply(event.replyToken, flexCard("仙加味｜聯絡業務", "批發採購、合作洽談、大量訂購及特殊需求，可點選下方按鈕加入業務 LINE。商品價格、折扣及正式訂單仍由專人確認。", [{label:"加入業務 LINE",uri:"https://line.me/ti/p/gpgcEZ0HHE"},{label:"官方客服",text:"我要人工客服"}]));
   }
@@ -1843,9 +1846,7 @@ async function handleMessage(event) {
   if (/人工|客服|聯絡/.test(text)) {
     return reply(event.replyToken, flexCard("仙加味｜聯絡我們", "一般商品、訂單及配送可直接在本官方 LINE 留言；批發、合作或大量採購也可以直接聯絡業務。", [{label:"官方 LINE 客服",text:"官方客服留言"},{label:"聯絡業務",uri:"https://line.me/ti/p/gpgcEZ0HHE"},{label:"請業務聯絡我",text:"請業務聯絡我"},{label:"看產品",text:"看產品"}]));
   }
-  if (text === "官方客服留言") {
-    return reply(event.replyToken,textMsg("請直接在這個官方 LINE 對話輸入您的商品、訂單或配送需求，客服會協助確認。",mainQuick()));
-  }
+
 
   if (/到貨|現貨|上架|可以買|能買|開放下單|何時出貨|出貨時間|盒子|盒裝/.test(text)) {
     return reply(
