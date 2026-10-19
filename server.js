@@ -576,7 +576,7 @@ function cartFlex(state) {
     .map((item, index) => `${index + 1}. ${item.name} × ${item.qty}${item.unit}\n小計：${money(item.total)}`)
     .join("\n\n");
 
-  return buildCartCard(`${lines}\n\n合計：${money(cartTotal(state.cart))}\n${orderNoticeForCart(state.cart)}`, [
+  return buildCartCard(`選購明細：\n${lines}\n\n應付合計：${money(cartTotal(state.cart))}\n\n出貨說明：${orderNoticeForCart(state.cart)}`, [
     { label: "直接結帳", text: "開始結帳" },
     { label: "繼續選購", text: "看產品" },
     { label: "清空購物車", text: "清空購物車" },
