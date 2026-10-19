@@ -1308,6 +1308,49 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+  // 商家合作洽談：分類 → 商家資訊 → 需求 → 確認送出，避免空白訊息造成誤通知。
+  if (/^(商家合作|合作洽談|批發合作|通路合作|異業合作|我要合作|合作諮詢)$/.test(text)) {
+    state.businessInquiry = { step: "category", data: {} };
+    return reply(event.replyToken, textMsg("仙加味｜商家合作洽談\\n歡迎批發、通路、門市及品牌合作。請先選擇合作類型：", [
+      { label: "批發／採購", text: "合作類型｜批發採購" },
+      { label: "通路／寄賣", text: "合作類型｜通路寄賣" },
+      { label: "品牌／異業", text: "合作類型｜品牌異業" },
+      { label: "其他合作", text: "合作類型｜其他合作" },
+      { label: "取消", text: "取消合作洽談" },
+    ]));
+  }
+  if (text === "取消合作洽談") {
+    delete state.businessInquiry;
+    return reply(event.replyToken, textMsg("已結束合作洽談填寫。如需再次洽談，請輸入「商家合作」。", mainQuick()));
+  }
+  if (state.businessInquiry) {
+    const inquiry = state.businessInquiry;
+    const selected = text.match(/^合作類型｜(批發採購|通路寄賣|品牌異業|其他合作)$/);
+    if (selected && inquiry.step === "category") {
+      inquiry.data.category = selected[1];
+      inquiry.step = "business";
+      return reply(event.replyToken, textMsg("請回覆「商家／公司名稱、聯絡人姓名、聯絡電話」；可一起提供所在地區。\\n例如：○○商行／王先生／09xxxxxxxx／台北市。\\n不方便提供電話，也可以寫「以 LINE 聯絡」。", [{label:"取消",text:"取消合作洽談"}]));
+    }
+    if (inquiry.step === "business" && !text.startsWith("合作類型｜")) {
+      if (text.length < 4) return reply(event.replyToken, textMsg("請提供商家名稱與聯絡方式，或輸入「取消合作洽談」。"));
+      inquiry.data.business = text.slice(0, 240);
+      inquiry.step = "details";
+      return reply(event.replyToken, textMsg("請說明想合作的商品、預估數量、合作方式或其他需求；如尚未確定，可直接描述想了解的內容。", [{label:"取消",text:"取消合作洽談"}]));
+    }
+    if (inquiry.step === "details") {
+      if (text.length < 3) return reply(event.replyToken, textMsg("請稍微描述合作需求，方便仙加味安排回覆。"));
+      inquiry.data.details = text.slice(0, 400);
+      inquiry.step = "confirm";
+      return reply(event.replyToken, textMsg(`請確認合作洽談內容：\\n類型：${inquiry.data.category}\\n商家與聯絡方式：${inquiry.data.business}\\n合作需求：${inquiry.data.details}\\n\\n確認後會通知仙加味負責人接續洽談，尚不代表合作成立。`, [{label:"確認送出",text:"確認送出合作洽談"},{label:"重新填寫",text:"商家合作"},{label:"取消",text:"取消合作洽談"}]));
+    }
+    if (inquiry.step === "confirm" && text === "確認送出合作洽談") {
+      const summary = `【商家合作洽談】\\n合作類型：${inquiry.data.category}\\n商家與聯絡方式：${inquiry.data.business}\\n需求：${inquiry.data.details}`;
+      delete state.businessInquiry;
+      const sent = await ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_PARTNER_ALERT]", error?.message || error); return false; });
+      return reply(event.replyToken, textMsg(sent ? "合作洽談資料已送出，仙加味將由專人接續聯繫。感謝您的洽詢。" : "合作資料已整理完成，但即時通知尚未確認成功。請保留本段 LINE 對話，仙加味將依收件匣訊息接續處理。", mainQuick()));
+    }
+  }
+
   // 商品目錄更新不可阻擋 LINE 即時回覆；先使用上次核准的快照，背景同步新品。
   if (/^(?:看產品|查看產品|看商品|產品|直接下單|直接購買|我要下單|立即下單|開始下單|我要買|商品下一頁｜|詢問商品｜)/.test(text)) {
     void publicCatalog.refresh().catch(error => {
