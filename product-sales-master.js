@@ -21,7 +21,7 @@ const SALES_OVERRIDE_FIELDS = Object.freeze([
 ]);
 
 const FORMAL_PRODUCT_COPY = Object.freeze({});
-const CURRENT_30_USAGE = "每日 1 罐";
+const CURRENT_30_USAGE = "每日 1–2 罐";
 
 const RETIRED_COPY_REPLACEMENTS = Object.freeze([
   [/每日早上及下午各一小匙/g, "食用時間可依個人使用習慣與作息時間安排"],
