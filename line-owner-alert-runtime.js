@@ -29,11 +29,12 @@ async function pushOwnerAlert(event, text) {
   if (!owner || !client) return false;
   const sourceUserId = String(event?.source?.userId || "").trim();
   const stamp = new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
+  const isPartner = String(text || "").startsWith("【商家合作洽談】");
   const message = [
-    "【仙加味｜人工客服提醒】",
-    "有顧客要求人工協助。",
+    isPartner ? "【仙加味｜新商家合作洽談】" : "【仙加味｜人工客服提醒】",
+    isPartner ? "有商家提交合作需求，請優先查看。" : "有顧客要求人工協助。",
     `時間：${stamp}`,
-    `訊息：${String(text || "人工客服").slice(0, 80)}`,
+    `訊息：${String(text || "人工客服").slice(0, isPartner ? 900 : 80)}`,
     sourceUserId ? `顧客識別：${sourceUserId.slice(0, 10)}…` : "",
     "請開啟 LINE Official Account Manager 查看最新聊天室。",
   ].filter(Boolean).join("\n");
