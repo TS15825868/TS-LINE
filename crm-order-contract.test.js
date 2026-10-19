@@ -30,5 +30,8 @@ function gas(cart) {
  const a={name:'自有商品測試',qty:11,price:50,total:500,label:'買10送1',unit:'罐'};
  const b={name:'其他廠商商品測試',qty:2,price:900,total:1600,label:'優惠價',unit:'盒'};
  gas([a]);gas([b]);gas([a,b]);assert.match(source,/checkout\.orderId \|\|=/);
+ const gasSource=fs.readFileSync('Code.gs','utf8');
+ assert.match(gasSource,/if \(cart\.length === 0\) return jsonOutput/);
+ assert.match(gasSource,/Math\.abs\(Number\(data\.total\) - total\) > 0\.01/);
  console.log('PASS offline CRM acknowledgment, own/partner/mixed records, promotions, totals and duplicate protection');
 })().catch(e=>{console.error(e);process.exitCode=1;});
