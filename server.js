@@ -511,7 +511,7 @@ function qtyMenu(product) {
       text: `${canOrder ? "加入購物車" : "詢價數量"}｜${product.id}｜${quantity}`
     };
   }).filter(Boolean);
-  buttons.push({ label: "人工客服", text: "我要人工客服" });
+  buttons.push({ label: "其他數量", text: `自訂數量｜${product.id}` });
   return flexCard(
     `${product.displayName}｜${canOrder ? "選擇數量" : "詢問數量"}`,
     `${productSpecText(product)}\n${canOrder ? "點選數量即可加入購物車。" : "點選數量即可詢價。"}`,
@@ -1681,6 +1681,32 @@ async function handleMessage(event) {
     if (!product || !Number.isInteger(qty) || qty < 1 || qty > 99) return reply(event.replyToken, textMsg("請重新選擇商品及數量。", mainQuick()));
     const message = "已選擇：" + product.displayName + "｜" + productSpecText(product) + "\n數量：" + qty + (product.unit || "件") + "\n請點選人工客服確認最新售價、優惠及訂購方式。";
     return reply(event.replyToken, textMsg(message, [{ label: "人工客服", text: "我要人工客服" }, { label: "重新選擇", text: "選擇數量｜" + product.id }, { label: "看產品", text: "看產品" }]));
+  }
+
+  // 一般客人固定數量之外，可自行輸入純數字；未核准報價的商品維持詢價。
+  const customQtyStart = text.match(/^自訂數量｜([^｜]+)$/);
+  if (customQtyStart) {
+    const p = getProduct(customQtyStart[1]);
+    if (!p) return reply(event.replyToken,textMsg("找不到這項商品，請重新選擇。",mainQuick()));
+    state.consumerCustomQuantityId = p.id;
+    return reply(event.replyToken,textMsg("請直接輸入需要的數量（1～99），例如：12。",[{label:"返回數量選單",text:"選擇數量｜"+p.id},{label:"取消",text:"取消自訂數量"}]));
+  }
+  if (text === "取消自訂數量") {
+    delete state.consumerCustomQuantityId;
+    return reply(event.replyToken,textMsg("已取消自訂數量。",mainQuick()));
+  }
+  if (state.consumerCustomQuantityId && /^[1-9][0-9]{0,1}$/.test(text)) {
+    const p=getProduct(state.consumerCustomQuantityId);
+    delete state.consumerCustomQuantityId;
+    if (!p) return reply(event.replyToken,textMsg("商品已更新，請重新選擇。",mainQuick()));
+    const qty=Number(text);
+    const price=Number(p.price);
+    const action=p.quoteOnly===true||!Number.isFinite(price)||price<=0?"詢價數量":"加入購物車";
+    // 經由原有驗證與金額計算邏輯處理，避免另造結帳路徑。
+    text=action+"｜"+p.id+"｜"+qty;
+  }
+  if (state.consumerCustomQuantityId && !/^(看產品|購物車|查看購買清單|商家合作|我要人工客服)$/.test(text)) {
+    return reply(event.replyToken,textMsg("請輸入 1～99 的數字，或點選返回數量選單。",[{label:"返回數量選單",text:"選擇數量｜"+state.consumerCustomQuantityId},{label:"取消",text:"取消自訂數量"}]));
   }
 
   const qtyMatch = text.match(/^選擇數量｜([^｜]+)$/);
