@@ -1197,6 +1197,7 @@ async function continueCheckout(event, state, text) {
   if (checkout.step === "confirm") {
     if (text !== "確認送出") return reply(event.replyToken, orderSummary(state));
 
+    if (checkout.sending) return reply(event.replyToken, textMsg("訂單正在確認中，請稍候，不需要重複送出。"));
     const finalNotice = orderNoticeForCart(state.cart);
     // 訂單送出前依最新已核准售價重新核對其他商品，避免過期購物車價格流入 CRM。
     for (const item of state.cart) {
@@ -1226,7 +1227,10 @@ async function continueCheckout(event, state, text) {
       createdAt: new Date().toISOString(),
     };
 
-    const result = await saveCRM(payload);
+    checkout.sending = true;
+    let result;
+    try { result = await saveCRM(payload); }
+    finally { checkout.sending = false; }
     if (!result.ok) {
       return reply(
         event.replyToken,
