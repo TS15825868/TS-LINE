@@ -17,7 +17,7 @@ assert.deepEqual(live.current(), publicPartner.products, "首次載入沿用最�
 assert.equal(publicPartner.products.find(p=>p.id==="danshen-tea-collection")?.name, "丹參茶包系列");
 for (const product of publicPartner.products) {
   assert.ok(/^product-[a-z0-9-]+\.html$/.test(product.page), `${product.id} 詳細頁格式錯誤`);
-  assert.ok(/^images\/catalog-owner-final-v20261017\/[^/]+\.webp(?:\?.*)?$/.test(product.image), `${product.id} 未使用核准實物主圖`);
+  assert.ok(((["royalherb-erzhenbao-64","uboss-sizhenbao"].includes(product.id)) ? product.image === `images/catalog-real-owner-v20261019/${product.id}-front.png` : /^images\/catalog-owner-final-v20261017\/[^/]+\.webp(?:\?.*)?$/.test(product.image)), `${product.id} 未使用核准實物主圖`);
   assert.ok(product.name && product.specification, `${product.id} 資料不完整`);
   assert.equal(product.price, undefined, `${product.id} 不得自創末端售價`);
 }

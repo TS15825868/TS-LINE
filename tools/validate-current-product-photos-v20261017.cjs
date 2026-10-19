@@ -20,7 +20,7 @@ for(const p of partner.products.filter(x=>x.approvedImage)){
  const main=new URL(p.approvedImage);
  assert.equal(main.origin,"https://ts15825868.github.io","Unexpected photo host "+p.id);
  assert.ok(main.pathname.startsWith("/xianjiawei/images/"),"Partner media must remain a verified website image "+p.id);
- assert.ok(main.pathname.includes("/catalog-owner-final-v20261017/"),"Unverified original carton source "+p.id);
+ assert.ok((main.pathname.includes("/catalog-owner-final-v20261017/") || (["royalherb-erzhenbao-64","uboss-sizhenbao"].includes(p.id) && main.pathname === `/xianjiawei/images/catalog-real-owner-v20261019/${p.id}-front.png`)),"Unverified original carton source "+p.id);
  assert.ok((p.approvedDetailImages||[]).every(url=>{
    const detail=new URL(url);
    return detail.origin===main.origin && detail.pathname.startsWith("/xianjiawei/images/");

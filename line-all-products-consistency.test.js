@@ -32,7 +32,7 @@ for(const p of publicPartners){
  assert.ok(price?.confirmed&&price.price>0,"其他商品末端價未核准："+p.id);
  assert.ok(catalog,"公開其他商品缺詢價目錄："+p.id);
  assert.equal(catalog.publicPage,p.page,"公開詳細頁不一致："+p.id);
- assert.ok(p.specification&&p.name&&p.image&&/\.webp$/.test(p.image),"商品資訊或真實圖路徑不完整："+p.id);
+ assert.ok(p.specification&&p.name&&p.image&&/\.(?:webp|png)$/.test(p.image),"商品資訊或真實圖路徑不完整："+p.id);
  assert.ok(!catalog.medicine,"藥品不得以一般食品產品卡公開販售："+p.id);
  assert.ok(!/成本|批發價/.test(price.label),"顧客卡片不得洩漏內部價格："+p.id);
 }
