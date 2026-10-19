@@ -373,7 +373,7 @@ function productBubble(product) {
       type: "image",
       url: productImage,
       size: "full",
-      aspectRatio: "4:3",
+      aspectRatio: "1:1",
       aspectMode: "fit",
       backgroundColor: "#EFE4D2",
       action: { type: "uri", uri: productUrl },
@@ -432,7 +432,7 @@ function partnerProductBubble(product) {
       type: "image",
       url: `${require("./line-image-safety-core").PUBLIC_BASE_URL}/assets/partner-product/${encodeURIComponent(product.id)}.jpg?v=${encodeURIComponent(PARTNER_CAROUSEL_VERSION + ":" + product.image)}`,
       size: "full",
-      aspectRatio: "4:3",
+      aspectRatio: "1:1",
       aspectMode: "fit",
       backgroundColor: "#EFE4D2",
       action: { type: "uri", uri: productUrl },
@@ -1116,7 +1116,7 @@ async function continueCheckout(event, state, text) {
     if (!name) return reply(event.replyToken, textMsg("請輸入收件人姓名。"));
     checkout.name = name;
     checkout.step = "phone";
-    return reply(event.replyToken, flexCard("第二步｜收件電話", "請直接回覆收件人電話。", [{ label: "取消", text: "取消" }]));
+    return reply(event.replyToken, flexCard("第二步｜收件電話", "請輸入手機或市話，例如 0912345678。", [{ label: "取消", text: "取消" }]));
   }
 
   if (checkout.step === "phone") {
