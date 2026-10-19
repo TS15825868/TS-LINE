@@ -64,7 +64,7 @@ LINE Official Account Manager 的「商業簡介」屬 OA Manager 手動發布�
 - 帳號名稱：仙加味
 - 狀態消息：現代漢方生活品牌｜補養，是一種節奏。
 - 地址：台北市萬華區西昌街52號
-- 營業時間：週一至週五 10:30－20:00；週六、週日公休日
+- 營業時間（以 `config/ecosystem-authority-v20260910.json` 為準）：週一至週五 10:00－20:00；週六非固定營業，預約取貨／配送請先洽官方 LINE；週日公休日。
 - 網站：仙加味｜連結入口 → https://ts15825868.github.io/xianjiawei/links.html
 - LINE OA：@762jybnm
 - 頭像：維持正式仙加味 Logo
