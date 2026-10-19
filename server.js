@@ -1332,8 +1332,11 @@ async function handleMessage(event) {
       state.merchantQuickOrder.selectedId = p.id;
       return reply(event.replyToken,textMsg("請選擇「"+(p.displayName||p.name)+"」的採購數量：", [1,5,10,20,50].map(q=>({label:q+" "+(p.unit||"件"),text:"商採數量｜"+q})).concat([{label:"其他數量",text:"商採其他數量"},{label:"返回商品",text:"商採選商品"}])));
     }
-    if (text === "商採其他數量") return reply(event.replyToken,textMsg("請輸入「商採數量｜數字」，例如：商採數量｜30（最多 9999）。"));
-    const quantity = text.match(/^商採數量｜([1-9][0-9]{0,3})$/);
+    if (text === "商採其他數量") { state.merchantQuickOrder.awaitingCustomQuantity = true; return reply(event.replyToken,textMsg("請直接輸入需要的數量，例如「80」。不用輸入其他文字，最多 9999。",[{label:"返回數量選單",text:"商採返回數量"},{label:"取消",text:"取消商採快捷"}])); }
+    if (text === "商採返回數量" && state.merchantQuickOrder.selectedId) { state.merchantQuickOrder.awaitingCustomQuantity = false; const p=merchantProducts().find(v=>v.id===state.merchantQuickOrder.selectedId); return reply(event.replyToken,textMsg("請選擇「"+(p?.displayName||p?.name||"商品")+"」的數量：",[1,5,10,20,50].map(q=>({label:q+" "+(p?.unit||"件"),text:"商採數量｜"+q})).concat([{label:"其他數量",text:"商採其他數量"},{label:"返回商品",text:"商採選商品"}]))); }
+    const customQty = state.merchantQuickOrder.awaitingCustomQuantity && /^[1-9][0-9]{0,3}$/.test(text) ? text : null;
+    if (state.merchantQuickOrder.awaitingCustomQuantity && !customQty && !text.startsWith("商採")) return reply(event.replyToken,textMsg("請直接輸入 1～9999 的數字，例如「80」。",[{label:"返回數量選單",text:"商採返回數量"},{label:"取消",text:"取消商採快捷"}]));
+    const quantity = customQty ? [customQty,customQty] : text.match(/^商採數量｜([1-9][0-9]{0,3})$/);
     if (quantity && state.merchantQuickOrder.selectedId) {
       const p = merchantProducts().find(v=>v.id===state.merchantQuickOrder.selectedId);
       if (!p) return reply(event.replyToken,textMsg("商品資料已變動，請重新選擇。",merchantItemButtons()));
@@ -1341,6 +1344,7 @@ async function handleMessage(event) {
       const existing=state.merchantQuickOrder.items.find(v=>v.id===p.id);
       if(existing) existing.qty+=qty; else state.merchantQuickOrder.items.push({id:p.id,name:p.displayName||p.name,qty,unit:p.unit||"件"});
       delete state.merchantQuickOrder.selectedId;
+      delete state.merchantQuickOrder.awaitingCustomQuantity;
       return reply(event.replyToken,textMsg("已加入 "+p.name+" × "+qty+"。可繼續選商品或查看清單。",[{label:"繼續選商品",text:"商採選商品"},{label:"查看清單",text:"商採清單"},{label:"取消",text:"取消商採快捷"}]));
     }
     if (text === "商採選商品") return reply(event.replyToken,textMsg("請選擇下一項商品。",merchantItemButtons()));
