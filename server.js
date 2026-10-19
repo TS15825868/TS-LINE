@@ -361,8 +361,7 @@ async function reply(token, messages) {
 
 function productBubble(product) {
   const retailPrice = Number(product.price);
-  const priceLine = Number.isFinite(retailPrice) && retailPrice > 0 && product.quoteOnly !== true
-    ? `售價：${money(retailPrice)}` : "售價請洽 LINE 客服確認";
+  const priceLine = "金額、優惠與折扣由專人確認";
   const productUrl = absoluteUrl(product.page || "products.html");
   const productImage = absoluteUrl(product.image || "images/logo.png");
 
@@ -515,7 +514,7 @@ function qtyMenu(product) {
     if (!validQuantity) return null;
     const total = canOrder ? calcItem(product, quantity).total : 0;
     return {
-      label: canOrder ? `${quantity}${orderUnit(product)}｜${money(total)}`.slice(0, 20) : `${quantity}${orderUnit(product)}`,
+      label: `${quantity}${orderUnit(product)}`,
       text: `${canOrder ? "加入購物車" : "詢價數量"}｜${product.id}｜${quantity}`
     };
   }).filter(Boolean);
@@ -581,11 +580,11 @@ function cartFlex(state) {
   }
 
   const lines = state.cart
-    .map((item, index) => `${index + 1}. ${item.name} × ${item.qty}${item.unit}\n小計：${money(item.total)}`)
+    .map((item, index) => `${index + 1}. ${item.name} × ${item.qty}${item.unit}`)
     .join("\n\n");
 
-  return buildCartCard(`選購明細：\n${lines}\n\n應付合計：${money(cartTotal(state.cart))}\n\n出貨說明：${orderNoticeForCart(state.cart)}`, [
-    { label: "直接結帳", text: "開始結帳" },
+  return buildCartCard(`選購明細：\n${lines}\n\n金額、折扣及運費由專人確認（送出不代表訂單成立）\n\n出貨說明：${orderNoticeForCart(state.cart)}`, [
+    { label: "送出選購需求", text: "開始結帳" },
     { label: "繼續選購", text: "看產品" },
     { label: "清空購物車", text: "清空購物車" },
   ]);
@@ -736,14 +735,14 @@ function comboQtyMenu(index) {
   const description = [
     ...(combo.items || []).map((item) => `・${item}`),
     "",
-    `每組售價：${money(unitPrice)}`,
+    "組合價格與優惠由專人確認",
     `可選組數：${quantities.join("、")}組`,
     ...(promotionLines.length ? ["", "已套用活動／優惠：", ...promotionLines.map((line) => `・${line}`)] : []),
     "",
     orderNoticeForCombo(combo),
   ].join("\n");
   const buttons = quantities.map((qty) => ({
-    label: `${qty}組｜${money(unitPrice * qty)}`.slice(0, 20),
+    label: `${qty}組`,
     text: `加入組合｜${index}｜${qty}`,
   }));
   buttons.push({ label: "其他搭配方案", text: "搭配組合" });
@@ -793,7 +792,7 @@ function comboMenuReply() {
             "",
             combo.desc || "",
             "",
-            `每組售價：${money(unitPrice)}`,
+            "組合價格與優惠由專人確認",
             `可選組數：${quantities.join("、")}組`,
             ...(promotions.length ? ["", "活動／優惠已套用：", ...promotions.map((line) => `・${line}`)] : []),
             "",
@@ -1076,8 +1075,8 @@ function startCheckout(state) {
 function orderSummary(state) {
   const checkout = state.checkout;
   return flexCard(
-    "確認訂單",
-    `購買商品：\n${state.cart.map(item => `${item.name} × ${item.qty}${item.unit}｜${money(item.total)}`).join("\n")}\n\n合計：${money(cartTotal(state.cart))}\n姓名：${checkout.name}\n電話：${checkout.phone}\n付款：${checkout.payment}\n配送：${checkout.shipping}\n地址／門市：${checkout.address}\n\n${orderNoticeForCart(state.cart)}`,
+    "確認選購需求",
+    `購買商品：\n${state.cart.map(item => `${item.name} × ${item.qty}${item.unit}`).join("\n")}\n\n金額／優惠／運費：專人確認（尚未成立訂單）\n姓名：${checkout.name}\n電話：${checkout.phone}\n付款：${checkout.payment}\n配送：${checkout.shipping}\n地址／門市：${checkout.address}\n\n${orderNoticeForCart(state.cart)}`,
     [
       { label: "確認送出", text: "確認送出" },
       { label: "取消", text: "取消" },
@@ -1207,6 +1206,13 @@ async function continueCheckout(event, state, text) {
 
     if (checkout.sending) return reply(event.replyToken, textMsg("訂單正在確認中，請稍候，不需要重複送出。"));
     const finalNotice = orderNoticeForCart(state.cart);
+    // 一般購物需求只交人工報價，不送未確認金額至正式 CRM 訂單。
+    if (!checkout.trial) {
+      const summary = "【LINE 選購需求｜待人工報價】\n" + state.cart.map(v=>v.name+" × "+v.qty+v.unit).join("\n") + "\n聯絡人："+checkout.name+"\n電話："+checkout.phone+"\n付款偏好："+checkout.payment+"\n配送："+checkout.shipping+"\n地址："+checkout.address+"\n價格、優惠、運費及正式訂單均待人工確認。";
+      const sent = await ownerAlert.pushOwnerAlert(event, summary).catch(error=>{console.error("[XJW_QUOTE_REQUEST]",error?.message||error);return false;});
+      if (sent) { state.cart=[]; state.checkout=null; }
+      return reply(event.replyToken,textMsg(sent?"選購需求已送出，仙加味將由專人確認報價、優惠、運費及交期；目前尚未成立正式訂單。":"需求暫未確認送達，購物車已保留。請稍後重試或聯絡人工客服。",sent?mainQuick():[{label:"重新送出",text:"確認送出"},{label:"人工客服",text:"我要人工客服"}]));
+    }
     // 訂單送出前依最新已核准售價重新核對其他商品，避免過期購物車價格流入 CRM。
     for (const item of state.cart) {
       if (!item.partner) continue;
