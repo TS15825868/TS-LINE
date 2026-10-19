@@ -1195,7 +1195,7 @@ async function continueCheckout(event, state, text) {
   }
 
   if (checkout.step === "confirm") {
-    if (!/確認送出|確認|送出/.test(text)) return reply(event.replyToken, orderSummary(state));
+    if (text !== "確認送出") return reply(event.replyToken, orderSummary(state));
 
     const finalNotice = orderNoticeForCart(state.cart);
     // 訂單送出前依最新已核准售價重新核對其他商品，避免過期購物車價格流入 CRM。
