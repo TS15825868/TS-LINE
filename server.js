@@ -1062,7 +1062,7 @@ function startTrialCheckout(state, shippingChoice) {
 
 function startCheckout(state) {
   state.checkout = { step: "name", name: "", phone: "", payment: "", shipping: "", address: "" };
-  return flexCard("第一步｜收件姓名", "請直接回覆收件人姓名。", [{ label: "取消", text: "取消" }]);
+  return flexCard("第一步｜收件姓名", "請輸入收件人姓名，例如 王先生。", [{ label: "取消", text: "取消" }]);
 }
 
 function orderSummary(state) {
