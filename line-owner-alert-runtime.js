@@ -29,10 +29,10 @@ async function pushOwnerAlert(event, text) {
   if (!owner || !client) return false;
   const sourceUserId = String(event?.source?.userId || "").trim();
   const stamp = new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
-  const isPartner = String(text || "").startsWith("【商家合作洽談】");
+  const isPartner = /^【商家(?:合作洽談|採購詢價)】/.test(String(text || ""));
   const message = [
-    isPartner ? "【仙加味｜新商家合作洽談】" : "【仙加味｜人工客服提醒】",
-    isPartner ? "有商家提交合作需求，請優先查看。" : "有顧客要求人工協助。",
+    isPartner ? "【仙加味｜新商家合作／採購洽詢】" : "【仙加味｜人工客服提醒】",
+    isPartner ? "有商家提交合作或採購需求，請優先查看。" : "有顧客要求人工協助。",
     `時間：${stamp}`,
     `訊息：${String(text || "人工客服").slice(0, isPartner ? 900 : 80)}`,
     sourceUserId ? `顧客識別：${sourceUserId.slice(0, 10)}…` : "",
