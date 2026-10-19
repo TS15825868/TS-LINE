@@ -1279,6 +1279,14 @@ async function continueCheckout(event, state, text) {
 
 async function handleLegacyPostback(event) {
   const state = getState(event.source.userId || "anonymous");
+  // 全域聯絡入口優先於結帳、商家洽談與自訂數量狀態，避免快捷按鈕被舊流程攔截。
+  if (/^(我要人工客服|人工客服|客服|聯絡我們|聯絡業務|業務聯絡|業務LINE|請業務聯絡我|請業務回覆|官方客服留言)$/.test(text)) {
+    if (text === "官方客服留言") return reply(event.replyToken,textMsg("請直接在這個官方 LINE 對話輸入您的商品、訂單或配送需求，客服會協助確認。",mainQuick()));
+    if (/^(聯絡業務|業務聯絡|業務LINE)$/.test(text)) return reply(event.replyToken,flexCard("仙加味｜聯絡業務","批發採購、合作洽談、大量訂購及特殊需求，可點選下方按鈕加入業務 LINE。價格、折扣及正式訂單由專人確認。",[{label:"加入業務 LINE",uri:"https://line.me/ti/p/gpgcEZ0HHE"},{label:"官方客服",text:"我要人工客服"}]));
+    if (/^(請業務聯絡我|請業務回覆)$/.test(text)) return reply(event.replyToken,textMsg("請直接在官方 LINE 留下您的稱呼、聯絡方式及需求，業務人員將接續處理。",mainQuick()));
+    return reply(event.replyToken,flexCard("仙加味｜聯絡我們","一般商品、訂單及配送請直接在官方 LINE 留言；批發、合作與大量採購可聯絡業務。",[{label:"官方 LINE 客服",text:"官方客服留言"},{label:"聯絡業務",uri:"https://line.me/ti/p/gpgcEZ0HHE"},{label:"請業務聯絡我",text:"請業務聯絡我"},{label:"看產品",text:"看產品"}]));
+  }
+  if (state.consumerCustomQuantityId && /^(選擇數量｜|看產品$|購物車$|查看購買清單$|商家合作$|開始結帳$)/.test(text)) delete state.consumerCustomQuantityId;
   const data = parsePB(event.postback?.data || "");
 
   if (data.action === "products") { await publicCatalog.refresh(); return reply(event.replyToken, productMenuReply()); }
