@@ -11,7 +11,7 @@ const stable=v=>JSON.stringify(v,null,2)+"\n";
 const REQUIRED_CURRENT_IDS=["guilu-gao","guilu-drink-30","guilu-drink-180","luerong-fen"];
 const QIXUAN_ID="qixuan-guilu-drink-powder";
 const publicIdsFromMaster=(master)=>[...new Set((master?.products||[]).map(x=>String(x?.id||"").trim()).filter(Boolean))];
-const CURRENT_30_USAGE="每日 1–2 罐";
+const CURRENT_30_USAGE="每日 1 罐";
 const QIXUAN_HIDDEN=Object.freeze({
   id:QIXUAN_ID,
   name:"柒玄茶・龜鹿調飲粉",
@@ -46,8 +46,8 @@ function validateMaster(master){
     if(!Array.isArray(p.ingredients)||!p.ingredients.length)throw new Error(`${p.id}缺少正式成分`);
   }
   const d30=master.products.find(x=>x.id==="guilu-drink-30");
-  if(!/^每日\s*1[～–-]2\s*罐/.test(String(d30?.usage?.[0]||"")))throw new Error("30cc公開母資料缺少每日 1～2 罐用法");
-  if(!d30.usage.includes("可依個人需求調整"))throw new Error("30cc公開母資料缺少正式用量調整說明");
+  if(!/^每日\s*1\s*罐/.test(String(d30?.usage?.[0]||"")))throw new Error("30cc公開母資料缺少每日 1 罐用法");
+
   if(ids.includes(QIXUAN_ID))throw new Error("柒玄茶維持暫緩公開，未明確重新上架不得自動公開");
 }
 
@@ -68,7 +68,7 @@ function mergeAuthority(local,master){
   const publicProducts=master.products.map(src=>{
     const old=localBy.get(src.id)||{};
     const primary=String(src?.usage?.[0]||old.usagePrimary||"").trim();
-    const adjustment=String(src.usageAdjustment||src.usage?.find(x=>x==="可依個人需求調整")||"").trim();
+    const adjustment="";
     const timing=String(src?.usageTiming||old.usageTiming||((src.id==="guilu-drink-30"||src.id==="guilu-drink-180")?"飲用時間可依個人使用習慣與作息時間安排":"")).trim();
     return {...old,id:src.id,name:src.name,displayName:src.name,specification:src.specification,...(src.package?{package:src.package}:{}),...(src.form?{form:src.form}:{}),ingredients:[...src.ingredients],...(primary?{usagePrimary:primary}:{}),...(adjustment?{usageAdjustment:adjustment}:{}),...(timing?{usageTiming:timing}:{}),...(src.detail?{detailUnitApprox:src.detail}:{}),publicProductMasterVersion:master.version};
   });
@@ -86,7 +86,7 @@ function mergeAuthority(local,master){
   ];
   const guardRules=[...new Set([
     ...deferredRules,
-    "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1–2 罐，可依個人需求調整，舊守門員不得覆蓋新版正確資料。",
+    "30cc正式使用方式依官網 public-product-master.json 最新權威同步；目前為每日 1 罐，舊守門員不得覆蓋新版正確資料。",
     ...((local.guardRules||[]).filter(x=>{const v=String(x);return !/龜鹿湯塊|龜鹿膠/.test(v)&& !v.includes("LINE可保留柒玄茶文字知識")&&!v.includes("七項產品文字知識完整")&&!v.includes("LINE文字知識必須保留7項")&&!v.includes("30cc目前正式使用方式")&&!v.includes("30cc正式使用方式")&&!v.includes("75g （2兩）")&&!v.includes("柒玄茶目前維持暫時隱藏")&&!v.includes("柒玄茶資料保留但不得出現在產品卡")&&!v.includes("柒玄茶目前沒有核准正式產品實物原圖");}))
   ])];
   return {
@@ -140,7 +140,7 @@ function assertCurrent(merged,authority,photoAuthority,master){
     if(expectedDm?!dm.includes(expectedDm):!dm.includes("/images/dm-final/"))throw new Error(`${id}正式DM來源不同步`);
   }
   const d30=auth.get("guilu-drink-30"),raw30=(merged.products||[]).find(x=>x.id==="guilu-drink-30");
-  if(!/^每日\s*1[～–-]2\s*罐/.test(String(d30?.usagePrimary||""))||!/^每日\s*1[～–-]2\s*罐/.test(String(raw30?.usage?.[0]||""))||d30?.usageAdjustment!=="可依個人需求調整"||!raw30?.usage?.includes("可依個人需求調整")||raw30?.usageAdjustment!=="可依個人需求調整")throw new Error("30cc目前新版用法／時間原則不同步");
+  if(!/^每日\s*1\s*罐/.test(String(d30?.usagePrimary||""))||!/^每日\s*1\s*罐/.test(String(raw30?.usage?.[0]||"")))throw new Error("30cc目前新版用法／時間原則不同步");
   if(/玻璃瓶|30cc／瓶|瓶裝|開瓶/.test(JSON.stringify(raw30)))throw new Error("30cc不得出現瓶型舊稱");
   if(!publicIds.includes(QIXUAN_ID)){
     const qixuan=auth.get(QIXUAN_ID);
