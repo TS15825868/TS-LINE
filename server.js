@@ -1306,7 +1306,7 @@ async function handleMessage(event) {
     return reply(event.replyToken, textMsg("目前請使用文字訊息詢問。", mainQuick()));
   }
 
-  const text = sanitizeUserText(event.message.text, 500);
+  let text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
   // 合作資格由管理端核准的 LINE userId 白名單控制，未核准者不得進入快捷採購。
   // 以環境變數配置，不將商家身分或合作價公開寫入 GitHub。
