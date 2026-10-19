@@ -1232,7 +1232,7 @@ async function continueCheckout(event, state, text) {
         event.replyToken,
         flexCard(
           "訂單暫未送出",
-          "訂單資料已保留，但系統目前無法寫入訂單。請稍後再按確認送出，或選擇人工客服協助。",
+          "尚未取得 CRM 成功接單確認，購物車與資料已保留。若剛剛已按過送出，請勿連續重按；可稍後重試或請人工客服查詢，避免重複訂購。",
           [
             { label: "再次送出", text: "確認送出" },
             { label: "人工客服", text: "我要人工客服" },
