@@ -496,6 +496,14 @@ function priceCarousel() {
   return textMsg("已核准商品的末端售價請查看商品卡；優惠、供貨與其他商品價格請由仙加味 LINE 人工客服確認。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
 }
 
+function orderUnit(product) {
+  const unit = String(product?.unit || "").trim();
+  if (unit && unit !== "件") return unit;
+  const spec = String(product?.spec || product?.size || product?.specification || "");
+  const match = spec.match(/[／/]\s*(罐|包|盒|瓶|袋|組|條|入|片|塊|支|個)(?:\b|[（(\s]|$)/u);
+  return match ? match[1] : (unit || "件");
+}
+
 function qtyMenu(product) {
   const options = Array.isArray(product.quantityOptions) && product.quantityOptions.length
     ? product.quantityOptions.slice(0, 4) : [1, 2, 3, 5];
@@ -507,14 +515,14 @@ function qtyMenu(product) {
     if (!validQuantity) return null;
     const total = canOrder ? calcItem(product, quantity).total : 0;
     return {
-      label: canOrder ? `${quantity}${product.unit || "件"}｜${money(total)}`.slice(0, 20) : `${quantity}${product.unit || "件"}`,
+      label: canOrder ? `${quantity}${orderUnit(product)}｜${money(total)}`.slice(0, 20) : `${quantity}${orderUnit(product)}`,
       text: `${canOrder ? "加入購物車" : "詢價數量"}｜${product.id}｜${quantity}`
     };
   }).filter(Boolean);
   buttons.push({ label: "其他數量", text: `自訂數量｜${product.id}` });
   return flexCard(
     `${product.displayName}｜${canOrder ? "選擇數量" : "詢問數量"}`,
-    `${productSpecText(product)}\n${canOrder ? "點選數量即可加入購物車。" : "點選數量即可詢價。"}`,
+    `${productSpecText(product)}\n數量單位：${orderUnit(product)}（依上方商品規格）\n${canOrder ? "點選數量即可加入購物車。" : "點選數量即可詢價。"}`,
     buttons
   );
 }
@@ -1330,7 +1338,7 @@ async function handleMessage(event) {
       const p = merchantProducts().find(v => v.id === chosen[1]);
       if (!p) return reply(event.replyToken,textMsg("此商品暫不提供快捷採購，請重新選擇。",merchantItemButtons()));
       state.merchantQuickOrder.selectedId = p.id;
-      return reply(event.replyToken,textMsg("請選擇「"+(p.displayName||p.name)+"」的採購數量：", [1,5,10,20,50].map(q=>({label:q+" "+(p.unit||"件"),text:"商採數量｜"+q})).concat([{label:"其他數量",text:"商採其他數量"},{label:"返回商品",text:"商採選商品"}])));
+      return reply(event.replyToken,textMsg("請選擇「"+(p.displayName||p.name)+"」的採購數量：", [1,5,10,20,50].map(q=>({label:q+" "+orderUnit(p),text:"商採數量｜"+q})).concat([{label:"其他數量",text:"商採其他數量"},{label:"返回商品",text:"商採選商品"}])));
     }
     if (text === "商採其他數量") { state.merchantQuickOrder.awaitingCustomQuantity = true; return reply(event.replyToken,textMsg("請直接輸入需要的數量，例如「80」。不用輸入其他文字，最多 9999。",[{label:"返回數量選單",text:"商採返回數量"},{label:"取消",text:"取消商採快捷"}])); }
     if (text === "商採返回數量" && state.merchantQuickOrder.selectedId) { state.merchantQuickOrder.awaitingCustomQuantity = false; const p=merchantProducts().find(v=>v.id===state.merchantQuickOrder.selectedId); return reply(event.replyToken,textMsg("請選擇「"+(p?.displayName||p?.name||"商品")+"」的數量：",[1,5,10,20,50].map(q=>({label:q+" "+(p?.unit||"件"),text:"商採數量｜"+q})).concat([{label:"其他數量",text:"商採其他數量"},{label:"返回商品",text:"商採選商品"}]))); }
@@ -1342,7 +1350,7 @@ async function handleMessage(event) {
       if (!p) return reply(event.replyToken,textMsg("商品資料已變動，請重新選擇。",merchantItemButtons()));
       const qty = Number(quantity[1]);
       const existing=state.merchantQuickOrder.items.find(v=>v.id===p.id);
-      if(existing) existing.qty+=qty; else state.merchantQuickOrder.items.push({id:p.id,name:p.displayName||p.name,qty,unit:p.unit||"件"});
+      if(existing) existing.qty+=qty; else state.merchantQuickOrder.items.push({id:p.id,name:p.displayName||p.name,qty,unit:orderUnit(p)});
       delete state.merchantQuickOrder.selectedId;
       delete state.merchantQuickOrder.awaitingCustomQuantity;
       return reply(event.replyToken,textMsg("已加入 "+p.name+" × "+qty+"。可繼續選商品或查看清單。",[{label:"繼續選商品",text:"商採選商品"},{label:"查看清單",text:"商採清單"},{label:"取消",text:"取消商採快捷"}]));
@@ -1689,7 +1697,7 @@ async function handleMessage(event) {
     const p = getProduct(customQtyStart[1]);
     if (!p) return reply(event.replyToken,textMsg("找不到這項商品，請重新選擇。",mainQuick()));
     state.consumerCustomQuantityId = p.id;
-    return reply(event.replyToken,textMsg("請直接輸入需要的數量（1～99），例如：12。",[{label:"返回數量選單",text:"選擇數量｜"+p.id},{label:"取消",text:"取消自訂數量"}]));
+    return reply(event.replyToken,textMsg("請直接輸入數字（1～99），例如：12。單位："+orderUnit(p)+"；商品規格："+(p.spec||p.size||"依商品頁標示")+"。",[{label:"返回數量選單",text:"選擇數量｜"+p.id},{label:"取消",text:"取消自訂數量"}]));
   }
   if (text === "取消自訂數量") {
     delete state.consumerCustomQuantityId;
