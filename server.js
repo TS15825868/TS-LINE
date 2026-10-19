@@ -716,9 +716,9 @@ function comboPromotionLines(combo) {
     const qty = Number(component.qty || 0);
     const exactOffer = product.offers.find((offer) => Number(offer.qty) === qty);
     if (exactOffer) {
-      lines.push(`${product.displayName}：${exactOffer.label} ${money(exactOffer.total)}`);
+      lines.push(`${product.displayName}：方案內容請由專人確認`);
     } else if (product.originalPrice && product.originalPrice > product.price) {
-      lines.push(`${product.displayName}：已套用優惠價 ${money(product.price)}`);
+      lines.push(`${product.displayName}：優惠由專人確認`);
     }
   }
   return lines;
@@ -737,7 +737,7 @@ function comboQtyMenu(index) {
     "",
     "組合價格與優惠由專人確認",
     `可選組數：${quantities.join("、")}組`,
-    ...(promotionLines.length ? ["", "已套用活動／優惠：", ...promotionLines.map((line) => `・${line}`)] : []),
+    ...(promotionLines.length ? ["", "活動優惠以人工報價為準"] : []),
     "",
     orderNoticeForCombo(combo),
   ].join("\n");
@@ -757,7 +757,7 @@ function addComboCart(state, combo, index, qty) {
   const item = state.cart.find((cartItem) => cartItem.id === id);
   const unitPrice = comboUnitPrice(combo);
   item.total = unitPrice * item.qty;
-  item.label = `每組 ${money(unitPrice)} × ${item.qty}`;
+  item.label = `搭配組合 × ${item.qty}組｜金額待確認`;
 }
 
 function comboMenuReply() {
@@ -794,7 +794,7 @@ function comboMenuReply() {
             "",
             "組合價格與優惠由專人確認",
             `可選組數：${quantities.join("、")}組`,
-            ...(promotions.length ? ["", "活動／優惠已套用：", ...promotions.map((line) => `・${line}`)] : []),
+            ...(promotions.length ? ["", "活動優惠以人工報價為準"] : []),
             "",
             orderNoticeForCombo(combo),
           ].join("\n");
