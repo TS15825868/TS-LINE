@@ -1308,6 +1308,19 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+  // 全域導覽指令不得被進行中的商家表單誤記為聯絡資料、商品或合作需求。
+  // 保留表單進度；使用者可稍後輸入「繼續合作洽談」或「繼續商家採購」。
+  const businessNavigation = /^(?:看產品|查看產品|看商品|產品|產品總覽|購物車|查看購物車|幫我推薦|搭配組合|直接下單|直接購買|我要下單|立即下單|開始下單|我要買|我要人工客服|人工客服|客服|主選單|返回主選單)$/;
+  if (text === "繼續合作洽談" && state.businessInquiry) {
+    const inquiry = state.businessInquiry;
+    const prompt = inquiry.step === "category" ? "請選擇合作類型，或輸入「商家合作」重新開始。" : inquiry.step === "business" ? "請提供商家／公司名稱、聯絡人與聯絡方式。" : inquiry.step === "details" ? "請說明合作商品、預估數量或合作需求。" : "請確認送出、重新填寫或取消合作洽談。";
+    return reply(event.replyToken, textMsg(prompt, inquiry.step === "confirm" ? [{label:"確認送出",text:"確認送出合作洽談"},{label:"重新填寫",text:"商家合作"},{label:"取消",text:"取消合作洽談"}] : [{label:"取消",text:"取消合作洽談"}]));
+  }
+  if (text === "繼續商家採購" && state.merchantOrderInquiry) {
+    const merchant = state.merchantOrderInquiry;
+    const prompt = merchant.step === "contact" ? "請提供商家名稱、聯絡人及聯絡方式。" : merchant.step === "items" ? "請提供商品名稱、規格與數量。" : merchant.step === "delivery" ? "請提供交貨地區、交期與需求。" : "請確認送出詢價、重新填寫或取消。";
+    return reply(event.replyToken, textMsg(prompt, merchant.step === "confirm" ? [{label:"確認送出",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}] : [{label:"取消",text:"取消商家採購"}]));
+  }
   // 商家採購詢價獨立於一般消費者結帳：未核准報價不成立訂單，也不寫入 CRM。
   if (/^(商家下單|商家採購|批發下單|商家訂貨|批發訂貨)$/.test(text)) {
     state.merchantOrderInquiry = { step: "contact", data: {} };
@@ -1317,7 +1330,7 @@ async function handleMessage(event) {
     delete state.merchantOrderInquiry;
     return reply(event.replyToken, textMsg("已取消本次商家採購詢價。需要時可再輸入「商家下單」。", mainQuick()));
   }
-  if (state.merchantOrderInquiry) {
+  if (state.merchantOrderInquiry && !businessNavigation.test(text)) {
     const merchant = state.merchantOrderInquiry;
     if (merchant.step === "contact") {
       if (text.length < 4) return reply(event.replyToken, textMsg("請提供商家名稱、聯絡人及聯絡方式；也可填「以 LINE 聯絡」。"));
@@ -1360,7 +1373,7 @@ async function handleMessage(event) {
     delete state.businessInquiry;
     return reply(event.replyToken, textMsg("已結束合作洽談填寫。如需再次洽談，請輸入「商家合作」。", mainQuick()));
   }
-  if (state.businessInquiry) {
+  if (state.businessInquiry && !businessNavigation.test(text)) {
     const inquiry = state.businessInquiry;
     const selected = text.match(/^合作類型｜(批發採購|通路寄賣|品牌異業|其他合作)$/);
     if (selected && inquiry.step === "category") {
