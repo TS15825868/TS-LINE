@@ -1308,6 +1308,43 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+  // 商家採購詢價獨立於一般消費者結帳：未核准報價不成立訂單，也不寫入 CRM。
+  if (/^(商家下單|商家採購|批發下單|商家訂貨|批發訂貨)$/.test(text)) {
+    state.merchantOrderInquiry = { step: "contact", data: {} };
+    return reply(event.replyToken, textMsg("仙加味｜商家採購詢價\n請提供商家名稱、聯絡人及聯絡方式（可填「以 LINE 聯絡」）。\n報價、供貨及付款配送方式均由專人確認後提供；本流程不會直接成立訂單。", [{label:"取消",text:"取消商家採購"}]));
+  }
+  if (text === "取消商家採購") {
+    delete state.merchantOrderInquiry;
+    return reply(event.replyToken, textMsg("已取消本次商家採購詢價。需要時可再輸入「商家下單」。", mainQuick()));
+  }
+  if (state.merchantOrderInquiry) {
+    const merchant = state.merchantOrderInquiry;
+    if (merchant.step === "contact") {
+      if (text.length < 4) return reply(event.replyToken, textMsg("請提供商家名稱、聯絡人及聯絡方式；也可填「以 LINE 聯絡」。"));
+      merchant.data.contact = text.slice(0, 240);
+      merchant.step = "items";
+      return reply(event.replyToken, textMsg("請輸入想採購的商品名稱、規格及數量（可一次列多項）。\n例如：龜鹿飲30cc玻璃罐 20罐；龜鹿膏 5罐。\n數量與價格均需由專人確認。", [{label:"取消",text:"取消商家採購"}]));
+    }
+    if (merchant.step === "items") {
+      if (text.length < 4) return reply(event.replyToken, textMsg("請提供至少一項商品及預估數量。"));
+      merchant.data.items = text.slice(0, 600);
+      merchant.step = "delivery";
+      return reply(event.replyToken, textMsg("請提供預計交貨地區、希望交期及其他需求；若尚未確定可回覆「待討論」。", [{label:"取消",text:"取消商家採購"}]));
+    }
+    if (merchant.step === "delivery") {
+      merchant.data.delivery = text.slice(0, 300);
+      merchant.step = "confirm";
+      return reply(event.replyToken, textMsg(`請確認商家採購詢價資料：\n商家與聯絡方式：${merchant.data.contact}\n商品與預估數量：${merchant.data.items}\n交貨及其他需求：${merchant.data.delivery}\n\n送出僅代表詢價，不代表價格核定、訂單成立或保證供貨。`, [{label:"確認送出詢價",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}]));
+    }
+    if (merchant.step === "confirm") {
+      if (text !== "確認送出商家詢價") return reply(event.replyToken, textMsg("請選擇「確認送出詢價」、「重新填寫」或「取消」。", [{label:"確認送出詢價",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}]));
+      const summary = `【商家採購詢價】\n商家與聯絡方式：${merchant.data.contact}\n商品與預估數量：${merchant.data.items}\n交貨與其他需求：${merchant.data.delivery}`;
+      const sent = await ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_MERCHANT_INQUIRY_ALERT]",error?.message||error);return false; });
+      if (sent) delete state.merchantOrderInquiry;
+      return reply(event.replyToken, textMsg(sent ? "商家採購詢價已通知仙加味負責人。專人將確認報價、庫存及配送，確認前尚未成立訂單。" : "商家詢價內容已整理，但管理員通知尚未成功。請保留對話並洽人工客服，或稍後再次按「確認送出詢價」。", sent ? mainQuick() : [{label:"再次送出",text:"確認送出商家詢價"},{label:"人工客服",text:"我要人工客服"}]));
+    }
+  }
+
   // 商家合作洽談：分類 → 商家資訊 → 需求 → 確認送出，避免空白訊息造成誤通知。
   if (/^(商家合作|合作洽談|批發合作|通路合作|異業合作|我要合作|合作諮詢)$/.test(text)) {
     state.businessInquiry = { step: "category", data: {} };
