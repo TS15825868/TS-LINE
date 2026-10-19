@@ -1322,6 +1322,19 @@ async function handleMessage(event) {
 
   let text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+  // Contact shortcuts must remain available even during an active order or merchant form.
+  if (/^(我要人工客服|人工客服|客服|聯絡我們|聯絡業務|業務聯絡|業務LINE|請業務聯絡我|請業務回覆|官方客服留言)$/.test(text)) {
+    if (text === "官方客服留言") {
+      return reply(event.replyToken, textMsg("請直接在官方 LINE 對話留下商品、訂單或配送需求，客服會協助確認。", mainQuick()));
+    }
+    if (/^(聯絡業務|業務聯絡|業務LINE)$/.test(text)) {
+      return reply(event.replyToken, flexCard("仙加味｜聯絡業務", "批發採購、合作洽談與大量訂購可聯絡業務；報價及正式訂單仍由專人確認。", [{label:"加入業務 LINE",uri:"https://line.me/ti/p/gpgcEZ0HHE"},{label:"官方客服",text:"官方客服留言"}]));
+    }
+    if (/^(請業務聯絡我|請業務回覆)$/.test(text)) {
+      return reply(event.replyToken, textMsg("請在官方 LINE 留下稱呼、聯絡方式與需求，業務人員將接續處理。", mainQuick()));
+    }
+    return reply(event.replyToken, flexCard("仙加味｜聯絡我們", "商品、訂單及配送請透過官方 LINE；批發及合作亦可聯絡業務。", [{label:"官方 LINE 客服",text:"官方客服留言"},{label:"聯絡業務",uri:"https://line.me/ti/p/gpgcEZ0HHE"},{label:"請業務聯絡我",text:"請業務聯絡我"},{label:"看產品",text:"看產品"}]));
+  }
   // 合作資格由管理端核准的 LINE userId 白名單控制，未核准者不得進入快捷採購。
   // 以環境變數配置，不將商家身分或合作價公開寫入 GitHub。
   const approvedMerchantIds = new Set(String(process.env.XJW_APPROVED_MERCHANT_LINE_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
