@@ -1308,6 +1308,56 @@ async function handleMessage(event) {
 
   const text = sanitizeUserText(event.message.text, 500);
   const state = getState(event.source.userId || "anonymous");
+  // 合作資格由管理端核准的 LINE userId 白名單控制，未核准者不得進入快捷採購。
+  // 以環境變數配置，不將商家身分或合作價公開寫入 GitHub。
+  const approvedMerchantIds = new Set(String(process.env.XJW_APPROVED_MERCHANT_LINE_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
+  const isApprovedMerchant = Boolean(event.source.userId && approvedMerchantIds.has(event.source.userId));
+  const merchantProducts = () => DATA.products.filter(p => p && p.id && p.name).slice(0, 12);
+  const merchantItemButtons = () => merchantProducts().map(p => ({label:String(p.displayName || p.name).slice(0,20),text:"商採商品｜"+p.id})).concat([{label:"查看清單",text:"商採清單"},{label:"取消",text:"取消商採快捷"}]);
+  if (text === "取消商採快捷") {
+    delete state.merchantQuickOrder;
+    return reply(event.replyToken,textMsg("已取消本次商家快捷採購。",mainQuick()));
+  }
+  if (isApprovedMerchant && /^(商家合作|合作洽談|批發合作|商家下單|商家採購|批發下單|商家訂貨|批發訂貨)$/.test(text)) {
+    delete state.businessInquiry;
+    delete state.merchantOrderInquiry;
+    state.merchantQuickOrder = {items:[]};
+    return reply(event.replyToken,textMsg("仙加味｜合作商家快捷採購\\n請點選商品，再選擇數量。可連續加入多項，最後送出採購詢價清單。價格、供貨及配送由專人確認，送出不代表正式訂單成立。",merchantItemButtons()));
+  }
+  if (isApprovedMerchant && state.merchantQuickOrder) {
+    const chosen = text.match(/^商採商品｜([a-zA-Z0-9_-]+)$/);
+    if (chosen) {
+      const p = merchantProducts().find(v => v.id === chosen[1]);
+      if (!p) return reply(event.replyToken,textMsg("此商品暫不提供快捷採購，請重新選擇。",merchantItemButtons()));
+      state.merchantQuickOrder.selectedId = p.id;
+      return reply(event.replyToken,textMsg("請選擇「"+(p.displayName||p.name)+"」的採購數量：", [1,5,10,20,50].map(q=>({label:q+" "+(p.unit||"件"),text:"商採數量｜"+q})).concat([{label:"其他數量",text:"商採其他數量"},{label:"返回商品",text:"商採選商品"}])));
+    }
+    if (text === "商採其他數量") return reply(event.replyToken,textMsg("請輸入「商採數量｜數字」，例如：商採數量｜30（最多 9999）。"));
+    const quantity = text.match(/^商採數量｜([1-9][0-9]{0,3})$/);
+    if (quantity && state.merchantQuickOrder.selectedId) {
+      const p = merchantProducts().find(v=>v.id===state.merchantQuickOrder.selectedId);
+      if (!p) return reply(event.replyToken,textMsg("商品資料已變動，請重新選擇。",merchantItemButtons()));
+      const qty = Number(quantity[1]);
+      const existing=state.merchantQuickOrder.items.find(v=>v.id===p.id);
+      if(existing) existing.qty+=qty; else state.merchantQuickOrder.items.push({id:p.id,name:p.displayName||p.name,qty,unit:p.unit||"件"});
+      delete state.merchantQuickOrder.selectedId;
+      return reply(event.replyToken,textMsg("已加入 "+p.name+" × "+qty+"。可繼續選商品或查看清單。",[{label:"繼續選商品",text:"商採選商品"},{label:"查看清單",text:"商採清單"},{label:"取消",text:"取消商採快捷"}]));
+    }
+    if (text === "商採選商品") return reply(event.replyToken,textMsg("請選擇下一項商品。",merchantItemButtons()));
+    if (text === "商採清單") {
+      const items=state.merchantQuickOrder.items;
+      if(!items.length) return reply(event.replyToken,textMsg("採購清單目前沒有商品。",merchantItemButtons()));
+      return reply(event.replyToken,textMsg("仙加味｜商家採購清單\\n"+items.map((v,i)=>(i+1)+". "+v.name+" × "+v.qty+" "+v.unit).join("\\n")+"\\n\\n送出後由專人確認合作價格、供貨及配送；尚未成立訂單。",[{label:"確認送出",text:"商採確認送出"},{label:"繼續加購",text:"商採選商品"},{label:"取消",text:"取消商採快捷"}]));
+    }
+    if (text === "商採確認送出") {
+      const items=state.merchantQuickOrder.items;
+      if(!items.length) return reply(event.replyToken,textMsg("採購清單尚無商品。",merchantItemButtons()));
+      const summary="【已核准商家採購詢價】\\nLINE userId："+event.source.userId+"\\n"+items.map(v=>v.name+" × "+v.qty+" "+v.unit).join("\\n");
+      const sent=await ownerAlert.pushOwnerAlert(event,summary).catch(e=>{console.error("[XJW_APPROVED_MERCHANT_ALERT]",e?.message||e);return false;});
+      if(sent) delete state.merchantQuickOrder;
+      return reply(event.replyToken,textMsg(sent?"採購清單已送出，仙加味將確認合作價格、庫存與配送。尚未成立正式訂單。":"採購清單已保留，但通知尚未成功，請稍後重試或聯絡人工客服。",sent?mainQuick():[{label:"再次送出",text:"商採確認送出"},{label:"人工客服",text:"我要人工客服"}]));
+    }
+  }
   // 全域導覽指令不得被進行中的商家表單誤記為聯絡資料、商品或合作需求。
   // 保留表單進度；使用者可稍後輸入「繼續合作洽談」或「繼續商家採購」。
   const businessNavigation = /^(?:看產品|查看產品|看商品|產品|產品總覽|購物車|查看購物車|幫我推薦|搭配組合|直接下單|直接購買|我要下單|立即下單|開始下單|我要買|我要人工客服|人工客服|客服|主選單|返回主選單)$/;
