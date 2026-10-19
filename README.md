@@ -78,14 +78,14 @@ LINE Official Account Manager 的「商業簡介」屬 OA Manager 手動發布�
 
 正式顧客端 Rich Menu／快速選單的顯示權威為 **LINE Official Account Manager**。
 
-六個功能區：
+六個功能區（以 OA Manager 已發布的顧客端選單為準）：
 
 1. 看產品
 2. 購物車
 3. 幫我推薦
 4. 搭配組合
-5. 怎麼使用
-6. 直接下單
+5. 直接下單
+6. 商家合作
 
 正式環境預設 `LINE_RICH_MENU_AUTHORITY=oa-manager`。Render 啟動時只做 authority reconciliation：清除過去由 Messaging API 設定的全體 default，讓 OA Manager 的正式快速選單接管；不得自動建立另一張 Rich Menu 覆蓋正式版。
 
