@@ -288,7 +288,7 @@ function flexCard(title, description, buttons = []) {
         spacing: "md",
         contents: [
           { type: "text", text: title, weight: "bold", size: "xl", color: "#7B1E1E", wrap: true },
-          { type: "text", text: description, size: "sm", color: "#555555", wrap: true },
+          { type: "text", text: description, size: "md", color: "#333333", wrap: true },
         ],
       },
       ...(footerButtons.length
