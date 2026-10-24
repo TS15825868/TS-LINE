@@ -5,6 +5,11 @@ name: 仙加味 LINE OA 目前正式版完整驗收
 # 正式規格只由 repo 目前權威與正式測試判斷，不在 workflow 複製第二套舊資料。
 on:
   workflow_dispatch:
+  # Weekly offline audit preserves new-advisory coverage after retiring
+  # redundant daily full acceptance while Render pipeline quota is blocked.
+  # No Render URL is called or deployment triggered by this workflow.
+  schedule:
+    - cron: '17 2 * * 1'
   push:
     branches: [main]
     paths:
