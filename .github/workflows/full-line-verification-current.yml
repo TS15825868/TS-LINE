@@ -96,15 +96,21 @@ jobs:
           base='https://ts-line.onrender.com'
           curl -LsS --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 150 "$base/" -o live-root.json
           curl -LsS --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 150 "$base/healthz" -o live-health.json
-          # A successful health response must identify this deployed commit and actual runtime facts.
-          ready=0
-          for attempt in $(seq 1 36); do
-            curl -fsS --retry 1 --connect-timeout 15 --max-time 45 "$base/healthz" -o live-health.json || true
-            if node -e "const h=require('./live-health.json');if(h.deploymentCommit!==process.env.GITHUB_SHA)process.exit(1)"; then ready=1; break; fi
-            echo "Waiting for Render current commit: $attempt/36"
-            sleep 10
-          done
-          test "$ready" = 1
+          # Code release and live deployment are different facts.
+          # When Render Free build quota is exhausted, retrying the same old
+          # commit 36 times wastes Actions minutes and does not deploy code.
+          # Report the precise mismatch immediately, without masking it.
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const h=JSON.parse(fs.readFileSync('live-health.json','utf8'));
+          const deployed=String(h.deploymentCommit||'unknown');
+          const expected=String(process.env.GITHUB_SHA||'unknown');
+          if(deployed!==expected){
+            console.error('LINE OA awaiting Render deployment: live='+deployed+' expected='+expected);
+            console.error('Formal code checks passed, but the live service has NOT been upgraded. No deployment retries were triggered.');
+            process.exit(1);
+          }
+          NODE
           node - <<'NODE'
           const fs=require('fs');
           const master=JSON.parse(fs.readFileSync('website-public-product-master.json','utf8'));
