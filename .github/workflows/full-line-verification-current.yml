@@ -11,8 +11,11 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/full-line-verification-current.yml'
-  schedule:
-    - cron: '31 1 * * *'
+  # LINE OA runtime stays on an older Render live build while included
+  # pipeline minutes are exhausted. Daily npm install + audit + release
+  # checks repeatedly prove this already-known deployment blocker.
+  # Keep all push-based security/content checks and explicit manual
+  # acceptance; do not suppress a stale-live-build error on a real release.
   workflow_dispatch:
 
 permissions:
