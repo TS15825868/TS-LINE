@@ -61,7 +61,10 @@ let slowCustomerEventCount = 0;
 const states = new Map();
 const processedWebhookEvents = new Map();
 const processingWebhookEvents = new Set();
-const WEBHOOK_EVENT_TTL_MS = 10 * 60 * 1000;
+// LINE may redeliver the same webhookEventId/replyToken. Reply tokens are
+// single-use and redelivered tokens may only be valid for 20 minutes from
+// the original event. Keep a local dedup guard longer than that window.
+const WEBHOOK_EVENT_TTL_MS = 30 * 60 * 1000;
 
 function cleanupWebhookEventCache(now = Date.now()) {
   for (const [key, createdAt] of processedWebhookEvents) {
@@ -78,11 +81,15 @@ function beginWebhookEvent(event) {
   return true;
 }
 
-function finishWebhookEvent(event, success) {
+function finishWebhookEvent(event, _success) {
   const id = String(event?.webhookEventId || "");
   if (!id) return;
   processingWebhookEvents.delete(id);
-  if (success) processedWebhookEvents.set(id, Date.now());
+  // The LINE platform may redeliver an event after we have already attempted
+  // an external reply/manager push/CRM write. A timeout or absent ACK does
+  // not prove the side effect was rejected. Never replay that same event in
+  // this process; the customer can send a NEW message to retry safely.
+  processedWebhookEvents.set(id, Date.now());
 }
 const DATA = loadData();
 const PARTNER_CAROUSEL_DATA = require("./line-partner-public-carousel.json");

@@ -401,3 +401,33 @@ const stubQuote={
  assert.match(success.text,/選購需求已送出/);
  console.log('PASS customer quote suppresses concurrent pushes and retains cart on failure');
 })().catch(err=>{console.error(err);process.exitCode=1});
+
+
+// Webhook events and reply tokens are single-use. A failed/ambiguous API ACK
+// MUST NOT remove the dedup receipt and repeat external side effects.
+const receiptStart=source.indexOf('const processedWebhookEvents = new Map();');
+const receiptEnd=source.indexOf('const DATA = loadData();',receiptStart);
+assert.ok(receiptStart>0&&receiptEnd>receiptStart,'Signed webhook dedup helpers not found');
+const receipts=vm.runInNewContext([
+ '(function(){',source.slice(receiptStart,receiptEnd),
+ 'return {beginWebhookEvent,finishWebhookEvent,processedWebhookEvents,processingWebhookEvents,WEBHOOK_EVENT_TTL_MS};','})()'
+].join('\n'),{Map,Set,Date});
+assert.equal(receipts.WEBHOOK_EVENT_TTL_MS,30*60*1000,'Cover LINE 20-minute redelivery window');
+const ev={webhookEventId:'OFFLINE_UNCERTAIN_EVENT',replyToken:'OFFLINE_SINGLE_USE_REPLY'};
+assert.equal(receipts.beginWebhookEvent(ev),true);
+assert.equal(receipts.beginWebhookEvent(ev),false,'Block concurrent processing of same event');
+receipts.finishWebhookEvent(ev,false);
+assert.equal(receipts.processingWebhookEvents.size,0);
+assert.equal(receipts.beginWebhookEvent(ev),false,
+ 'Do not repeat an uncertain reply token or CRM write after ACK failure');
+assert.equal(receipts.beginWebhookEvent({webhookEventId:'OFFLINE_NEW_MESSAGE'}),true,
+ 'A genuinely new customer message may still be answered');
+const succeeded={webhookEventId:'OFFLINE_CONFIRMED_EVENT'};
+assert.equal(receipts.beginWebhookEvent(succeeded),true);
+receipts.finishWebhookEvent(succeeded,true);
+assert.equal(receipts.beginWebhookEvent(succeeded),false,'Also suppress successful duplicate deliveries');
+assert.equal(receipts.beginWebhookEvent({}),true,
+ 'Older signature-verified events without IDs retain existing compatibility');
+receipts.processedWebhookEvents.set(ev.webhookEventId,Date.now()-31*60*1000);
+assert.equal(receipts.beginWebhookEvent(ev),true,'Old in-memory IDs expire to limit memory');
+console.log('PASS webhook redelivery never resends an uncertain one-time reply or CRM action');
