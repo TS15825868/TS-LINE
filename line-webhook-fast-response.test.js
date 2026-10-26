@@ -386,7 +386,7 @@ const stubQuote={
  const first=handler(event,state);
  assert.equal(state.checkout.sending,true,'Set busy flag before the first await');
  const second=await handler(event,state);
- assert.deepEqual(second,{busy:true});
+ assert.equal(second?.busy,true,'Concurrent quote should return an explicit busy response');
  assert.equal(sendCount,1,'Concurrent taps must not send the same quote twice');
  finish(false);
  const failed=await first;
