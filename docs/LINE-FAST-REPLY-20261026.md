@@ -25,3 +25,11 @@ Render 2026-10 的 build pipeline minutes 已耗盡，使用 `[skip render]` Com
 新增無客戶身分資訊的 `lastCustomerProcessingMs`、`lastEventToLineAckApproxMs`、`lastCustomerEventProcessedAt`、`lastCustomerResponseAccepted`、`slowCustomerEventCount`。收到 LINE 有效 timestamp 時，會將從 LINE 事件建立到後端處理／API 回覆完成的時間納入，包括 Render 冷啟動造成的延遲。超過 8 秒計入累積慢事件；失敗回覆不標記成功。無 timestamp 或逾 15 分鐘舊事件只記處理時間，不假造事件起點。
 
 **注意：LINE 平台接受回覆 != 顧客手機完整顯示訊息**。這是降低事故偵測盲點，不代表通過官方端對端測試。Render build 額度未恢復前，程式更新不會自動生效。
+
+## 2026-10-26｜一次性 Reply Token 的安全快速失敗
+
+LINE 官方 `replyToken` 僅可使用一次。舊版凡發生非文字 Flex 回覆錯誤，就立即使用同一個 Token 重送純文字；若第一次只是逾時、502／503 或網路斷線，原請求可能已成功，第二次只會浪費時間或使用已失效 Token。現在**只有第一次明確獲得 HTTP 400 且不是 Reply Token 格式錯誤**時，才會用純文字備援；5xx、429、401 和無法確認的傳輸錯誤均不重送。
+
+原始 SDK 錯誤可能含個人對話或 Token；現在 LINE 服務內部錯誤日誌只記通用 HTTP 狀態，公開 `/healthz` 也只回傳布林值而不是原始錯誤內容。CRM 訂單與營運資料不受此變更影響。
+
+這是已寫入 GitHub 的**待 Render 建置額度恢復部署**版本，不能將離線驗收視為當下正式聊天流量已套用。

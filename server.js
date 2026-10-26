@@ -329,6 +329,19 @@ function fallbackReplyText(messages) {
   return "仙加味已收到您的訊息，請稍候再試一次，或輸入「人工客服」。";
 }
 
+// LINE reply tokens are single-use. On a transport timeout or 5xx the
+// first message may already have been accepted, so a second fallback send
+// can only waste time or attempt to reuse a spent reply token.
+// Try a plain-text fallback solely after a definitive 400 that is not a
+// reply-token validation failure (usually an invalid Flex message).
+function canUseTextFallback(error){
+  const status=Number(error?.status??error?.response?.status??error?.originalError?.response?.status);
+  if(status!==400)return false;
+  let description='';
+  try{description=JSON.stringify(error?.body??error?.response?.data??error?.originalError?.response?.data??{});}
+  catch{return false;}
+  return !/replytoken|reply[ _-]?token/i.test(description);
+}
 async function reply(token, messages) {
   if (!client) {
     lastReplyError = "LINE credentials are not configured";
@@ -343,11 +356,13 @@ async function reply(token, messages) {
     lastReplyError = "";
     return true;
   } catch (error) {
-    const detail = error?.body || error?.originalError?.response?.data || error?.response?.data || error.message || error;
-    lastReplyError = typeof detail === "object" ? JSON.stringify(detail).slice(0, 1000) : String(detail).slice(0, 1000);
-    console.error("LINE 回覆失敗：", lastReplyError);
+    const status=Number(error?.status??error?.response?.status??error?.originalError?.response?.status);
+    lastReplyError=Number.isInteger(status)&&status>0
+      ? "LINE API returned status "+status
+      : "LINE API request failed before reliable acknowledgement";
+    console.error("LINE 回覆失敗（不記錄顧客內容）：",lastReplyError);
 
-    if (normalized.some((message) => message?.type !== "text")) {
+    if (normalized.some((message) => message?.type !== "text")&&canUseTextFallback(error)) {
       try {
         await client.replyMessage({
           replyToken: token,
@@ -365,9 +380,10 @@ async function reply(token, messages) {
         lastReplySuccessAt = new Date().toISOString();
         return true;
       } catch (fallbackError) {
-        const fallbackDetail = fallbackError?.body || fallbackError?.message || fallbackError;
-        lastReplyError += ` | fallback: ${typeof fallbackDetail === "object" ? JSON.stringify(fallbackDetail) : String(fallbackDetail)}`;
-        console.error("LINE 純文字備援回覆失敗：", lastReplyError);
+        const fallbackStatus=Number(fallbackError?.status??fallbackError?.response?.status);
+        lastReplyError+=" | text fallback "+(Number.isInteger(fallbackStatus)&&fallbackStatus>0
+          ? "HTTP "+fallbackStatus:"status unconfirmed");
+        console.error("LINE 純文字備援回覆失敗（無顧客資料）：", lastReplyError);
       }
     }
     return false;

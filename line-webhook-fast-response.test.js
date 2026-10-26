@@ -43,3 +43,22 @@ const run=vm.runInNewContext('(async function(data,event,reply,productMenuReply,
   console.log("PASS LINE approved product reply does not wait for remote catalog");
  }finally{clearTimeout(timer)}
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+const fallbackStart=source.indexOf('function canUseTextFallback(error)');
+const fallbackEnd=source.indexOf('async function reply(token, messages)',fallbackStart);
+assert.ok(fallbackStart>0&&fallbackEnd>fallbackStart);
+const canUseTextFallback=vm.runInNewContext(
+ '('+source.slice(fallbackStart,fallbackEnd).trim()+')');
+for(const uncertain of [
+ {name:'AbortError',message:'unknown if delivered'},
+ {status:502},{status:503},{status:504},{status:429},{status:401},
+ {status:400,body:{message:'Invalid reply token'}},
+ {status:400,body:{message:'bad',details:[{property:'replyToken',message:'Invalid value'}]}}
+])assert.equal(canUseTextFallback(uncertain),false,'Never retry a spent or uncertain reply token');
+for(const definitelyRejected of [
+ {status:400,body:{message:'Invalid messages[0].contents'}},
+ {response:{status:400,data:{details:[{property:'messages[0].altText',message:'invalid'}]}}}
+])assert.equal(canUseTextFallback(definitelyRejected),true,'A definitive invalid Flex payload may fall back to plain text');
+assert.match(source,/&&canUseTextFallback\(error\)/);
+assert.doesNotMatch(source,/lastReplyError = typeof detail === "object"/);
+assert.doesNotMatch(source,/JSON\.stringify\(fallbackDetail\)/);
