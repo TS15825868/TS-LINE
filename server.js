@@ -81,6 +81,14 @@ const PARTNER_CAROUSEL_DATA = require("./line-partner-public-carousel.json");
 const PARTNER_CAROUSEL_VERSION = PARTNER_CAROUSEL_DATA.version;
 const publicCatalog = require("./line-public-catalog-runtime");
 const danshenMenu = require("./line-danshen-flavor-menu");
+
+// LINE replies use approved in-memory facts. Website refresh remains
+// single-flight with an independent 8.5s timeout, never a customer delay.
+function schedulePublicCatalogRefresh() {
+  void publicCatalog.refresh().catch(() => {
+    console.warn("[XJW_LINE_CATALOG_REFRESH] Approved snapshot retained");
+  });
+}
 const partnerRetailAuthority = require("./line-partner-retail-authority.json");
 function partnerRetail(product) {
   const approved = partnerRetailAuthority.products?.[product.id];
@@ -1281,7 +1289,10 @@ async function handleLegacyPostback(event) {
   const state = getState(event.source.userId || "anonymous");
   const data = parsePB(event.postback?.data || "");
 
-  if (data.action === "products") { await publicCatalog.refresh(); return reply(event.replyToken, productMenuReply()); }
+  if (data.action === "products") {
+    schedulePublicCatalogRefresh();
+    return reply(event.replyToken, productMenuReply());
+  }
   if (data.action === "prices") return reply(event.replyToken, priceCarousel());
   if (data.action === "recommend") return reply(event.replyToken, recommendReply());
   if (data.action === "cart") return reply(event.replyToken, cartFlex(state));
@@ -1505,9 +1516,7 @@ async function handleMessage(event) {
 
   // 商品目錄更新不可阻擋 LINE 即時回覆；先使用上次核准的快照，背景同步新品。
   if (/^(?:看產品|查看產品|看商品|產品|直接下單|直接購買|我要下單|立即下單|開始下單|我要買|商品下一頁｜|詢問商品｜)/.test(text)) {
-    void publicCatalog.refresh().catch(error => {
-      console.error("[XJW_LINE_CATALOG_REFRESH] 更新失敗：", error?.message || String(error));
-    });
+    schedulePublicCatalogRefresh();
   }
 
   const nextProductsMatch = text.match(/^商品下一頁｜(\d+)$/);
@@ -1938,6 +1947,9 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/healthz", (_req, res) => {
+  // Existing Cloudflare heartbeat also refreshes the formally approved
+  // public catalog in the background. Health never waits for GitHub.
+  schedulePublicCatalogRefresh();
   res.json({
     ok: true,
     version: VERSION,

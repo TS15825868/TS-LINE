@@ -25,7 +25,8 @@ assert.ok(source.includes("...otherCards.map(partnerProductBubble)"), "全部核
 assert.ok(source.includes("!coreIds.has(product.id)"), "官網新增商品不得與核心商品卡重複");
 assert.ok(source.includes("const hasNextPage = remaining.length > 60"), "商品超過單次 LINE 回覆上限時不得截斷或報錯");
 assert.ok(source.includes("const nextProductsMatch"), "大量新品必須有下一頁導覽");
-assert.ok(source.includes("await publicCatalog.refresh()"), "LINE 查詢商品時必須同步官網最新已核准商品");
+assert.ok(source.includes("schedulePublicCatalogRefresh()"), "LINE 查詢商品必須以非阻塞方式背景更新核准目錄");
+assert.ok(!source.includes("await publicCatalog.refresh()"), "LINE 商品查詢不可等候外部網站最多8.5秒");
 assert.ok(source.includes("return productCarousel();"), "產品入口應直接顯示同一組左右滑動卡片");
 assert.equal(retail.products["danshen-tea-collection"].price, 480, "六款丹參茶末端售價應為每盒480元");
 assert.equal(retail.products["danshen-tea-collection"].label, "售價 NT$480／盒｜共六款可選", "商品卡應顯示一盒480元、六款可選");
