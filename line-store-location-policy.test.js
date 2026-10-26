@@ -39,6 +39,28 @@ assert.match(String(store.holidayNote || ""), /自取/);
 assert.match(store.hours,/週六.*預約/,"週六預約安排須與正式核准簡介一致");
 assert.match(store.hours,/週日休息/,"核准週日休息狀態必須正確");
 assert.match(serverSource, /官網：24 小時可瀏覽產品、品牌、使用方式與常見問題。/, "LINE 門市資訊應同步說明官網 24 小時可瀏覽");
+
+assert.doesNotMatch(serverSource, /store\.address\s*\|\|\s*"台北市萬華區西昌街52號"/,
+  "門市資料缺失時不得公開固定門牌");
+assert.doesNotMatch(serverSource, /store\.hours\s*\|\|\s*"週一至週五 10:30/,
+  "門市資料缺失時不得回流過時營業時間");
+const vm = require("node:vm");
+const fallbackStart=serverSource.indexOf("function storeServiceText() {");
+const fallbackEnd=serverSource.indexOf("\nfunction flexCard(",fallbackStart);
+assert.ok(fallbackStart>0 && fallbackEnd>fallbackStart,"門市客服回覆函式位置必須存在");
+const fallbackFactory=vm.runInNewContext(
+  "(function(DATA,storeLocationPolicy){"+
+  serverSource.slice(fallbackStart,fallbackEnd)+
+  ";return storeServiceText;})"
+);
+const safeFallback=fallbackFactory({store:{}},policy)();
+assert.match(safeFallback,/最新門市／自取資訊請先透過官方 LINE 確認/);
+assert.match(safeFallback,/週一至週五 10:00－20:00/);
+assert.doesNotMatch(safeFallback,/西昌街52號|10:30－20:00|09:30－18:30/);
+const liveStore=fallbackFactory({store:{address:"官方 LINE 確認自取",
+  hours:"週一至週五 11:00－19:00",holidayNote:"休假提前公告"}},policy)();
+assert.match(liveStore,/週一至週五 11:00－19:00/,"不應覆蓋已提供的正式新設定");
+
 assert.ok(!serverSource.includes("週一至週六 09:30–18:30"), "server.js 不得保留舊營業時間備援");
 assert.ok(!serverSource.includes("下一個營業時段"), "server.js 不得回退成固定下一營業時段才回覆");
 assert.equal(ecosystemAuthority.brand?.publicName, "仙加味", "公開主品牌必須是仙加味");

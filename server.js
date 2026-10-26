@@ -15,6 +15,7 @@ const fs = require("fs");
 const path = require("path");
 const { isSensitiveHealthQuestion, isExplicitDoctorReferralRequest, isEmergencyHealthQuestion } = require("./medical-referral-policy");
 const ownerAlert = require("./line-owner-alert-runtime");
+const storeLocationPolicy = require("./line-store-location-policy");
 const { withLineLoadingIndicator } = require("./line-chat-loading");
 const { matchApprovedFaq } = require("./line-approved-faq-runtime");
 
@@ -284,8 +285,10 @@ function mainQuick() {
 
 function storeServiceText() {
   const store = DATA.store || {};
-  return `門市地址：${store.address || "台北市萬華區西昌街52號"}。
-營業時間：${store.hours || "週一至週五 10:30－20:00；週六、週日休息"}。
+  // A missing runtime store record must never resurrect an old address or
+  // retired hours. The location policy reads the approved business profile.
+  return `門市地址：${store.address || "最新門市／自取資訊請先透過官方 LINE 確認"}。
+營業時間：${store.hours || storeLocationPolicy.resolvePublicHours()}。
 ${store.holidayNote || "官方 LINE 可隨時留言；店休及非營業時間的訊息，將依實際情況回覆。週末如有配送、自取需求，也可先透過 LINE 詢問安排。"}
 官網：24 小時可瀏覽產品、品牌、使用方式與常見問題。
 
