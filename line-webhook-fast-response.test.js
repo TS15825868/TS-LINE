@@ -345,3 +345,59 @@ assert.match(ownerSource,/OWNER_ALERT_RECEIPT_LIMIT/);
    "A new separate customer request must still alert owner");
  console.log("PASS one manager alert per webhook ID, including in-flight redelivery");
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+
+// Customer quotation alerts must be guarded exactly like trial CRM writes.
+// This uses only stubs and an in-memory pending promise (no LINE API call).
+const quoteStart=source.indexOf('    if (!checkout.trial) {',source.indexOf('async function continueCheckout('));
+const quoteStop=source.indexOf('    // 訂單送出前依最新已核准售價',quoteStart);
+assert.ok(quoteStart>0&&quoteStop>quoteStart,'Customer quotation block missing');
+const quoteBlock=source.slice(quoteStart,quoteStop);
+assert.match(quoteBlock,/checkout\.sending = true;\s+let sent;/);
+assert.match(quoteBlock,/finally\s*\{\s*checkout\.sending = false;/);
+const quoteHandler=vm.runInNewContext(
+ '(function({reply,textMsg,mainQuick,withLineLoadingIndicator,ownerAlert}){'+
+ 'return async function quote(event,state){'+
+ 'const checkout=state.checkout;'+
+ 'if(checkout.sending)return {busy:true};'+
+ 'const finalNotice="OFFLINE_NOTICE";'+quoteBlock+
+ 'return null;};})',
+ {console:{error(){}}}
+);
+const stubQuote={
+ reply:async(_token,message)=>message,
+ textMsg:(text,buttons=[])=>({text,buttons}),
+ mainQuick:()=>[{label:'看產品',text:'看產品'}],
+ withLineLoadingIndicator:(_event,run)=>run(),
+ ownerAlert:{pushOwnerAlert:async()=>false}
+};
+(async()=>{
+ const event={replyToken:'OFFLINE_ONLY',source:{type:'user',userId:'U'+'a'.repeat(32)}};
+ const makeState=()=>({cart:[{name:'龜鹿膏',qty:1,unit:'罐'}],checkout:{
+   trial:false,step:'confirm',name:'離線測試',phone:'09xxxxxxxx',
+   payment:'貨到付款',shipping:'宅配',address:'測試地址',sending:false
+ }});
+ let sendCount=0,finish;
+ const pending=new Promise(resolve=>{finish=resolve});
+ const state=makeState();
+ const handler=quoteHandler({...stubQuote,ownerAlert:{pushOwnerAlert:()=>{
+   sendCount++;return pending;
+ }}});
+ const first=handler(event,state);
+ assert.equal(state.checkout.sending,true,'Set busy flag before the first await');
+ const second=await handler(event,state);
+ assert.deepEqual(second,{busy:true});
+ assert.equal(sendCount,1,'Concurrent taps must not send the same quote twice');
+ finish(false);
+ const failed=await first;
+ assert.equal(state.checkout.sending,false,'Clear busy state after failed attempt');
+ assert.equal(state.cart.length,1,'Keep original cart after no acknowledgement');
+ assert.match(failed.text,/需求暫未確認送達/);
+ assert.ok(failed.buttons.some(x=>x.text==='確認送出'));
+ const confirmed=makeState();
+ const success=await quoteHandler({...stubQuote,ownerAlert:{pushOwnerAlert:async()=>true}})(event,confirmed);
+ assert.equal(confirmed.checkout,null,'Clear checkout only after successful manager ACK');
+ assert.equal(confirmed.cart.length,0);
+ assert.match(success.text,/選購需求已送出/);
+ console.log('PASS customer quote suppresses concurrent pushes and retains cart on failure');
+})().catch(err=>{console.error(err);process.exitCode=1});

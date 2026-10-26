@@ -1249,8 +1249,19 @@ async function continueCheckout(event, state, text) {
     // 一般購物需求只交人工報價，不送未確認金額至正式 CRM 訂單。
     if (!checkout.trial) {
       const summary = "【LINE 選購需求｜待人工報價】\n" + state.cart.map(v=>v.name+" × "+v.qty+v.unit).join("\n") + "\n聯絡人："+checkout.name+"\n電話："+checkout.phone+"\n付款偏好："+checkout.payment+"\n配送："+checkout.shipping+"\n地址："+checkout.address+"\n價格、優惠、運費及正式訂單均待人工確認。";
-      const sent = await withLineLoadingIndicator(event, () =>
-        ownerAlert.pushOwnerAlert(event, summary).catch(error=>{console.error("[XJW_QUOTE_REQUEST] notification failed (details withheld)");return false;}));
+      // The checkout guard above relies on this flag. Hold it throughout
+      // the manager push, including loading animation and a failed result.
+      checkout.sending = true;
+      let sent;
+      try {
+        sent = await withLineLoadingIndicator(event, () =>
+          ownerAlert.pushOwnerAlert(event, summary).catch(() => {
+            console.error("[XJW_QUOTE_REQUEST] notification failed (details withheld)");
+            return false;
+          }));
+      } finally {
+        checkout.sending = false;
+      }
       if (sent) { state.cart=[]; state.checkout=null; }
       return reply(event.replyToken,textMsg(sent?"選購需求已送出，仙加味將由專人確認報價、優惠、運費及交期；目前尚未成立正式訂單。":"需求暫未確認送達，購物車已保留。請稍後重試或聯絡人工客服。",sent?mainQuick():[{label:"重新送出",text:"確認送出"},{label:"人工客服",text:"我要人工客服"}]));
     }
