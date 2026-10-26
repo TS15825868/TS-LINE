@@ -477,3 +477,47 @@ assert.match(source,/if \(!claimReplyToken\(token\)\)/);
   assert.equal(malformedAttempts,2,"Successful fallback cannot be repeated across handler paths");
   console.log("PASS one-time LINE reply token protected across async routes and ambiguous failures");
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+
+// Approved owner handoff must retain full quote details instead of
+// truncating the entire checkout to 80 chars. Only the configured owner
+// receives contact information; the SDK payload is never logged.
+(async()=>{
+ const ownerConfig={CHANNEL_ACCESS_TOKEN:"OFFLINE_FAKE_TOKEN",
+   OWNER_LINE_USER_ID:"U_PRIVATE_OWNER"};
+ const quiet={logs:[],pushes:[]};
+ const dispatch=fakeOwnerRuntime(ownerConfig,quiet);
+ const sample={source:{type:"user",userId:"U"+"3".repeat(32)}};
+ const quote="【LINE 選購需求｜待人工報價】\n"+
+  "龜鹿膏 × 3罐\n聯絡人：離線測試客戶\n電話：0912345678\n"+
+  "付款偏好：貨到付款\n配送：宅配\n地址：離線測試中正路123號\n"+
+  "價格、優惠、運費及正式訂單均待人工確認。";
+ assert.ok(quote.length>80,"Fixture exercises actual old truncation");
+ assert.equal(await dispatch.pushOwnerAlert(sample,quote),true);
+ assert.equal(quiet.pushes.length,1);
+ assert.equal(quiet.pushes[0].to,"U_PRIVATE_OWNER");
+ const customerMessage=quiet.pushes[0].messages[0].text;
+ assert.match(customerMessage,/新商品詢價／待人工報價/);
+ assert.match(customerMessage,/龜鹿膏 × 3罐/);
+ assert.match(customerMessage,/聯絡人：離線測試客戶/);
+ assert.match(customerMessage,/電話：0912345678/);
+ assert.match(customerMessage,/地址：離線測試中正路123號/);
+ assert.match(customerMessage,/尚未成立正式訂單/);
+ assert.ok(customerMessage.length<5000,"LINE push text stays below message limit");
+ assert.ok(!quiet.logs.join("\n").includes("0912345678"),
+  "Customer data must not appear in application logs");
+ const partner="【商家合作洽談】\n合作類型：經銷\n商家與聯絡方式："
+  +"合作方".repeat(180)+"\n需求：產品包裝及配送期詢問";
+ assert.equal(await dispatch.pushOwnerAlert(sample,partner),true);
+ assert.match(quiet.pushes[1].messages[0].text,/產品包裝及配送期詢問/,
+  "Merchant notice must not lose long final request details");
+ const ordinary="人工客服"+"測試擴充內容".repeat(55);
+ assert.equal(await dispatch.pushOwnerAlert(sample,ordinary),true);
+ assert.doesNotMatch(quiet.pushes[2].messages[0].text,/測試擴充內容(?:測試擴充內容){20}/,
+  "Ordinary chat content must remain bounded to short human-handoff text");
+ const blocked={logs:[],pushes:[]};
+ assert.equal(await fakeOwnerRuntime({CHANNEL_ACCESS_TOKEN:"OFFLINE_FAKE_TOKEN"},blocked)
+  .pushOwnerAlert(sample,quote),false,"Unconfigured owner must not receive PII");
+ assert.equal(blocked.pushes.length,0);
+ console.log("PASS full owner-only purchase quote and merchant details without customer PII logs");
+})().catch(e=>{console.error(e);process.exitCode=1});

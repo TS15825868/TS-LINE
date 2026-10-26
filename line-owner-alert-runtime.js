@@ -57,12 +57,25 @@ async function pushOwnerAlert(event, text) {
   if (!owner || !client) return false;
   const sourceUserId = String(event?.source?.userId || "").trim();
   const stamp = new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
-  const isPartner = /^【商家(?:合作洽談|採購詢價)】/.test(String(text || ""));
+  const noticeText = String(text || "人工客服");
+  const isPartner = /^【商家(?:合作洽談|採購詢價)】/.test(noticeText);
+  const isRetailQuote = /^【LINE 選購需求｜待人工報價】/.test(noticeText);
+  const isOrderHandoff = isPartner || isRetailQuote;
+  // Checkout clears a confirmed quote from volatile cart state. Do not lose
+  // customer contact, shipping or product quantities after a successful push.
+  // Only the explicitly configured owner can receive the structured details.
+  const noticeTitle = isPartner ? "【仙加味｜新商家合作／採購洽詢】"
+    : isRetailQuote ? "【仙加味｜新商品詢價／待人工報價】"
+    : "【仙加味｜人工客服提醒】";
+  const noticeIntroduction = isPartner
+    ? "有商家提交合作或採購需求，請優先查看。"
+    : isRetailQuote ? "有顧客提交商品選購需求，尚未成立正式訂單，請人工確認。"
+    : "有顧客要求人工協助。";
   const message = [
-    isPartner ? "【仙加味｜新商家合作／採購洽詢】" : "【仙加味｜人工客服提醒】",
-    isPartner ? "有商家提交合作或採購需求，請優先查看。" : "有顧客要求人工協助。",
+    noticeTitle,
+    noticeIntroduction,
     `時間：${stamp}`,
-    `訊息：${String(text || "人工客服").slice(0, isPartner ? 900 : 80)}`,
+    `訊息：${noticeText.slice(0, isOrderHandoff ? 3800 : 80)}`,
     sourceUserId ? `顧客識別：${sourceUserId.slice(0, 10)}…` : "",
     "請開啟 LINE Official Account Manager 查看最新聊天室。",
   ].filter(Boolean).join("\n");
