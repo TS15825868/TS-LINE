@@ -12,6 +12,21 @@ const data = JSON.parse(fs.readFileSync(path.join(__dirname, "data.json"), "utf8
 const store = data.store || {};
 const serverSource = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
 const ecosystemAuthority = JSON.parse(fs.readFileSync(path.join(__dirname, "config/ecosystem-authority-v20260910.json"), "utf8"));
+const policy = require("./line-store-location-policy");
+const approved = ecosystemAuthority.lineBusinessProfile?.hours || {};
+const approvedText = "週一至週五 "+approved.monday;
+assert.ok(store.hours.includes(approvedText),
+  "Runtime weekday timetable must follow latest approved LINE business profile");
+assert.equal(policy.resolvePublicHours(
+  "週一至週五 10:30－20:00；週六、週日休息"),store.hours,
+  "Known outdated Render override must not supersede approved business hours");
+assert.equal(policy.resolvePublicHours(
+  "週一至週五 09:30－18:30；週六、週日休息"),store.hours,
+  "Retired timetable cannot flow back from environment");
+const newSchedule = "僅接受預約營業時段；請先以官方 LINE 聯繫";
+assert.equal(policy.resolvePublicHours(newSchedule),newSchedule,
+  "Unrelated newer permitted schedules should not be frozen by old version guards");
+
 
 assert.equal(store.publicAddressEnabled, false, "未設定 PUBLIC_STORE_ADDRESS 時不得公開固定門牌");
 assert.equal(store.addressAuthority, "line-confirmation-only");
@@ -21,7 +36,8 @@ assert.match(String(store.holidayNote || ""), /隨時留言/);
 assert.match(String(store.holidayNote || ""), /週末/);
 assert.match(String(store.holidayNote || ""), /配送/);
 assert.match(String(store.holidayNote || ""), /自取/);
-assert.equal(store.hours, "週一至週五 10:00－20:00；週六彈性預約取貨／配送（請先洽 LINE）；週日休息", "門市營業時間應使用 目前核准的正式營業時間");
+assert.match(store.hours,/週六.*預約/,"週六預約安排須與正式核准簡介一致");
+assert.match(store.hours,/週日休息/,"核准週日休息狀態必須正確");
 assert.match(serverSource, /官網：24 小時可瀏覽產品、品牌、使用方式與常見問題。/, "LINE 門市資訊應同步說明官網 24 小時可瀏覽");
 assert.ok(!serverSource.includes("週一至週六 09:30–18:30"), "server.js 不得保留舊營業時間備援");
 assert.ok(!serverSource.includes("下一個營業時段"), "server.js 不得回退成固定下一營業時段才回覆");
