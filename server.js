@@ -357,6 +357,32 @@ function canUseTextFallback(error){
   if (/replytoken|reply[ _-]?token/i.test(description)) return false;
   return /messages\s*\[\s*\d+\s*\]/i.test(description);
 }
+// One LINE reply token may be accepted only once. Track attempts, not only
+// successful API acknowledgements: a transport timeout might have delivered.
+// Retain 30 minutes to cover the platform redelivery period, with a bounded
+// in-process cache. The explicitly rejected malformed Flex -> text fallback
+// happens INSIDE the same claim and remains permitted.
+const attemptedReplyTokens = new Map();
+const REPLY_TOKEN_TTL_MS = 30 * 60 * 1000;
+const MAX_REPLY_TOKEN_ENTRIES = 15000;
+let lastReplyTokenPruneAt = 0;
+function claimReplyToken(token) {
+  const id = String(token || "").trim();
+  if (!id) return false;
+  const now = Date.now();
+  if (now - lastReplyTokenPruneAt > 60000 ||
+      attemptedReplyTokens.size >= MAX_REPLY_TOKEN_ENTRIES) {
+    for (const [key, time] of attemptedReplyTokens) {
+      if (now - time > REPLY_TOKEN_TTL_MS) attemptedReplyTokens.delete(key);
+    }
+    lastReplyTokenPruneAt = now;
+  }
+  if (attemptedReplyTokens.has(id)) return false;
+  if (attemptedReplyTokens.size >= MAX_REPLY_TOKEN_ENTRIES)
+    attemptedReplyTokens.delete(attemptedReplyTokens.keys().next().value);
+  attemptedReplyTokens.set(id, now);
+  return true;
+}
 async function reply(token, messages) {
   if (!client) {
     lastReplyError = "LINE credentials are not configured";
@@ -364,6 +390,12 @@ async function reply(token, messages) {
     return false;
   }
 
+  // A handler-exception fallback must never reuse a token that an earlier
+  // route may already have sent or sent ambiguously; ask for a NEW message.
+  if (!claimReplyToken(token)) {
+    console.warn("[XJW_LINE_REPLY] duplicate or missing reply token blocked");
+    return false;
+  }
   const normalized = Array.isArray(messages) ? messages : [messages];
   try {
     await client.replyMessage({ replyToken: token, messages: normalized });

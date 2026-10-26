@@ -431,3 +431,49 @@ assert.equal(receipts.beginWebhookEvent({}),true,
 receipts.processedWebhookEvents.set(ev.webhookEventId,Date.now()-31*60*1000);
 assert.equal(receipts.beginWebhookEvent(ev),true,'Old in-memory IDs expire to limit memory');
 console.log('PASS webhook redelivery never resends an uncertain one-time reply or CRM action');
+
+
+// One-use token claim across reply handler paths, including SDK uncertainty.
+// A malformed Flex can still fall back once INSIDE its original invocation.
+assert.match(source,/function claimReplyToken\(token\)/);
+assert.match(source,/if \(!claimReplyToken\(token\)\)/);
+(async()=>{
+  let attempts=0, release;
+  const pending = new Promise(resolve=>{release=resolve});
+  const harness=makeReplyHarness({async replyMessage(){
+    attempts++;
+    await pending;
+    return {};
+  }});
+  const first=harness.reply("OFFLINE_SHARED_TOKEN",{type:"text",text:"仙加味"});
+  assert.equal(await harness.reply("OFFLINE_SHARED_TOKEN",{type:"text",text:"重複"}),
+    false,"Concurrent handler must not spend the same reply token twice");
+  assert.equal(attempts,1);
+  release();
+  assert.equal(await first,true);
+  assert.equal(await harness.reply("OFFLINE_SHARED_TOKEN",{type:"text",text:"再次"}),
+    false,"A previously acknowledged reply token is already used");
+  assert.equal(attempts,1);
+  let failedRequests=0;
+  const ambiguous=makeReplyHarness({async replyMessage(){
+    failedRequests++;
+    throw {status:503};
+  }});
+  assert.equal(await ambiguous.reply("OFFLINE_AMBIGUOUS_TOKEN",{type:"text",text:"第一次"}),false);
+  assert.equal(await ambiguous.reply("OFFLINE_AMBIGUOUS_TOKEN",{type:"text",text:"第二次"}),false);
+  assert.equal(failedRequests,1,"Unknown 5xx ACK must not trigger a second SDK request");
+  assert.equal(await ambiguous.reply("  ",{type:"text",text:"空白token"}),false);
+  assert.equal(failedRequests,1);
+  let malformedAttempts=0;
+  const malformed=makeReplyHarness({async replyMessage({messages}){
+    malformedAttempts++;
+    if(malformedAttempts===1)throw {status:400,body:{message:"Invalid messages[0].contents"}};
+    assert.equal(messages[0].type,"text");
+    return {};
+  }});
+  assert.equal(await malformed.reply("OFFLINE_FLEX_TOKEN",{type:"flex",altText:"仙加味",contents:{}}),true);
+  assert.equal(malformedAttempts,2,"Definitive invalid Flex retains one text fallback");
+  assert.equal(await malformed.reply("OFFLINE_FLEX_TOKEN",{type:"text",text:"no resend"}),false);
+  assert.equal(malformedAttempts,2,"Successful fallback cannot be repeated across handler paths");
+  console.log("PASS one-time LINE reply token protected across async routes and ambiguous failures");
+})().catch(e=>{console.error(e);process.exitCode=1});
