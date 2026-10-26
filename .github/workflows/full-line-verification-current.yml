@@ -1,21 +1,12 @@
 name: 仙加味 LINE OA 現行完整驗收
 # security-lock-refresh-verified-20261007
 
+# This is a LIVE release acceptance check, not a push-based code audit.
+# The independent ci.yml already checks every relevant code/security change.
+# Running this on every commit repeatedly confirms the known Render free
+# build quota block and wastes GitHub Actions minutes. Invoke manually after
+# a genuine successful Render deploy; never hide an actual version mismatch.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '**/*.js'
-      - '**/*.json'
-      - 'public/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/full-line-verification-current.yml'
-  # LINE OA runtime stays on an older Render live build while included
-  # pipeline minutes are exhausted. Daily npm install + audit + release
-  # checks repeatedly prove this already-known deployment blocker.
-  # Keep all push-based security/content checks and explicit manual
-  # acceptance; do not suppress a stale-live-build error on a real release.
   workflow_dispatch:
 
 permissions:
@@ -131,7 +122,14 @@ jobs:
           if(actual.some(p=>p.id==='qixuan-guilu-drink-powder'))throw new Error('Deferred Qixuan exposed in live runtime');
           console.log('PASS LINE actual deployed commit and runtime facts',h.deploymentCommit,JSON.stringify(drink30),JSON.stringify(actual.find(p=>p.id==='guilu-tangkuai')));
           if(h.mascotAssetsReady!==true) throw new Error('LINE mascotAssetsReady=false');
-          if(String(h.storeHours||'')!=='週一至週五 10:30－20:00；週六、週日休息') throw new Error('LINE live storeHours 未套用目前正式版本：'+String(h.storeHours||''));
+          // Use the current formal brand profile instead of freezing 10:30 here.
+          // A newer approved timetable updates the authority, not this workflow.
+          const profile=JSON.parse(fs.readFileSync('config/ecosystem-authority-v20260910.json','utf8')).lineBusinessProfile||{};
+          const weekdayHours=String(profile.hours?.monday||'').trim();
+          const liveHours=String(h.storeHours||'');
+          if(!weekdayHours || !liveHours.includes('週一至週五 '+weekdayHours) ||
+             !/週六.*預約/.test(liveHours) || !/週日休息/.test(liveHours))
+            throw new Error('LINE live storeHours 與目前核准商業簡介不一致：'+liveHours);
           const note=String(h.storeHolidayNote||'');
           for(const required of ['隨時留言','非營業時間','週末','配送','自取']) if(!note.includes(required)) throw new Error('LINE live storeHolidayNote 缺少：'+required);
           for(const retired of ['週一至週六 09:30','下一個營業時段']) if(JSON.stringify(h).includes(retired)) throw new Error('LINE live 回流退役服務時間規則：'+retired);
