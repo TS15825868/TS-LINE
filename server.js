@@ -15,6 +15,7 @@ const fs = require("fs");
 const path = require("path");
 const { isSensitiveHealthQuestion, isExplicitDoctorReferralRequest, isEmergencyHealthQuestion } = require("./medical-referral-policy");
 const ownerAlert = require("./line-owner-alert-runtime");
+const { withLineLoadingIndicator } = require("./line-chat-loading");
 
 const VERSION = "v401.9";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
@@ -1217,7 +1218,8 @@ async function continueCheckout(event, state, text) {
     // 一般購物需求只交人工報價，不送未確認金額至正式 CRM 訂單。
     if (!checkout.trial) {
       const summary = "【LINE 選購需求｜待人工報價】\n" + state.cart.map(v=>v.name+" × "+v.qty+v.unit).join("\n") + "\n聯絡人："+checkout.name+"\n電話："+checkout.phone+"\n付款偏好："+checkout.payment+"\n配送："+checkout.shipping+"\n地址："+checkout.address+"\n價格、優惠、運費及正式訂單均待人工確認。";
-      const sent = await ownerAlert.pushOwnerAlert(event, summary).catch(error=>{console.error("[XJW_QUOTE_REQUEST]",error?.message||error);return false;});
+      const sent = await withLineLoadingIndicator(event, () =>
+        ownerAlert.pushOwnerAlert(event, summary).catch(error=>{console.error("[XJW_QUOTE_REQUEST]",error?.message||error);return false;}));
       if (sent) { state.cart=[]; state.checkout=null; }
       return reply(event.replyToken,textMsg(sent?"選購需求已送出，仙加味將由專人確認報價、優惠、運費及交期；目前尚未成立正式訂單。":"需求暫未確認送達，購物車已保留。請稍後重試或聯絡人工客服。",sent?mainQuick():[{label:"重新送出",text:"確認送出"},{label:"人工客服",text:"我要人工客服"}]));
     }
@@ -1251,7 +1253,7 @@ async function continueCheckout(event, state, text) {
 
     checkout.sending = true;
     let result;
-    try { result = await saveCRM(payload); }
+    try { result = await withLineLoadingIndicator(event, () => saveCRM(payload)); }
     finally { checkout.sending = false; }
     if (!result.ok) {
       return reply(
@@ -1395,7 +1397,8 @@ async function handleMessage(event) {
       const items=state.merchantQuickOrder.items;
       if(!items.length) return reply(event.replyToken,textMsg("採購清單尚無商品。",merchantItemButtons()));
       const summary="【已核准商家採購詢價】\\nLINE userId："+event.source.userId+"\\n"+items.map(v=>v.name+" × "+v.qty+" "+v.unit).join("\\n");
-      const sent=await ownerAlert.pushOwnerAlert(event,summary).catch(e=>{console.error("[XJW_APPROVED_MERCHANT_ALERT]",e?.message||e);return false;});
+      const sent=await withLineLoadingIndicator(event, () =>
+        ownerAlert.pushOwnerAlert(event,summary).catch(e=>{console.error("[XJW_APPROVED_MERCHANT_ALERT]",e?.message||e);return false;}));
       if(sent) delete state.merchantQuickOrder;
       return reply(event.replyToken,textMsg(sent?"採購清單已送出，仙加味將確認合作價格、庫存與配送。尚未成立正式訂單。":"採購清單已保留，但通知尚未成功，請稍後重試或聯絡人工客服。",sent?mainQuick():[{label:"再次送出",text:"商採確認送出"},{label:"人工客服",text:"我要人工客服"}]));
     }
@@ -1444,7 +1447,8 @@ async function handleMessage(event) {
     if (merchant.step === "confirm") {
       if (text !== "確認送出商家詢價") return reply(event.replyToken, textMsg("請選擇「確認送出詢價」、「重新填寫」或「取消」。", [{label:"確認送出詢價",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}]));
       const summary = `【商家採購詢價】\n商家與聯絡方式：${merchant.data.contact}\n商品與預估數量：${merchant.data.items}\n交貨與其他需求：${merchant.data.delivery}`;
-      const sent = await ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_MERCHANT_INQUIRY_ALERT]",error?.message||error);return false; });
+      const sent = await withLineLoadingIndicator(event, () =>
+        ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_MERCHANT_INQUIRY_ALERT]",error?.message||error);return false; }));
       if (sent) delete state.merchantOrderInquiry;
       return reply(event.replyToken, textMsg(sent ? "商家採購詢價已通知仙加味負責人。專人將確認報價、庫存及配送，確認前尚未成立訂單。" : "商家詢價內容已整理，但管理員通知尚未成功。請保留對話並洽人工客服，或稍後再次按「確認送出詢價」。", sent ? mainQuick() : [{label:"再次送出",text:"確認送出商家詢價"},{label:"人工客服",text:"我要人工客服"}]));
     }
@@ -1499,7 +1503,8 @@ async function handleMessage(event) {
     if (inquiry.step === "confirm" && text === "確認送出合作洽談") {
       const summary = `【商家合作洽談】\n合作類型：${inquiry.data.category}\n商家與聯絡方式：${inquiry.data.business}\n需求：${inquiry.data.details}`;
       delete state.businessInquiry;
-      const sent = await ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_PARTNER_ALERT]", error?.message || error); return false; });
+      const sent = await withLineLoadingIndicator(event, () =>
+        ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_PARTNER_ALERT]", error?.message || error); return false; }));
       return reply(event.replyToken, textMsg(sent ? "合作洽談資料已送出，仙加味將由專人接續聯繫。感謝您的洽詢。" : "合作資料已整理完成，但即時通知尚未確認成功。請保留本段 LINE 對話，仙加味將依收件匣訊息接續處理。", mainQuick()));
     }
   }

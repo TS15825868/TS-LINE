@@ -11,3 +11,9 @@
 新離線測試模擬遠端網站無回應，產品 Postback 仍直接回傳最近正式核准快照，沒有呼叫 LINE、CRM 或其他對客 API。CRM 建立訂單與合作表單必須等待可採信通知／寫入回執，**不會為了速度假裝成功或提前清除顧客購物車**。
 
 Render 2026-10 的 build pipeline minutes 已耗盡，使用 `[skip render]` Commit 避免反覆失敗建置。即使 GitHub 安全測試通過，這份加速程式在 Render 成功部署前都**不算已對顧客上線**。正式服務仍受 Render 免費方案可能休眠／重啟影響；唯一完全脫離依賴的方式，是先把簽章、回覆與付款訂單流程逐項移轉並完成官方 Webhook 端對端驗證，不能拿現有「只收件」的 Cloudflare 待命 Worker 當正式 LINE 客服。
+
+## 2026-10-26｜正在核對訂單／商家通知時不顯示卡住
+
+一般商品／FAQ 繼續即時使用核准的本地資料，不使用 Loading API。只有需要等待**正式 CRM 試喝需求寫入**，或**商家採購／合作／詢價管理員通知**時，若實際超過 650ms 才非同步啟動 LINE 官方 1:1 10 秒 Loading Animation（LINE 官方入口 `/v2/bot/chat/loading/start`）。動畫 HTTP 最長 1.5 秒，失敗也不阻擋原交易；只有 `source.type=user`、格式正確的 LINE User ID 與受保護 Token 才可觸發；群組不呼叫。
+
+這是**顧客進度提示而非加快 CRM 寫入**，對外正式成功仍必須以原管理員 Push 回傳或 CRM 訂單 ID 為準，失敗時保留購物車及原錯誤訊息，不另外發 Push、不提前清除待確認訂單。LINE 官方文件說明 Loading Animation 本身非「發送訊息」，支援的 1:1 聊天中，新訊息到達會自動停止動畫。此程式在 Render 建置額度恢復並部署前仍**未正式上線**。
