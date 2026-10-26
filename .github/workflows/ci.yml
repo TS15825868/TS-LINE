@@ -32,6 +32,7 @@ on:
       - 'config/ecosystem-authority-v20260910.json'
       - 'line-store-location-policy.test.js'
       - 'line-store-location-policy.js'
+      - 'line-business-profile-authority.test.js'
       - 'approved-post-library.js'
       - 'approved-post-static.js'
       - 'line-public-copy-authority.test.js'
