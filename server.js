@@ -1311,8 +1311,23 @@ async function continueCheckout(event, state, text) {
   }
 }
 
+// Only a one-to-one LINE chat with a specific user may own cart, checkout,
+// merchant inquiry or trial state. Group/room and missing-ID events must not
+// share the old global "anonymous" cart or reveal a private user's cart.
+function isPrivateCustomerEvent(event) {
+  return event?.source?.type === "user" &&
+    typeof event.source.userId === "string" &&
+    event.source.userId.trim().length > 0;
+}
+async function replyNonPrivateCustomerEvent(event) {
+  if (!event?.replyToken) return false;
+  return reply(event.replyToken, textMsg(
+    "為保障個人訂單與聯絡資料安全，仙加味的試喝、選購與客服服務請透過官方 LINE 一對一聊天室詢問。請私訊官方 LINE 並重新輸入您的需求。"
+  ));
+}
+
 async function handleLegacyPostback(event) {
-  const state = getState(event.source.userId || "anonymous");
+  const state = getState(event.source.userId);
   const data = parsePB(event.postback?.data || "");
 
   if (data.action === "products") {
@@ -1358,7 +1373,7 @@ async function handleMessage(event) {
   }
 
   let text = sanitizeUserText(event.message.text, 500);
-  const state = getState(event.source.userId || "anonymous");
+  const state = getState(event.source.userId);
   // Contact shortcuts must remain available even during an active order or merchant form.
   if (/^(我要人工客服|人工客服|客服|聯絡我們|聯絡業務|業務聯絡|業務LINE|請業務聯絡我|請業務回覆|官方客服留言)$/.test(text)) {
     if (text === "官方客服留言") {
@@ -1948,7 +1963,11 @@ async function handleEvent(event) {
 
   try {
     let result;
-    if (event.type === "follow") {
+    if ((event.type === "message" || event.type === "postback") &&
+        !isPrivateCustomerEvent(event)) {
+      // Never allocate a shared cart or accept personal order fields in groups.
+      result = await replyNonPrivateCustomerEvent(event);
+    } else if (event.type === "follow") {
       result = await reply(event.replyToken, mascotWelcomeReply());
     } else if (event.type === "postback") {
       result = await handleLegacyPostback(event);

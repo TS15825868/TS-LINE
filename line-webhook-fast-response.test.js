@@ -100,3 +100,43 @@ const makeReplyHarness=vm.runInNewContext([
  assert.match(uncertain.get().lastReplyError,/503/);
  console.log('PASS LINE fallback success clears stale error while ambiguous 5xx never retries');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+
+// The LINE event source is not always an identifiable one-to-one customer.
+// Simulate all supported event origins without loading credentials or sending.
+const privateStart=source.indexOf('function isPrivateCustomerEvent(event) {');
+const privateEnd=source.indexOf('async function handleLegacyPostback(event)',privateStart);
+assert.ok(privateStart>0&&privateEnd>privateStart,"Private customer guard missing");
+const handlers=vm.runInNewContext([
+  '(function(reply,textMsg){',
+  source.slice(privateStart,privateEnd),
+  'return {isPrivateCustomerEvent,replyNonPrivateCustomerEvent};',
+  '})'
+].join('\n'))(
+  async(token,msg)=>({token,msg}),
+  text=>({type:'text',text})
+);
+const validUser={source:{type:'user',userId:'U0123456789abcdef0123456789abcdef'},replyToken:'FAKE_ONE_TO_ONE'};
+assert.equal(handlers.isPrivateCustomerEvent(validUser),true);
+for(const evt of [
+  {source:{type:'user'}},
+  {source:{type:'group',groupId:'Cgroup',userId:validUser.source.userId}},
+  {source:{type:'group',groupId:'Cgroup'}},
+  {source:{type:'room',roomId:'Rroom',userId:validUser.source.userId}},
+  {source:{}},
+  {}
+])assert.equal(handlers.isPrivateCustomerEvent(evt),false,'Nonprivate input must not touch a customer cart');
+(async()=>{
+  const guarded=await handlers.replyNonPrivateCustomerEvent({
+    source:{type:'group',groupId:'Cgroup'},replyToken:'OFFLINE_GROUP_TOKEN'
+  });
+  assert.equal(guarded.token,'OFFLINE_GROUP_TOKEN');
+  assert.equal(guarded.msg.type,'text');
+  assert.match(guarded.msg.text,/一對一聊天室/);
+  assert.equal(await handlers.replyNonPrivateCustomerEvent({source:{type:'user'}}),false);
+  console.log('PASS nonprivate LINE events never receive personal cart or order flow');
+})().catch(e=>{console.error(e);process.exitCode=1});
+assert.match(source,/if \(\(event\.type === "message" \|\| event\.type === "postback"\) &&\s+!isPrivateCustomerEvent\(event\)\)/);
+assert.match(source,/result = await replyNonPrivateCustomerEvent\(event\)/);
+assert.doesNotMatch(source,/getState\(event\.source\.userId \|\| "anonymous"\)/);
+assert.equal((source.match(/getState\(event\.source\.userId\)/g)||[]).length,2);
