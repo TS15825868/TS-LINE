@@ -14,6 +14,34 @@ const VERSION = "20261026-owner-alert-secure-binding-v2";
 const BIND_COMMAND = "綁定人工客服通知";
 const SUPPORT_PATTERN = /^(?:我要)?(?:人工客服|客服協助|聯絡客服|找客服)$/;
 
+// LINE may redeliver the SAME webhook event. Send one manager notification
+// per signed webhookEventId, including while an earlier push is in flight.
+// Keep bounded state and do not log event IDs or customer text. A failed or
+// ambiguous push is not auto-retried with the same event ID.
+const ownerAlertReceipts = new Map();
+const OWNER_ALERT_DEDUP_TTL_MS = 60 * 60 * 1000;
+const OWNER_ALERT_RECEIPT_LIMIT = 10000;
+let lastOwnerAlertPruneAt = 0;
+function claimOwnerAlertEvent(event) {
+  const id = String(event?.webhookEventId || "").trim();
+  if (!id) return true; // Legacy events without IDs keep existing behavior.
+  const now = Date.now();
+  if (now - lastOwnerAlertPruneAt > 60000 ||
+      ownerAlertReceipts.size >= OWNER_ALERT_RECEIPT_LIMIT) {
+    for (const [key, createdAt] of ownerAlertReceipts) {
+      if (now - createdAt > OWNER_ALERT_DEDUP_TTL_MS) ownerAlertReceipts.delete(key);
+    }
+    lastOwnerAlertPruneAt = now;
+  }
+  if (ownerAlertReceipts.has(id)) return false;
+  if (ownerAlertReceipts.size >= OWNER_ALERT_RECEIPT_LIMIT) {
+    ownerAlertReceipts.delete(ownerAlertReceipts.keys().next().value);
+  }
+  ownerAlertReceipts.set(id, now);
+  return true;
+}
+
+
 function ownerUserId() {
   return String(process.env.OWNER_LINE_USER_ID || "").trim();
 }
@@ -56,7 +84,7 @@ function inspectEvents(req) {
       continue;
     }
 
-    if (SUPPORT_PATTERN.test(text)) {
+    if (SUPPORT_PATTERN.test(text) && claimOwnerAlertEvent(event)) {
       pushOwnerAlert(event, text).then((ok) => {
         if (ok) console.log("[XJW_OWNER_ALERT] sent");
         else console.log("[XJW_OWNER_ALERT] skipped: OWNER_LINE_USER_ID not configured");

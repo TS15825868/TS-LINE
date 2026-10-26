@@ -341,7 +341,11 @@ function canUseTextFallback(error){
   let description='';
   try{description=JSON.stringify(error?.body??error?.response?.data??error?.originalError?.response?.data??{});}
   catch{return false;}
-  return !/replytoken|reply[ _-]?token/i.test(description);
+  // A generic HTTP 400 is not proof the one-time replyToken is unused.
+  // Retry only when LINE explicitly identifies a malformed messages[N]
+  // payload. Ambiguous 400s must fail closed like transport/5xx errors.
+  if (/replytoken|reply[ _-]?token/i.test(description)) return false;
+  return /messages\s*\[\s*\d+\s*\]/i.test(description);
 }
 async function reply(token, messages) {
   if (!client) {

@@ -52,6 +52,8 @@ const canUseTextFallback=vm.runInNewContext(
 for(const uncertain of [
  {name:'AbortError',message:'unknown if delivered'},
  {status:502},{status:503},{status:504},{status:429},{status:401},
+ {status:400},{status:400,body:{}},
+ {status:400,body:{message:'Bad request'}},
  {status:400,body:{message:'Invalid reply token'}},
  {status:400,body:{message:'bad',details:[{property:'replyToken',message:'Invalid value'}]}}
 ])assert.equal(canUseTextFallback(uncertain),false,'Never retry a spent or uncertain reply token');
@@ -59,6 +61,8 @@ for(const definitelyRejected of [
  {status:400,body:{message:'Invalid messages[0].contents'}},
  {response:{status:400,data:{details:[{property:'messages[0].altText',message:'invalid'}]}}}
 ])assert.equal(canUseTextFallback(definitelyRejected),true,'A definitive invalid Flex payload may fall back to plain text');
+assert.equal(canUseTextFallback({status:400,body:{message:'Bad request'}}),false);
+assert.equal(canUseTextFallback({status:400,body:{message:'Invalid Flex payload'}}),false);
 assert.match(source,/&&canUseTextFallback\(error\)/);
 assert.doesNotMatch(source,/lastReplyError = typeof detail === "object"/);
 assert.doesNotMatch(source,/JSON\.stringify\(fallbackDetail\)/);
@@ -314,4 +318,30 @@ const stubPartner={
  await first;
  assert.equal(concurrent.businessInquiry,undefined);
  console.log("PASS partner inquiry retained after failed alert and sent only once after confirmed owner receipt");
+})().catch(e=>{console.error(e);process.exitCode=1});
+
+
+// Signed LINE redeliveries carry the same webhookEventId. A duplicate
+// must NOT push an extra owner alert, even if the first push is in flight.
+assert.match(ownerSource,/claimOwnerAlertEvent\(event\)/);
+assert.match(ownerSource,/OWNER_ALERT_RECEIPT_LIMIT/);
+(async()=>{
+ const receiptEnv={CHANNEL_ACCESS_TOKEN:"OFFLINE_FAKE_TOKEN",
+   OWNER_LINE_USER_ID:"U_PRIVATE_OWNER"};
+ const receiptHistory={logs:[],pushes:[]};
+ const receiptRuntime=fakeOwnerRuntime(receiptEnv,receiptHistory);
+ const shared={webhookEventId:"OFFLINE_WEBHOOK_SAME_EVENT",
+   type:"message",message:{type:"text",text:"人工客服"},
+   source:{type:"user",userId:"U"+"1".repeat(32)}};
+ receiptRuntime.inspectEvents({body:{events:[shared,shared]}});
+ receiptRuntime.inspectEvents({body:{events:[{...shared}]}});
+ await Promise.resolve();await Promise.resolve();
+ assert.equal(receiptHistory.pushes.length,1,
+   "Retries and duplicated webhook events must not repeat owner push");
+ const next={...shared,webhookEventId:"OFFLINE_WEBHOOK_DIFFERENT_EVENT"};
+ receiptRuntime.inspectEvents({body:{events:[next]}});
+ await Promise.resolve();await Promise.resolve();
+ assert.equal(receiptHistory.pushes.length,2,
+   "A new separate customer request must still alert owner");
+ console.log("PASS one manager alert per webhook ID, including in-flight redelivery");
 })().catch(e=>{console.error(e);process.exitCode=1});
