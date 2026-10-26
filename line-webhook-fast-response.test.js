@@ -140,3 +140,55 @@ assert.match(source,/if \(\(event\.type === "message" \|\| event\.type === "post
 assert.match(source,/result = await replyNonPrivateCustomerEvent\(event\)/);
 assert.doesNotMatch(source,/getState\(event\.source\.userId \|\| "anonymous"\)/);
 assert.equal((source.match(/getState\(event\.source\.userId\)/g)||[]).length,2);
+
+
+// Safe free FAQ must use existing approved facts and leave unrelated,
+// medical or potentially identifying questions to the existing routes.
+const {matchApprovedFaq}=require("./line-approved-faq-runtime");
+const expectedApproved=[
+ ["龜鹿膏跟龜鹿飲差在哪裡","difference-gao-drink"],
+ ["30cc和180cc有什麼不一樣","drink-30-vs-180"],
+ ["龜鹿飲製作要多久","drink-shipping"],
+ ["龜鹿飲可以微波嗎","warm-use"],
+ ["龜鹿飲能直接喝嗎","drink-direct-use"],
+ ["第一次買怎麼選","first-time-choice"],
+ ["想送長輩選什麼好","gift-for-elder"],
+ ["官網可以線上結帳嗎","online-purchase"]
+];
+for(const [question,id] of expectedApproved){
+ const matched=matchApprovedFaq(question);
+ assert.equal(matched?.id,id,question);
+ assert.ok(matched.text.trim(),question);
+}
+for(const question of [
+ "龜鹿飲對糖尿病有用嗎","我有高血壓能喝嗎","柒玄茶怎麼買",
+ "龜鹿膠還有現貨嗎","今天營業到幾點","有沒有特價",
+ "我的訂單在哪","商採數量｜5","龜鹿飲","人工客服"
+])assert.equal(matchApprovedFaq(question),null,"Unsafe or stateful question must stay in existing flow: "+question);
+const answers=require("./config/ai-commerce-answers.json");
+const hours=answers.answers.find(x=>x.id==="business-hours")?.answer||"";
+assert.match(hours,/輸入「營業時間」/);
+assert.doesNotMatch(hours,/\b(?:10:00|10:30|09:30)\b/,
+  "Static FAQ must not override the live PUBLIC_STORE_HOURS value");
+assert.match(source,/const approvedFaq = matchApprovedFaq\(text\)/);
+const aiBranch=source.indexOf("const approvedFaq = matchApprovedFaq(text)");
+assert.ok(aiBranch>source.indexOf("if (state.checkout) return continueCheckout"));
+assert.ok(aiBranch<source.indexOf("const product = detectProduct(text)"));
+
+const comboStart=source.indexOf("function orderNoticeForCombo(combo) {");
+const comboEnd=source.indexOf("function orderNoticeForCart(cart = [])",comboStart);
+assert.ok(comboStart>0&&comboEnd>comboStart);
+const comboFn=vm.runInNewContext(
+ "(function(getProduct,MIXED_ORDER_NOTICE,DRINK_ORDER_NOTICE,READY_STOCK_ORDER_NOTICE){"+
+ source.slice(comboStart,comboEnd)+"return orderNoticeForCombo;})"
+)(
+ id=>id==="drink"?{fulfillmentType:"made-to-order-drink",readyStock:false}:
+     id==="stock"?{fulfillmentType:"ready-stock",readyStock:true}:null,
+ "混合","飲品5～7個工作天","現貨依供貨");
+assert.match(comboFn(null),/商品明細需由客服確認/);
+assert.doesNotMatch(comboFn({products:[]}),/5～7個工作天/);
+assert.match(comboFn({products:[{productId:"invalid"}]}),/商品明細需由客服確認/);
+assert.equal(comboFn({products:[{productId:"drink"}]}),"飲品5～7個工作天");
+assert.equal(comboFn({products:[{productId:"stock"}]}),"現貨依供貨");
+assert.equal(comboFn({products:[{productId:"drink"},{productId:"stock"}]}),"混合");
+console.log("PASS approved zero-cost FAQs, no static hours and empty-combo fulfillment fallback");

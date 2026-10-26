@@ -16,6 +16,7 @@ const path = require("path");
 const { isSensitiveHealthQuestion, isExplicitDoctorReferralRequest, isEmergencyHealthQuestion } = require("./medical-referral-policy");
 const ownerAlert = require("./line-owner-alert-runtime");
 const { withLineLoadingIndicator } = require("./line-chat-loading");
+const { matchApprovedFaq } = require("./line-approved-faq-runtime");
 
 const VERSION = "v401.9";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
@@ -160,7 +161,7 @@ function orderNoticeForProduct(product) {
 
 function orderNoticeForCombo(combo) {
   const products = (combo?.products || []).map((item) => getProduct(item.productId)).filter(Boolean);
-  if (!products.length) return cart.some(item => item.partner) ? "其他商品依實際庫存安排，出貨與配送由客服確認。" : MIXED_ORDER_NOTICE;
+  if (!products.length) return "此組合的商品明細需由客服確認，實際出貨及配送時間依確認內容安排。";
   const hasDrink = products.some((product) => product.fulfillmentType === "made-to-order-drink" || product.readyStock === false);
   const hasReady = products.some((product) => product.fulfillmentType !== "made-to-order-drink" && product.readyStock !== false);
   if (hasDrink && hasReady) return MIXED_ORDER_NOTICE;
@@ -1920,6 +1921,11 @@ async function handleMessage(event) {
       textMsg(`${MIXED_ORDER_NOTICE}\n\n可先選擇產品與數量完成訂購安排；實際出貨時間、配送方式與優惠由客服再協助確認。`, mainQuick())
     );
   }
+
+  // Free deterministic FAQ: answer only specifically matched, reviewed facts.
+  // Place after safety/checkout/price/stock/customer contact routes.
+  const approvedFaq = matchApprovedFaq(text);
+  if (approvedFaq) return reply(event.replyToken, textMsg(approvedFaq.text, mainQuick()));
 
   const product = detectProduct(text);
   if (product) {
