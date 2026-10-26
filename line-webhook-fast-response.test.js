@@ -62,3 +62,41 @@ for(const definitelyRejected of [
 assert.match(source,/&&canUseTextFallback\(error\)/);
 assert.doesNotMatch(source,/lastReplyError = typeof detail === "object"/);
 assert.doesNotMatch(source,/JSON\.stringify\(fallbackDetail\)/);
+
+
+// Offline mocked LINE SDK path: a definitively rejected Flex may be retried
+// once as text; its successful acceptance must reset the health error flag.
+const replyStart=source.indexOf('async function reply(token, messages)',fallbackEnd);
+const replyEnd=source.indexOf('function productBubble(product)',replyStart);
+assert.ok(replyStart>0&&replyEnd>replyStart,'Reply implementation anchor missing');
+const makeReplyHarness=vm.runInNewContext([
+ '(function(client){',
+ 'let lastReplyError=""; let lastReplySuccessAt="";',
+ 'const mainQuick=()=>[{label:"看產品",text:"看產品"}];',
+ 'const fallbackReplyText=()=>"仙加味已收到您的詢問";',
+ source.slice(fallbackStart,replyEnd),
+ 'return {reply,get:()=>({lastReplyError,lastReplySuccessAt})};',
+ '})'
+].join('\n'),{Date,console:{error(){},warn(){}}});
+(async()=>{
+ let attempts=0;
+ const accepted=makeReplyHarness({async replyMessage({messages}){
+   attempts++;
+   if(attempts===1)throw {status:400,body:{message:'Invalid messages[0].contents'}};
+   assert.equal(messages[0].type,'text');
+   return {};
+ }});
+ assert.equal(await accepted.reply('offline-test-token',{type:'flex',altText:'仙加味',contents:{}}),true);
+ assert.equal(attempts,2,'Definitively rejected Flex gets exactly one safe text fallback');
+ assert.equal(accepted.get().lastReplyError,'','Successful recovery must clear stale failed state');
+ assert.ok(accepted.get().lastReplySuccessAt,'Successful fallback must retain acknowledgement timestamp');
+ let uncertainAttempts=0;
+ const uncertain=makeReplyHarness({async replyMessage(){
+   uncertainAttempts++;
+   throw {status:503,body:{message:'Temporary failure'}};
+ }});
+ assert.equal(await uncertain.reply('offline-second-token',{type:'flex',altText:'仙加味',contents:{}}),false);
+ assert.equal(uncertainAttempts,1,'Uncertain 5xx must not reuse a one-time reply token');
+ assert.match(uncertain.get().lastReplyError,/503/);
+ console.log('PASS LINE fallback success clears stale error while ambiguous 5xx never retries');
+})().catch(error=>{console.error(error);process.exitCode=1});

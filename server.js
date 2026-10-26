@@ -378,6 +378,8 @@ async function reply(token, messages) {
           }],
         });
         lastReplySuccessAt = new Date().toISOString();
+        // Recovery succeeded; never leave the previous rejected Flex as a live error.
+        lastReplyError = "";
         return true;
       } catch (fallbackError) {
         const fallbackStatus=Number(fallbackError?.status??fallbackError?.response?.status);
