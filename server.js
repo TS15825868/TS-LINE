@@ -1543,11 +1543,31 @@ async function handleMessage(event) {
       return reply(event.replyToken, textMsg(`請確認合作洽談內容：\n類型：${inquiry.data.category}\n商家與聯絡方式：${inquiry.data.business}\n合作需求：${inquiry.data.details}\n\n確認後會通知仙加味負責人接續洽談，尚不代表合作成立。`, [{label:"確認送出",text:"確認送出合作洽談"},{label:"重新填寫",text:"商家合作"},{label:"取消",text:"取消合作洽談"}]));
     }
     if (inquiry.step === "confirm" && text === "確認送出合作洽談") {
+      // A failed or unconfirmed owner push must not discard the inquiry.
+      // Concurrent double taps must not send the same merchant request twice.
+      if (inquiry.sending) return reply(event.replyToken, textMsg("合作需求正在確認送達，請勿重複送出。"));
+      inquiry.sending = true;
       const summary = `【商家合作洽談】\n合作類型：${inquiry.data.category}\n商家與聯絡方式：${inquiry.data.business}\n需求：${inquiry.data.details}`;
-      delete state.businessInquiry;
-      const sent = await withLineLoadingIndicator(event, () =>
-        ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_PARTNER_ALERT] notification failed (details withheld)"); return false; }));
-      return reply(event.replyToken, textMsg(sent ? "合作洽談資料已送出，仙加味將由專人接續聯繫。感謝您的洽詢。" : "合作資料已整理完成，但即時通知尚未確認成功。請保留本段 LINE 對話，仙加味將依收件匣訊息接續處理。", mainQuick()));
+      let sent;
+      try {
+        sent = await withLineLoadingIndicator(event, () =>
+          ownerAlert.pushOwnerAlert(event, summary).catch(() => {
+            console.error("[XJW_PARTNER_ALERT] notification failed (details withheld)");
+            return false;
+          }));
+      } finally {
+        inquiry.sending = false;
+      }
+      if (sent) delete state.businessInquiry;
+      return reply(event.replyToken, textMsg(
+        sent ? "合作洽談資料已送出，仙加味將由專人接續聯繫。感謝您的洽詢。"
+          : "合作資料尚未確認送達，內容已保留。請點選「重新送出」，或洽人工客服。",
+        sent ? mainQuick() : [
+          {label:"重新送出",text:"確認送出合作洽談"},
+          {label:"人工客服",text:"我要人工客服"},
+          {label:"取消",text:"取消合作洽談"}
+        ]
+      ));
     }
   }
 

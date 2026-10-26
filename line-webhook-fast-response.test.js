@@ -263,3 +263,55 @@ function fakeOwnerRuntime(env,captures){
  assert.ok(!fail.logs.join(" ").includes("0912345678"),"No raw private SDK failure in logs");
  console.log("PASS: owner binding blocked, groups ignored, configured owner preserved, private errors redacted");
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+
+// Partner cooperation inquiries: only clear state after a confirmed owner
+// receipt and never notify twice while a previous push is still pending.
+const partnerStart=source.indexOf('    if (inquiry.step === "confirm" && text === "確認送出合作洽談") {');
+const partnerStop=source.indexOf('\n  }\n\n  // 合作表單確認階段',partnerStart);
+assert.ok(partnerStart>0&&partnerStop>partnerStart);
+const partnerBlock=source.slice(partnerStart,partnerStop);
+const partnerFactory=vm.runInNewContext(
+ '(function({reply,textMsg,mainQuick,withLineLoadingIndicator,ownerAlert}){'+
+ 'return async function confirmPartner(event,state,text){'+
+ 'const inquiry=state.businessInquiry;'+partnerBlock+
+ 'return null; };})',
+ {console:{error(){}}}
+);
+const stubPartner={
+ reply:async(_token,msg)=>msg,
+ textMsg:(text,buttons=[])=>({text,buttons}),
+ mainQuick:()=>[{label:"看產品",text:"看產品"}],
+ withLineLoadingIndicator:(_event,run)=>run(),
+ ownerAlert:{pushOwnerAlert:async()=>false}
+};
+(async()=>{
+ const incoming=()=>({businessInquiry:{step:"confirm",data:{
+   category:"品牌合作",business:"OFFLINE_TEST_MERCHANT",details:"核准規格洽談"
+ }}});
+ const e={replyToken:"OFFLINE_MERCHANT_TOKEN",source:{type:"user",userId:"U"+"1".repeat(32)}};
+ const failState=incoming();
+ const fail=await partnerFactory(stubPartner)(e,failState,"確認送出合作洽談");
+ assert.ok(failState.businessInquiry,"Failed owner push must preserve customer inquiry");
+ assert.match(fail.text,/尚未確認送達/);
+ assert.ok(fail.buttons.some(b=>b.text==="確認送出合作洽談"));
+ const succeed=incoming();
+ const success=await partnerFactory({...stubPartner,ownerAlert:{pushOwnerAlert:async()=>true}})
+   (e,succeed,"確認送出合作洽談");
+ assert.equal(succeed.businessInquiry,undefined,"Only confirmed success clears state");
+ assert.match(success.text,/已送出/);
+ let finish,sendCount=0;
+ const pending=new Promise(resolve=>{finish=resolve});
+ const concurrent=incoming();
+ const fn=partnerFactory({...stubPartner,ownerAlert:{pushOwnerAlert:()=>{
+   sendCount++;return pending;
+ }}});
+ const first=fn(e,concurrent,"確認送出合作洽談");
+ const duplicate=await fn(e,concurrent,"確認送出合作洽談");
+ assert.equal(sendCount,1,"Concurrent repeated click must not resend merchant inquiry");
+ assert.match(duplicate.text,/正在確認送達/);
+ finish(true);
+ await first;
+ assert.equal(concurrent.businessInquiry,undefined);
+ console.log("PASS partner inquiry retained after failed alert and sent only once after confirmed owner receipt");
+})().catch(e=>{console.error(e);process.exitCode=1});
