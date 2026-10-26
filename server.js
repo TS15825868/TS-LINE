@@ -51,6 +51,12 @@ const client = config.channelAccessToken
 let lastWebhookAt = "";
 let lastReplySuccessAt = "";
 let lastReplyError = "";
+// Public health data must never expose customer text, SDK errors or tokens.
+let lastCustomerProcessingMs = null;
+let lastEventToLineAckApproxMs = null;
+let lastCustomerEventProcessedAt = "";
+let lastCustomerResponseAccepted = false;
+let slowCustomerEventCount = 0;
 const states = new Map();
 const processedWebhookEvents = new Map();
 const processingWebhookEvents = new Set();
@@ -1901,9 +1907,26 @@ async function handleMessage(event) {
   );
 }
 
+function recordCustomerReplyTiming(event,startedAt,accepted){
+  if(!["follow","postback","message"].includes(event?.type))return;
+  const endedAt=Date.now();
+  const handlerMs=Math.max(0,endedAt-startedAt);
+  const eventAt=Number(event?.timestamp);
+  // Event timestamp includes time waiting for Render to wake, if supplied
+  // by LINE. Filter clock skew and stale event redeliveries; this is an
+  // approximation up to LINE API acceptance, not a recipient delivery SLA.
+  const eventToAckMs=Number.isFinite(eventAt)&&eventAt>0&&eventAt<=endedAt+60000
+    &&endedAt-eventAt<=15*60*1000?Math.max(0,endedAt-eventAt):null;
+  lastCustomerProcessingMs=handlerMs;
+  lastEventToLineAckApproxMs=eventToAckMs;
+  lastCustomerEventProcessedAt=new Date(endedAt).toISOString();
+  lastCustomerResponseAccepted=accepted===true;
+  if((eventToAckMs??handlerMs)>8000)slowCustomerEventCount++;
+}
 async function handleEvent(event) {
   lastWebhookAt = new Date().toISOString();
   if (!beginWebhookEvent(event)) return Promise.resolve();
+  const startedAt=Date.now();
 
   try {
     let result;
@@ -1918,6 +1941,7 @@ async function handleEvent(event) {
     }
 
     const success = result !== false;
+    recordCustomerReplyTiming(event,startedAt,success);
     finishWebhookEvent(event, success);
     return result;
   } catch (error) {
@@ -1936,6 +1960,7 @@ async function handleEvent(event) {
           [{ label: "重新看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]
         ));
         if (recovered) {
+          recordCustomerReplyTiming(event,startedAt,true);
           finishWebhookEvent(event, true);
           return true;
         }
@@ -1943,6 +1968,7 @@ async function handleEvent(event) {
         console.error("[XJW_LINE_EVENT_FALLBACK]", String(fallbackError?.message || fallbackError).slice(0, 500));
       }
     }
+    recordCustomerReplyTiming(event,startedAt,false);
     throw error;
   }
 }
@@ -1980,7 +2006,14 @@ app.get("/healthz", (_req, res) => {
     processingWebhookEvents: processingWebhookEvents.size,
     lastWebhookAt,
     lastReplySuccessAt,
-    lastReplyError,
+    // The old raw SDK error could include private webhook/message context.
+    lastReplyErrorPresent:Boolean(lastReplyError),
+    lastCustomerProcessingMs,
+    lastEventToLineAckApproxMs,
+    lastCustomerEventProcessedAt,
+    lastCustomerResponseAccepted,
+    slowCustomerEventCount,
+    customerReplyFullyDeliveredVerified:false,
     replyClient: "MessagingApiClient",
   });
 });

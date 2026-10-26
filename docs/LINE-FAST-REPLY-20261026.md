@@ -17,3 +17,11 @@ Render 2026-10 的 build pipeline minutes 已耗盡，使用 `[skip render]` Com
 一般商品／FAQ 繼續即時使用核准的本地資料，不使用 Loading API。只有需要等待**正式 CRM 試喝需求寫入**，或**商家採購／合作／詢價管理員通知**時，若實際超過 650ms 才非同步啟動 LINE 官方 1:1 10 秒 Loading Animation（LINE 官方入口 `/v2/bot/chat/loading/start`）。動畫 HTTP 最長 1.5 秒，失敗也不阻擋原交易；只有 `source.type=user`、格式正確的 LINE User ID 與受保護 Token 才可觸發；群組不呼叫。
 
 這是**顧客進度提示而非加快 CRM 寫入**，對外正式成功仍必須以原管理員 Push 回傳或 CRM 訂單 ID 為準，失敗時保留購物車及原錯誤訊息，不另外發 Push、不提前清除待確認訂單。LINE 官方文件說明 Loading Animation 本身非「發送訊息」，支援的 1:1 聊天中，新訊息到達會自動停止動畫。此程式在 Render 建置額度恢復並部署前仍**未正式上線**。
+
+## 2026-10-26｜由真實收到客戶事件到 LINE 平台接受回覆的指標
+
+原 LINE `/healthz` 會完整回傳 `lastReplyError`，可能攜帶 LINE SDK 例外中的私有內容；改成 `lastReplyErrorPresent` 布林值，內部仍維持錯誤診斷，不公開原文。
+
+新增無客戶身分資訊的 `lastCustomerProcessingMs`、`lastEventToLineAckApproxMs`、`lastCustomerEventProcessedAt`、`lastCustomerResponseAccepted`、`slowCustomerEventCount`。收到 LINE 有效 timestamp 時，會將從 LINE 事件建立到後端處理／API 回覆完成的時間納入，包括 Render 冷啟動造成的延遲。超過 8 秒計入累積慢事件；失敗回覆不標記成功。無 timestamp 或逾 15 分鐘舊事件只記處理時間，不假造事件起點。
+
+**注意：LINE 平台接受回覆 != 顧客手機完整顯示訊息**。這是降低事故偵測盲點，不代表通過官方端對端測試。Render build 額度未恢復前，程式更新不會自動生效。
