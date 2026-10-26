@@ -52,6 +52,7 @@ for (const retired of ["歡迎諮詢","09:30－18:30","09:30 - 18:30"]) {
 }
 
 const storePolicy = fs.readFileSync(path.join(ROOT, "line-store-location-policy.js"), "utf8");
-assert.match(storePolicy, /週一至週五 10:00－20:00；週六彈性預約取貨／配送/);
+assert.match(storePolicy, /lineBusinessProfile/, "LINE 門市營業時間必須以目前核准的商業簡介為來源");
+assert.match(storePolicy, /resolvePublicHours/, "已退役的 Render 環境營業時間不能回流");
 
 console.log("PASS：LINE OA 商業簡介權威已鎖定新版狀態消息、週一至週五10:00－20:00、週六彈性預約及週日公休與正式連結入口；舊時段封面標記為必須更換。");
