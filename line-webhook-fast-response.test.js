@@ -45,7 +45,7 @@ const run=vm.runInNewContext('(async function(data,event,reply,productMenuReply,
 })().catch(e=>{console.error(e);process.exitCode=1});
 
 const fallbackStart=source.indexOf('function canUseTextFallback(error)');
-const fallbackEnd=source.indexOf('async function reply(token, messages)',fallbackStart);
+const fallbackEnd=source.indexOf('// One LINE reply token may be accepted only once.',fallbackStart);
 assert.ok(fallbackStart>0&&fallbackEnd>fallbackStart);
 const canUseTextFallback=vm.runInNewContext(
  '('+source.slice(fallbackStart,fallbackEnd).trim()+')');
