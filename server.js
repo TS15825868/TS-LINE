@@ -1132,13 +1132,15 @@ async function saveCRM(payload) {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) return { ...result, ok: false, error: "CRM HTTP " + response.status };
     if (result.ok !== true || !String(result.orderId || "").trim()) {
-      return { ok: false, error: result.error || "CRM did not acknowledge an order ID" };
+      return { ok: false, error: "CRM did not acknowledge an order ID" };
     }
     return result;
   } catch (error) {
-    const message = error.name === "AbortError" ? "CRM timeout after " + CRM_TIMEOUT_MS + "ms" : error.message;
-    console.error("CRM 寫入失敗：" + message);
-    return { ok: false, error: message || "CRM request failed" };
+    const timedOut=error?.name==="AbortError";
+    // The underlying transport error may contain a private CRM URL or
+    // submitted order fields. Return only bounded, non-sensitive categories.
+    console.error("[XJW_CRM_WRITE] "+(timedOut?"timeout":"request_failed"));
+    return { ok: false, error: timedOut?"CRM request timed out":"CRM request failed" };
   } finally {
     clearTimeout(timeout);
   }
@@ -1244,7 +1246,7 @@ async function continueCheckout(event, state, text) {
     if (!checkout.trial) {
       const summary = "【LINE 選購需求｜待人工報價】\n" + state.cart.map(v=>v.name+" × "+v.qty+v.unit).join("\n") + "\n聯絡人："+checkout.name+"\n電話："+checkout.phone+"\n付款偏好："+checkout.payment+"\n配送："+checkout.shipping+"\n地址："+checkout.address+"\n價格、優惠、運費及正式訂單均待人工確認。";
       const sent = await withLineLoadingIndicator(event, () =>
-        ownerAlert.pushOwnerAlert(event, summary).catch(error=>{console.error("[XJW_QUOTE_REQUEST]",error?.message||error);return false;}));
+        ownerAlert.pushOwnerAlert(event, summary).catch(error=>{console.error("[XJW_QUOTE_REQUEST] notification failed (details withheld)");return false;}));
       if (sent) { state.cart=[]; state.checkout=null; }
       return reply(event.replyToken,textMsg(sent?"選購需求已送出，仙加味將由專人確認報價、優惠、運費及交期；目前尚未成立正式訂單。":"需求暫未確認送達，購物車已保留。請稍後重試或聯絡人工客服。",sent?mainQuick():[{label:"重新送出",text:"確認送出"},{label:"人工客服",text:"我要人工客服"}]));
     }
@@ -1438,7 +1440,7 @@ async function handleMessage(event) {
       if(!items.length) return reply(event.replyToken,textMsg("採購清單尚無商品。",merchantItemButtons()));
       const summary="【已核准商家採購詢價】\\nLINE userId："+event.source.userId+"\\n"+items.map(v=>v.name+" × "+v.qty+" "+v.unit).join("\\n");
       const sent=await withLineLoadingIndicator(event, () =>
-        ownerAlert.pushOwnerAlert(event,summary).catch(e=>{console.error("[XJW_APPROVED_MERCHANT_ALERT]",e?.message||e);return false;}));
+        ownerAlert.pushOwnerAlert(event,summary).catch(e=>{console.error("[XJW_APPROVED_MERCHANT_ALERT] notification failed (details withheld)");return false;}));
       if(sent) delete state.merchantQuickOrder;
       return reply(event.replyToken,textMsg(sent?"採購清單已送出，仙加味將確認合作價格、庫存與配送。尚未成立正式訂單。":"採購清單已保留，但通知尚未成功，請稍後重試或聯絡人工客服。",sent?mainQuick():[{label:"再次送出",text:"商採確認送出"},{label:"人工客服",text:"我要人工客服"}]));
     }
@@ -1488,7 +1490,7 @@ async function handleMessage(event) {
       if (text !== "確認送出商家詢價") return reply(event.replyToken, textMsg("請選擇「確認送出詢價」、「重新填寫」或「取消」。", [{label:"確認送出詢價",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}]));
       const summary = `【商家採購詢價】\n商家與聯絡方式：${merchant.data.contact}\n商品與預估數量：${merchant.data.items}\n交貨與其他需求：${merchant.data.delivery}`;
       const sent = await withLineLoadingIndicator(event, () =>
-        ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_MERCHANT_INQUIRY_ALERT]",error?.message||error);return false; }));
+        ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_MERCHANT_INQUIRY_ALERT] notification failed (details withheld)");return false; }));
       if (sent) delete state.merchantOrderInquiry;
       return reply(event.replyToken, textMsg(sent ? "商家採購詢價已通知仙加味負責人。專人將確認報價、庫存及配送，確認前尚未成立訂單。" : "商家詢價內容已整理，但管理員通知尚未成功。請保留對話並洽人工客服，或稍後再次按「確認送出詢價」。", sent ? mainQuick() : [{label:"再次送出",text:"確認送出商家詢價"},{label:"人工客服",text:"我要人工客服"}]));
     }
@@ -1544,7 +1546,7 @@ async function handleMessage(event) {
       const summary = `【商家合作洽談】\n合作類型：${inquiry.data.category}\n商家與聯絡方式：${inquiry.data.business}\n需求：${inquiry.data.details}`;
       delete state.businessInquiry;
       const sent = await withLineLoadingIndicator(event, () =>
-        ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_PARTNER_ALERT]", error?.message || error); return false; }));
+        ownerAlert.pushOwnerAlert(event, summary).catch(error => { console.error("[XJW_PARTNER_ALERT] notification failed (details withheld)"); return false; }));
       return reply(event.replyToken, textMsg(sent ? "合作洽談資料已送出，仙加味將由專人接續聯繫。感謝您的洽詢。" : "合作資料已整理完成，但即時通知尚未確認成功。請保留本段 LINE 對話，仙加味將依收件匣訊息接續處理。", mainQuick()));
     }
   }
@@ -1688,7 +1690,7 @@ async function handleMessage(event) {
     if (now - Number(state.lastHealthIntakeAlertAt || 0) >= 30 * 60 * 1000) {
       state.lastHealthIntakeAlertAt = now;
       void ownerAlert.pushOwnerAlert(event, "個人適用性詢問，請至仙加味 LINE OA 收件匣查看")
-        .catch(error => console.error("[XJW_OWNER_ALERT] sensitive-intake failed", error?.message || error));
+        .catch(error => console.error("[XJW_OWNER_ALERT] sensitive-intake failed (details withheld)"));
     }
     return reply(event.replyToken, healthQuestionIntakeReply());
   }
@@ -1989,11 +1991,14 @@ async function handleEvent(event) {
     return result;
   } catch (error) {
     finishWebhookEvent(event, false);
+    // Never place original customer text, SDK response, tokens or stack traces
+    // in application logs. Some upstream exceptions contain request bodies.
+    const eventStatus=Number(error?.status??error?.response?.status);
     console.error("[XJW_LINE_EVENT_ERROR]", {
-      eventType: event?.type || "unknown",
-      messageType: event?.message?.type || "none",
-      error: String(error?.message || error).slice(0, 700),
-      stack: String(error?.stack || "").slice(0, 1400),
+      eventType: ["message","postback","follow"].includes(event?.type)?event.type:"other",
+      messageType: ["text","image","audio","video","file","location","sticker"].includes(event?.message?.type)?event.message.type:"other",
+      category: Number.isInteger(eventStatus)&&eventStatus>=400&&eventStatus<600
+        ? "HTTP "+eventStatus : "handler_failed",
     });
     // 事件仍持有有效 replyToken 時嘗試回覆，而不是讓顧客只看到已讀前的沉默。
     if (event?.replyToken && (event?.type === "message" || event?.type === "postback")) {
@@ -2008,7 +2013,7 @@ async function handleEvent(event) {
           return true;
         }
       } catch (fallbackError) {
-        console.error("[XJW_LINE_EVENT_FALLBACK]", String(fallbackError?.message || fallbackError).slice(0, 500));
+        console.error("[XJW_LINE_EVENT_FALLBACK] generic customer reply could not be confirmed");
       }
     }
     recordCustomerReplyTiming(event,startedAt,false);

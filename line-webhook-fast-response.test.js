@@ -192,3 +192,74 @@ assert.equal(comboFn({products:[{productId:"drink"}]}),"飲品5～7個工作天"
 assert.equal(comboFn({products:[{productId:"stock"}]}),"現貨依供貨");
 assert.equal(comboFn({products:[{productId:"drink"},{productId:"stock"}]}),"混合");
 console.log("PASS approved zero-cost FAQs, no static hours and empty-combo fulfillment fallback");
+
+
+// Runtime security: no public LINE message may enroll a manager or log PII.
+// Use a fully stubbed LINE client: no external network, credentials or data.
+const ownerSource=fs.readFileSync(require("node:path").join(__dirname,"line-owner-alert-runtime.js"),"utf8");
+assert.doesNotMatch(ownerSource,/process\.env\.OWNER_LINE_USER_ID\s*=/);
+assert.doesNotMatch(ownerSource,/console\.log\(\x60\[XJW_OWNER_BIND\]/);
+assert.match(ownerSource,/event\?\.source\?\.type !== "user"/);
+for(const marker of ["[XJW_QUOTE_REQUEST]","[XJW_APPROVED_MERCHANT_ALERT]","[XJW_MERCHANT_INQUIRY_ALERT]",
+ "[XJW_PARTNER_ALERT]","[XJW_LINE_EVENT_FALLBACK]"])
+  assert.ok(source.includes(marker),"Missing privacy-safe diagnostic: "+marker);
+assert.doesNotMatch(source,/error:\s*String\(error\?\.message \|\| error\)/);
+assert.doesNotMatch(source,/stack:\s*String\(error\?\.stack/);
+assert.doesNotMatch(source,/console\.error\("[XJW_CRM_WRITE]"\s*,?\s*error/);
+
+function fakeOwnerRuntime(env,captures){
+ const context={
+   module:{exports:{}},process:{env},
+   console:{log:(...args)=>captures.logs.push(args.join(" ")),
+     warn:(...args)=>captures.logs.push(args.join(" ")),
+     error:(...args)=>captures.logs.push(args.join(" "))},
+   Date,Promise,
+   require:(id)=>{assert.equal(id,"@line/bot-sdk");
+     return {messagingApi:{MessagingApiClient:class {
+       async pushMessage(request){
+         captures.pushes.push(request);
+         if(captures.fail)throw Error("private phone 0912345678, full customer request");
+       }
+     }}};
+   }
+ };
+ vm.runInNewContext(ownerSource,context);
+ return context.module.exports;
+}
+(async()=>{
+ const privateId="U1234567890abcdefghijklmnopqrstuv";
+ const own={logs:[],pushes:[]};
+ const env={CHANNEL_ACCESS_TOKEN:"OFFLINE_FAKE_TOKEN"};
+ const mod=fakeOwnerRuntime(env,own);
+ mod.inspectEvents({body:{events:[{
+   type:"message",message:{type:"text",text:"綁定人工客服通知"},
+   source:{type:"user",userId:privateId}}]}});
+ assert.equal(env.OWNER_LINE_USER_ID,undefined,"Customer-controlled manager binding must remain prohibited");
+ assert.equal(own.pushes.length,0);
+ assert.ok(!own.logs.join(" ").includes(privateId),"Never print private source LINE user ID");
+ const guarded={logs:[],pushes:[]};
+ const checked=fakeOwnerRuntime({
+   CHANNEL_ACCESS_TOKEN:"OFFLINE_FAKE_TOKEN",OWNER_LINE_USER_ID:"U_PRIVATE_OWNER"
+ },guarded);
+ checked.inspectEvents({body:{events:[{
+   type:"message",message:{type:"text",text:"人工客服"},
+   source:{type:"group",groupId:"C_GROUP",userId:privateId}}]}});
+ await Promise.resolve();await Promise.resolve();
+ assert.equal(guarded.pushes.length,0,"Group messages may not trigger owner alerts");
+ checked.inspectEvents({body:{events:[{
+   type:"message",message:{type:"text",text:"人工客服"},
+   source:{type:"user",userId:privateId}}]}});
+ await Promise.resolve();await Promise.resolve();
+ assert.equal(guarded.pushes.length,1,"Configured owner still receives legitimate 1:1 alerts");
+ assert.equal(guarded.pushes[0].to,"U_PRIVATE_OWNER");
+ assert.ok(!guarded.logs.join(" ").includes(privateId));
+ const fail={logs:[],pushes:[],fail:true};
+ const failing=fakeOwnerRuntime({CHANNEL_ACCESS_TOKEN:"OFFLINE_FAKE_TOKEN",
+   OWNER_LINE_USER_ID:"U_PRIVATE_OWNER"},fail);
+ failing.inspectEvents({body:{events:[{
+   type:"message",message:{type:"text",text:"人工客服"},
+   source:{type:"user",userId:privateId}}]}});
+ await Promise.resolve();await Promise.resolve();await new Promise(resolve=>setImmediate(resolve));
+ assert.ok(!fail.logs.join(" ").includes("0912345678"),"No raw private SDK failure in logs");
+ console.log("PASS: owner binding blocked, groups ignored, configured owner preserved, private errors redacted");
+})().catch(e=>{console.error(e);process.exitCode=1});

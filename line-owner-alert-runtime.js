@@ -4,13 +4,13 @@
  * LINE OA 人工客服個人 LINE 提醒
  * - 正式通知對象由 OWNER_LINE_USER_ID 環境變數指定，不硬編碼任何個人 ID。
  * - 客人輸入「我要人工客服／人工客服／客服協助／聯絡客服」時，可推播提醒管理員私人 LINE。
- * - 第一次可由管理員本人傳「綁定人工客服通知」；服務會在當次執行期暫存該 userId 並寫入安全日誌，
- *   後續再由維運把該 ID 固定到 Render OWNER_LINE_USER_ID，避免重啟後遺失。
+ * - 管理員接收者只可由受保護的 OWNER_LINE_USER_ID 正式環境設定。
+ * - 「綁定人工客服通知」為已停用的舊指令；任何顧客訊息都無權修改通知對象。
  * - 不讀取、不轉送其他聊天內容；提醒只包含人工客服觸發文字與時間。
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20260821-owner-support-alert-v1";
+const VERSION = "20261026-owner-alert-secure-binding-v2";
 const BIND_COMMAND = "綁定人工客服通知";
 const SUPPORT_PATTERN = /^(?:我要)?(?:人工客服|客服協助|聯絡客服|找客服)$/;
 
@@ -45,13 +45,14 @@ async function pushOwnerAlert(event, text) {
 function inspectEvents(req) {
   const events = Array.isArray(req?.body?.events) ? req.body.events : [];
   for (const event of events) {
-    if (event?.type !== "message" || event?.message?.type !== "text") continue;
+    if (event?.type !== "message" || event?.message?.type !== "text" ||
+        event?.source?.type !== "user" || !String(event?.source?.userId || "").trim()) continue;
     const text = String(event.message.text || "").trim();
-    const sourceUserId = String(event?.source?.userId || "").trim();
 
-    if (text === BIND_COMMAND && sourceUserId) {
-      if (!ownerUserId()) process.env.OWNER_LINE_USER_ID = sourceUserId;
-      console.log(`[XJW_OWNER_BIND] ${sourceUserId}`);
+    // Reject unauthenticated enrollment. Only the protected deployment
+    // environment may define a manager, never a chat command.
+    if (text === BIND_COMMAND) {
+      console.warn("[XJW_OWNER_BIND] ignored legacy chat binding; configure secure environment");
       continue;
     }
 
@@ -59,7 +60,7 @@ function inspectEvents(req) {
       pushOwnerAlert(event, text).then((ok) => {
         if (ok) console.log("[XJW_OWNER_ALERT] sent");
         else console.log("[XJW_OWNER_ALERT] skipped: OWNER_LINE_USER_ID not configured");
-      }).catch((error) => console.error("[XJW_OWNER_ALERT] failed", error?.message || error));
+      }).catch(() => console.error("[XJW_OWNER_ALERT] failed (private error details withheld)"));
     }
   }
 }
@@ -72,7 +73,7 @@ function install(app) {
     const finalHandler = handlers.pop();
     if (typeof finalHandler !== "function") return nativePost(path, ...handlers, finalHandler);
     const inspectMiddleware = function xjwOwnerAlertMiddleware(req, _res, next) {
-      try { inspectEvents(req); } catch (error) { console.error("[XJW_OWNER_ALERT] inspect failed", error?.message || error); }
+      try { inspectEvents(req); } catch { console.error("[XJW_OWNER_ALERT] inspect failed (private error details withheld)"); }
       next();
     };
     return nativePost(path, ...handlers, inspectMiddleware, finalHandler);
