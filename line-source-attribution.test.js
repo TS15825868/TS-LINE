@@ -19,6 +19,31 @@ for (const [text, page, label] of cases) {
   assert(result.leadOrigin.startsWith("https://ts15825868.github.io/xianjiawei/"));
 }
 
+// Reproduce the current production CTA contract, not only saved 2026/09 links.
+const currentCases = [
+  ["我從仙加味官網首頁進來，想了解產品與怎麼選。", "home"],
+  ["我從仙加味商品總覽進來，想了解商品規格、供貨與購買方式。", "products"],
+  ["我想比較仙加味目前產品與規格。", "products"],
+  ["我不確定仙加味目前產品怎麼選，想請你依我的使用習慣整理。", "products"],
+  ["我不確定怎麼選，想請你依我的生活方式幫我整理。", "choose"],
+  ["我想依生活習慣比較仙加味產品。", "choose"],
+  ["我從品牌故事頁進來，想認識仙加味與產品。", "brand"],
+  ["我看完仙加味品牌故事，想了解產品與怎麼選。", "brand"],
+  ["我想申請龜鹿飲30cc試喝組。", "trial"],
+];
+for (const [text, page] of currentCases) {
+  assert.strictEqual(attribution.detectWebsiteOrigin(text)?.sourceDetail, `website:${page}`);
+}
+assert.strictEqual(attribution.detectWebsiteOrigin("我不確定怎麼選"), null);
+assert.strictEqual(attribution.detectWebsiteOrigin("龜鹿飲30cc試喝"), null);
+assert.strictEqual(attribution.detectWebsiteOrigin("我想了解仙加味產品。"), null);
+
+attribution.remember("U-current-prefill-test", currentCases.at(-1)[0], 10000);
+const currentPayload = attribution.augmentCrmPayload({userId:"U-current-prefill-test",source:"LINE OA",campaignId:"keep-existing"},10001);
+assert.strictEqual(currentPayload.sourceDetail,"website:trial");
+assert.strictEqual(currentPayload.campaignId,"keep-existing");
+assert.strictEqual(attribution.getRemembered("U-current-prefill-test",10000+24*60*60*1000+1),null);
+
 assert.strictEqual(attribution.detectWebsiteOrigin("申請試喝"), null, "LINE OA 內部快速回覆不得誤判成官網試喝頁");
 assert.strictEqual(attribution.detectWebsiteOrigin("我想看產品"), null, "一般對話不得誤判官網來源");
 

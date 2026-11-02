@@ -11,11 +11,32 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-09-16-v1";
+const VERSION = "2026-11-02-current-website-prefills-v2";
 const TTL_MS = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const origins = new Map();
+
+// Exact current website CTA copy (site-core-v410.js and the page CTAs).
+// Keep older explicit prefills below for customers returning from saved links;
+// ordinary product questions must not be treated as website-source evidence.
+const CURRENT_PAGE_PREFILLS = {
+  home: ["我從仙加味官網首頁進來，想了解產品與怎麼選。"],
+  products: [
+    "我從仙加味商品總覽進來，想了解商品規格、供貨與購買方式。",
+    "我想比較仙加味目前產品與規格。",
+    "我不確定仙加味目前產品怎麼選，想請你依我的使用習慣整理。",
+  ],
+  choose: [
+    "我不確定怎麼選，想請你依我的生活方式幫我整理。",
+    "我想依生活習慣比較仙加味產品。",
+  ],
+  brand: [
+    "我從品牌故事頁進來，想認識仙加味與產品。",
+    "我看完仙加味品牌故事，想了解產品與怎麼選。",
+  ],
+  trial: ["我想申請龜鹿飲30cc試喝組。"],
+};
 
 const PAGE_RULES = [
   {
@@ -62,7 +83,8 @@ function clean(value, max = 500) {
 function detectWebsiteOrigin(text) {
   const value = clean(text);
   if (!value) return null;
-  const rule = PAGE_RULES.find((item) => item.matches(value));
+  const rule = PAGE_RULES.find((item) =>
+    CURRENT_PAGE_PREFILLS[item.page]?.includes(value) || item.matches(value));
   if (!rule) return null;
   return {
     source: "官網→LINE OA",
