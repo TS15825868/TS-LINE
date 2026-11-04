@@ -1,6 +1,6 @@
 {
-  "version": "4.2.0",
-  "updatedAt": "2026-10-18",
+  "version": "4.3.0",
+  "updatedAt": "2026-11-04",
   "brand": "仙加味",
   "tagline": "補養，是一種節奏。",
   "quickReplies": {
@@ -100,5 +100,17 @@
   },
   "positioning": "現代漢方生活品牌",
   "productScopeLine": "漢方飲食文化・多元日常選擇",
-  "profileCore": "仙加味｜現代漢方生活品牌\n萬華起家・四代家族傳承\n漢方飲食文化・多元日常選擇\n補養，是一種節奏。"
+  "profileCore": "仙加味｜現代漢方生活品牌\n萬華起家・四代家族傳承\n漢方飲食文化・多元日常選擇\n補養，是一種節奏。",
+  "brandPositioningAuthority": {
+    "statement": "仙加味是現代漢方生活品牌，提供龜鹿系列與多元漢方食品；龜鹿、鹿角與熬膠工藝是起家根基和專業，不代表只有龜鹿商品。",
+    "websiteExamples": [
+      "龜鹿膏100g",
+      "丹參茶包系列",
+      "四珍寶精華膏湯塊"
+    ],
+    "usageRule": "依正式商品型態與日常情境介紹；其他品項以官網最新正式商品總覽及產品標示為準。",
+    "knowledge": "龜鹿文化與工藝是專業知識主題，不是全品牌的唯一主題。",
+    "safety": "不改既有價格、規格、試喝、交期、訂單或客服流程；未通過安全驗收不啟用自動對客發送。",
+    "source": "TS15825868/xianjiawei:data/brand-content.json"
+  }
 }
