@@ -482,12 +482,13 @@
         "service": "仙加味LINE商品、價格與供貨詢問",
         "websitePublic": true,
         "autoCheckout": false,
-        "photoState": "owner-supplied-original-photographs-20261113"
+        "photoState": "owner-original-package-mask-proportional-verified-20261113"
       },
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/baumann-ginseng-loquat-front.jpg",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/baumann-ginseng-loquat-main.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/baumann-ginseng-loquat-back.jpg"
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/baumann-ginseng-loquat-back.jpg",
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/baumann-ginseng-loquat-front.jpg"
       ]
     },
     {
@@ -520,12 +521,13 @@
         "service": "仙加味LINE商品、價格與供貨詢問",
         "websitePublic": true,
         "autoCheckout": false,
-        "photoState": "owner-supplied-original-photographs-20261113"
+        "photoState": "owner-original-package-mask-proportional-verified-20261113"
       },
-      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/sun-e-ginseng-citrus-front.jpg",
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/sun-e-ginseng-citrus-main.webp",
       "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
       "approvedDetailImages": [
-        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/sun-e-ginseng-citrus-back.jpg"
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/sun-e-ginseng-citrus-back.jpg",
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/sun-e-ginseng-citrus-front.jpg"
       ]
     }
   ],
