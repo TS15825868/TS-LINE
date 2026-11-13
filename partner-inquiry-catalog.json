@@ -452,9 +452,84 @@
         "https://ts15825868.github.io/xianjiawei/images/catalog-real-owner-v20261019/royalherb-erzhenbao-64-open.png",
         "https://ts15825868.github.io/xianjiawei/images/catalog-real-owner-v20261019/royalherb-erzhenbao-64-back.png"
       ]
+    },
+    {
+      "id": "baumann-ginseng-loquat",
+      "name": "寶曼花旗參枇杷軟糖",
+      "aliases": [
+        "寶曼花旗參枇杷爽喉軟糖",
+        "寶曼花旗參枇杷軟糖",
+        "花旗參枇杷軟糖",
+        "枇杷軟糖"
+      ],
+      "publicPage": "product-baumann-ginseng-loquat.html",
+      "food": {
+        "classification": "merchant-confirmed-food",
+        "size": "30g／包｜12包／盒",
+        "ingredients": [
+          "砂糖",
+          "麥芽糖",
+          "椰子油",
+          "明膠（動物來源）",
+          "植物萃取物（枇杷葉、桔梗、茯苓、陳皮、蓮子、羅漢果、生薑）",
+          "花旗參",
+          "蜂蜜",
+          "香料",
+          "焦糖色素",
+          "薄荷",
+          "棕櫚蠟"
+        ],
+        "service": "仙加味LINE商品、價格與供貨詢問",
+        "websitePublic": true,
+        "autoCheckout": false,
+        "photoState": "owner-supplied-original-photographs-20261113"
+      },
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/baumann-ginseng-loquat-front.jpg",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/baumann-ginseng-loquat-back.jpg"
+      ]
+    },
+    {
+      "id": "sun-e-ginseng-citrus",
+      "name": "上裕花旗參冰橙檸檬軟糖",
+      "aliases": [
+        "上裕花旗參冰橙檸檬爽喉軟糖",
+        "上裕花旗參冰橙檸檬軟糖",
+        "花旗參冰橙檸檬軟糖",
+        "冰橙檸檬軟糖"
+      ],
+      "publicPage": "product-sun-e-ginseng-citrus.html",
+      "food": {
+        "classification": "merchant-confirmed-food",
+        "size": "30g／包｜12包／盒",
+        "ingredients": [
+          "砂糖",
+          "麥芽糖",
+          "椰子油",
+          "明膠（動物來源）",
+          "檸檬酸",
+          "花旗參",
+          "檸檬濃縮果汁",
+          "柳橙濃縮果汁",
+          "香料",
+          "焦糖色素",
+          "薄荷",
+          "棕櫚蠟"
+        ],
+        "service": "仙加味LINE商品、價格與供貨詢問",
+        "websitePublic": true,
+        "autoCheckout": false,
+        "photoState": "owner-supplied-original-photographs-20261113"
+      },
+      "approvedImage": "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/sun-e-ginseng-citrus-front.jpg",
+      "imageAuthority": "TS15825868/xianjiawei/partner-catalog.json",
+      "approvedDetailImages": [
+        "https://ts15825868.github.io/xianjiawei/images/partner-products/20261113/sun-e-ginseng-citrus-back.jpg"
+      ]
     }
   ],
   "photoAuthorityVersion": "20261017-owner-approved-real-erzhenbao-trays-current-web",
   "visualPolicy": "完整實物包裝原圖、單品呈現，不做AI重畫或風景背景",
-  "updatedAt": "2026-10-18"
+  "updatedAt": "2026-11-13"
 }

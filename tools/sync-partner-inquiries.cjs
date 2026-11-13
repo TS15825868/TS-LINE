@@ -45,7 +45,7 @@ const target=path.join(__dirname,'../partner-inquiry-catalog.json');
     autoCheckout:false,
     photoState:p.imageSourceStatus||'pending'
    }:undefined;
-   return {id:p.id,name:p.name,aliases:[...new Set(aliases)],publicPage:publicPage||null,
+   return {id:p.id,name:p.displayName||p.name,aliases:[...new Set(aliases)],publicPage:publicPage||null,
     ...(medicine?{medicine}:{}),...(food?{food}:{})};
   });
   fs.writeFileSync(target+'.tmp',JSON.stringify({source:'TS15825868/xianjiawei/partner-catalog.json',products},null,2)+'\n');

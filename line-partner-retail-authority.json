@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-18-owner-confirmed-er-zhenbao-si-zhenbao-suggested-retail-v3",
+  "version": "2026-11-13-owner-confirmed-ginseng-chews-v1",
   "currency": "TWD",
   "scope": "LINE OA 商品卡：使用者最新確認二珍寶與四珍寶均為建議售價、優惠價；其餘產品依最新核准標示",
   "policy": "丹參茶包每盒售價 NT$480、單盒選一款口味；六款是六種選擇，不代表一盒內含六款或 NT$480 可買六盒。新品價格須經使用者確認，不得推算；所有商品保留獲核准的標示類型。",
@@ -45,6 +45,48 @@
       "promotionPrice": 12000,
       "confirmed": true,
       "source": "2026-10-18 使用者最新明確確認：四珍寶64塊 建議售價NT$14,800、優惠價NT$12,000"
+    },
+    "baumann-ginseng-loquat": {
+      "price": 100,
+      "unit": "包",
+      "priceType": "sale",
+      "label": "售價 NT$100／包\n買5送1｜6包 NT$500\n整盒12包 NT$1,000",
+      "confirmed": true,
+      "inquiryOnly": true,
+      "offers": [
+        {
+          "qty": 12,
+          "total": 1000,
+          "label": "整盒12包"
+        },
+        {
+          "qty": 6,
+          "total": 500,
+          "label": "買5送1"
+        }
+      ],
+      "source": "2026-11-13 使用者確認單包100元、12包1000元、買5送1；各口味分開計價，混搭未確認"
+    },
+    "sun-e-ginseng-citrus": {
+      "price": 100,
+      "unit": "包",
+      "priceType": "sale",
+      "label": "售價 NT$100／包\n買5送1｜6包 NT$500\n整盒12包 NT$1,000",
+      "confirmed": true,
+      "inquiryOnly": true,
+      "offers": [
+        {
+          "qty": 12,
+          "total": 1000,
+          "label": "整盒12包"
+        },
+        {
+          "qty": 6,
+          "total": 500,
+          "label": "買5送1"
+        }
+      ],
+      "source": "2026-11-13 使用者確認單包100元、12包1000元、買5送1；各口味分開計價，混搭未確認"
     }
   }
 }

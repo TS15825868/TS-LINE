@@ -1,8 +1,8 @@
 {
-  "version": "2026-10-18-website-approved-public-products",
+  "version": "2026-11-13-owner-ginseng-chews-v1",
   "sourceRepository": "TS15825868/xianjiawei",
   "sourceFile": "products.html",
-  "sourceCommit": "f4ba1a73e462602270c25074c040894a06da1370",
+  "sourceCommit": "ca18e88bc24e595c2546d8573add79ddbb91a4d3",
   "displayPolicy": "LINE OA 僅呈現官網已核准公開的實物商品，無核准末端售價時不自動顯示價格或加入購物車；丹參六款合併一張卡。",
   "products": [
     {
@@ -39,6 +39,20 @@
       "name": "二珍寶精華膏湯塊",
       "specification": "每盒 64 塊｜總重 600g±15g",
       "page": "product-er-zhen-bao.html"
+    },
+    {
+      "id": "baumann-ginseng-loquat",
+      "image": "images/partner-products/20261113/baumann-ginseng-loquat-front.jpg",
+      "name": "寶曼花旗參枇杷軟糖",
+      "specification": "30g／包｜12包／盒",
+      "page": "product-baumann-ginseng-loquat.html"
+    },
+    {
+      "id": "sun-e-ginseng-citrus",
+      "image": "images/partner-products/20261113/sun-e-ginseng-citrus-front.jpg",
+      "name": "上裕花旗參冰橙檸檬軟糖",
+      "specification": "30g／包｜12包／盒",
+      "page": "product-sun-e-ginseng-citrus.html"
     }
   ]
 }

@@ -1313,7 +1313,7 @@ async function continueCheckout(event, state, text) {
       const product = publicCatalog.current().find(entry => entry.id === item.id);
       const retail = product && partnerRetail(product);
       const approvedPrice = Number(retail?.promotionPrice || retail?.price || 0);
-      if (!product || !retail || !Number.isFinite(approvedPrice) || approvedPrice <= 0) {
+      if (!product || !retail || retail.inquiryOnly === true || !Number.isFinite(approvedPrice) || approvedPrice <= 0) {
         checkout.step = "confirm";
         return reply(event.replyToken, flexCard("請重新確認商品", "有商品售價已更新或暫停訂購，請聯絡客服確認後再送出。", [{ label: "人工客服", text: "我要人工客服" }, { label: "取消", text: "取消" }]));
       }
@@ -1678,13 +1678,13 @@ async function handleMessage(event) {
     const retail = partnerRetail(product);
     const unit = retail?.unit || "盒";
     const price = Number(retail?.promotionPrice || retail?.price || 0);
-    const buttons = [1, 2, 3].map(qty => ({
+    const buttons = (retail?.inquiryOnly ? [1, 6, 12] : [1, 2, 3]).map(qty => ({
       label: `${qty}${unit}`,
-      text: `加入其他商品購物車｜${product.id}｜${qty}`
+      text: `${retail?.inquiryOnly ? "詢問其他商品數量" : "加入其他商品購物車"}｜${product.id}｜${qty}`
     }));
     buttons.push({ label: "人工客服", text: "我要人工客服" });
     return reply(event.replyToken, flexCard(`${product.name}｜選擇數量`,
-      `${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n點選盒數即可繼續。`, buttons));
+      `${product.specification}\n${retail ? retail.label : "售價請洽客服確認"}\n點選數量即可繼續。`, buttons));
   }
 
   const partnerCartMatch = text.match(/^加入其他商品購物車｜([^｜]+)｜(\d+)$/);
@@ -1693,7 +1693,7 @@ async function handleMessage(event) {
     const qty = Number(partnerCartMatch[2]);
     const retail = product && partnerRetail(product);
     const price = Number(retail?.promotionPrice || retail?.price || 0);
-    if (!product || !Number.isInteger(qty) || qty < 1 || qty > 99 || !retail || price <= 0)
+    if (!product || !Number.isInteger(qty) || qty < 1 || qty > 99 || !retail || retail.inquiryOnly === true || price <= 0)
       return reply(event.replyToken, textMsg("目前無法加入這項商品，請洽人工客服。", [{ label: "人工客服", text: "我要人工客服" }]));
     const id = product.id;
     const item = state.cart.find(entry => entry.id === id);
@@ -1809,6 +1809,7 @@ async function handleMessage(event) {
         '這款為其他廠牌食品，可先查看原廠商品資訊。' +
         (food.size ? '\n包裝規格：' + food.size + '。' : '') +
         ingredients +
+        (partnerRetail(partnerInquiry)?.label ? '\n' + partnerRetail(partnerInquiry).label : '') +
         '\n售價、現貨批次、購買及配送請由人工客服確認。此處不提供療效或個人醫療判斷。',
         [
           ...(partnerInquiry.publicPage && food.websitePublic

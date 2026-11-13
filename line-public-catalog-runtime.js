@@ -33,7 +33,7 @@ async function refresh({ force = false } = {}) {
       const candidates = catalog.products.filter(p =>
         p.public === true && !p.medicine && isValid(p) && liveIds.has(p.id)
       ).map(p => ({
-        id: p.id, name: p.name, specification: p.size || p.specification,
+        id: p.id, name: p.displayName || p.name, specification: p.size || p.specification,
         image: p.image, page: p.page,
       }));
       // 官方目錄合法將所有其他商品下架時，須同步移除 LINE 卡片，不得讓舊快照繼續公開。
