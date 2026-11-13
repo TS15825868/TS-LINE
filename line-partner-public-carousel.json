@@ -2,7 +2,7 @@
   "version": "2026-11-13-owner-ginseng-chews-v1",
   "sourceRepository": "TS15825868/xianjiawei",
   "sourceFile": "products.html",
-  "sourceCommit": "ca18e88bc24e595c2546d8573add79ddbb91a4d3",
+  "sourceCommit": "429e4c0fdf1adae98c859b4c487c2a3bfd9133fa",
   "displayPolicy": "LINE OA 僅呈現官網已核准公開的實物商品，無核准末端售價時不自動顯示價格或加入購物車；丹參六款合併一張卡。",
   "products": [
     {
@@ -42,14 +42,14 @@
     },
     {
       "id": "baumann-ginseng-loquat",
-      "image": "images/partner-products/20261113/baumann-ginseng-loquat-front.jpg",
+      "image": "images/partner-products/20261113/baumann-ginseng-loquat-main.webp",
       "name": "寶曼花旗參枇杷軟糖",
       "specification": "30g／包｜12包／盒",
       "page": "product-baumann-ginseng-loquat.html"
     },
     {
       "id": "sun-e-ginseng-citrus",
-      "image": "images/partner-products/20261113/sun-e-ginseng-citrus-front.jpg",
+      "image": "images/partner-products/20261113/sun-e-ginseng-citrus-main.webp",
       "name": "上裕花旗參冰橙檸檬軟糖",
       "specification": "30g／包｜12包／盒",
       "page": "product-sun-e-ginseng-citrus.html"
