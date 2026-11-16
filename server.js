@@ -1565,7 +1565,7 @@ async function handleMessage(event) {
     const payload = draft.payload;
     const summary = `【商家合作洽談】\n合作編號：${id}\n合作類型：${payload.category}\n商家與聯絡方式：${payload.businessContact}\n需求：${payload.details}`;
     const receipt = await withLineLoadingIndicator(event, () => persistAndNotify(
-      { receiptPayload: payload }, null, () => ownerAlert.pushOwnerAlert(event, summary), inquiryOptions,
+      { receiptPayload: payload }, null, () => ownerAlert.pushOwnerAlert(event, summary), { ...inquiryOptions, actorUserId: event.source.userId },
     ));
     if (receipt && state.businessInquiry?.receiptPayload?.id === id) delete state.businessInquiry;
     return reply(event.replyToken, textMsg(
@@ -2255,3 +2255,6 @@ module.exports = {
   beginWebhookEvent,
   finishWebhookEvent,
 };
+
+
+
