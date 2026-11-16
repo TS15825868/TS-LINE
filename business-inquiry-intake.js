@@ -35,7 +35,11 @@ async function postSigned(payload, { secret, transport = fetch, now = Date.now()
 }
 
 async function sendInquiry(payload, options) {
-  const reply = await postSigned(payload, options);
+  if (options.actorUserId && (typeof options.secret !== "string" || options.secret.length < 32)) return null;
+  const input = options.actorUserId
+    ? { action: "confirm-draft", actorKey: draftActorKey(options.secret, options.actorUserId), payload }
+    : payload;
+  const reply = await postSigned(input, options);
   if (!reply || ![200, 201].includes(reply.status)) return null;
   const receipt = reply.body;
   if (receipt?.id !== payload.id || receipt.duplicate !== (reply.status === 200) ||
@@ -65,9 +69,13 @@ async function persistAndNotify(inquiry, verifiedOrigin, notify, options) {
   return receipt;
 }
 
+function draftActorKey(secret, userId) {
+  return createHmac("sha256", secret).update("xjw-b2b-draft:" + userId).digest("hex");
+}
+
 async function accessDraft(action, userId, options, fields = {}) {
   if (!userId || typeof options.secret !== "string" || options.secret.length < 32) return null;
-  const actorKey = createHmac("sha256", options.secret).update("xjw-b2b-draft:" + userId).digest("hex");
+  const actorKey = draftActorKey(options.secret, userId);
   const receipt = await postSigned({ action, actorKey, ...fields }, options);
   return receipt?.status === 200 ? receipt.body : null;
 }
