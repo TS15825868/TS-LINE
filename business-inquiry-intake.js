@@ -65,4 +65,10 @@ async function persistAndNotify(inquiry, verifiedOrigin, notify, options) {
   return receipt;
 }
 
-module.exports = { prepareInquiry, sendInquiry, persistAndNotify };
+async function accessDraft(action, userId, options, fields = {}) {
+  if (!userId || typeof options.secret !== "string" || options.secret.length < 32) return null;
+  const actorKey = createHmac("sha256", options.secret).update("xjw-b2b-draft:" + userId).digest("hex");
+  const receipt = await postSigned({ action, actorKey, ...fields }, options);
+  return receipt?.status === 200 ? receipt.body : null;
+}
+module.exports = { prepareInquiry, sendInquiry, persistAndNotify, accessDraft };
