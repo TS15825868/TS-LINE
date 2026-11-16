@@ -4,9 +4,9 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('server.js','utf8');
 const fn = source.slice(source.indexOf('async function saveCRM('), source.indexOf('async function continueCheckout('));
-async function check(body, ok=true) {
+async function check(body, ok=true, payload={orderId:'accepted'}) {
  const ctx={CRM_URL:'https://offline.invalid',CRM_TIMEOUT_MS:100,AbortController,setTimeout,clearTimeout,console,fetch:async()=>({ok,status:503,json:async()=>{if(body instanceof Error)throw body;return body;}})};
- vm.createContext(ctx);vm.runInContext(fn+'\nthis.save=saveCRM;',ctx);return ctx.save({});
+ vm.createContext(ctx);vm.runInContext(fn+'\nthis.save=saveCRM;',ctx);return ctx.save(payload);
 }
 function gas(cart) {
  const sheets=new Map();
@@ -27,6 +27,11 @@ function gas(cart) {
  for(const body of [{},{ok:false},{ok:true},null,new Error('invalid JSON')])assert.equal((await check(body)).ok,false);
  assert.equal((await check({ok:true,orderId:'accepted'},false)).ok,false);
  assert.equal((await check({ok:true,orderId:'accepted'})).ok,true);
+ assert.equal((await check({ok:true,orderId:'accepted',duplicated:true})).ok,true);
+ assert.equal((await check({ok:true,orderId:'different-order'})).ok,false);
+ assert.equal((await check({ok:true,orderId:123})).ok,false);
+ assert.equal((await check({ok:true,orderId:'accepted'},true,{})).ok,false);
+ assert.equal((await check({ok:true,orderId:'accepted',privateData:'not-for-caller'},false)).privateData,undefined);
  const a={name:'自有商品測試',qty:11,price:50,total:500,label:'買10送1',unit:'罐'};
  const b={name:'其他廠商商品測試',qty:2,price:900,total:1600,label:'優惠價',unit:'盒'};
  gas([a]);gas([b]);gas([a,b]);assert.match(source,/checkout\.orderId \|\|=/);

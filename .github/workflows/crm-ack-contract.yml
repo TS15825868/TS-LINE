@@ -1,0 +1,24 @@
+name: Isolated CRM acknowledgment contract
+on:
+  push:
+    branches: [ops/b2b-signed-intake-client]
+    paths: ['server.js', 'crm-order-contract.test.js', '.github/workflows/crm-ack-contract.yml']
+  pull_request:
+    branches: [main]
+    paths: ['server.js', 'crm-order-contract.test.js', '.github/workflows/crm-ack-contract.yml']
+permissions:
+  contents: read
+jobs:
+  offline-crm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node --check server.js
+      - run: node crm-order-contract.test.js
+      - run: node --test business-inquiry-access.test.js

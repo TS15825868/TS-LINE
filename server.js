@@ -1166,6 +1166,8 @@ function orderSummary(state) {
 
 async function saveCRM(payload) {
   if (!CRM_URL) return { ok: false, error: "CRM_URL is not configured" };
+  const expectedOrderId = typeof payload?.orderId === "string" ? payload.orderId.trim() : "";
+  if (!expectedOrderId) return { ok: false, error: "Missing request order ID" };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CRM_TIMEOUT_MS);
   try {
@@ -1176,9 +1178,9 @@ async function saveCRM(payload) {
       signal: controller.signal,
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) return { ...result, ok: false, error: "CRM HTTP " + response.status };
-    if (result.ok !== true || !String(result.orderId || "").trim()) {
-      return { ok: false, error: "CRM did not acknowledge an order ID" };
+    if (!response.ok) return { ok: false, error: "CRM HTTP " + response.status };
+    if (result?.ok !== true || typeof result.orderId !== "string" || result.orderId !== expectedOrderId) {
+      return { ok: false, error: "CRM did not acknowledge the submitted order ID" };
     }
     return result;
   } catch (error) {
