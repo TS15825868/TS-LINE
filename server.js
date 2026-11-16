@@ -1556,9 +1556,12 @@ async function handleMessage(event) {
   // 商家合作洽談：分類 → 商家資訊 → 需求 → 確認送出，避免空白訊息造成誤通知。
   if (/^(商家合作|合作洽談|批發合作|通路合作|異業合作|我要合作|合作諮詢)$/.test(text)) {
     state.businessInquiry = { step: "category", data: {} };
-    return reply(event.replyToken, textMsg("仙加味｜商家合作洽談\n歡迎批發、通路、門市及品牌合作。請先選擇合作類型：", [
+    return reply(event.replyToken, textMsg("仙加味｜商家合作洽談\n請先選擇合作類型：", [
       { label: "批發／採購", text: "合作類型｜批發採購" },
-      { label: "通路／寄賣", text: "合作類型｜通路寄賣" },
+      { label: "經銷合作", text: "合作類型｜經銷" },
+      { label: "零售通路／寄賣", text: "合作類型｜通路寄賣" },
+      { label: "產品開發", text: "合作類型｜產品開發" },
+      { label: "鹿角原料合作", text: "合作類型｜鹿角原料" },
       { label: "品牌／異業", text: "合作類型｜品牌異業" },
       { label: "其他合作", text: "合作類型｜其他合作" },
       { label: "取消", text: "取消合作洽談" },
@@ -1570,7 +1573,7 @@ async function handleMessage(event) {
   }
   if (state.businessInquiry && !businessNavigation.test(text)) {
     const inquiry = state.businessInquiry;
-    const selected = text.match(/^合作類型｜(批發採購|通路寄賣|品牌異業|其他合作)$/);
+    const selected = text.match(/^合作類型｜(批發採購|經銷|通路寄賣|產品開發|鹿角原料|品牌異業|其他合作)$/);
     if (selected && inquiry.step === "category") {
       inquiry.data.category = selected[1];
       inquiry.step = "business";
