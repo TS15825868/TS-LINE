@@ -84,5 +84,16 @@ test("saved confirmation survives LINE process state loss and is scoped to its a
     await accessDraft("discard-draft", "actorA", options);
     assert.equal((await accessDraft("load-draft", "actorA", options, { id: payload.id })).payload, null);
     assert.equal(dbFile.prepare("SELECT COUNT(*) AS count FROM business_inquiries").get().count, 0);
+    // The cancellation arrived after the initial read but before the final insert.
+    const actorOptions = { ...options, actorUserId: "actorA" };
+    assert.equal(await sendInquiry(recovered.payload, actorOptions), null);
+    assert.equal(dbFile.prepare("SELECT COUNT(*) AS count FROM business_inquiries").get().count, 0);
+
+    // If confirm wins, a later cancellation only discards the draft.
+    await accessDraft("save-draft", "actorA", options, { payload });
+    assert.equal((await sendInquiry(payload, actorOptions)).duplicate, false);
+    await accessDraft("discard-draft", "actorA", options);
+    assert.equal((await sendInquiry(payload, actorOptions)).duplicate, true);
+    assert.equal(dbFile.prepare("SELECT COUNT(*) AS count FROM business_inquiries").get().count, 1);
   } finally { dbFile.close(); }
 });
