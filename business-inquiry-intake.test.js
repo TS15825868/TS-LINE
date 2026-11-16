@@ -33,3 +33,30 @@ test("retry preserves identity and time and the worker accepts the signed reques
   });
   assert.equal(rows.size, 1);
 });
+
+test("notification waits for persistence and a signed claim; ambiguous delivery is held", async () => {
+  const { persistAndNotify } = require("./business-inquiry-intake.js");
+  const { businessInquiryIntake } = await import("../erp/edge/business-inquiry-intake.mjs");
+  const { businessInquirySchema } = await import("../erp/edge/business-inquiries.mjs");
+  const { DatabaseSync } = require("node:sqlite");
+  const sqlite = new DatabaseSync(":memory:");
+  try {
+    sqlite.exec(businessInquirySchema);
+    const db = { prepare: sql => ({ bind: (...args) => ({ first: async () => sqlite.prepare(sql).get(...args) }) }) };
+    const secret = "isolated-test-key-not-a-real-credential";
+    const options = { secret, transport: (url, init) => businessInquiryIntake(new Request(url, init), { DB: db, XJW_B2B_INTAKE_ENABLED: "true", XJW_B2B_INTAKE_SECRET: secret }) };
+    const inquiry = { data: { category: "經銷", business: "隔離測試", details: "測試需求" } };
+    let attempts = 0;
+    const notify = async () => {
+      attempts++;
+      assert.equal(sqlite.prepare("SELECT notification_status FROM business_inquiries").get()?.notification_status, "sending");
+      throw new Error("mock ambiguous delivery");
+    };
+    const receipt = await persistAndNotify(inquiry, null, notify, options);
+    assert.equal(receipt.notificationStatus, "uncertain");
+    assert.equal((await persistAndNotify(inquiry, null, notify, options)).notificationStatus, "uncertain");
+    assert.equal(attempts, 1);
+    assert.equal(await persistAndNotify(inquiry, null, notify, { ...options, secret: "invalid" }), null);
+    assert.equal(attempts, 1);
+  } finally { sqlite.close(); }
+});
