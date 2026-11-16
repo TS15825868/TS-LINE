@@ -1669,8 +1669,9 @@ async function handleMessage(event) {
 
   // 合作表單確認階段不接受任意文字覆寫，亦不可誤觸發送出。
   if (state.businessInquiry?.step === "confirm" && !businessNavigation.test(text)) {
+    const confirmId = state.businessInquiry.receiptPayload?.id;
     return reply(event.replyToken, textMsg("請選擇「確認送出」、「重新填寫」或「取消」；也可以先查看商品。", [
-      {label:"確認送出",text:"確認送出合作洽談"},
+      {label:"確認送出",text:durableInquiryEnabled && confirmId ? "確認送出合作洽談｜" + confirmId : "確認送出合作洽談"},
       {label:"重新填寫",text:"商家合作"},
       {label:"取消",text:"取消合作洽談"},
       {label:"看產品",text:"看產品"},
