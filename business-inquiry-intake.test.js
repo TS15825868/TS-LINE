@@ -61,18 +61,28 @@ test("notification waits for persistence and a signed claim; ambiguous delivery 
   } finally { sqlite.close(); }
 });
 
-test("B2B persistence is confined to merchant cooperation, not retail checkout", () => {
-  const server = require("node:fs").readFileSync(require("node:path").join(__dirname, "server.js"), "utf8");
-  const start = server.indexOf("async function continueCheckout(");
-  const end = server.indexOf("function detectWebsiteIntent(", start);
-  assert.ok(start >= 0 && end > start);
-  assert.doesNotMatch(server.slice(start, end), /persistAndNotify|XJW_B2B_PERSIST_ENABLED/);
-  const flag = 'if (process.env.XJW_B2B_PERSIST_ENABLED === "true")';
-  assert.equal(server.split(flag).length - 1, 1);
-  const business = server.indexOf("// 商家合作洽談：");
-  const confirmation = server.indexOf('if (inquiry.step === "confirm" && text === "確認送出合作洽談")', business);
-  const boundary = server.indexOf("// 合作表單確認階段", confirmation);
-  assert.ok(business >= 0 && confirmation > business && boundary > confirmation);
-  assert.ok(server.slice(confirmation, boundary).includes(flag));
-  assert.match(server.slice(confirmation, boundary), /persistAndNotify\(/);
+test("saved confirmation survives LINE process state loss and is scoped to its actor", async () => {
+  const { accessDraft } = require("./business-inquiry-intake.js");
+  const { businessInquiryIntake } = await import("../erp/edge/business-inquiry-intake.mjs");
+  const { businessInquirySchema } = await import("../erp/edge/business-inquiries.mjs");
+  const { DatabaseSync } = require("node:sqlite");
+  const dbFile = new DatabaseSync(":memory:");
+  try {
+    dbFile.exec(businessInquirySchema);
+    const db = { prepare: sql => ({ bind: (...args) => ({
+      first: async () => dbFile.prepare(sql).get(...args),
+      run: async () => dbFile.prepare(sql).run(...args),
+    }) }) };
+    const secret = "isolated-test-key-not-a-real-credential";
+    const env = { DB: db, XJW_B2B_INTAKE_ENABLED: "true", XJW_B2B_INTAKE_SECRET: secret };
+    const options = { secret, transport: (url, init) => businessInquiryIntake(new Request(url, init), env) };
+    const payload = prepareInquiry({ data: { category: "經銷", business: "隔離測試", details: "測試需求" } }, "website:home");
+    assert.deepEqual(await accessDraft("save-draft", "actorA", options, { payload }), { id: payload.id });
+    const recovered = await accessDraft("load-draft", "actorA", options, { id: payload.id });
+    assert.deepEqual(recovered.payload, payload);
+    assert.equal((await accessDraft("load-draft", "actorB", options, { id: payload.id })).payload, null);
+    await accessDraft("discard-draft", "actorA", options);
+    assert.equal((await accessDraft("load-draft", "actorA", options, { id: payload.id })).payload, null);
+    assert.equal(dbFile.prepare("SELECT COUNT(*) AS count FROM business_inquiries").get().count, 0);
+  } finally { dbFile.close(); }
 });
