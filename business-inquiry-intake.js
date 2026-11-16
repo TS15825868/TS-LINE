@@ -16,17 +16,30 @@ function prepareInquiry(inquiry, verifiedOrigin) {
   return inquiry.receiptPayload;
 }
 
-async function postSigned(payload, { secret, transport = fetch, now = Date.now() }) {
+async function postSigned(payload, {
+  secret, transport = fetch, now = Date.now(),
+  accessClientId = process.env.XJW_B2B_ACCESS_CLIENT_ID,
+  accessClientSecret = process.env.XJW_B2B_ACCESS_CLIENT_SECRET,
+}) {
   if (typeof secret !== "string" || secret.length < 32) return null;
+  const hasAccessId = typeof accessClientId === "string" && accessClientId.trim().length > 0;
+  const hasAccessSecret = typeof accessClientSecret === "string" && accessClientSecret.trim().length > 0;
+  // Both credentials or neither: isolated transports need no Access token.
+  // The production Access policy stays in force and rejects unauthenticated requests.
+  if (hasAccessId !== hasAccessSecret) return null;
   const body = JSON.stringify(payload);
   const timestamp = String(now);
   const mac = createHmac("sha256", secret)
     .update(`xjw-b2b-intake-v1\nPOST\n${path}\n${timestamp}\n${body}`)
     .digest("hex");
+  const headers = { "content-type": "application/json", "x-xjw-timestamp": timestamp, "x-xjw-signature": mac };
+  if (hasAccessId && hasAccessSecret) {
+    headers["CF-Access-Client-Id"] = accessClientId.trim();
+    headers["CF-Access-Client-Secret"] = accessClientSecret.trim();
+  }
   try {
     const response = await transport(originHost + path, {
-      method: "POST", body, redirect: "error", signal: AbortSignal.timeout(5000),
-      headers: { "content-type": "application/json", "x-xjw-timestamp": timestamp, "x-xjw-signature": mac },
+      method: "POST", body, redirect: "error", signal: AbortSignal.timeout(5000), headers,
     });
     return { status: response.status, body: await response.json() };
   } catch {
