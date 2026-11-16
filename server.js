@@ -1508,7 +1508,7 @@ async function handleMessage(event) {
   if (text === "繼續合作洽談" && state.businessInquiry) {
     const inquiry = state.businessInquiry;
     const prompt = inquiry.step === "category" ? "請選擇合作類型，或輸入「商家合作」重新開始。" : inquiry.step === "business" ? "請提供商家／公司名稱、聯絡人與聯絡方式。" : inquiry.step === "details" ? "請說明合作商品、預估數量或合作需求。" : "請確認送出、重新填寫或取消合作洽談。";
-    return reply(event.replyToken, textMsg(prompt, inquiry.step === "confirm" ? [{label:"確認送出",text:"確認送出合作洽談"},{label:"重新填寫",text:"商家合作"},{label:"取消",text:"取消合作洽談"}] : [{label:"取消",text:"取消合作洽談"}]));
+    return reply(event.replyToken, textMsg(prompt, inquiry.step === "confirm" ? [{label:"確認送出",text:inquiry.receiptPayload ? "確認送出合作洽談｜"+inquiry.receiptPayload.id : "確認送出合作洽談"},{label:"重新填寫",text:"商家合作"},{label:"取消",text:"取消合作洽談"}] : [{label:"取消",text:"取消合作洽談"}]));
   }
   if (text === "繼續商家採購" && state.merchantOrderInquiry) {
     const merchant = state.merchantOrderInquiry;
@@ -1553,8 +1553,32 @@ async function handleMessage(event) {
     }
   }
 
+  const durableInquiryEnabled = process.env.XJW_B2B_PERSIST_ENABLED === "true";
+  const inquiryCommand = text.match(/^確認送出合作洽談｜(B2B-[a-f0-9-]{36})$/i);
+  const inquiryOptions = { secret: process.env.XJW_B2B_INTAKE_SECRET };
+  if (durableInquiryEnabled && inquiryCommand) {
+    const { accessDraft, persistAndNotify } = require("./business-inquiry-intake");
+    const id = inquiryCommand[1];
+    const draft = await accessDraft("load-draft", event.source.userId, inquiryOptions, { id });
+    if (!draft) return reply(event.replyToken, textMsg("目前無法確認合作草稿，請稍後重試。"));
+    if (draft.payload?.id !== id) return reply(event.replyToken, textMsg("這份合作草稿已失效，請重新輸入「商家合作」。"));
+    const payload = draft.payload;
+    const summary = `【商家合作洽談】\n合作編號：${id}\n合作類型：${payload.category}\n商家與聯絡方式：${payload.businessContact}\n需求：${payload.details}`;
+    const receipt = await withLineLoadingIndicator(event, () => persistAndNotify(
+      { receiptPayload: payload }, null, () => ownerAlert.pushOwnerAlert(event, summary), inquiryOptions,
+    ));
+    if (receipt && state.businessInquiry?.receiptPayload?.id === id) delete state.businessInquiry;
+    return reply(event.replyToken, textMsg(
+      receipt ? `已收到合作洽談，編號：${id}。仙加味將由專人接續聯繫。` : "尚未確認收件，請稍後重新送出。",
+      receipt ? mainQuick() : [{ label: "重新送出", text }],
+    ));
+  }
+
   // 商家合作洽談：分類 → 商家資訊 → 需求 → 確認送出，避免空白訊息造成誤通知。
   if (/^(商家合作|合作洽談|批發合作|通路合作|異業合作|我要合作|合作諮詢)$/.test(text)) {
+    if (durableInquiryEnabled && !await require("./business-inquiry-intake").accessDraft("discard-draft", event.source.userId, inquiryOptions)) {
+      return reply(event.replyToken, textMsg("目前無法重設合作草稿，請稍後再試。"));
+    }
     state.businessInquiry = { step: "category", data: {} };
     return reply(event.replyToken, textMsg("仙加味｜商家合作洽談\n請先選擇合作類型：", [
       { label: "批發／採購", text: "合作類型｜批發採購" },
@@ -1568,6 +1592,9 @@ async function handleMessage(event) {
     ]));
   }
   if (text === "取消合作洽談") {
+    if (durableInquiryEnabled && !await require("./business-inquiry-intake").accessDraft("discard-draft", event.source.userId, inquiryOptions)) {
+      return reply(event.replyToken, textMsg("目前無法取消合作草稿，請稍後再試。"));
+    }
     delete state.businessInquiry;
     return reply(event.replyToken, textMsg("已結束合作洽談填寫。如需再次洽談，請輸入「商家合作」。", mainQuick()));
   }
@@ -1599,34 +1626,24 @@ async function handleMessage(event) {
       if (!detailOption && text.length < 3) return reply(event.replyToken, textMsg("請選擇合作需求或輸入至少三個字。"));
 
       inquiry.data.details = (detailOption ? detailOption[1] : text).slice(0, 400);
+      let confirmCommand = "確認送出合作洽談";
+      if (durableInquiryEnabled) {
+        const { prepareInquiry, accessDraft } = require("./business-inquiry-intake");
+        const origin = require("./line-source-attribution").getRemembered(event.source.userId)?.sourceDetail;
+        const payload = prepareInquiry(inquiry, origin);
+        const saved = await accessDraft("save-draft", event.source.userId, inquiryOptions, { payload });
+        if (saved?.id !== payload.id) return reply(event.replyToken, textMsg("合作草稿尚未保存，請再送出原合作需求，或洽人工客服。"));
+        confirmCommand += "｜" + payload.id;
+      }
       inquiry.step = "confirm";
-      return reply(event.replyToken, textMsg(`請確認合作洽談內容：\n類型：${inquiry.data.category}\n商家與聯絡方式：${inquiry.data.business}\n合作需求：${inquiry.data.details}\n\n確認後會通知仙加味負責人接續洽談，尚不代表合作成立。`, [{label:"確認送出",text:"確認送出合作洽談"},{label:"重新填寫",text:"商家合作"},{label:"取消",text:"取消合作洽談"}]));
+      return reply(event.replyToken, textMsg(`請確認合作洽談內容：\n類型：${inquiry.data.category}\n商家與聯絡方式：${inquiry.data.business}\n合作需求：${inquiry.data.details}\n\n確認後會通知仙加味負責人接續洽談，尚不代表合作成立。`, [{label:"確認送出",text:confirmCommand},{label:"重新填寫",text:"商家合作"},{label:"取消",text:"取消合作洽談"}]));
     }
-    if (inquiry.step === "confirm" && text === "確認送出合作洽談") {
+    if (!durableInquiryEnabled && inquiry.step === "confirm" && text === "確認送出合作洽談") {
       // A failed or unconfirmed owner push must not discard the inquiry.
       // Concurrent double taps must not send the same merchant request twice.
       if (inquiry.sending) return reply(event.replyToken, textMsg("合作需求正在確認送達，請勿重複送出。"));
       inquiry.sending = true;
       const summary = `【商家合作洽談】\n合作類型：${inquiry.data.category}\n商家與聯絡方式：${inquiry.data.business}\n需求：${inquiry.data.details}`;
-      if (process.env.XJW_B2B_PERSIST_ENABLED === "true") {
-        const { persistAndNotify } = require("./business-inquiry-intake");
-        const origin = require("./line-source-attribution").getRemembered(event.source.userId)?.sourceDetail;
-        let receipt;
-        try {
-          receipt = await withLineLoadingIndicator(event, () => persistAndNotify(
-            inquiry, origin, () => ownerAlert.pushOwnerAlert(event, summary),
-            { secret: process.env.XJW_B2B_INTAKE_SECRET },
-          ));
-        } finally {
-          inquiry.sending = false;
-        }
-        if (receipt && state.businessInquiry === inquiry) delete state.businessInquiry;
-        return reply(event.replyToken, textMsg(
-          receipt ? `已收到合作洽談，編號：${receipt.id}。仙加味將由專人接續聯繫。`
-            : "目前尚未確認收件，請稍後重新送出或洽人工客服。",
-          receipt ? mainQuick() : [{label:"重新送出",text:"確認送出合作洽談"},{label:"人工客服",text:"我要人工客服"}],
-        ));
-      }
       let sent;
       try {
         sent = await withLineLoadingIndicator(event, () =>
@@ -2238,5 +2255,3 @@ module.exports = {
   beginWebhookEvent,
   finishWebhookEvent,
 };
-
-
