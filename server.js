@@ -1294,25 +1294,6 @@ async function continueCheckout(event, state, text) {
       // The checkout guard above relies on this flag. Hold it throughout
       // the manager push, including loading animation and a failed result.
       checkout.sending = true;
-      if (process.env.XJW_B2B_PERSIST_ENABLED === "true") {
-        const { persistAndNotify } = require("./business-inquiry-intake");
-        const origin = require("./line-source-attribution").getRemembered(event.source.userId)?.sourceDetail;
-        let receipt;
-        try {
-          receipt = await withLineLoadingIndicator(event, () => persistAndNotify(
-            inquiry, origin, () => ownerAlert.pushOwnerAlert(event, summary),
-            { secret: process.env.XJW_B2B_INTAKE_SECRET },
-          ));
-        } finally {
-          inquiry.sending = false;
-        }
-        if (receipt && state.businessInquiry === inquiry) delete state.businessInquiry;
-        return reply(event.replyToken, textMsg(
-          receipt ? `已收到合作洽談，編號：${receipt.id}。仙加味將由專人接續聯繫。`
-            : "目前尚未確認收件，請稍後重新送出或洽人工客服。",
-          receipt ? mainQuick() : [{label:"重新送出",text:"確認送出合作洽談"},{label:"人工客服",text:"我要人工客服"}],
-        ));
-      }
       let sent;
       try {
         sent = await withLineLoadingIndicator(event, () =>
