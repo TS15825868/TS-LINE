@@ -60,3 +60,19 @@ test("notification waits for persistence and a signed claim; ambiguous delivery 
     assert.equal(attempts, 1);
   } finally { sqlite.close(); }
 });
+
+test("B2B persistence is confined to merchant cooperation, not retail checkout", () => {
+  const server = require("node:fs").readFileSync(require("node:path").join(__dirname, "server.js"), "utf8");
+  const start = server.indexOf("async function continueCheckout(");
+  const end = server.indexOf("function detectWebsiteIntent(", start);
+  assert.ok(start >= 0 && end > start);
+  assert.doesNotMatch(server.slice(start, end), /persistAndNotify|XJW_B2B_PERSIST_ENABLED/);
+  const flag = 'if (process.env.XJW_B2B_PERSIST_ENABLED === "true")';
+  assert.equal(server.split(flag).length - 1, 1);
+  const business = server.indexOf("// 商家合作洽談：");
+  const confirmation = server.indexOf('if (inquiry.step === "confirm" && text === "確認送出合作洽談")', business);
+  const boundary = server.indexOf("// 合作表單確認階段", confirmation);
+  assert.ok(business >= 0 && confirmation > business && boundary > confirmation);
+  assert.ok(server.slice(confirmation, boundary).includes(flag));
+  assert.match(server.slice(confirmation, boundary), /persistAndNotify\(/);
+});
