@@ -271,14 +271,14 @@ function fakeOwnerRuntime(env,captures){
 
 // Partner cooperation inquiries: only clear state after a confirmed owner
 // receipt and never notify twice while a previous push is still pending.
-const partnerStart=source.indexOf('    if (inquiry.step === "confirm" && text === "確認送出合作洽談") {');
+const partnerStart=source.indexOf('    if (!durableInquiryEnabled && inquiry.step === "confirm" && text === "確認送出合作洽談") {');
 const partnerStop=source.indexOf('\n  }\n\n  // 合作表單確認階段',partnerStart);
 assert.ok(partnerStart>0&&partnerStop>partnerStart);
 const partnerBlock=source.slice(partnerStart,partnerStop);
 const partnerFactory=vm.runInNewContext(
  '(function({reply,textMsg,mainQuick,withLineLoadingIndicator,ownerAlert}){'+
  'return async function confirmPartner(event,state,text){'+
- 'const inquiry=state.businessInquiry;'+partnerBlock+
+ 'const inquiry=state.businessInquiry;const durableInquiryEnabled=false;'+partnerBlock+
  'return null; };})',
  {console:{error(){}}}
 );
