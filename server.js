@@ -2149,6 +2149,8 @@ app.get("/healthz", (_req, res) => {
   // Existing Cloudflare heartbeat also refreshes the formally approved
   // public catalog in the background. Health never waits for GitHub.
   schedulePublicCatalogRefresh();
+  const b2bReadiness = require("./business-inquiry-intake");
+  b2bReadiness.scheduleReadiness();
   res.json({
     ok: true,
     version: VERSION,
@@ -2156,6 +2158,8 @@ app.get("/healthz", (_req, res) => {
     credentialsConfigured: Boolean(config.channelAccessToken && config.channelSecret),
     ownerAlertConfigured: Boolean(process.env.OWNER_LINE_USER_ID),
     crmConfigured: Boolean(CRM_URL),
+    b2bTransport: b2bReadiness.readinessStatus(),
+    b2bPersistenceEnabled: process.env.XJW_B2B_PERSIST_ENABLED === "true",
     catalogVersion: DATA.catalogVersion || "",
     mascotVersion: MASCOT_VERSION,
     productCount: DATA.products.length,

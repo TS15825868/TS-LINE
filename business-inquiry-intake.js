@@ -1,5 +1,5 @@
 "use strict";
-const { createHmac, randomUUID } = require("node:crypto");
+const { createHmac, randomUUID, randomBytes } = require("node:crypto");
 const path = "/api/internal/business-inquiries";
 const originHost = "https://xianjiawei-internal.tung314069.workers.dev";
 
@@ -33,6 +33,7 @@ async function postSigned(payload, {
     .update(`xjw-b2b-intake-v1\nPOST\n${path}\n${timestamp}\n${body}`)
     .digest("hex");
   const headers = { "content-type": "application/json", "x-xjw-timestamp": timestamp, "x-xjw-signature": mac };
+  if (payload.action === "readiness") headers["x-xjw-readiness"] = "1";
   if (hasAccessId && hasAccessSecret) {
     headers["CF-Access-Client-Id"] = accessClientId.trim();
     headers["CF-Access-Client-Secret"] = accessClientSecret.trim();
@@ -92,4 +93,32 @@ async function accessDraft(action, userId, options, fields = {}) {
   const receipt = await postSigned({ action, actorKey, ...fields }, options);
   return receipt?.status === 200 ? receipt.body : null;
 }
-module.exports = { prepareInquiry, sendInquiry, persistAndNotify, accessDraft };
+async function probeReadiness(options = {}) {
+  const { accessClientId = process.env.XJW_B2B_ACCESS_CLIENT_ID, accessClientSecret = process.env.XJW_B2B_ACCESS_CLIENT_SECRET } = options;
+  if (!accessClientId?.trim() || !accessClientSecret?.trim()) return { verified: false };
+  const nonce = randomBytes(16).toString("hex");
+  const reply = await postSigned({ action: "readiness", nonce }, { ...options, accessClientId, accessClientSecret });
+  const ack = reply?.body;
+  return { verified: reply?.status === 200 && ack?.ok === true && ack.action === "readiness" &&
+    ack.nonce === nonce && ack.version === "xjw-b2b-intake-v1" && typeof ack.enabled === "boolean",
+    intakeEnabled: typeof ack?.enabled === "boolean" && ack.enabled };
+}
+let readiness = { verified: false, checkedAt: null, intakeEnabled: false };
+let checking = false;
+let lastAttempt = 0;
+// Health only schedules a bounded background read-only check. No customer
+// context is sent, and concurrent health checks cannot multiply requests.
+function scheduleReadiness() {
+  if (checking || Date.now() - lastAttempt < 15 * 60 * 1000 ||
+      !process.env.XJW_B2B_ACCESS_CLIENT_ID || !process.env.XJW_B2B_ACCESS_CLIENT_SECRET ||
+      !process.env.XJW_B2B_INTAKE_SECRET) return;
+  checking = true;
+  lastAttempt = Date.now();
+  void probeReadiness({ secret: process.env.XJW_B2B_INTAKE_SECRET }).then(result => {
+    readiness = { ...result, checkedAt: new Date().toISOString() };
+  }).catch(() => {
+    readiness = { verified: false, intakeEnabled: false, checkedAt: new Date().toISOString() };
+  }).finally(() => { checking = false; });
+}
+function readinessStatus() { return { ...readiness }; }
+module.exports = { prepareInquiry, sendInquiry, persistAndNotify, accessDraft, probeReadiness, scheduleReadiness, readinessStatus };

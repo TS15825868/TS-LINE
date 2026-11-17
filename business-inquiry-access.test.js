@@ -53,3 +53,22 @@ test("isolated transport without an Access token retains HMAC and sends no Acces
   } });
   assert.deepEqual(result, { payload: null });
 });
+
+test("readiness requires Access credentials, signs a fresh nonce, and rejects mismatched acknowledgments", async () => {
+  const { probeReadiness } = require("./business-inquiry-intake");
+  let calls = 0;
+  const transport = async (url, init) => {
+    calls++;
+    checkRequest(url, init);
+    assert.equal(init.headers["x-xjw-readiness"], "1");
+    const payload = JSON.parse(init.body);
+    assert.equal(payload.action, "readiness");
+    assert.match(payload.nonce, /^[a-f0-9]{32}$/);
+    return Response.json({ok:true, action:"readiness", nonce:payload.nonce, version:"xjw-b2b-intake-v1", enabled:false});
+  };
+  assert.deepEqual(await probeReadiness({...opts, transport}), {verified:true,intakeEnabled:false});
+  assert.deepEqual(await probeReadiness({...opts, accessClientId:"", transport}), {verified:false});
+  assert.equal(calls,1);
+  const wrong = await probeReadiness({...opts, transport:async()=>Response.json({ok:true,action:"readiness",nonce:"wrong",version:"xjw-b2b-intake-v1",enabled:false})});
+  assert.equal(wrong.verified,false);
+});
