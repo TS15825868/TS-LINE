@@ -2148,9 +2148,9 @@ app.get("/", (_req, res) => {
 app.get("/healthz", (_req, res) => {
   // Existing Cloudflare heartbeat also refreshes the formally approved
   // public catalog in the background. Health never waits for GitHub.
-  schedulePublicCatalogRefresh();
   const b2bReadiness = require("./business-inquiry-intake");
   b2bReadiness.scheduleReadiness();
+  schedulePublicCatalogRefresh();
   res.json({
     ok: true,
     version: VERSION,

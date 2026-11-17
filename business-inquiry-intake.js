@@ -99,9 +99,9 @@ async function probeReadiness(options = {}) {
   const nonce = randomBytes(16).toString("hex");
   const reply = await postSigned({ action: "readiness", nonce }, { ...options, accessClientId, accessClientSecret });
   const ack = reply?.body;
-  return { verified: reply?.status === 200 && ack?.ok === true && ack.action === "readiness" &&
-    ack.nonce === nonce && ack.version === "xjw-b2b-intake-v1" && typeof ack.enabled === "boolean",
-    intakeEnabled: typeof ack?.enabled === "boolean" && ack.enabled };
+  const verified = reply?.status === 200 && ack?.ok === true && ack.action === "readiness" &&
+    ack.nonce === nonce && ack.version === "xjw-b2b-intake-v1" && typeof ack.enabled === "boolean";
+  return { verified, intakeEnabled: verified && ack.enabled === true };
 }
 let readiness = { verified: false, checkedAt: null, intakeEnabled: false };
 let checking = false;
