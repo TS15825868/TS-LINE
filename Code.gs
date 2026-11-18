@@ -1,6 +1,6 @@
 /**
  * 仙加味 CRM 訂單寫入系統
- * Version: v231_stable
+ * Version: v232_receipt_guard
  *
  * 本版重點：
  * - 保留 v230 穩定版邏輯
@@ -13,7 +13,7 @@
 var CONFIG = {
   TZ: "Asia/Taipei",
   DEFAULT_SOURCE: "LINE OA",
-  VERSION_NOTE: "仙加味 v231 CRM 自動更新",
+  VERSION_NOTE: "仙加味 v232 CRM 接單回執",
   STORE_PICKUP_ADDRESS: "台北市萬華區西昌街52號（客服確認取貨時間）"
 };
 
@@ -21,7 +21,8 @@ function doGet(e) {
   return jsonOutput({
     ok: true,
     service: "仙加味 CRM",
-    version: "v231_stable",
+    version: "v232_receipt_guard",
+    receiptProtocol: "complete-order-receipt-v1",
     message: "Webhook is running"
   });
 }
@@ -61,6 +62,36 @@ function doPost(e) {
       "付款方式", "配送方式", "地址／取貨資訊", "來源", "訂單狀態", "客服備註"
     ]);
 
+    // Durable order receipt journal. No customer fields are stored here.
+    // A started/ambiguous transaction must never be acknowledged as complete
+    // or replayed merely because its master row exists.
+    var receiptSheet = getSheet(ss, "CRM接單回執", [
+      "訂單編號", "內容雜湊", "狀態", "開始時間", "完成時間"
+    ]);
+    var requestHash = orderRequestHash_([orderId, userId, name, phone, payment,
+      shipping, address, source, total, cart]);
+    var existing = findOrderReceipts_(receiptSheet, orderId);
+    if (existing.length > 0) {
+      if (existing.length !== 1 || existing[0].hash !== requestHash) {
+        return jsonOutput({ ok: false, outcome: "id_conflict", orderId: orderId });
+      }
+      if (existing[0].state === "completed" && orderExists_(masterSheet, orderId)) {
+        return jsonOutput({ ok: true, duplicated: true, orderId: orderId, total: total, cartCount: cart.length });
+      }
+      return jsonOutput({ ok: false, outcome: "unknown", orderId: orderId });
+    }
+    if (orderExists_(masterSheet, orderId)) {
+      // Legacy master-only duplicate: completion cannot be proven. Never
+      // rewrite it or return a false success; operator reconciles existing rows.
+      return jsonOutput({ ok: false, outcome: "unknown", orderId: orderId });
+    }
+    receiptSheet.appendRow([orderId, requestHash, "started", now, ""]);
+    SpreadsheetApp.flush();
+    var reservation = findOrderReceipts_(receiptSheet, orderId);
+    if (reservation.length !== 1 || reservation[0].hash !== requestHash || reservation[0].state !== "started") {
+      return jsonOutput({ ok: false, outcome: "unknown", orderId: orderId });
+    }
+
     var detailSheet = getSheet(ss, "訂單明細", [
       "時間", "訂單編號", "商品", "數量", "單位", "方案", "小計", "來源", "備註"
     ]);
@@ -83,15 +114,6 @@ function doPost(e) {
     var dashboardSheet = getSheet(ss, "CRM儀表板", [
       "更新時間", "今日訂單數", "今日營業額", "總客戶數", "總營業額", "備註"
     ]);
-
-    if (orderExists_(masterSheet, orderId)) {
-      return jsonOutput({
-        ok: true,
-        duplicated: true,
-        orderId: orderId,
-        message: "訂單已存在，未重複寫入"
-      });
-    }
 
     var productText = cart.map(function(i) {
       return (i.name || "") + " × " + (i.qty || 1) + (i.unit || "") + (i.label ? "（" + i.label + "）" : "");
@@ -135,6 +157,14 @@ function doPost(e) {
 
     autoResizeSheets_([masterSheet, detailSheet, shipSheet, remitSheet, customerSheet, dashboardSheet]);
 
+    // Confirm all business writes are flushed before committing the receipt.
+    // If any stage fails, leave "started" for manual reconciliation; no retry
+    // can repeat customer counters, shipping rows or payment rows.
+    SpreadsheetApp.flush();
+    receiptSheet.getRange(reservation[0].row, 3, 1, 3)
+      .setValues([["completed", now, new Date()]]);
+    SpreadsheetApp.flush();
+
     return jsonOutput({
       ok: true,
       orderId: orderId,
@@ -145,8 +175,8 @@ function doPost(e) {
   } catch (err) {
     return jsonOutput({
       ok: false,
-      error: String(err),
-      stack: err && err.stack ? String(err.stack) : ""
+      outcome: "unknown",
+      error: "訂單結果待查，請勿重複送出"
     });
   } finally {
     try {
@@ -299,6 +329,24 @@ function autoResizeSheets_(sheets) {
       if (cols > 0) sheet.autoResizeColumns(1, cols);
     } catch (e) {}
   });
+}
+
+function orderRequestHash_(values) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+    JSON.stringify(values), Utilities.Charset.UTF_8);
+  return digest.map(function(b) { return ("0" + (b & 255).toString(16)).slice(-2); }).join("");
+}
+
+function findOrderReceipts_(sheet, orderId) {
+  if (sheet.getLastRow() < 2) return [];
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues();
+  var matches = [];
+  rows.forEach(function(r, i) {
+    if (String(r[0]) === String(orderId)) {
+      matches.push({ row: i + 2, hash: String(r[1]), state: String(r[2]) });
+    }
+  });
+  return matches;
 }
 
 function orderExists_(sheet, orderId) {
