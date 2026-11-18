@@ -35,6 +35,37 @@ function gas(cart) {
  const a={name:'自有商品測試',qty:11,price:50,total:500,label:'買10送1',unit:'罐'};
  const b={name:'其他廠商商品測試',qty:2,price:900,total:1600,label:'優惠價',unit:'盒'};
  gas([a]);gas([b]);gas([a,b]);assert.match(source,/checkout\.orderId \|\|=/);
+ assert.equal((await check({ok:false})).outcome,'unknown');
+ assert.equal((await check({ok:true,orderId:'different-order'})).outcome,'unknown');
+ assert.equal((await check({ok:true,orderId:'accepted'},true,{})).outcome,'not_sent');
+ // Exercise the actual checkout body in isolation with fake transport, no LINE or CRM calls.
+ const checkoutSource=source.slice(source.indexOf('function trialCheckoutHold('),source.indexOf('async function handleLegacyPostback('));
+ const buildContext=(result)=>{
+   let calls=0;
+   const ctx={require,console,orderNoticeForCart:()=>'',cartTotal:()=>60,
+     publicCatalog:{current:()=>[]},mainQuick:()=>[],textMsg:(text,buttons)=>({text,buttons}),flexCard:(title,text,buttons)=>({title,text,buttons}),
+     reply:async(_token,card)=>card,withLineLoadingIndicator:async(_event,fn)=>fn(),
+     CRM_URL:'https://offline.invalid',CRM_TIMEOUT_MS:100,AbortController,setTimeout,clearTimeout,
+     fetch:async()=>{calls++;return {ok:true,json:async()=>result};}};
+   vm.createContext(ctx);vm.runInContext(checkoutSource+'\nthis.run=continueCheckout;this.startTrial=startTrialCheckout;this.startOrder=startCheckout;',ctx);
+   return {ctx,calls:()=>calls};
+ };
+ const checkoutState=()=>({cart:[{id:'trial',name:'隔離測試',qty:1,unit:'組',total:60}],checkout:{step:'confirm',trial:true,orderId:'accepted',name:'隔離測試',phone:'test',shipping:'宅配',address:'test'}});
+ const evt={source:{userId:'offline'},replyToken:'offline'};
+ const uncertain=buildContext({ok:true,orderId:'different-order'}),state=checkoutState();
+ const held=await uncertain.ctx.run(evt,state,'確認送出');
+ assert.equal(held.title,'試喝申請結果待查');
+ assert.match(held.text,/accepted/);
+ assert.equal(state.checkout.crmUncertain,true);
+ assert.equal(uncertain.calls(),1);
+ for(const action of ['確認送出','取消'])assert.equal((await uncertain.ctx.run(evt,state,action)).title,'試喝申請結果待查');
+ assert.equal(uncertain.ctx.startTrial(state,'宅配').title,'試喝申請結果待查');
+ assert.equal(uncertain.ctx.startOrder(state).title,'試喝申請結果待查');
+ assert.equal(uncertain.calls(),1);
+ assert.equal(state.cart.length,1);
+ const success=buildContext({ok:true,orderId:'accepted'}),confirmed=checkoutState();
+ assert.equal((await success.ctx.run(evt,confirmed,'確認送出')).title,'訂單已送出');
+ assert.equal(success.calls(),1);assert.equal(confirmed.checkout,null);assert.equal(confirmed.cart.length,0);
  const gasSource=fs.readFileSync('Code.gs','utf8');
  assert.match(gasSource,/if \(cart\.length === 0\) return jsonOutput/);
  assert.match(gasSource,/Math\.abs\(Number\(data\.total\) - total\) > 0\.01/);

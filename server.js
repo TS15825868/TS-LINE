@@ -1107,7 +1107,21 @@ function trialCampaignReply() {
   };
 }
 
+// The deployed legacy CRM's idempotency is not yet live-certified. Do not
+// automatically repeat an ambiguous write, even with the same request ID.
+function trialCheckoutHold(state) {
+  const checkout = state.checkout;
+  return checkout?.trial && (checkout.sending || checkout.crmUncertain) ? checkout : null;
+}
+function trialCheckoutHoldReply(checkout) {
+  if (checkout.sending) return textMsg("試喝申請正在確認中，請勿重複送出。");
+  return flexCard("試喝申請結果待查",
+    `尚未確認試喝申請是否已收件。查詢編號：${checkout.orderId}。請直接在本官方 LINE 對話請客服查詢，不需重新填寫或再次送出，也請先不要重複付款。`,
+    [{ label: "人工客服", text: "我要人工客服" }]);
+}
 function startTrialCheckout(state, shippingChoice) {
+  const hold = trialCheckoutHold(state);
+  if (hold) return trialCheckoutHoldReply(hold);
   const trial = DATA.trialCampaign || {};
   const option = trialShippingOption(shippingChoice);
   if (!option) {
@@ -1148,6 +1162,8 @@ function startTrialCheckout(state, shippingChoice) {
 }
 
 function startCheckout(state) {
+  const hold = trialCheckoutHold(state);
+  if (hold) return trialCheckoutHoldReply(hold);
   state.checkout = { step: "name", name: "", phone: "", payment: "", shipping: "", address: "" };
   return flexCard("第一步｜收件姓名", "請輸入收件人姓名，例如 王先生。", [{ label: "取消", text: "取消" }]);
 }
@@ -1165,9 +1181,9 @@ function orderSummary(state) {
 }
 
 async function saveCRM(payload) {
-  if (!CRM_URL) return { ok: false, error: "CRM_URL is not configured" };
+  if (!CRM_URL) return { ok: false, outcome: "not_sent", error: "CRM_URL is not configured" };
   const expectedOrderId = typeof payload?.orderId === "string" ? payload.orderId.trim() : "";
-  if (!expectedOrderId) return { ok: false, error: "Missing request order ID" };
+  if (!expectedOrderId) return { ok: false, outcome: "not_sent", error: "Missing request order ID" };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CRM_TIMEOUT_MS);
   try {
@@ -1178,9 +1194,9 @@ async function saveCRM(payload) {
       signal: controller.signal,
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) return { ok: false, error: "CRM HTTP " + response.status };
+    if (!response.ok) return { ok: false, outcome: "unknown", error: "CRM HTTP " + response.status };
     if (result?.ok !== true || typeof result.orderId !== "string" || result.orderId !== expectedOrderId) {
-      return { ok: false, error: "CRM did not acknowledge the submitted order ID" };
+      return { ok: false, outcome: "unknown", error: "CRM did not acknowledge the submitted order ID" };
     }
     return result;
   } catch (error) {
@@ -1188,7 +1204,7 @@ async function saveCRM(payload) {
     // The underlying transport error may contain a private CRM URL or
     // submitted order fields. Return only bounded, non-sensitive categories.
     console.error("[XJW_CRM_WRITE] "+(timedOut?"timeout":"request_failed"));
-    return { ok: false, error: timedOut?"CRM request timed out":"CRM request failed" };
+    return { ok: false, outcome: "unknown", error: timedOut?"CRM request timed out":"CRM request failed" };
   } finally {
     clearTimeout(timeout);
   }
@@ -1196,6 +1212,8 @@ async function saveCRM(payload) {
 
 async function continueCheckout(event, state, text) {
   const checkout = state.checkout;
+  const hold = trialCheckoutHold(state);
+  if (hold) return reply(event.replyToken, trialCheckoutHoldReply(hold));
 
   if (text === "取消") {
     state.checkout = null;
@@ -1340,7 +1358,12 @@ async function continueCheckout(event, state, text) {
     checkout.sending = true;
     let result;
     try { result = await withLineLoadingIndicator(event, () => saveCRM(payload)); }
+    catch { result = { ok: false, outcome: "unknown" }; }
     finally { checkout.sending = false; }
+    if (!result.ok && result.outcome !== "not_sent") {
+      checkout.crmUncertain = true;
+      return reply(event.replyToken, trialCheckoutHoldReply(checkout));
+    }
     if (!result.ok) {
       return reply(
         event.replyToken,
@@ -1400,6 +1423,7 @@ async function handleLegacyPostback(event) {
   if (data.action === "recommend") return reply(event.replyToken, recommendReply());
   if (data.action === "cart") return reply(event.replyToken, cartFlex(state));
   if (data.action === "checkout") return reply(event.replyToken, state.cart.length ? startCheckout(state) : cartFlex(state));
+  if (data.action === "add" && trialCheckoutHold(state)) return reply(event.replyToken, trialCheckoutHoldReply(state.checkout));
 
   const product = getProduct(data.productId);
   if (data.action === "qty" && product) return reply(event.replyToken, qtyMenu(product));
@@ -1438,6 +1462,9 @@ async function handleMessage(event) {
   const state = getState(event.source.userId);
   // Contact shortcuts must remain available even during an active order or merchant form.
   if (/^(我要人工客服|人工客服|客服|聯絡我們|聯絡業務|業務聯絡|業務LINE|請業務聯絡我|請業務回覆|官方客服留言)$/.test(text)) {
+    if (/^(我要人工客服|人工客服|客服|官方客服留言)$/.test(text) && state.checkout?.crmUncertain && state.checkout?.trial) {
+      return reply(event.replyToken, textMsg(`請在此對話留言，由仙加味客服查詢試喝申請編號：${state.checkout.orderId}。尚未確認收件前，請勿再次送出或重複付款。`));
+    }
     if (text === "官方客服留言") {
       return reply(event.replyToken, textMsg("請直接在官方 LINE 對話留下商品、訂單或配送需求，客服會協助確認。", mainQuick()));
     }
@@ -1731,6 +1758,8 @@ async function handleMessage(event) {
 
   const partnerCartMatch = text.match(/^加入其他商品購物車｜([^｜]+)｜(\d+)$/);
   if (partnerCartMatch) {
+    const hold = trialCheckoutHold(state);
+    if (hold) return reply(event.replyToken, trialCheckoutHoldReply(hold));
     const product = publicCatalog.current().find(item => item.id === partnerCartMatch[1]);
     const qty = Number(partnerCartMatch[2]);
     const retail = product && partnerRetail(product);
