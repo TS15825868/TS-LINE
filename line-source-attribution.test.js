@@ -91,3 +91,24 @@ assert.strictEqual(attribution.isCrmRequest(process.env.CRM_URL || "https://scri
 assert.strictEqual(attribution.isCrmRequest("https://api.line.me/v2/bot/message/push", { method: "POST" }), false, "LINE API 不得被 CRM bridge 攔截");
 
 console.log("line-source-attribution tests passed");
+
+// Cross-system exact self-report contract. Old generic messages stay unknown.
+const entryContract={
+  "home": [
+    "我從仙加味官網首頁進來，想了解目前產品怎麼選。"
+  ],
+  "choose": [
+    "我從仙加味官網怎麼選頁面進來，想請你幫我比較產品。"
+  ],
+  "trial": [
+    "我從仙加味官網試喝頁進來，想申請龜鹿飲30cc試喝組。"
+  ]
+};
+for(const [page,messages] of Object.entries(entryContract))for(const message of messages){const origin=attribution.detectWebsiteOrigin(message);assert.equal(origin.sourceEvidence,"website_self_report");assert.equal(origin.sourceDetail,"website:"+page);}
+assert.equal(attribution.detectWebsiteOrigin("我從仙加味官網試喝頁進來，想了解別的事情。"),null);
+assert.equal(attribution.detectWebsiteOrigin("我想申請龜鹿飲30cc試喝組。").sourceEvidence,"prefill_match_only");
+assert.equal(attribution.detectWebsiteOrigin("我想依生活習慣比較仙加味產品。").sourceEvidence,"prefill_match_only");
+// Exercise the real website-intent function in isolation, without starting LINE.
+const fs=require("node:fs"),vm=require("node:vm");const server=fs.readFileSync("server.js","utf8");const intentSource=server.slice(server.indexOf("function detectWebsiteIntent("),server.indexOf("async function handleMessage("));const sandbox={};vm.runInNewContext(intentSource+"\nthis.detect=detectWebsiteIntent;",sandbox);assert.equal(sandbox.detect(entryContract.choose[0]),"recommend");assert.equal(sandbox.detect(entryContract.trial[0]),"trial");
+// Trial page price inquiries must not be routed to trial by a source prefix.
+console.log("PASS explicit trial/choose website source contract");
