@@ -1,10 +1,13 @@
-# 仙加味 CRM 完整接單回執（v232）
+# 仙加味 CRM 完整接單回執（隔離候選，不可直接部署）
 
-- 正式 GAS 尚未部署本版。GitHub 合併、Render 上線和 GAS Web App 部署為不同成果。
+- 2026-11-18 正式 CRM 預設 Web App 已實際唯讀 GET，回應 `ok: true`、`service: 仙加味 CRM`、`version: v282_stable`。GitHub `Code.gs` v232_receipt_guard 是由較舊 v231 原始碼建立的**隔離候選及契約驗證**，不是正式 v282 原始碼，嚴禁覆蓋現有 Web App。
+- 正式 CRM「出貨清單」部署第46版，現行綁定試算表；2026-11-16 已有正式資料備份。既有紀錄不能代替 v282 完整原始碼，綁定試算表與現行部署不變。
+- LINE main 83129e6e、Render dep-dbun022jnfac73bp8bs0 已讀回 live；僅證實 LINE 服務部署。Apps Script v282 仍運行，未部署新 GAS、未向正式 CRM 送測試訂單。
+- **下一必要步驟**：取得「出貨清單」第46版完整 Apps Script 專案原始碼與 manifest，確認目前部署與 head 的版本差異；保留全部現行功能，將 v232 的回執契約最小差異移植至 v282 基礎，再做隔離測試。禁止以候選 `Code.gs` 全檔覆蓋。
 - 現有 `SPREADSHEET_ID` 不變，不更換客戶資料表，不刪除任何既有資料。
 - 新增 `CRM接單回執` 工作表，僅保存訂單編號、正規化內容 SHA-256、started/completed、時間。不可公開此表。
 - 同一編號、同一內容、已完成且主表存在：可回覆原訂單成功；不再追加或累加客戶次數。
 - 內容衝突、舊主表無完整回執、部分寫入、未完成或結果待查：保留原資料，不自動補寫，不回成功，不重送。客服用原編號查主表/明細/出貨/對帳/客戶與回執，人工核對後才另行處理；不可直接把 started 改 completed。
 - 部署前先確認隔離 Apps Script 指向隔離試算表，逐項測試成功、重送、部分錯誤、同編號不同內容。不得向正式 CRM 發送合成訂單。
-- 部署後 GET 只讀應回傳 `version: v232_receipt_guard` 與 `receiptProtocol: complete-order-receipt-v1`。GET 不能證明實際寫入，正式端對端仍需獨立驗收。
+- 移植後的正式版本號應基於 v282 實際原始碼決定，不得使用 v232 作為覆蓋版本。隔離及正式 GET 核對新版本與 `receiptProtocol: complete-order-receipt-v1`；GET 不能證明實際寫入，正式端對端仍需獨立驗收。
 - 使用既有帳號及免費資源；不啟用 B2B，不公開私密資料，不將舊版結果誤稱新版已部署。
