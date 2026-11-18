@@ -2,10 +2,10 @@ name: Isolated CRM acknowledgment contract
 on:
   push:
     branches: [ops/b2b-signed-intake-client]
-    paths: ['server.js', 'Code.gs', 'business-inquiry-intake.js', 'business-inquiry-access.test.js', 'crm-order-contract.test.js', '.github/workflows/crm-ack-contract.yml']
+    paths: ['server.js', 'line-source-attribution.js', 'line-source-attribution.test.js', 'Code.gs', 'business-inquiry-intake.js', 'business-inquiry-access.test.js', 'crm-order-contract.test.js', '.github/workflows/crm-ack-contract.yml']
   pull_request:
     branches: [main]
-    paths: ['server.js', 'Code.gs', 'business-inquiry-intake.js', 'business-inquiry-access.test.js', 'crm-order-contract.test.js', '.github/workflows/crm-ack-contract.yml']
+    paths: ['server.js', 'line-source-attribution.js', 'line-source-attribution.test.js', 'Code.gs', 'business-inquiry-intake.js', 'business-inquiry-access.test.js', 'crm-order-contract.test.js', '.github/workflows/crm-ack-contract.yml']
 permissions:
   contents: read
 jobs:
