@@ -38,9 +38,10 @@ assert.strictEqual(attribution.detectWebsiteOrigin("我不確定怎麼選"), nul
 assert.strictEqual(attribution.detectWebsiteOrigin("龜鹿飲30cc試喝"), null);
 assert.strictEqual(attribution.detectWebsiteOrigin("我想了解仙加味產品。"), null);
 
-attribution.remember("U-current-prefill-test", currentCases.at(-1)[0], 10000);
+assert.strictEqual(attribution.remember("U-current-prefill-test", currentCases.at(-1)[0], 10000),null);
 const currentPayload = attribution.augmentCrmPayload({userId:"U-current-prefill-test",source:"LINE OA",campaignId:"keep-existing"},10001);
-assert.strictEqual(currentPayload.sourceDetail,"website:trial");
+assert.strictEqual(currentPayload.sourceDetail,undefined);
+assert.strictEqual(attribution.detectWebsiteOrigin(currentCases.at(-1)[0]).sourceEvidence,"prefill_match_only");
 assert.strictEqual(currentPayload.campaignId,"keep-existing");
 assert.strictEqual(attribution.getRemembered("U-current-prefill-test",10000+24*60*60*1000+1),null);
 
@@ -49,7 +50,8 @@ assert.strictEqual(attribution.detectWebsiteOrigin("我想看產品"), null, "�
 
 const now = Date.now();
 const userId = "U-attribution-test";
-attribution.remember(userId, cases[4][0], now);
+attribution.remember(userId, currentCases[0][0], now);
+assert.strictEqual(attribution.remember(userId,cases[4][0],now+1),null);
 const enriched = attribution.augmentCrmPayload({
   userId,
   source: "LINE OA",
@@ -57,18 +59,33 @@ const enriched = attribution.augmentCrmPayload({
   campaignId: "guilu-drink-30-evergreen-trial",
 }, now + 1000);
 
-assert.strictEqual(enriched.source, "官網→LINE OA｜試喝頁");
-assert.strictEqual(enriched.orderSource, "官網→LINE OA｜試喝頁");
-assert.strictEqual(enriched.sourceDetail, "website:trial");
-assert.strictEqual(enriched.campaignTag, "website-trial-line");
+assert.strictEqual(enriched.source, "官網→LINE OA｜首頁");
+assert.strictEqual(enriched.orderSource, "官網→LINE OA｜首頁");
+assert.strictEqual(enriched.sourceDetail, "website:home");
+assert.strictEqual(enriched.campaignTag, "website-home-line");
+assert.strictEqual(enriched.sourceEvidence,"website_self_report");
 assert.strictEqual(enriched.lineOaStatus, "connected");
 assert.strictEqual(enriched.campaignId, "guilu-drink-30-evergreen-trial", "既有試喝 campaignId 必須保留");
 
 const customUser = "U-custom-source-test";
-attribution.remember(customUser, cases[1][0], now);
+attribution.remember(customUser, currentCases[1][0], now);
 const custom = attribution.augmentCrmPayload({ userId: customUser, source: "人工活動名單", orderType: "purchase" }, now + 1000);
 assert.strictEqual(custom.source, "人工活動名單", "既有非預設來源不可被官網歸因覆寫");
-assert.strictEqual(custom.sourceDetail, "website:products");
+assert.strictEqual(custom.sourceDetail, undefined, "人工來源不可混入網站歸因");
+const groupUser="U-group-offline";
+attribution.captureEvents({events:[{type:"message",source:{type:"group",userId:groupUser},message:{type:"text",text:currentCases[0][0]}}]});
+assert.equal(attribution.getRemembered(groupUser),null);
+const privateUser="U-private-offline";
+attribution.captureEvents({events:[{type:"message",source:{type:"user",userId:privateUser},message:{type:"text",text:currentCases[0][0]}}]});
+assert.equal(attribution.getRemembered(privateUser)?.sourceEvidence,"website_self_report");
+attribution.captureEvents({events:[{type:"unfollow",source:{type:"user",userId:privateUser}}]});
+assert.equal(attribution.getRemembered(privateUser),null);
+const first="U-first-source";
+attribution.remember(first,currentCases[0][0],now);
+attribution.remember(first,currentCases[1][0],now+1);
+assert.equal(attribution.getRemembered(first,now+2).sourceDetail,"website:home");
+assert.equal(attribution.getRemembered(first,now+24*60*60*1000+1),null);
+console.log("PASS source evidence: self-report only, first source, group exclusion, unfollow removal, explicit attribution preserved");
 
 assert.strictEqual(attribution.isCrmRequest(process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec", { method: "POST" }), true);
 assert.strictEqual(attribution.isCrmRequest("https://api.line.me/v2/bot/message/push", { method: "POST" }), false, "LINE API 不得被 CRM bridge 攔截");

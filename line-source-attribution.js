@@ -11,8 +11,10 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-11-02-current-website-prefills-v2";
-const TTL_MS = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
+const VERSION = "2026-11-18-explicit-source-evidence-v3";
+const requestedTtl = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
+const TTL_MS = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(requestedTtl, 24 * 60 * 60 * 1000) : 24 * 60 * 60 * 1000;
+const MAX_ORIGINS = 10000;
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const origins = new Map();
@@ -86,8 +88,12 @@ function detectWebsiteOrigin(text) {
   const rule = PAGE_RULES.find((item) =>
     CURRENT_PAGE_PREFILLS[item.page]?.includes(value) || item.matches(value));
   if (!rule) return null;
+  // A matching CTA is not proof of a visit: the same text can be typed or
+  // copied anywhere. Only explicit website self-report can be attributed.
+  const explicit = /^(?:我從仙加味(?:官網首頁|商品總覽|品牌故事頁)進來|我從仙加味官網首頁來|我看過仙加味「怎麼選」頁面|我看過仙加味品牌故事|我看完仙加味品牌故事)/.test(value);
   return {
-    source: "官網→LINE OA",
+    source: explicit ? "官網→LINE OA" : "LINE OA",
+    sourceEvidence: explicit ? "website_self_report" : "prefill_match_only",
     sourceDetail: `website:${rule.page}`,
     sourceLabel: rule.label,
     leadOrigin: `${SITE_URL}${rule.path}`,
@@ -98,7 +104,7 @@ function detectWebsiteOrigin(text) {
 
 function cleanup(now = Date.now()) {
   for (const [userId, item] of origins) {
-    if (!item || now - Number(item.capturedAtMs || 0) > TTL_MS) origins.delete(userId);
+    if (!item || now < Number(item.capturedAtMs) || now - Number(item.capturedAtMs || 0) > TTL_MS) origins.delete(userId);
   }
 }
 
@@ -106,10 +112,14 @@ function remember(userId, text, now = Date.now()) {
   const id = clean(userId, 250);
   if (!id) return null;
   const origin = detectWebsiteOrigin(text);
-  if (!origin) return null;
+  if (!origin || origin.sourceEvidence !== "website_self_report") return null;
   cleanup(now);
-  const saved = { ...origin, capturedAtMs: now };
+  // Preserve first explicit source during the bounded session; generic or
+  // subsequent CTAs cannot overwrite it. Never persist raw messages.
+  if (origins.has(id)) return { ...origins.get(id) };
+  const saved = { ...origin, capturedAt: new Date(now).toISOString(), capturedAtMs: now };
   origins.set(id, saved);
+  while (origins.size > MAX_ORIGINS) origins.delete(origins.keys().next().value);
   return saved;
 }
 
@@ -134,16 +144,17 @@ function augmentCrmPayload(payload, now = Date.now()) {
   if (!origin) return payload;
 
   const existingSource = clean(payload.source || payload.orderSource, 200);
-  const source = existingSource && existingSource !== "LINE OA"
-    ? existingSource
-    : `${origin.source}｜${origin.sourceLabel}`;
+  // A manually specified source is authoritative, not a website hit.
+  if (existingSource && existingSource !== "LINE OA") return payload;
+  const source = `${origin.source}｜${origin.sourceLabel}`;
 
   return {
     ...payload,
     source,
     orderSource: source,
-    sourceDetail: origin.sourceDetail,
-    leadOrigin: origin.leadOrigin,
+    sourceDetail: clean(payload.sourceDetail, 200) || origin.sourceDetail,
+    leadOrigin: clean(payload.leadOrigin, 500) || origin.leadOrigin,
+    sourceEvidence: origin.sourceEvidence,
     campaignTag: clean(payload.campaignTag || origin.campaignTag, 200),
     lineOaStatus: "connected",
   };
@@ -152,8 +163,11 @@ function augmentCrmPayload(payload, now = Date.now()) {
 function captureEvents(body) {
   const events = Array.isArray(body?.events) ? body.events : [];
   for (const event of events) {
+    // Same private-chat boundary as the actual customer order handler.
+    if (event?.source?.type !== "user" || typeof event.source.userId !== "string") continue;
+    if (event.type === "unfollow") { origins.delete(clean(event.source.userId,250)); continue; }
     if (event?.type !== "message" || event?.message?.type !== "text") continue;
-    remember(event?.source?.userId || "", event.message.text || "");
+    remember(event.source.userId, event.message.text || "");
   }
 }
 
@@ -168,7 +182,7 @@ function installLineMiddlewareCapture() {
       return middleware(req, res, (error) => {
         if (!error) {
           try { captureEvents(req.body); }
-          catch (captureError) { console.warn("LINE來源歸因讀取失敗：", captureError?.message || captureError); }
+          catch { console.warn("[XJW_SOURCE_ATTRIBUTION] capture_failed"); }
         }
         next(error);
       });
@@ -194,8 +208,8 @@ function installCrmFetchBridge() {
       if (nextPayload !== parsed) {
         return originalFetch(input, { ...init, body: JSON.stringify(nextPayload) });
       }
-    } catch (error) {
-      console.warn("LINE CRM來源歸因補寫失敗：", error?.message || error);
+    } catch {
+      console.warn("[XJW_SOURCE_ATTRIBUTION] crm_enrichment_failed");
     }
     return originalFetch(input, init);
   };
