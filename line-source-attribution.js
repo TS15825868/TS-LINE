@@ -11,7 +11,7 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-11-18-explicit-source-evidence-v3";
+const VERSION = "2026-11-18-website-entry-contract-v4";
 const requestedTtl = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
 const TTL_MS = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(requestedTtl, 24 * 60 * 60 * 1000) : 24 * 60 * 60 * 1000;
 const MAX_ORIGINS = 10000;
@@ -22,6 +22,18 @@ const origins = new Map();
 // Exact current website CTA copy (site-core-v410.js and the page CTAs).
 // Keep older explicit prefills below for customers returning from saved links;
 // ordinary product questions must not be treated as website-source evidence.
+// Exact released or staged website self-report wording; never infer a visit.
+const EXPLICIT_ENTRY_PREFILLS = {
+  "home": [
+    "我從仙加味官網首頁進來，想了解目前產品怎麼選。"
+  ],
+  "choose": [
+    "我從仙加味官網怎麼選頁面進來，想請你幫我比較產品。"
+  ],
+  "trial": [
+    "我從仙加味官網試喝頁進來，想申請龜鹿飲30cc試喝組。"
+  ]
+};
 const CURRENT_PAGE_PREFILLS = {
   home: ["我從仙加味官網首頁進來，想了解產品與怎麼選。"],
   products: [
@@ -86,11 +98,11 @@ function detectWebsiteOrigin(text) {
   const value = clean(text);
   if (!value) return null;
   const rule = PAGE_RULES.find((item) =>
-    CURRENT_PAGE_PREFILLS[item.page]?.includes(value) || item.matches(value));
+    EXPLICIT_ENTRY_PREFILLS[item.page]?.includes(value) || CURRENT_PAGE_PREFILLS[item.page]?.includes(value) || item.matches(value));
   if (!rule) return null;
   // A matching CTA is not proof of a visit: the same text can be typed or
   // copied anywhere. Only explicit website self-report can be attributed.
-  const explicit = /^(?:我從仙加味(?:官網首頁|商品總覽|品牌故事頁)進來|我從仙加味官網首頁來|我看過仙加味「怎麼選」頁面|我看過仙加味品牌故事|我看完仙加味品牌故事)/.test(value);
+  const explicit = EXPLICIT_ENTRY_PREFILLS[rule.page]?.includes(value) || /^(?:我從仙加味(?:官網首頁|商品總覽|品牌故事頁)進來|我從仙加味官網首頁來|我看過仙加味「怎麼選」頁面|我看過仙加味品牌故事|我看完仙加味品牌故事)/.test(value);
   return {
     source: explicit ? "官網→LINE OA" : "LINE OA",
     sourceEvidence: explicit ? "website_self_report" : "prefill_match_only",
