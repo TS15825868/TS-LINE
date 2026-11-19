@@ -10,7 +10,7 @@
  */
 const line = require("@line/bot-sdk");
 
-const VERSION = "20261026-owner-alert-secure-binding-v2";
+const VERSION = "20261119-owner-alert-source-v3";
 const BIND_COMMAND = "綁定人工客服通知";
 const SUPPORT_PATTERN = /^(?:我要)?(?:人工客服|客服協助|聯絡客服|找客服)$/;
 
@@ -75,6 +75,7 @@ async function pushOwnerAlert(event, text) {
     noticeTitle,
     noticeIntroduction,
     `時間：${stamp}`,
+    isOrderHandoff ? require("./line-source-attribution").ownerOriginSummary(event) : "",
     `訊息：${noticeText.slice(0, isOrderHandoff ? 3800 : 80)}`,
     sourceUserId ? `顧客識別：${sourceUserId.slice(0, 10)}…` : "",
     "請開啟 LINE Official Account Manager 查看最新聊天室。",

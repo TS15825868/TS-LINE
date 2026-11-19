@@ -146,3 +146,17 @@ assert.equal(sandbox.detect(contactEntry),"human");
 assert(server.includes('normalizeBusinessEntry(sanitizeUserText(event.message.text, 500))'));
 const b2bUser="U-b2b-source-offline";attribution.remember(b2bUser,b2bEntry,now);assert.equal(attribution.getRemembered(b2bUser,now+1).sourceDetail,"website:contact-b2b");
 console.log("PASS opt-in contact and B2B entry contract");
+
+// Source is included only in the existing internal commercial handoff notification.
+const quoteUser="U-quote-attribution-offline",quoteEvent={source:{type:"user",userId:quoteUser}};
+assert.equal(attribution.ownerOriginSummary(quoteEvent,now),"客源：尚未取得客戶自述來源");
+attribution.remember(quoteUser,referralPhrase,now);
+assert.equal(attribution.ownerOriginSummary(quoteEvent,now+1),"客源：親友介紹→LINE OA｜試喝頁（客戶自述）");
+assert.equal(attribution.ownerOriginSummary({source:{type:"group",userId:quoteUser}},now+1),"");
+assert.equal(attribution.ownerOriginSummary({source:{type:"user",userId:b2bUser}},now+1),"客源：官網→LINE OA｜合作頁（客戶自述）");
+assert(!attribution.ownerOriginSummary(quoteEvent,now+1).includes(quoteUser));
+assert.equal(attribution.ownerOriginSummary(quoteEvent,now+24*60*60*1000+1),"客源：尚未取得客戶自述來源");
+const ownerSource=fs.readFileSync("line-owner-alert-runtime.js","utf8");
+assert(ownerSource.includes('isOrderHandoff ? require("./line-source-attribution").ownerOriginSummary(event) : ""'));
+assert.equal((ownerSource.match(/client\.pushMessage\(/g)||[]).length,1);
+console.log("PASS verified self-reported source in existing owner handoff only");

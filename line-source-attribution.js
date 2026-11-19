@@ -11,7 +11,7 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-11-19-contact-b2b-entry-v6";
+const VERSION = "2026-11-19-owner-handoff-source-v7";
 const requestedTtl = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
 const TTL_MS = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(requestedTtl, 24 * 60 * 60 * 1000) : 24 * 60 * 60 * 1000;
 const MAX_ORIGINS = 10000;
@@ -158,6 +158,14 @@ function getRemembered(userId, now = Date.now()) {
   return item ? { ...item } : null;
 }
 
+// Fixed labels from verified private-chat self-reports, not raw customer text.
+function ownerOriginSummary(event, now = Date.now()) {
+  if (event?.source?.type !== "user" || typeof event.source.userId !== "string") return "";
+  const origin = getRemembered(event.source.userId, now);
+  if (!origin) return "客源：尚未取得客戶自述來源";
+  return "客源：" + origin.source + "｜" + origin.sourceLabel + "（客戶自述）";
+}
+
 function isCrmRequest(input, init = {}) {
   const method = String(init.method || "GET").toUpperCase();
   if (method !== "POST") return false;
@@ -256,6 +264,7 @@ module.exports = {
   normalizeBusinessEntry,
   remember,
   getRemembered,
+  ownerOriginSummary,
   augmentCrmPayload,
   captureEvents,
   isCrmRequest,
