@@ -112,3 +112,24 @@ assert.equal(attribution.detectWebsiteOrigin("我想依生活習慣比較仙加�
 const fs=require("node:fs"),vm=require("node:vm");const server=fs.readFileSync("server.js","utf8");const intentSource=server.slice(server.indexOf("function detectWebsiteIntent("),server.indexOf("async function handleMessage("));const sandbox={};vm.runInNewContext(intentSource+"\nthis.detect=detectWebsiteIntent;",sandbox);assert.equal(sandbox.detect(entryContract.choose[0]),"recommend");assert.equal(sandbox.detect(entryContract.trial[0]),"trial");
 // Trial page price inquiries must not be routed to trial by a source prefix.
 console.log("PASS explicit trial/choose website source contract");
+
+// Voluntary referral self-report, not an inferred share, click or new purchase.
+const referralPhrase="我是經親友介紹認識仙加味，想申請龜鹿飲30cc試喝組。";
+const referral=attribution.detectWebsiteOrigin(referralPhrase);
+assert.equal(referral.sourceEvidence,"referral_self_report");
+assert.equal(referral.sourceDetail,"referral:trial");
+assert.equal(attribution.detectWebsiteOrigin("朋友介紹"),null);
+assert.equal(attribution.detectWebsiteOrigin(referralPhrase+"其他"),null);
+const referralUser="U-referral-offline";
+attribution.remember(referralUser,referralPhrase,now);
+const referred=attribution.augmentCrmPayload({userId:referralUser,source:"LINE OA",orderType:"trial"},now+1);
+assert.equal(referred.source,"親友介紹→LINE OA｜試喝頁");
+assert.equal(referred.campaignTag,"referral-trial-line");
+assert.equal(referred.sourceEvidence,"referral_self_report");
+assert.equal(referred.orderType,"trial");
+assert.equal(attribution.augmentCrmPayload({userId:referralUser,source:"人工來源"},now+1).source,"人工來源");
+attribution.remember(referralUser,currentCases[0][0],now+2);
+assert.equal(attribution.getRemembered(referralUser,now+3).sourceDetail,"referral:trial");
+assert.equal(attribution.getRemembered(referralUser,now+24*60*60*1000+1),null);
+assert.equal(sandbox.detect(referralPhrase),"trial");
+console.log("PASS exact voluntary referral contract");

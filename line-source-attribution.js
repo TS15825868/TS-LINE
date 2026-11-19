@@ -11,7 +11,7 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-11-18-website-entry-contract-v4";
+const VERSION = "2026-11-19-referral-entry-contract-v5";
 const requestedTtl = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
 const TTL_MS = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(requestedTtl, 24 * 60 * 60 * 1000) : 24 * 60 * 60 * 1000;
 const MAX_ORIGINS = 10000;
@@ -97,6 +97,13 @@ function clean(value, max = 500) {
 function detectWebsiteOrigin(text) {
   const value = clean(text);
   if (!value) return null;
+  // Only a deliberate, exact customer self-report is a referral source.
+  if (value === "我是經親友介紹認識仙加味，想申請龜鹿飲30cc試喝組。") return {
+    source: "親友介紹→LINE OA", sourceEvidence: "referral_self_report",
+    sourceDetail: "referral:trial", sourceLabel: "試喝頁",
+    leadOrigin: `${SITE_URL}trial.html`, campaignTag: "referral-trial-line",
+    capturedAt: new Date().toISOString(),
+  };
   const rule = PAGE_RULES.find((item) =>
     EXPLICIT_ENTRY_PREFILLS[item.page]?.includes(value) || CURRENT_PAGE_PREFILLS[item.page]?.includes(value) || item.matches(value));
   if (!rule) return null;
@@ -124,7 +131,7 @@ function remember(userId, text, now = Date.now()) {
   const id = clean(userId, 250);
   if (!id) return null;
   const origin = detectWebsiteOrigin(text);
-  if (!origin || origin.sourceEvidence !== "website_self_report") return null;
+  if (!origin || !["website_self_report", "referral_self_report"].includes(origin.sourceEvidence)) return null;
   cleanup(now);
   // Preserve first explicit source during the bounded session; generic or
   // subsequent CTAs cannot overwrite it. Never persist raw messages.
