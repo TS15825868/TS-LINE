@@ -1440,6 +1440,8 @@ async function handleLegacyPostback(event) {
 function detectWebsiteIntent(text) {
   const value = String(text || "").trim();
   if (!value) return "";
+  if (value === "我從仙加味官網進來，想詢問產品、試喝、購買或合作。") return "products";
+  if (value === "我從仙加味官網聯絡頁進來，想詢問產品、規格、使用方式或購買配送。") return "human";
 
   if (/試喝|體驗龜鹿飲/.test(value)) return "trial";
   if (/我看了產品整理|幫我比較產品|產品差異|規格比較|想請你幫我比較|哪一種比較適合|適合我的|我目前是/.test(value)) return "recommend";
@@ -1458,7 +1460,7 @@ async function handleMessage(event) {
     return reply(event.replyToken, textMsg("目前請使用文字訊息詢問。", mainQuick()));
   }
 
-  let text = sanitizeUserText(event.message.text, 500);
+  let text = require("./line-source-attribution").normalizeBusinessEntry(sanitizeUserText(event.message.text, 500));
   const state = getState(event.source.userId);
   // Contact shortcuts must remain available even during an active order or merchant form.
   if (/^(我要人工客服|人工客服|客服|聯絡我們|聯絡業務|業務聯絡|業務LINE|請業務聯絡我|請業務回覆|官方客服留言)$/.test(text)) {

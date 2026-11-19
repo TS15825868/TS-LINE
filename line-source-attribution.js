@@ -11,7 +11,7 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-11-19-referral-entry-contract-v5";
+const VERSION = "2026-11-19-contact-b2b-entry-v6";
 const requestedTtl = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
 const TTL_MS = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(requestedTtl, 24 * 60 * 60 * 1000) : 24 * 60 * 60 * 1000;
 const MAX_ORIGINS = 10000;
@@ -25,14 +25,17 @@ const origins = new Map();
 // Exact released or staged website self-report wording; never infer a visit.
 const EXPLICIT_ENTRY_PREFILLS = {
   "home": [
-    "我從仙加味官網首頁進來，想了解目前產品怎麼選。"
+    "我從仙加味官網首頁進來，想了解目前產品怎麼選。",
+    "我從仙加味官網進來，想詢問產品、試喝、購買或合作。"
   ],
   "choose": [
     "我從仙加味官網怎麼選頁面進來，想請你幫我比較產品。"
   ],
   "trial": [
     "我從仙加味官網試喝頁進來，想申請龜鹿飲30cc試喝組。"
-  ]
+  ],
+  contact: ["我從仙加味官網聯絡頁進來，想詢問產品、規格、使用方式或購買配送。"],
+  "contact-b2b": ["我從仙加味官網合作頁進來，想進行商家合作。"]
 };
 const CURRENT_PAGE_PREFILLS = {
   home: ["我從仙加味官網首頁進來，想了解產品與怎麼選。"],
@@ -53,6 +56,8 @@ const CURRENT_PAGE_PREFILLS = {
 };
 
 const PAGE_RULES = [
+  { page: "contact", label: "聯絡頁", path: "contact.html", campaignTag: "website-contact-line", matches: () => false },
+  { page: "contact-b2b", label: "合作頁", path: "contact.html#business-inquiry", campaignTag: "website-contact-b2b-line", matches: () => false },
   {
     page: "home",
     label: "首頁",
@@ -119,6 +124,11 @@ function detectWebsiteOrigin(text) {
     campaignTag: rule.campaignTag,
     capturedAt: new Date().toISOString(),
   };
+}
+
+// Normalize only the exact opt-in website B2B prefill after signed capture.
+function normalizeBusinessEntry(text) {
+  return text === "我從仙加味官網合作頁進來，想進行商家合作。" ? "商家合作" : text;
 }
 
 function cleanup(now = Date.now()) {
@@ -243,6 +253,7 @@ module.exports = {
   VERSION,
   PAGE_RULES,
   detectWebsiteOrigin,
+  normalizeBusinessEntry,
   remember,
   getRemembered,
   augmentCrmPayload,

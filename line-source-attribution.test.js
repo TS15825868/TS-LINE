@@ -133,3 +133,16 @@ assert.equal(attribution.getRemembered(referralUser,now+3).sourceDetail,"referra
 assert.equal(attribution.getRemembered(referralUser,now+24*60*60*1000+1),null);
 assert.equal(sandbox.detect(referralPhrase),"trial");
 console.log("PASS exact voluntary referral contract");
+
+// Explicit website contact and opt-in B2B entry; existing merchant permissions stay unchanged.
+const contactEntry="我從仙加味官網聯絡頁進來，想詢問產品、規格、使用方式或購買配送。",b2bEntry="我從仙加味官網合作頁進來，想進行商家合作。",homeEntry="我從仙加味官網進來，想詢問產品、試喝、購買或合作。";
+for(const [msg,detail] of [[contactEntry,"website:contact"],[b2bEntry,"website:contact-b2b"],[homeEntry,"website:home"]]){const o=attribution.detectWebsiteOrigin(msg);assert.equal(o.sourceDetail,detail);assert.equal(o.sourceEvidence,"website_self_report");}
+assert.equal(attribution.normalizeBusinessEntry(b2bEntry),"商家合作");
+assert.equal(attribution.normalizeBusinessEntry("商家合作"),"商家合作");
+assert.equal(attribution.normalizeBusinessEntry(b2bEntry+"其他"),b2bEntry+"其他");
+assert.equal(attribution.detectWebsiteOrigin("商家合作"),null);
+assert.equal(sandbox.detect(homeEntry),"products");
+assert.equal(sandbox.detect(contactEntry),"human");
+assert(server.includes('normalizeBusinessEntry(sanitizeUserText(event.message.text, 500))'));
+const b2bUser="U-b2b-source-offline";attribution.remember(b2bUser,b2bEntry,now);assert.equal(attribution.getRemembered(b2bUser,now+1).sourceDetail,"website:contact-b2b");
+console.log("PASS opt-in contact and B2B entry contract");
