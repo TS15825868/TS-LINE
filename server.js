@@ -1461,6 +1461,7 @@ async function handleMessage(event) {
   }
 
   let text = require("./line-source-attribution").normalizeBusinessEntry(sanitizeUserText(event.message.text, 500));
+  text = require("./line-source-attribution").normalizeProductEntry(text);
   const state = getState(event.source.userId);
   // Contact shortcuts must remain available even during an active order or merchant form.
   if (/^(我要人工客服|人工客服|客服|聯絡我們|聯絡業務|業務聯絡|業務LINE|請業務聯絡我|請業務回覆|官方客服留言)$/.test(text)) {

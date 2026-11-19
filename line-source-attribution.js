@@ -11,7 +11,7 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-11-19-owner-handoff-source-v7";
+const VERSION = "2026-11-19-product-entry-v8";
 const requestedTtl = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
 const TTL_MS = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(requestedTtl, 24 * 60 * 60 * 1000) : 24 * 60 * 60 * 1000;
 const MAX_ORIGINS = 10000;
@@ -55,7 +55,39 @@ const CURRENT_PAGE_PREFILLS = {
   trial: ["我想申請龜鹿飲30cc試喝組。"],
 };
 
+const PRODUCT_ENTRY_PREFILLS = [
+  {
+    "id": "guilu-gao",
+    "label": "龜鹿膏",
+    "path": "product-guilu-gao.html",
+    "original": "我想了解龜鹿膏100g的使用與購買方式。",
+    "message": "我從仙加味官網龜鹿膏商品頁進來，我想了解龜鹿膏100g的使用與購買方式。"
+  },
+  {
+    "id": "guilu-drink-30",
+    "label": "龜鹿飲30cc玻璃罐",
+    "path": "product-guilu-drink-30cc.html",
+    "original": "我想了解龜鹿飲30cc玻璃罐的使用、交期與購買方式。",
+    "message": "我從仙加味官網龜鹿飲30cc玻璃罐商品頁進來，我想了解龜鹿飲30cc玻璃罐的使用、交期與購買方式。"
+  },
+  {
+    "id": "guilu-drink-180",
+    "label": "龜鹿飲180cc鋁袋",
+    "path": "product-guilu-drink-180cc.html",
+    "original": "我想了解龜鹿飲180cc鋁袋的使用、交期與購買方式。",
+    "message": "我從仙加味官網龜鹿飲180cc鋁袋商品頁進來，我想了解龜鹿飲180cc鋁袋的使用、交期與購買方式。"
+  },
+  {
+    "id": "luerong-fen",
+    "label": "鹿茸粉",
+    "path": "product-luerong-fen.html",
+    "original": "我想了解鹿茸粉75g的使用與購買方式。",
+    "message": "我從仙加味官網鹿茸粉商品頁進來，我想了解鹿茸粉75g的使用與購買方式。"
+  }
+];
+
 const PAGE_RULES = [
+  ...PRODUCT_ENTRY_PREFILLS.map(({id,label,path})=>({page:"product-"+id,label,path,campaignTag:"website-product-"+id+"-line",matches:()=>false})),
   { page: "contact", label: "聯絡頁", path: "contact.html", campaignTag: "website-contact-line", matches: () => false },
   { page: "contact-b2b", label: "合作頁", path: "contact.html#business-inquiry", campaignTag: "website-contact-b2b-line", matches: () => false },
   {
@@ -109,12 +141,14 @@ function detectWebsiteOrigin(text) {
     leadOrigin: `${SITE_URL}trial.html`, campaignTag: "referral-trial-line",
     capturedAt: new Date().toISOString(),
   };
+  const productEntry = PRODUCT_ENTRY_PREFILLS.find(item => item.message === value);
   const rule = PAGE_RULES.find((item) =>
+    (productEntry && item.page === 'product-'+productEntry.id) ||
     EXPLICIT_ENTRY_PREFILLS[item.page]?.includes(value) || CURRENT_PAGE_PREFILLS[item.page]?.includes(value) || item.matches(value));
   if (!rule) return null;
   // A matching CTA is not proof of a visit: the same text can be typed or
   // copied anywhere. Only explicit website self-report can be attributed.
-  const explicit = EXPLICIT_ENTRY_PREFILLS[rule.page]?.includes(value) || /^(?:我從仙加味(?:官網首頁|商品總覽|品牌故事頁)進來|我從仙加味官網首頁來|我看過仙加味「怎麼選」頁面|我看過仙加味品牌故事|我看完仙加味品牌故事)/.test(value);
+  const explicit = Boolean(productEntry) || EXPLICIT_ENTRY_PREFILLS[rule.page]?.includes(value) || /^(?:我從仙加味(?:官網首頁|商品總覽|品牌故事頁)進來|我從仙加味官網首頁來|我看過仙加味「怎麼選」頁面|我看過仙加味品牌故事|我看完仙加味品牌故事)/.test(value);
   return {
     source: explicit ? "官網→LINE OA" : "LINE OA",
     sourceEvidence: explicit ? "website_self_report" : "prefill_match_only",
@@ -129,6 +163,11 @@ function detectWebsiteOrigin(text) {
 // Normalize only the exact opt-in website B2B prefill after signed capture.
 function normalizeBusinessEntry(text) {
   return text === "我從仙加味官網合作頁進來，想進行商家合作。" ? "商家合作" : text;
+}
+
+// Restore the existing product inquiry text after signed capture. No new checkout route.
+function normalizeProductEntry(text) {
+  return PRODUCT_ENTRY_PREFILLS.find(item => item.message === text)?.original || text;
 }
 
 function cleanup(now = Date.now()) {
@@ -262,6 +301,7 @@ module.exports = {
   PAGE_RULES,
   detectWebsiteOrigin,
   normalizeBusinessEntry,
+  normalizeProductEntry,
   remember,
   getRemembered,
   ownerOriginSummary,
