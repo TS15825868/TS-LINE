@@ -218,7 +218,8 @@ function fakeOwnerRuntime(env,captures){
      warn:(...args)=>captures.logs.push(args.join(" ")),
      error:(...args)=>captures.logs.push(args.join(" "))},
    Date,Promise,
-   require:(id)=>{assert.equal(id,"@line/bot-sdk");
+   require:(id)=>{if(id==="./line-source-attribution") return {ownerOriginSummary:()=> "客源：尚未取得客戶自述來源"};
+     assert.equal(id,"@line/bot-sdk");
      return {messagingApi:{MessagingApiClient:class {
        async pushMessage(request){
          captures.pushes.push(request);
