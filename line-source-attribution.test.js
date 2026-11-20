@@ -166,3 +166,30 @@ const productEntries=[{"id":"guilu-gao","label":"龜鹿膏","path":"product-guil
 for(const item of productEntries){const o=attribution.detectWebsiteOrigin(item.message);assert.equal(o.sourceDetail,"website:product-"+item.id);assert.equal(o.sourceEvidence,"website_self_report");assert.equal(o.leadOrigin,"https://ts15825868.github.io/xianjiawei/"+item.path);assert.equal(attribution.normalizeProductEntry(item.message),item.original);assert.equal(attribution.normalizeProductEntry(item.original),item.original);assert.equal(attribution.detectWebsiteOrigin(item.original),null);assert.equal(attribution.detectWebsiteOrigin(item.message+"其他"),null);const id="offline-product-"+item.id;attribution.remember(id,item.message,now);assert.equal(attribution.augmentCrmPayload({userId:id,source:"LINE OA"},now+1).source,"官網→LINE OA｜"+item.label);assert.equal(attribution.ownerOriginSummary({source:{type:"user",userId:id}},now+1),"客源：官網→LINE OA｜"+item.label+"（客戶自述）");}
 assert(server.includes("normalizeProductEntry(text)"));
 console.log("PASS four explicit product entry sources and existing product inquiry routing");
+
+// All seven approved partner-food pages use an explicit opt-in message and keep
+// their existing product inquiry flow. None is an automatic checkout.
+const partnerEntries=[{"id":"jinan-sisheng-siwuyin","label":"參仲四物飲","path":"product-jinan-siwuyin.html","original":"參仲四物飲","message":"我從仙加味官網參仲四物飲商品頁進來，想了解參仲四物飲的規格與購買方式。"},{"id":"danshen-tea-collection","label":"丹參茶包系列","path":"product-danshen-tea.html","original":"丹參茶包系列","message":"我從仙加味官網丹參茶包系列商品頁進來，想了解丹參茶包系列的規格與購買方式。"},{"id":"guilu-vitality","label":"龜鹿活力飲（葡萄糖胺）","path":"product-guilu-vitality.html","original":"我想了解龜鹿活力飲（葡萄糖胺）的規格與購買方式。","message":"我從仙加味官網龜鹿活力飲（葡萄糖胺）商品頁進來，想了解龜鹿活力飲（葡萄糖胺）的規格與購買方式。"},{"id":"uboss-sizhenbao","label":"四珍寶","path":"product-four-treasures.html","original":"我想了解四珍寶的規格與購買方式。","message":"我從仙加味官網四珍寶商品頁進來，想了解四珍寶的規格與購買方式。"},{"id":"royalherb-erzhenbao-64","label":"二珍寶","path":"product-er-zhen-bao.html","original":"我想了解二珍寶的規格與購買方式。","message":"我從仙加味官網二珍寶商品頁進來，想了解二珍寶的規格與購買方式。"},{"id":"baumann-ginseng-loquat","label":"寶曼花旗參枇杷軟糖","path":"product-baumann-ginseng-loquat.html","original":"我想了解寶曼花旗參枇杷軟糖的規格與購買方式。","message":"我從仙加味官網寶曼花旗參枇杷軟糖商品頁進來，想了解寶曼花旗參枇杷軟糖的規格與購買方式。"},{"id":"sun-e-ginseng-citrus","label":"上裕花旗參冰橙檸檬軟糖","path":"product-sun-e-ginseng-citrus.html","original":"我想了解上裕花旗參冰橙檸檬軟糖的規格與購買方式。","message":"我從仙加味官網上裕花旗參冰橙檸檬軟糖商品頁進來，想了解上裕花旗參冰橙檸檬軟糖的規格與購買方式。"}];
+const approvedPartnerIds=new Set(partnerEntries.map(p=>p.id));
+assert.equal(approvedPartnerIds.size,7);
+assert.deepEqual(new Set(attribution.PARTNER_ENTRY_PREFILLS.map(p=>p.id)),approvedPartnerIds);
+for(const entry of partnerEntries){
+ const origin=attribution.detectWebsiteOrigin(entry.message);
+ assert.equal(origin.source,"官網→LINE OA");
+ assert.equal(origin.sourceEvidence,"website_self_report");
+ assert.equal(origin.sourceDetail,"website:partner-"+entry.id);
+ assert.equal(origin.leadOrigin,"https://ts15825868.github.io/xianjiawei/"+entry.path);
+ assert.equal(origin.sourceLabel,entry.label);
+ assert.equal(attribution.normalizeProductEntry(entry.message),entry.original);
+ assert.equal(attribution.normalizeProductEntry(entry.original),entry.original);
+ assert.equal(attribution.detectWebsiteOrigin(entry.original),null);
+ assert.equal(attribution.detectWebsiteOrigin(entry.message+"多一個字"),null);
+ const id="offline-partner-"+entry.id;
+ attribution.remember(id,entry.message,now);
+ assert.equal(attribution.augmentCrmPayload({userId:id,source:"LINE OA"},now+1).source,"官網→LINE OA｜"+entry.label);
+ assert.equal(attribution.augmentCrmPayload({userId:id,source:"既有人工來源"},now+1).source,"既有人工來源");
+}
+assert(server.includes('if (text === "參仲四物飲")'));
+assert(server.includes('absoluteUrl("product-jinan-siwuyin.html")'));
+assert(server.includes("normalizeProductEntry(text)"));
+console.log("PASS all seven official partner-product entry links with preserved inquiry routing");

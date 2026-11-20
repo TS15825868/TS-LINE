@@ -11,7 +11,7 @@
 
 const line = require("@line/bot-sdk");
 
-const VERSION = "2026-11-19-product-entry-v8";
+const VERSION = "2026-11-20-partner-public-entry-v9";
 const requestedTtl = Number(process.env.LINE_SOURCE_ATTRIBUTION_TTL_MS || 24 * 60 * 60 * 1000);
 const TTL_MS = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(requestedTtl, 24 * 60 * 60 * 1000) : 24 * 60 * 60 * 1000;
 const MAX_ORIGINS = 10000;
@@ -86,6 +86,59 @@ const PRODUCT_ENTRY_PREFILLS = [
   }
 ];
 
+// Only exact self-reported, approved public partner-food page links are attributed.
+const PARTNER_ENTRY_PREFILLS = [
+  {
+    "id": "jinan-sisheng-siwuyin",
+    "label": "參仲四物飲",
+    "path": "product-jinan-siwuyin.html",
+    "original": "參仲四物飲",
+    "message": "我從仙加味官網參仲四物飲商品頁進來，想了解參仲四物飲的規格與購買方式。"
+  },
+  {
+    "id": "danshen-tea-collection",
+    "label": "丹參茶包系列",
+    "path": "product-danshen-tea.html",
+    "original": "丹參茶包系列",
+    "message": "我從仙加味官網丹參茶包系列商品頁進來，想了解丹參茶包系列的規格與購買方式。"
+  },
+  {
+    "id": "guilu-vitality",
+    "label": "龜鹿活力飲（葡萄糖胺）",
+    "path": "product-guilu-vitality.html",
+    "original": "我想了解龜鹿活力飲（葡萄糖胺）的規格與購買方式。",
+    "message": "我從仙加味官網龜鹿活力飲（葡萄糖胺）商品頁進來，想了解龜鹿活力飲（葡萄糖胺）的規格與購買方式。"
+  },
+  {
+    "id": "uboss-sizhenbao",
+    "label": "四珍寶",
+    "path": "product-four-treasures.html",
+    "original": "我想了解四珍寶的規格與購買方式。",
+    "message": "我從仙加味官網四珍寶商品頁進來，想了解四珍寶的規格與購買方式。"
+  },
+  {
+    "id": "royalherb-erzhenbao-64",
+    "label": "二珍寶",
+    "path": "product-er-zhen-bao.html",
+    "original": "我想了解二珍寶的規格與購買方式。",
+    "message": "我從仙加味官網二珍寶商品頁進來，想了解二珍寶的規格與購買方式。"
+  },
+  {
+    "id": "baumann-ginseng-loquat",
+    "label": "寶曼花旗參枇杷軟糖",
+    "path": "product-baumann-ginseng-loquat.html",
+    "original": "我想了解寶曼花旗參枇杷軟糖的規格與購買方式。",
+    "message": "我從仙加味官網寶曼花旗參枇杷軟糖商品頁進來，想了解寶曼花旗參枇杷軟糖的規格與購買方式。"
+  },
+  {
+    "id": "sun-e-ginseng-citrus",
+    "label": "上裕花旗參冰橙檸檬軟糖",
+    "path": "product-sun-e-ginseng-citrus.html",
+    "original": "我想了解上裕花旗參冰橙檸檬軟糖的規格與購買方式。",
+    "message": "我從仙加味官網上裕花旗參冰橙檸檬軟糖商品頁進來，想了解上裕花旗參冰橙檸檬軟糖的規格與購買方式。"
+  }
+];
+
 const PAGE_RULES = [
   ...PRODUCT_ENTRY_PREFILLS.map(({id,label,path})=>({page:"product-"+id,label,path,campaignTag:"website-product-"+id+"-line",matches:()=>false})),
   { page: "contact", label: "聯絡頁", path: "contact.html", campaignTag: "website-contact-line", matches: () => false },
@@ -141,6 +194,16 @@ function detectWebsiteOrigin(text) {
     leadOrigin: `${SITE_URL}trial.html`, campaignTag: "referral-trial-line",
     capturedAt: new Date().toISOString(),
   };
+  const partnerEntry = PARTNER_ENTRY_PREFILLS.find(item => item.message === value);
+  if (partnerEntry) return {
+    source: "官網→LINE OA",
+    sourceEvidence: "website_self_report",
+    sourceDetail: "website:partner-" + partnerEntry.id,
+    sourceLabel: partnerEntry.label,
+    leadOrigin: SITE_URL + partnerEntry.path,
+    campaignTag: "website-partner-" + partnerEntry.id + "-line",
+    capturedAt: new Date().toISOString(),
+  };
   const productEntry = PRODUCT_ENTRY_PREFILLS.find(item => item.message === value);
   const rule = PAGE_RULES.find((item) =>
     (productEntry && item.page === 'product-'+productEntry.id) ||
@@ -167,7 +230,8 @@ function normalizeBusinessEntry(text) {
 
 // Restore the existing product inquiry text after signed capture. No new checkout route.
 function normalizeProductEntry(text) {
-  return PRODUCT_ENTRY_PREFILLS.find(item => item.message === text)?.original || text;
+  return PRODUCT_ENTRY_PREFILLS.find(item => item.message === text)?.original ||
+    PARTNER_ENTRY_PREFILLS.find(item => item.message === text)?.original || text;
 }
 
 function cleanup(now = Date.now()) {
@@ -299,6 +363,7 @@ installCrmFetchBridge();
 module.exports = {
   VERSION,
   PAGE_RULES,
+  PARTNER_ENTRY_PREFILLS,
   detectWebsiteOrigin,
   normalizeBusinessEntry,
   normalizeProductEntry,

@@ -1910,6 +1910,14 @@ async function handleMessage(event) {
     ));
   }
 
+  // Approved published partner catalog item without a generic food-category matcher.
+  // The exact opt-in CTA is normalized first; do not invent prices or offer checkout.
+  if (text === "參仲四物飲") {
+    return reply(event.replyToken, flexCard("參仲四物飲",
+      "這款為其他廠牌公開商品。正式包裝、成分與規格請依仙加味官網商品頁及原廠標示核對；現貨、售價與配送由人工客服確認。",
+      [{label:"查看正式商品介紹",uri:absoluteUrl("product-jinan-siwuyin.html")},
+       {label:"仙加味商品與購買諮詢",text:"我要人工客服"}]));
+  }
   const partnerInquiry = require('./partner-inquiry.js').findPartnerInquiry(text);
   if (partnerInquiry) {
     const license = partnerInquiry.medicine?.classification === 'licensed-traditional-medicine'
