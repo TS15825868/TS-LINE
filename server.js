@@ -1590,6 +1590,7 @@ async function handleMessage(event) {
     const merchant = state.merchantOrderInquiry;
     if (merchant.step === "contact") {
       if (text.length < 4) return reply(event.replyToken, textMsg("請提供商家名稱、聯絡人及聯絡方式；也可填「以 LINE 聯絡」。"));
+      if (durableInquiryEnabled && text.trim().length>240) return reply(event.replyToken,textMsg("商家名稱與聯絡方式請精簡至240字內，避免未經告知截斷資料。"));
       merchant.data.contact = text.slice(0, 240);
       merchant.step = "items";
       return reply(event.replyToken, textMsg("請輸入想採購的商品名稱、規格及數量（可一次列多項）。\n例如：龜鹿飲30cc玻璃罐 20罐；龜鹿膏 5罐。\n數量與價格均需由專人確認。", [{label:"取消",text:"取消商家採購"}]));

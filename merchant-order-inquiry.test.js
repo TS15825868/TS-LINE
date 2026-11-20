@@ -33,6 +33,7 @@ test("server only confirms signed actor-bound merchant draft, holds ambiguous no
  assert(s.includes('persistAndNotify('));
  assert(s.includes('accessDraft("save-draft", event.source.userId, inquiryOptions, {payload})'));
  assert(s.includes('merchantToBusinessInquiry(merchant.data)'));
+ assert(s.includes("商家名稱與聯絡方式請精簡至240字內"));
  assert(s.includes('receipt ? `商家採購詢價已收件，編號：${id}。'));
  assert(s.includes('if (text !== "確認送出商家詢價")'));
  assert(s.includes('ownerAlert.pushOwnerAlert(event, summary)'));
