@@ -1545,14 +1545,44 @@ async function handleMessage(event) {
   if (text === "繼續商家採購" && state.merchantOrderInquiry) {
     const merchant = state.merchantOrderInquiry;
     const prompt = merchant.step === "contact" ? "請提供商家名稱、聯絡人及聯絡方式。" : merchant.step === "items" ? "請提供商品名稱、規格與數量。" : merchant.step === "delivery" ? "請提供交貨地區、交期與需求。" : "請確認送出詢價、重新填寫或取消。";
-    return reply(event.replyToken, textMsg(prompt, merchant.step === "confirm" ? [{label:"確認送出",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}] : [{label:"取消",text:"取消商家採購"}]));
+    return reply(event.replyToken, textMsg(prompt, merchant.step === "confirm" ? [{label:"確認送出",text:process.env.XJW_B2B_PERSIST_ENABLED==="true" && merchant.receiptPayload ? "確認送出商家詢價｜"+merchant.receiptPayload.id : "確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}] : [{label:"取消",text:"取消商家採購"}]));
   }
+  // Confirmed merchant purchase quotations share the signed, actor-bound B2B D1 intake.
+  // No order is created and no CRM/order status is modified.
+  const durableInquiryEnabled = process.env.XJW_B2B_PERSIST_ENABLED === "true";
+  const inquiryOptions = { secret: process.env.XJW_B2B_INTAKE_SECRET };
+  const merchantReceiptCommand = text.match(/^確認送出商家詢價｜(B2B-[a-f0-9-]{36})$/i);
+  if (durableInquiryEnabled && merchantReceiptCommand) {
+    const {accessDraft,persistAndNotify}=require("./business-inquiry-intake");
+    const id=merchantReceiptCommand[1];
+    const draft=await accessDraft("load-draft", event.source.userId, inquiryOptions, {id});
+    if (!draft) return reply(event.replyToken,textMsg("商家詢價收件狀態暫時無法確認，請保留訊息並稍後重試。"));
+    const payload=draft.payload;
+    if (payload?.id!==id || payload.category !== "批發採購")
+      return reply(event.replyToken,textMsg("這份商家採購詢價草稿已失效，請重新輸入「商家下單」。"));
+    const summary=`【商家採購詢價】\n合作編號：${id}\n商家與聯絡方式：${payload.businessContact}\n${payload.details}`;
+    const receipt=await withLineLoadingIndicator(event,()=>persistAndNotify(
+      {receiptPayload:payload},null,()=>ownerAlert.pushOwnerAlert(event,summary),{...inquiryOptions,actorUserId:event.source.userId},
+    ));
+    if (receipt && state.merchantOrderInquiry?.receiptPayload?.id===id) delete state.merchantOrderInquiry;
+    return reply(event.replyToken,textMsg(
+      receipt ? `商家採購詢價已收件，編號：${id}。專人將確認報價、庫存及配送；確認前尚未成立訂單。`
+        : "尚未確認商家詢價收件，請保留對話並稍後重新送出。",
+      receipt ? mainQuick() : [{label:"重新確認送出",text}],
+    ));
+  }
+
   // 商家採購詢價獨立於一般消費者結帳：未核准報價不成立訂單，也不寫入 CRM。
   if (/^(商家下單|商家採購|批發下單|商家訂貨|批發訂貨)$/.test(text)) {
+    if (durableInquiryEnabled && !await require("./business-inquiry-intake").accessDraft("discard-draft", event.source.userId, inquiryOptions))
+      return reply(event.replyToken,textMsg("目前無法重設商家詢價草稿，請稍後重試。"));
+    delete state.businessInquiry;
     state.merchantOrderInquiry = { step: "contact", data: {} };
     return reply(event.replyToken, textMsg("仙加味｜商家採購詢價\n請提供商家名稱、聯絡人及聯絡方式（可填「以 LINE 聯絡」）。\n報價、供貨及付款配送方式均由專人確認後提供；本流程不會直接成立訂單。", [{label:"取消",text:"取消商家採購"}]));
   }
   if (text === "取消商家採購") {
+    if (durableInquiryEnabled && !await require("./business-inquiry-intake").accessDraft("discard-draft", event.source.userId, inquiryOptions))
+      return reply(event.replyToken,textMsg("目前無法確認商家詢價取消狀態，請稍後重試。"));
     delete state.merchantOrderInquiry;
     return reply(event.replyToken, textMsg("已取消本次商家採購詢價。需要時可再輸入「商家下單」。", mainQuick()));
   }
@@ -1566,16 +1596,35 @@ async function handleMessage(event) {
     }
     if (merchant.step === "items") {
       if (text.length < 4) return reply(event.replyToken, textMsg("請提供至少一項商品及預估數量。"));
-      merchant.data.items = text.slice(0, 600);
+      if (durableInquiryEnabled && text.trim().length>240) return reply(event.replyToken,textMsg("商家採購商品與數量請精簡至240字內，完整保留輸入內容後才可安全記錄。"));
+      merchant.data.items = text.slice(0, durableInquiryEnabled ? 240 : 600);
       merchant.step = "delivery";
       return reply(event.replyToken, textMsg("請提供預計交貨地區、希望交期及其他需求；若尚未確定可回覆「待討論」。", [{label:"取消",text:"取消商家採購"}]));
     }
     if (merchant.step === "delivery") {
-      merchant.data.delivery = text.slice(0, 300);
+      if (durableInquiryEnabled && text.trim().length>110) return reply(event.replyToken,textMsg("交貨地區、交期及其他需求請精簡至110字內，避免寫入時遺漏重要資料。"));
+      merchant.data.delivery = text.slice(0, durableInquiryEnabled ? 110 : 300);
+      let confirmCommand = "確認送出商家詢價";
+      if (durableInquiryEnabled) {
+        const {merchantToBusinessInquiry}=require("./merchant-order-inquiry");
+        const {prepareInquiry,accessDraft}=require("./business-inquiry-intake");
+        const record=merchantToBusinessInquiry(merchant.data);
+        if (!record) return reply(event.replyToken,textMsg("商家詢價內容需要完整的商家資訊、商品數量及交貨需求，請輸入「商家下單」重新填寫。"));
+        const origin=require("./line-source-attribution").getRemembered(event.source.userId)?.sourceDetail;
+        const payload=prepareInquiry(record,origin);
+        const saved=await accessDraft("save-draft", event.source.userId, inquiryOptions, {payload});
+        if (saved?.id!==payload.id) return reply(event.replyToken,textMsg("商家詢價草稿尚未安全保存，請保留內容並再次送出交貨需求，或洽人工客服。"));
+        merchant.receiptPayload=payload;
+        confirmCommand+="｜"+payload.id;
+      }
       merchant.step = "confirm";
-      return reply(event.replyToken, textMsg(`請確認商家採購詢價資料：\n商家與聯絡方式：${merchant.data.contact}\n商品與預估數量：${merchant.data.items}\n交貨及其他需求：${merchant.data.delivery}\n\n送出僅代表詢價，不代表價格核定、訂單成立或保證供貨。`, [{label:"確認送出詢價",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}]));
+      return reply(event.replyToken, textMsg(`請確認商家採購詢價資料：\n商家與聯絡方式：${merchant.data.contact}\n商品與預估數量：${merchant.data.items}\n交貨及其他需求：${merchant.data.delivery}\n\n送出僅代表詢價，不代表價格核定、訂單成立或保證供貨。`, [{label:"確認送出詢價",text:confirmCommand},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}]));
     }
     if (merchant.step === "confirm") {
+      if (durableInquiryEnabled) return reply(event.replyToken,textMsg(
+        merchant.receiptPayload?.id ? "請點選原確認按鈕，或輸入「商家下單」重新填寫。" : "請重新輸入「商家下單」以安全保存並確認詢價。",
+        merchant.receiptPayload?.id ? [{label:"確認送出詢價",text:"確認送出商家詢價｜"+merchant.receiptPayload.id},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}] : mainQuick(),
+      ));
       if (text !== "確認送出商家詢價") return reply(event.replyToken, textMsg("請選擇「確認送出詢價」、「重新填寫」或「取消」。", [{label:"確認送出詢價",text:"確認送出商家詢價"},{label:"重新填寫",text:"商家下單"},{label:"取消",text:"取消商家採購"}]));
       const summary = `【商家採購詢價】\n商家與聯絡方式：${merchant.data.contact}\n商品與預估數量：${merchant.data.items}\n交貨與其他需求：${merchant.data.delivery}`;
       const sent = await withLineLoadingIndicator(event, () =>
@@ -1585,9 +1634,7 @@ async function handleMessage(event) {
     }
   }
 
-  const durableInquiryEnabled = process.env.XJW_B2B_PERSIST_ENABLED === "true";
   const inquiryCommand = text.match(/^確認送出合作洽談｜(B2B-[a-f0-9-]{36})$/i);
-  const inquiryOptions = { secret: process.env.XJW_B2B_INTAKE_SECRET };
   if (durableInquiryEnabled && inquiryCommand) {
     const { accessDraft, persistAndNotify } = require("./business-inquiry-intake");
     const id = inquiryCommand[1];
@@ -1611,6 +1658,7 @@ async function handleMessage(event) {
     if (durableInquiryEnabled && !await require("./business-inquiry-intake").accessDraft("discard-draft", event.source.userId, inquiryOptions)) {
       return reply(event.replyToken, textMsg("目前無法重設合作草稿，請稍後再試。"));
     }
+    delete state.merchantOrderInquiry;
     state.businessInquiry = { step: "category", data: {} };
     return reply(event.replyToken, textMsg("仙加味｜商家合作洽談\n請先選擇合作類型：", [
       { label: "批發／採購", text: "合作類型｜批發採購" },
