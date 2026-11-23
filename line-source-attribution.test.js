@@ -193,3 +193,32 @@ assert(server.includes('if (text === "參仲四物飲")'));
 assert(server.includes('absoluteUrl("product-jinan-siwuyin.html")'));
 assert(server.includes("normalizeProductEntry(text)"));
 console.log("PASS all seven official partner-product entry links with preserved inquiry routing");
+
+
+// 2026-11-23: Website recipes page's existing opt-in LINE text has a stable
+// customer-origin label; do not infer sources from generic cooking questions.
+const recipesEntry="我從官網料理頁進來，想詢問產品料理與沖泡方式。";
+const recipesOrigin=attribution.detectWebsiteOrigin(recipesEntry);
+assert(recipesOrigin);
+assert.strictEqual(recipesOrigin.source,"官網→LINE OA");
+assert.strictEqual(recipesOrigin.sourceEvidence,"website_self_report");
+assert.strictEqual(recipesOrigin.sourceDetail,"website:recipes");
+assert.strictEqual(recipesOrigin.sourceLabel,"料理頁");
+assert.strictEqual(recipesOrigin.leadOrigin,"https://ts15825868.github.io/xianjiawei/recipes.html");
+assert.strictEqual(recipesOrigin.campaignTag,"website-recipes-line");
+assert.strictEqual(attribution.detectWebsiteOrigin("我想詢問仙加味產品的料理與沖泡方式。"),null);
+assert.strictEqual(attribution.detectWebsiteOrigin("龜鹿產品的料理搭配"),null);
+assert.strictEqual(attribution.detectWebsiteOrigin(recipesEntry+"幫我下單"),null);
+const recipeUser="U-recipe-source-isolated-test";
+const recipeNow=Date.now();
+const savedRecipe=attribution.remember(recipeUser,recipesEntry,recipeNow);
+assert.strictEqual(savedRecipe?.sourceDetail,"website:recipes");
+const recipePayload=attribution.augmentCrmPayload({userId:recipeUser,source:"LINE OA",campaignId:"keep-source"},recipeNow+1);
+assert.strictEqual(recipePayload.source,"官網→LINE OA｜料理頁");
+assert.strictEqual(recipePayload.sourceDetail,"website:recipes");
+assert.strictEqual(recipePayload.campaignId,"keep-source");
+assert.strictEqual(attribution.ownerOriginSummary({source:{type:"user",userId:recipeUser}},recipeNow+1),"客源：官網→LINE OA｜料理頁（客戶自述）");
+assert.strictEqual(attribution.remember(recipeUser,"我想了解仙加味產品。",recipeNow+1000),null);
+assert.strictEqual(attribution.detectWebsiteOrigin("我從官網料理頁進來，想詢問產品料理與沖泡方式。 ").sourceDetail,"website:recipes"); // existing sanitizer trims whitespace
+assert.strictEqual(attribution.getRemembered(recipeUser,recipeNow+24*60*60*1000+1),null);
+console.log("PASS exact current recipes CTA attribution without changing customer responses");
