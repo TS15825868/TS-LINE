@@ -34,6 +34,11 @@ const EXPLICIT_ENTRY_PREFILLS = {
   "trial": [
     "我從仙加味官網試喝頁進來，想申請龜鹿飲30cc試喝組。"
   ],
+  // This exact text is already the live recipes.html CTA.
+  // Never attribute generic cooking questions without an explicit page source.
+  "recipes": [
+    "我從官網料理頁進來，想詢問產品料理與沖泡方式。"
+  ],
   contact: ["我從仙加味官網聯絡頁進來，想詢問產品、規格、使用方式或購買配送。"],
   "contact-b2b": ["我從仙加味官網合作頁進來，想進行商家合作。"]
 };
@@ -170,6 +175,13 @@ const PAGE_RULES = [
     path: "brand.html",
     campaignTag: "website-brand-line",
     matches: (text) => text.includes("我看過仙加味品牌故事，想更了解龜鹿產品與日常使用方式"),
+  },
+  {
+    page: "recipes",
+    label: "料理頁",
+    path: "recipes.html",
+    campaignTag: "website-recipes-line",
+    matches: () => false,
   },
   {
     page: "trial",
