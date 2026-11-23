@@ -25,6 +25,9 @@ on:
       - 'line-source-attribution.js'
       - 'line-source-attribution.test.js'
       - 'server.js'
+      - 'business-inquiry-intake.js'
+      - 'business-inquiry-intake.test.js'
+      - 'business-inquiry-access.test.js'
       - 'line-approved-faq-runtime.js'
       - 'line-webhook-fast-response.test.js'
       - 'line-webhook-customer-timing.test.js'
@@ -131,3 +134,33 @@ jobs:
           git checkout -- data.json assets/data/official-products.json
           git diff --exit-code
 
+
+  # Reuse the existing LINE source/weekly CI trigger; no extra schedule, no remote D1.
+  b2b-current-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout current LINE source
+        uses: actions/checkout@v5
+        with:
+          path: line
+          persist-credentials: false
+      - name: Checkout current official ERP main (read only)
+        uses: actions/checkout@v5
+        with:
+          repository: TS15825868/xianjiawei-internal
+          ref: main
+          path: erp
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Record exact cross-system source versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'LINE tested SHA: `%s`\n' "$(git -C line rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          printf 'ERP current main SHA: `%s`\n' "$(git -C erp rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Cross-check signed B2B intake against ERP current main
+        working-directory: line
+        run: node --test business-inquiry-intake.test.js
