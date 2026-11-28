@@ -132,7 +132,8 @@
     "180cc主規格180cc／包（鋁袋）；每日一包",
     "正式成分與順序不得回退舊版本",
     "產品圖、詳細DM、試喝圖不可混用",
-    "核准公開商品必須使用正式實拍等比例呈現；柒玄茶與其他暫緩品項只保留內部，不自創包裝、不自動公開。"
+    "核准公開商品必須使用正式實拍等比例呈現；柒玄茶與其他暫緩品項只保留內部，不自創包裝、不自動公開。",
+    "自製龜鹿膠及龜鹿湯塊已退出現行銷售推薦，舊圖片鎖定僅供內部歷史資料核對，不得顯示於公開卡片、推薦、下單或自動回覆。"
   ],
   "imageLocks": {
     "guiluDrink30": "小玻璃裸罐無貼紙、無外盒、無外袋、金色蓋；高矮胖瘦照原圖",
@@ -152,5 +153,18 @@
   "deferredInternalProductIds": [
     "qixuan-guilu-drink-powder"
   ],
-  "partnerCatalogAuthority": "https://ts15825868.github.io/xianjiawei/partner-catalog.json"
+  "partnerCatalogAuthority": "https://ts15825868.github.io/xianjiawei/partner-catalog.json",
+  "currentSupplyPolicy": {
+    "effectiveDate": "2026-11-28",
+    "primaryPromotionProductId": "guilu-gao",
+    "retiredSelfProducedProductIds": [
+      "guilu-jiao",
+      "guilu-tangkuai"
+    ],
+    "demandLedPartnerProductIds": [
+      "royalherb-erzhenbao-64",
+      "uboss-sizhenbao"
+    ],
+    "rule": "龜鹿膏為日常主動推廣核心。自製龜鹿膠、龜鹿膠塊／龜鹿湯塊已停止製作及現行銷售推薦；歷史資料與正式原圖保留，不得自動回流。二珍寶、四珍寶依顧客需求確認原廠供貨與交易條件後批進轉售，不自行生產、不主動大量備貨、不承諾未核實現貨或交期；保留既有公開及交易限制。"
+  }
 }
