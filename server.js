@@ -23,6 +23,7 @@ const VERSION = "v401.9";
 const SITE_URL = "https://ts15825868.github.io/xianjiawei/";
 const DRINK_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作；訂單資料與付款方式確認後，製作加工約需5～7個工作天，完成後才安排出貨，物流配送時間另計。";
 const READY_STOCK_ORDER_NOTICE = "本產品為預先製作備貨商品；訂單資料與付款方式確認後，依現貨狀況安排出貨，物流配送時間另計。";
+const PUBLIC_BRAND_INTRO = "仙加味，源自1978年台北萬華，延續四代家族工藝與漢方飲食文化。以龜鹿系列及漢方食品，讓傳統補養融入現代日常。";
 const MIXED_ORDER_NOTICE = "龜鹿飲30cc與180cc為接單後安排製作，約需5～7個工作天；龜鹿膏與鹿茸粉依現貨狀況安排。物流配送時間另計。";
 const CRM_URL = process.env.CRM_URL || "https://script.google.com/macros/s/AKfycbwAFBxeROd2ZYGJ_h0O7_H2MMxptOMoj3EXIErZpbKuTYFOzOVwQkrk8X1MoxapkHVGSA/exec";
 const CRM_TIMEOUT_MS = Number(process.env.CRM_TIMEOUT_MS || 8000);
@@ -284,15 +285,7 @@ function mainQuick() {
 }
 
 function storeServiceText() {
-  const store = DATA.store || {};
-  // A missing runtime store record must never resurrect an old address or
-  // retired hours. The location policy reads the approved business profile.
-  return `門市地址：${store.address || "最新門市／自取資訊請先透過官方 LINE 確認"}。
-營業時間：${store.hours || storeLocationPolicy.resolvePublicHours()}。
-${store.holidayNote || "官方 LINE 可隨時留言；店休及非營業時間的訊息，將依實際情況回覆。週末如有配送、自取需求，也可先透過 LINE 詢問安排。"}
-官網：24 小時可瀏覽產品、品牌、使用方式與常見問題。
-
-請直接留下想詢問的產品、規格、數量、配送或取貨需求，我們會由人工協助回覆。`;
+  return "商品諮詢、訂購及配送，歡迎透過官方 LINE 聯繫。請直接留下商品、規格、數量或配送需求，客服會協助確認。";
 }
 
 function flexCard(title, description, buttons = []) {
@@ -710,7 +703,7 @@ function mascotWelcomeReply() {
     altText: "歡迎來到仙加味",
     contents: mascotBubble(
       "歡迎來到仙加味",
-      `您好，歡迎來到仙加味。\n\n仙加味提供自有品牌與其他廠牌商品。可先到官網查看圖片、規格與介紹，再由官方 LINE 協助詢問、確認供貨及適用的交易方式。\n\n${MIXED_ORDER_NOTICE}`,
+      `您好，歡迎來到仙加味。\n\n${PUBLIC_BRAND_INTRO}\n\n${MIXED_ORDER_NOTICE}`,
       [
         { label: "看產品", text: "看產品" },
         { label: "幫我推薦", text: "幫我推薦" },
@@ -989,7 +982,7 @@ function huangdiNeijingReply() {
 function brandStoryReply() {
   return mascotBubble(
     "仙加味｜四代傳承",
-    "仙加味的故事從台北萬華開始。\n\n第一代曾祖父從行口與山產買賣起步。祖父『鹿角伯』自十幾歲起學習山產原料，以及鹿角、鹿茸、鹿鞭等鹿類原料與產品的生鮮、乾品處理與加工。父親長期協助並於約2000年前後正式承接第三代工作。\n\n重要歷程：\n・1974年開始獨立經營\n・1976年正式成立獨立事業\n・1978年完成公司化經營\n・2008年『仙加味』品牌完成註冊\n\n第四代將家族經驗整理成更清楚的產品資訊與日常使用方式。",
+    PUBLIC_BRAND_INTRO,
     [
       { label: "完整品牌故事", uri: absoluteUrl("brand.html") },
       { label: "查看產品", text: "看產品" },
@@ -1260,29 +1253,24 @@ async function continueCheckout(event, state, text) {
     return reply(event.replyToken, textMsg("請選擇配送方式。", [
       { label: "宅配", text: "宅配" },
       { label: "7-11賣貨便", text: "7-11賣貨便" },
-      { label: "門市自取", text: "門市自取" },
       { label: "雙北親送", text: "雙北親送" },
       { label: "取消", text: "取消" },
     ]));
   }
 
   if (checkout.step === "shipping") {
-    if (!/宅配|7-11|賣貨便|門市自取|自取|雙北|親送/.test(text)) {
-      return reply(event.replyToken, textMsg("請選擇宅配、7-11賣貨便、門市自取或雙北親送。"));
+    if (/自取|面交/.test(text)) {
+      return reply(event.replyToken, textMsg("取貨安排請先由客服個別確認。您也可以選擇宅配、7-11賣貨便或雙北親送。"));
+    }
+    if (!/宅配|7-11|賣貨便|雙北|親送/.test(text)) {
+      return reply(event.replyToken, textMsg("請選擇宅配、7-11賣貨便或雙北親送。"));
     }
     checkout.shipping = /7-11|賣貨便/.test(text)
       ? "7-11賣貨便"
-      : /自取/.test(text)
-        ? "門市自取"
         : /雙北|親送/.test(text)
           ? "雙北親送"
           : "宅配";
 
-    if (checkout.shipping === "門市自取") {
-      checkout.address = "萬華門市自取，客服確認時間";
-      checkout.step = "confirm";
-      return reply(event.replyToken, orderSummary(state));
-    }
 
     checkout.step = "address";
     return reply(
@@ -2086,7 +2074,7 @@ async function handleMessage(event) {
       altText: "仙加味配送與付款",
       contents: mascotBubble(
         "配送與付款｜小老闆幫你整理",
-        `付款方式：${(DATA.payments || ["現金付款", "匯款", "貨到付款"]).join("、")}\n\n配送方式：${(DATA.shipping || ["宅配", "7-11賣貨便", "門市自取", "雙北親送"]).join("、")}\n\n實際費用、到貨時間與可用方式由客服依訂單確認。`,
+        `付款方式：${(DATA.payments || ["現金付款", "匯款", "貨到付款"]).join("、")}\n\n配送方式：${(DATA.shipping || ["宅配", "7-11賣貨便", "雙北親送"]).filter(option => !/自取|面交/.test(option)).join("、")}\n\n實際費用、到貨時間與可用方式由客服依訂單確認。`,
         [
           { label: "查看購物車", text: "查看購買清單" },
           { label: "直接下單", text: "直接下單" },
@@ -2117,7 +2105,7 @@ async function handleMessage(event) {
   }
 
   if (/營業時間|門市時間|幾點營業|幾點關門|假日預約|預約門市/.test(text)) {
-    return reply(event.replyToken, { type: "flex", altText: "仙加味門市資訊", contents: mascotBubble("門市資訊｜小老闆為你服務", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }], "service") });
+    return reply(event.replyToken, { type: "flex", altText: "仙加味服務資訊", contents: mascotBubble("服務資訊｜小老闆為你服務", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }], "service") });
   }
 
   if (text === "官方客服留言") {
