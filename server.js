@@ -284,6 +284,22 @@ function mainQuick() {
   ];
 }
 
+const PICKUP_INQUIRY_REPLY = "您好，請問您想訂購哪一款商品呢？我們可以依您的需求協助確認取貨或配送方式。";
+
+function serviceInquiryReply(text) {
+  const question = text.replace(/[？?。！!\s]+$/u, "");
+  if (/^(?:請問)?(?:可以|能|可否|能否|我要|我想|能不能)?(?:預約)?(?:門市)?(?:自取|面交|取貨)(?:嗎|呢|可以嗎)?$/u.test(question)) {
+    return PICKUP_INQUIRY_REPLY;
+  }
+  if (/^(?:請問)?(?:營業時間(?:是什麼|是幾點)?|門市時間|幾點營業|幾點關門|假日預約|預約門市)(?:嗎|呢)?$/u.test(question)) {
+    return "您好，商品諮詢及訂購皆可透過官方 LINE 留言，我們會依序回覆您。";
+  }
+  if (/^(?:請問)?(?:仙加味|你們|門市|店面)?(?:的)?(?:地址(?:在哪裡|在哪|是什麼)?|在哪裡|位於哪裡|在哪)(?:嗎|呢)?$/u.test(question)) {
+    return "我們位於台北萬華，商品諮詢、訂購及配送皆可透過官方 LINE 聯繫。";
+  }
+  return "";
+}
+
 function storeServiceText() {
   return "商品諮詢、訂購及配送，歡迎透過官方 LINE 聯繫。請直接留下商品、規格、數量或配送需求，客服會協助確認。";
 }
@@ -1260,7 +1276,7 @@ async function continueCheckout(event, state, text) {
 
   if (checkout.step === "shipping") {
     if (/自取|面交/.test(text)) {
-      return reply(event.replyToken, textMsg("取貨安排請先由客服個別確認。您也可以選擇宅配、7-11賣貨便或雙北親送。"));
+      return reply(event.replyToken, textMsg(PICKUP_INQUIRY_REPLY));
     }
     if (!/宅配|7-11|賣貨便|雙北|親送/.test(text)) {
       return reply(event.replyToken, textMsg("請選擇宅配、7-11賣貨便或雙北親送。"));
@@ -1455,6 +1471,9 @@ async function handleMessage(event) {
   if (/^(?:營業人資訊|商行資訊|統編|統一編號)[？?]?$/.test(text)) {
     return reply(event.replyToken, textMsg("仙加味商行｜統一編號：00702569。商品與交易事項請在此對話洽詢仙加味官方 LINE（@762jybnm）。"));
   }
+  const serviceReply = serviceInquiryReply(text);
+  if (serviceReply) return reply(event.replyToken, textMsg(serviceReply));
+
   // Acknowledgements and small talk are not product inquiries. Let the owner
   // continue the conversation without repeating the full welcome/product menu.
   if (/^(?:謝謝|謝謝你|感謝|感謝你|多謝|不客氣|辛苦了|好的|好喔|好哦|收到|了解|嗯嗯|哈哈|哈哈哈|掰掰|再見|晚安|早安)[！!。．~～\s]*$/.test(text)) return true;
@@ -2102,10 +2121,6 @@ async function handleMessage(event) {
 
   if (/品牌故事|四代|鹿角伯|家族傳承|曾祖父|祖父|第三代|第四代/.test(text)) {
     return reply(event.replyToken, brandStoryReply());
-  }
-
-  if (/營業時間|門市時間|幾點營業|幾點關門|假日預約|預約門市/.test(text)) {
-    return reply(event.replyToken, { type: "flex", altText: "仙加味服務資訊", contents: mascotBubble("服務資訊｜小老闆為你服務", storeServiceText(), [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }], "service") });
   }
 
   if (text === "官方客服留言") {
