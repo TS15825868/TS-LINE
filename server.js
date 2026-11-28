@@ -580,6 +580,33 @@ function productMenuReply() {
   return productCarousel();
 }
 
+// 顧客端「訂購與試喝」選單只提供導覽，不建立訂單、不清除購買清單。
+function purchaseServiceReply(state = {}) {
+  if (state.checkout || state.businessInquiry || state.merchantOrderInquiry ||
+      state.merchantQuickOrder || state.consumerCustomQuantityId) {
+    return textMsg("目前有尚未完成的填寫或申請，請先依原流程完成；如需協助，請聯絡人工客服。", [
+      { label: "人工客服", text: "我要人工客服" },
+    ]);
+  }
+  // 正文不使用試喝專用卡片辨識詞，避免被舊視覺守門員誤判成試喝申請卡。
+  return {
+    type: "flex",
+    altText: "仙加味｜選購服務",
+    contents: mascotBubble(
+      "選購服務｜小老闆幫你整理",
+      "請選擇想了解的服務。商品、數量、金額及配送由仙加味官方 LINE 客服協助確認；送出需求不代表訂單成立。",
+      [
+        { label: "免費試喝", text: "試喝" },
+        { label: "選購商品", text: "看產品" },
+        { label: "查看購買清單", text: "查看購買清單" },
+        { label: "價格與配送", text: "常見問題" },
+        { label: "人工客服", text: "我要人工客服" },
+      ],
+      "service"
+    ),
+  };
+}
+
 function priceCarousel() {
   return textMsg("商品金額、優惠、折扣與運費均由仙加味 LINE 專人確認。請先選商品及數量。", [{ label: "看產品", text: "看產品" }, { label: "人工客服", text: "我要人工客服" }]);
 }
@@ -1478,6 +1505,7 @@ async function handleMessage(event) {
   // continue the conversation without repeating the full welcome/product menu.
   if (/^(?:謝謝|謝謝你|感謝|感謝你|多謝|不客氣|辛苦了|好的|好喔|好哦|收到|了解|嗯嗯|哈哈|哈哈哈|掰掰|再見|晚安|早安)[！!。．~～\s]*$/.test(text)) return true;
   const state = getState(event.source.userId);
+  if (text === "訂購與試喝") return reply(event.replyToken, purchaseServiceReply(state));
   // Contact shortcuts must remain available even during an active order or merchant form.
   if (/^(我要人工客服|人工客服|客服|聯絡我們|聯絡業務|業務聯絡|業務LINE|請業務聯絡我|請業務回覆|官方客服留言)$/.test(text)) {
     if (/^(我要人工客服|人工客服|客服|官方客服留言)$/.test(text) && state.checkout?.crmUncertain && state.checkout?.trial) {
@@ -2330,6 +2358,7 @@ module.exports = {
   cartTotal,
   productCarousel,
   productMenuReply,
+  purchaseServiceReply,
   priceCarousel,
   recommendReply,
   mascotWelcomeReply,
