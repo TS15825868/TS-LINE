@@ -1464,6 +1464,9 @@ async function handleMessage(event) {
 
   let text = require("./line-source-attribution").normalizeBusinessEntry(sanitizeUserText(event.message.text, 500));
   text = require("./line-source-attribution").normalizeProductEntry(text);
+  if (/^(?:營業人資訊|商行資訊|統編|統一編號)[？?]?$/.test(text)) {
+    return reply(event.replyToken, textMsg("仙加味商行｜統一編號：00702569。商品與交易事項請在此對話洽詢仙加味官方 LINE（@762jybnm）。"));
+  }
   // Acknowledgements and small talk are not product inquiries. Let the owner
   // continue the conversation without repeating the full welcome/product menu.
   if (/^(?:謝謝|謝謝你|感謝|感謝你|多謝|不客氣|辛苦了|好的|好喔|好哦|收到|了解|嗯嗯|哈哈|哈哈哈|掰掰|再見|晚安|早安)[！!。．~～\s]*$/.test(text)) return true;
